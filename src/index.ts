@@ -1,5 +1,5 @@
 import { GPGPU } from './GPGPU';
 
-export default {
+export {
 	GPGPU,
 };

@@ -6,7 +6,13 @@ GPGPU compute in the browser with WebGL.  Unlike other libraries out there, this
 
 ## Examples
 
+## Scripts
 
+To build Typescript from `src` to Javascript in `dist` run:
+
+`npm run build`
+
+(be sure you have done an `npm install` so that you have typescript installed)
 
 ## References
 
