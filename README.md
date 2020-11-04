@@ -4,6 +4,16 @@ This repo is under active development, really only posted here for internal use 
 
 GPGPU compute in the browser with WebGL.  Unlike other libraries out there, this is designed with WebGL 1.0 support, so it should run on mobile.  Additionally, it should be compatible with threejs.
 
+## Use
+ 
+ To install:
+
+`npm install git+https:github.com/amandaghassaei/webgl-gpgpu.git`
+
+npm install --save-dev @types/git+https:github.com/amandaghassaei/webgl-gpgpu.git
+
+
+
 ## Examples
 
 ## Scripts
