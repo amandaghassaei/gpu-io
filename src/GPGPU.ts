@@ -209,10 +209,23 @@ export class GPGPU {
 		};
 		
 		uniforms?.forEach(uniform => {
-			const {name, value, type} = uniform;
-			this.setProgramUniform(programName, name, value, type);
+			const {name, value} = uniform;
+			this.setProgramUniform(programName, name, value);
 		});
 	};
+
+	private uniformTypeForValue(value: number | number[]) {
+		if (!isNaN(value as number) || (value as number[]).length === 1) {
+			return FLOAT_1D_UNIFORM;
+		}
+		if ((value as number[]).length === 2) {
+			return FLOAT_2D_UNIFORM;
+		}
+		if ((value as number[]).length === 3) {
+			return FLOAT_3D_UNIFORM;
+		}
+		throw new Error(`Invalid uniform value: ${value}`);
+	}
 
 	// private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1f'): void;
 	// private setUniformForProgram(programName: string, uniformName: string, value: [number, number], type: '2f'): void;
@@ -222,7 +235,6 @@ export class GPGPU {
 		programName: string,
 		uniformName: string,
 		value: number | number[],
-		type: UniformType,
 	) {
 		const { gl, programs } = this;
 
@@ -233,6 +245,7 @@ export class GPGPU {
 	
 		const { uniforms } = program;
 		const uniform = uniforms[uniformName];
+		const type = this.uniformTypeForValue(value);
         if (!uniform) {
 			// Init uniform if needed.
 			const location = gl.getUniformLocation(program.program, uniformName);
@@ -254,21 +267,12 @@ export class GPGPU {
 		// Set uniform.
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
-				if (isNaN(value as number)) {
-					throw new Error(`Uniform ${uniformName} must be a number, got ${value}.`);
-				}
 				gl.uniform1f(location, value as number);
 				break;
 			case FLOAT_2D_UNIFORM:
-				if ((value as number[]).length !== 2) {
-					throw new Error(`Uniform ${uniformName} must be an array of length 2, got ${value}.`);
-				}
 				gl.uniform2f(location, (value as number[])[0], (value as number[])[1]);
 				break;
 			case FLOAT_3D_UNIFORM:
-				if ((value as number[]).length !== 3) {
-					throw new Error(`Uniform ${uniformName} must be an array of length 3, got ${value}.`);
-				}
 				gl.uniform3f(location, (value as number[])[0], (value as number[])[1], (value as number[])[2]);
 				break;
 			// case IMAGE_UNIFORM:

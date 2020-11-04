@@ -152,16 +152,28 @@ var GPGPU = /** @class */ (function () {
             uniforms: {},
         };
         uniforms === null || uniforms === void 0 ? void 0 : uniforms.forEach(function (uniform) {
-            var name = uniform.name, value = uniform.value, type = uniform.type;
-            _this.setProgramUniform(programName, name, value, type);
+            var name = uniform.name, value = uniform.value;
+            _this.setProgramUniform(programName, name, value);
         });
     };
     ;
+    GPGPU.prototype.uniformTypeForValue = function (value) {
+        if (!isNaN(value) || value.length === 1) {
+            return constants_1.FLOAT_1D_UNIFORM;
+        }
+        if (value.length === 2) {
+            return constants_1.FLOAT_2D_UNIFORM;
+        }
+        if (value.length === 3) {
+            return constants_1.FLOAT_3D_UNIFORM;
+        }
+        throw new Error("Invalid uniform value: " + value);
+    };
     // private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: [number, number], type: '2f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: [number, number, number], type: '3f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1i'): void;
-    GPGPU.prototype.setProgramUniform = function (programName, uniformName, value, type) {
+    GPGPU.prototype.setProgramUniform = function (programName, uniformName, value) {
         var _a = this, gl = _a.gl, programs = _a.programs;
         var program = programs[programName];
         if (!program) {
@@ -169,6 +181,7 @@ var GPGPU = /** @class */ (function () {
         }
         var uniforms = program.uniforms;
         var uniform = uniforms[uniformName];
+        var type = this.uniformTypeForValue(value);
         if (!uniform) {
             // Init uniform if needed.
             var location_1 = gl.getUniformLocation(program.program, uniformName);
@@ -190,21 +203,12 @@ var GPGPU = /** @class */ (function () {
         // Set uniform.
         switch (type) {
             case constants_1.FLOAT_1D_UNIFORM:
-                if (isNaN(value)) {
-                    throw new Error("Uniform " + uniformName + " must be a number, got " + value + ".");
-                }
                 gl.uniform1f(location, value);
                 break;
             case constants_1.FLOAT_2D_UNIFORM:
-                if (value.length !== 2) {
-                    throw new Error("Uniform " + uniformName + " must be an array of length 2, got " + value + ".");
-                }
                 gl.uniform2f(location, value[0], value[1]);
                 break;
             case constants_1.FLOAT_3D_UNIFORM:
-                if (value.length !== 3) {
-                    throw new Error("Uniform " + uniformName + " must be an array of length 3, got " + value + ".");
-                }
                 gl.uniform3f(location, value[0], value[1], value[2]);
                 break;
             // case IMAGE_UNIFORM:

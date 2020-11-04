@@ -24,7 +24,8 @@ export declare class GPGPU {
         type: UniformType;
         value: number;
     }[], vertexShaderSource?: string): void;
-    setProgramUniform(programName: string, uniformName: string, value: number | number[], type: UniformType): void;
+    private uniformTypeForValue;
+    setProgramUniform(programName: string, uniformName: string, value: number | number[]): void;
     private initFramebufferForTexture;
     private glTextureFormatForNumChannels;
     private glTextureTypeForType;
