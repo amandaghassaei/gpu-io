@@ -68,7 +68,7 @@ var GPGPU = /** @class */ (function () {
         }
         catch (e) { }
         if (!ext) {
-            console.warn("Unsupported extension: " + extension + ".");
+            console.warn("Unsupported " + (optional ? 'optional ' : '') + "extension: " + extension + ".");
         }
         // If the extension is not optional, throw error.
         if (!ext && !optional) {
@@ -153,7 +153,7 @@ var GPGPU = /** @class */ (function () {
         };
         uniforms === null || uniforms === void 0 ? void 0 : uniforms.forEach(function (uniform) {
             var name = uniform.name, value = uniform.value, type = uniform.type;
-            _this.setUniformForProgram(programName, name, value, type);
+            _this.setProgramUniform(programName, name, value, type);
         });
     };
     ;
@@ -161,7 +161,7 @@ var GPGPU = /** @class */ (function () {
     // private setUniformForProgram(programName: string, uniformName: string, value: [number, number], type: '2f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: [number, number, number], type: '3f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1i'): void;
-    GPGPU.prototype.setUniformForProgram = function (programName, uniformName, value, type) {
+    GPGPU.prototype.setProgramUniform = function (programName, uniformName, value, type) {
         var _a = this, gl = _a.gl, programs = _a.programs;
         var program = programs[programName];
         if (!program) {
@@ -190,17 +190,29 @@ var GPGPU = /** @class */ (function () {
         // Set uniform.
         switch (type) {
             case constants_1.FLOAT_1D_UNIFORM:
+                if (isNaN(value)) {
+                    throw new Error("Uniform " + uniformName + " must be a number, got " + value + ".");
+                }
                 gl.uniform1f(location, value);
                 break;
             case constants_1.FLOAT_2D_UNIFORM:
+                if (value.length !== 2) {
+                    throw new Error("Uniform " + uniformName + " must be an array of length 2, got " + value + ".");
+                }
                 gl.uniform2f(location, value[0], value[1]);
                 break;
             case constants_1.FLOAT_3D_UNIFORM:
+                if (value.length !== 3) {
+                    throw new Error("Uniform " + uniformName + " must be an array of length 3, got " + value + ".");
+                }
                 gl.uniform3f(location, value[0], value[1], value[2]);
                 break;
-            case constants_1.IMAGE_UNIFORM:
-                gl.uniform1i(location, value);
-                break;
+            // case IMAGE_UNIFORM:
+            // 	if (isNaN(value as number)) {
+            // 		throw new Error(`Uniform ${uniformName} must be a number, got ${value}.`);
+            // 	}
+            // 	gl.uniform1i(location, value as number);
+            // 	break;
             default:
                 throw new Error("Unknown uniform type: " + type + ".");
         }
