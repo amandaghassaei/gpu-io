@@ -5,12 +5,12 @@ var DefaultVertexShader_1 = require("./kernels/DefaultVertexShader");
 var constants_1 = require("./constants");
 var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
 var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
-var circlePoints = [0, 0];
+var unitCirclePoints = [0, 0];
 var NUM_SEGMENTS_CIRCLE = 20;
 for (var i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
-    circlePoints.push(0.1 * Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE), 0.1 * Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE));
+    unitCirclePoints.push(Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE), Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE));
 }
-var circlePositions = new Float32Array(circlePoints);
+var circlePositions = new Float32Array(unitCirclePoints);
 // Store extensions as constants.
 var OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
 var OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
@@ -356,7 +356,7 @@ var GPGPU = /** @class */ (function () {
         // TODO: dig into this.
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        var filter = this.linearFilterEnabled ? gl.LINEAR : gl.NEAREST;
+        var filter = gl.NEAREST; //this.linearFilterEnabled ? gl.LINEAR : gl.NEAREST;
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
         // TODO: Check that data is correct type.
@@ -445,9 +445,12 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
+        // Update uniforms and buffers.
+        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // Draw to framebuffer.
+        // Draw.
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a strip of px along the boundary.
     GPGPU.prototype.stepBoundary = function (programName, inputTextures, outputTexture) {
@@ -457,8 +460,11 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
+        // Update uniforms and buffers.
+        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
+        // Draw.
         gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
     };
     // // Step program for all but a strip of px along the boundary.
@@ -476,16 +482,20 @@ var GPGPU = /** @class */ (function () {
     // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
     // }
     // Step program only for a circular spot.
-    GPGPU.prototype.stepCircle = function (programName, inputTextures, outputTexture) {
+    GPGPU.prototype.stepCircle = function (programName, position, radius, inputTextures, outputTexture) {
         if (inputTextures === void 0) { inputTextures = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
+        // Update uniforms and buffers.
+        this.setProgramUniform(programName, 'u_scale', [radius, radius], 'FLOAT');
+        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 1); // Draw to framebuffer.
+        // Draw.
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
     };
     GPGPU.prototype.swapTextures = function (texture1Name, texture2Name) {
         var temp = this.textures[texture1Name];

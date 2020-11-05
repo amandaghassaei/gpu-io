@@ -39,15 +39,15 @@ type Program = {
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
-const circlePoints = [0, 0];
+const unitCirclePoints = [0, 0];
 const NUM_SEGMENTS_CIRCLE = 20;
 for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
-	circlePoints.push(
-		0.1 * Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
-		0.1 * Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
+	unitCirclePoints.push(
+		Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
+		Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
 	);
 }
-const circlePositions = new Float32Array(circlePoints);
+const circlePositions = new Float32Array(unitCirclePoints);
 
 // Store extensions as constants.
 const OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
@@ -470,7 +470,7 @@ Error code: ${gl.getError()}.`);
 		// TODO: dig into this.
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		const filter = this.linearFilterEnabled ? gl.LINEAR : gl.NEAREST;
+		const filter = gl.NEAREST;//this.linearFilterEnabled ? gl.LINEAR : gl.NEAREST;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
@@ -575,9 +575,12 @@ Error code: ${gl.getError()}.`);
 		if (errorState) {
 			return;
 		}
+		// Update uniforms and buffers.
+		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this._step(programName, inputTextures, outputTexture);
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
+		// Draw.
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 
 	// Step program only for a strip of px along the boundary.
@@ -592,8 +595,11 @@ Error code: ${gl.getError()}.`);
 		if (errorState) {
 			return;
 		}
+		// Update uniforms and buffers.
+		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 		this._step(programName, inputTextures, outputTexture);
+		// Draw.
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
 
@@ -617,10 +623,10 @@ Error code: ${gl.getError()}.`);
 	// Step program only for a circular spot.
 	stepCircle(
 		programName: string,
+		position: [number, number],
+		radius: number,
 		inputTextures: string[] = [],
 		outputTexture?: string, // Undefined renders to screen.
-		// position: [number, number],
-		// radius: number,
 	) {
 		const { gl, errorState, circlePositionsBuffer } = this;
 
@@ -629,9 +635,13 @@ Error code: ${gl.getError()}.`);
 			return;
 		}
 
+		// Update uniforms and buffers.
+		this.setProgramUniform(programName, 'u_scale', [radius, radius], 'FLOAT');
+		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this._step(programName, inputTextures, outputTexture);
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 1);// Draw to framebuffer.
+		// Draw.
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
 	}
 
     swapTextures(
