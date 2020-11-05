@@ -28,7 +28,7 @@ export class GPGPU {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 
 	private errorState = false;
-	private readonly errorCallback: (message: string) => void;
+	private readonly errorCallback: (message: string) => void | never;
 
 	private readonly programs: { [ key: string ] : Program } = {}; // All current gl programs.
 	private readonly textures: { [ key: string ] : WebGLTexture } = {}; // All current gl textures.
