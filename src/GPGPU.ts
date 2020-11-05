@@ -239,13 +239,6 @@ export class GPGPU {
 			this.errorCallback(`Program ${programName} filed to link: ${gl.getProgramInfoLog(program)}`);
 		}
 
-		// Add position attribute to vertex shader.
-		// Look up where the vertex data needs to go.
-		const positionLocation = gl.getAttribLocation(program, 'aPosition');
-		// Point attribute to the currently bound VBO.
-		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-		// Enable the attribute.
-		gl.enableVertexAttribArray(positionLocation);
 		// Add new program.
         programs[programName] = {
             program: program,
@@ -557,6 +550,12 @@ Error code: ${gl.getError()}.`);
 			gl.activeTexture(gl.TEXTURE0 + i);
 			gl.bindTexture(gl.TEXTURE_2D, this.textures[inputTextures[i]]);
 		}
+
+		// Point attribute to the currently bound VBO.
+		const positionLocation = gl.getAttribLocation(program, 'aPosition');
+		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(positionLocation);
 	};
 	
 	// Step for entire fullscreen quad.
