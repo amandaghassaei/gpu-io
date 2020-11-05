@@ -212,7 +212,7 @@ var GPGPU = /** @class */ (function () {
             gl.useProgram(program.program); // Seem to need this to get valid uniform location.
             var location_1 = gl.getUniformLocation(program.program, uniformName);
             if (!location_1) {
-                this.errorCallback("Could not init uniform: " + gl.getError());
+                this.errorCallback("Could not init uniform " + uniformName + " for program " + programName + ".  Check that uniform is present in shader code, unused uniforms may be removed by compiler.  Error code: " + gl.getError());
                 return;
             }
             uniforms[uniformName] = {
