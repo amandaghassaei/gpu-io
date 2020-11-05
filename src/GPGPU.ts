@@ -216,7 +216,6 @@ export class GPGPU {
 			this.errorCallback(`Program ${programName} filed to link: ${gl.getProgramInfoLog(program)}`);
 		}
 
-		this.gl.useProgram(program);// TODO: need this?
 		if (!vertexShaderSource) {
 			// Load fullscreen rect vertex shader by default.
 			this.loadFSRectPositions(program);
@@ -465,7 +464,6 @@ export class GPGPU {
 		canvasEl.height = height;
     };
 
-	// TODO: add option to draw to screen.
     step(
 		programName: string,
 		inputTextures: string[],

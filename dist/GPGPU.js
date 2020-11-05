@@ -144,7 +144,6 @@ var GPGPU = /** @class */ (function () {
             // Something went wrong with the link.
             this.errorCallback("Program " + programName + " filed to link: " + gl.getProgramInfoLog(program));
         }
-        this.gl.useProgram(program); // TODO: need this?
         if (!vertexShaderSource) {
             // Load fullscreen rect vertex shader by default.
             this.loadFSRectPositions(program);
@@ -354,7 +353,6 @@ var GPGPU = /** @class */ (function () {
         canvasEl.height = height;
     };
     ;
-    // TODO: add option to draw to screen.
     GPGPU.prototype.step = function (programName, inputTextures, outputTexture, // Null renders to screen.
     time) {
         // Ignore if we are in error state.
