@@ -43,8 +43,8 @@ const circlePoints = [0, 0];
 const NUM_SEGMENTS_CIRCLE = 20;
 for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 	circlePoints.push(
-		0.1 * Math.cos(2*Math.PI/NUM_SEGMENTS_CIRCLE),
-		0.1 * Math.sin(2*Math.PI/NUM_SEGMENTS_CIRCLE),
+		0.1 * Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
+		0.1 * Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
 	);
 }
 const circlePositions = new Float32Array(circlePoints);
@@ -617,7 +617,7 @@ Error code: ${gl.getError()}.`);
 	// Step program only for a circular spot.
 	stepCircle(
 		programName: string,
-		inputTextures: string[],
+		inputTextures: string[] = [],
 		outputTexture?: string, // Undefined renders to screen.
 		// position: [number, number],
 		// radius: number,

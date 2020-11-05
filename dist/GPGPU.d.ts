@@ -36,7 +36,7 @@ export declare class GPGPU {
     private _step;
     step(programName: string, inputTextures?: string[], outputTexture?: string): void;
     stepBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
-    stepCircle(programName: string, inputTextures: string[], outputTexture?: string): void;
+    stepCircle(programName: string, inputTextures?: string[], outputTexture?: string): void;
     swapTextures(texture1Name: string, texture2Name: string): void;
     reset(): void;
 }

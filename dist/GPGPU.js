@@ -8,7 +8,7 @@ var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
 var circlePoints = [0, 0];
 var NUM_SEGMENTS_CIRCLE = 20;
 for (var i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
-    circlePoints.push(0.1 * Math.cos(2 * Math.PI / NUM_SEGMENTS_CIRCLE), 0.1 * Math.sin(2 * Math.PI / NUM_SEGMENTS_CIRCLE));
+    circlePoints.push(0.1 * Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE), 0.1 * Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE));
 }
 var circlePositions = new Float32Array(circlePoints);
 // Store extensions as constants.
@@ -477,6 +477,7 @@ var GPGPU = /** @class */ (function () {
     // }
     // Step program only for a circular spot.
     GPGPU.prototype.stepCircle = function (programName, inputTextures, outputTexture) {
+        if (inputTextures === void 0) { inputTextures = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer;
         // Ignore if we are in error state.
         if (errorState) {
