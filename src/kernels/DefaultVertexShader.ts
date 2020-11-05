@@ -3,7 +3,7 @@ export default `
 precision mediump float;
 attribute vec2 aPosition;
 uniform vec2 u_scale;
-uniform vec2 u_translation;
+uniform vec2 u_translation; // Defaults to [0, 0]
 varying vec2 uv;
 void main() {
 	// Apply transformations.

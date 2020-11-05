@@ -446,7 +446,7 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Update uniforms and buffers.
-        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+        this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
         // Draw.
@@ -461,7 +461,7 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Update uniforms and buffers.
-        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+        this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
         // Draw.
