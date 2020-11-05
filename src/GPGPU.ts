@@ -81,12 +81,13 @@ export class GPGPU {
 			// Init a gl context if not passed in.
 			gl = canvasEl.getContext('webgl2', {antialias:false})  as WebGL2RenderingContext | null
 				|| canvasEl.getContext('webgl', {antialias:false})  as WebGLRenderingContext | null;
-			// || canvasEl.getContext("experimental-webgl", {antialias:false}) as RenderingContext;
+			// || canvasEl.getContext('experimental-webgl', {antialias:false}) as RenderingContext;
 			if (gl === null) {
 			errorCallback('Unable to initialize WebGL context.');
 				return;
 			}
 		}
+		gl.viewport(0, 0, canvasEl.clientWidth, canvasEl.clientHeight);// TODO: need this?
 
 		this.gl = gl;
 
@@ -138,7 +139,7 @@ export class GPGPU {
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]), gl.STATIC_DRAW);
 	
 		// Look up where the vertex data needs to go.
-		const positionLocation = gl.getAttribLocation(program, "a_position");
+		const positionLocation = gl.getAttribLocation(program, 'a_position');
 		gl.enableVertexAttribArray(positionLocation);
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 	}
@@ -218,7 +219,7 @@ export class GPGPU {
 			this.errorCallback(`Program ${programName} filed to link: ${gl.getProgramInfoLog(program)}`);
 		}
 
-		this.gl.useProgram(program);
+		this.gl.useProgram(program);// TODO: need this?
 		if (!vertexShaderSource) {
 			// Load fullscreen rect vertex shader by default.
 			this.loadFSRectPositions(program);
