@@ -279,12 +279,14 @@ export class GPGPU {
 		if (!program) {
 			throw new Error(`Count not set uniform, no program of name: ${programName}.`);
 		}
+
+		// Set active program.
+		gl.useProgram(program.program);
 	
 		const { uniforms } = program;
 		const type = this.uniformTypeForValue(value, dataType);
 		if (!uniforms[uniformName]) {
 			// Init uniform if needed.
-			gl.useProgram(program.program); // Seem to need this to get valid uniform location.
 			const location = gl.getUniformLocation(program.program, uniformName);
 			if (!location) {
 				this.errorCallback(`Could not init uniform ${uniformName} for program ${programName}.
