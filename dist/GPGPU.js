@@ -387,7 +387,7 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Init a framebuffer for this texture so we can write to it.
-        this.initFramebufferForTexture(textureName);
+        this.initFramebufferForTexture(textureName, shouldOverwrite);
     };
     ;
     GPGPU.prototype.onResize = function (canvasEl) {

@@ -495,7 +495,7 @@ Error code: ${gl.getError()}.`);
 		}
 
 		// Init a framebuffer for this texture so we can write to it.
-		this.initFramebufferForTexture(textureName);
+		this.initFramebufferForTexture(textureName, shouldOverwrite);
 	};
 
 	onResize(canvasEl: HTMLCanvasElement) {
