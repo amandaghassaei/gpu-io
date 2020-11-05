@@ -6,6 +6,8 @@ declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
 declare type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
 export declare class GPGPU {
     private readonly gl;
+    private width;
+    private height;
     private errorState;
     private readonly errorCallback;
     private readonly programs;
@@ -36,7 +38,9 @@ export declare class GPGPU {
     private _step;
     step(programName: string, inputTextures?: string[], outputTexture?: string): void;
     stepBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
-    stepCircle(programName: string, position: [number, number], radius: number, inputTextures?: string[], outputTexture?: string): void;
+    stepCircle(programName: string, position: [number, number], // position is in screen space coords.
+    radius: number, // radius is in px.
+    inputTextures?: string[], outputTexture?: string): void;
     swapTextures(texture1Name: string, texture2Name: string): void;
     reset(): void;
 }

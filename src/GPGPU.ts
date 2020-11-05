@@ -55,6 +55,8 @@ const OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
 
 export class GPGPU {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
+	private width!: number;
+	private height!: number;
 
 	private errorState = false;
 	private readonly errorCallback: (message: string) => void;
@@ -531,6 +533,9 @@ Error code: ${gl.getError()}.`);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
 		canvasEl.width = width;
 		canvasEl.height = height;
+		// Save dimensions.
+		this.width = width;
+		this.height = height;
 	};
 
 	private _step(
@@ -623,12 +628,12 @@ Error code: ${gl.getError()}.`);
 	// Step program only for a circular spot.
 	stepCircle(
 		programName: string,
-		position: [number, number],
-		radius: number,
+		position: [number, number], // position is in screen space coords.
+		radius: number, // radius is in px.
 		inputTextures: string[] = [],
 		outputTexture?: string, // Undefined renders to screen.
 	) {
-		const { gl, errorState, circlePositionsBuffer } = this;
+		const { gl, errorState, circlePositionsBuffer, width, height } = this;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -636,8 +641,8 @@ Error code: ${gl.getError()}.`);
 		}
 
 		// Update uniforms and buffers.
-		this.setProgramUniform(programName, 'u_scale', [radius, radius], 'FLOAT');
-		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+		this.setProgramUniform(programName, 'u_scale', [radius / width, radius / height], 'FLOAT');
+		this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this._step(programName, inputTextures, outputTexture);
 		// Draw.

@@ -412,6 +412,9 @@ var GPGPU = /** @class */ (function () {
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
         canvasEl.width = width;
         canvasEl.height = height;
+        // Save dimensions.
+        this.width = width;
+        this.height = height;
     };
     ;
     GPGPU.prototype._step = function (programName, inputTextures, outputTexture) {
@@ -482,16 +485,18 @@ var GPGPU = /** @class */ (function () {
     // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
     // }
     // Step program only for a circular spot.
-    GPGPU.prototype.stepCircle = function (programName, position, radius, inputTextures, outputTexture) {
+    GPGPU.prototype.stepCircle = function (programName, position, // position is in screen space coords.
+    radius, // radius is in px.
+    inputTextures, outputTexture) {
         if (inputTextures === void 0) { inputTextures = []; }
-        var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer;
+        var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
         // Update uniforms and buffers.
-        this.setProgramUniform(programName, 'u_scale', [radius, radius], 'FLOAT');
-        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+        this.setProgramUniform(programName, 'u_scale', [radius / width, radius / height], 'FLOAT');
+        this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
         // Draw.
