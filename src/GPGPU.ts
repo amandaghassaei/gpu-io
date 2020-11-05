@@ -71,12 +71,7 @@ export class GPGPU {
 			errorCallback;
 		}
 
-		
-		// Save canvas.
-		// @ts-ignore
-		canvasEl.addEventListener('resize', this.updateSize);
-		this.updateSize(canvasEl);
-
+		// Init GL.
 		if (!gl) {
 			// Init a gl context if not passed in.
 			gl = canvasEl.getContext('webgl2', {antialias:false})  as WebGL2RenderingContext | null
@@ -87,11 +82,9 @@ export class GPGPU {
 				return;
 			}
 		}
-
 		this.gl = gl;
 
 		// GL setup.
-
 		// Load extensions.
 		// https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_half_float
 		// Half float is supported by modern mobile browsers, float not yet supported.
@@ -111,6 +104,11 @@ export class GPGPU {
 			return;
 		}
 		this.fsRectVertexShader = fsRectVertexShader;
+
+		// Canvas setup.
+		// @ts-ignore
+		canvasEl.addEventListener('resize', this.updateSize);
+		this.updateSize(canvasEl);
 
 		// Log number of textures available.
 		const maxTexturesInFragmentShader = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);

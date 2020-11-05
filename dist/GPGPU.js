@@ -23,10 +23,7 @@ var GPGPU = /** @class */ (function () {
             self.errorState = true;
             errorCallback;
         };
-        // Save canvas.
-        // @ts-ignore
-        canvasEl.addEventListener('resize', this.updateSize);
-        this.updateSize(canvasEl);
+        // Init GL.
         if (!gl) {
             // Init a gl context if not passed in.
             gl = canvasEl.getContext('webgl2', { antialias: false })
@@ -57,6 +54,10 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         this.fsRectVertexShader = fsRectVertexShader;
+        // Canvas setup.
+        // @ts-ignore
+        canvasEl.addEventListener('resize', this.updateSize);
+        this.updateSize(canvasEl);
         // Log number of textures available.
         var maxTexturesInFragmentShader = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         console.log(maxTexturesInFragmentShader + " textures max.");
