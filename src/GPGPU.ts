@@ -26,7 +26,7 @@ type UniformType =
 	typeof INT_3D_UNIFORM |
 	typeof INT_4D_UNIFORM;
 type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
-type UniformValueType = number | [number, number] | [number, number, number] | [number, number, number, number];
+type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
 type Uniform = { 
 	location: WebGLUniformLocation,
 	type: UniformType,
@@ -95,7 +95,7 @@ export class GPGPU {
 		// Disable depth testing globally.
 		gl.disable(gl.DEPTH_TEST);
 
-		// Set unpack alignment to 1.
+		// Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
 		// https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
 		gl.pixelStorei( gl.UNPACK_ALIGNMENT, 1 );
 
@@ -178,7 +178,7 @@ export class GPGPU {
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
-		vertexShaderSource?: string,
+		// vertexShaderSource?: string,
 	) {
 		const { programs, gl } = this;
 		if (programs[programName]) {
@@ -188,9 +188,10 @@ export class GPGPU {
 		}
 		const fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
 		// Load fullscreen rect vertex shader by default.
-		const vertexShader = vertexShaderSource ?
-			this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
-			this.fsRectVertexShader;
+		// const vertexShader = vertexShaderSource ?
+		// 	this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
+		// 	this.fsRectVertexShader;
+		const vertexShader = this.fsRectVertexShader;
 		if (!fragmentShader || !vertexShader) {
 			this.errorCallback(`Unable to init shaders for program ${programName}.`);
 			return;
@@ -216,10 +217,10 @@ export class GPGPU {
 			this.errorCallback(`Program ${programName} filed to link: ${gl.getProgramInfoLog(program)}`);
 		}
 
-		if (!vertexShaderSource) {
+		// if (!vertexShaderSource) {
 			// Load fullscreen rect vertex shader by default.
 			this.loadFSRectPositions(program);
-		}
+		// }
 
 		// Add new program.
         programs[programName] = {
@@ -267,11 +268,7 @@ export class GPGPU {
 		}
 	}
 
-	// private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1f'): void;
-	// private setUniformForProgram(programName: string, uniformName: string, value: [number, number], type: '2f'): void;
-	// private setUniformForProgram(programName: string, uniformName: string, value: [number, number, number], type: '3f'): void;
-	// private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1i'): void;
-    setProgramUniform(
+	setProgramUniform(
 		programName: string,
 		uniformName: string,
 		value: UniformValueType,
@@ -295,6 +292,7 @@ export class GPGPU {
 			if (!location) {
 				this.errorCallback(`Could not init uniform ${uniformName} for program ${programName}.
 Check that uniform is present in shader code, unused uniforms may be removed by compiler.
+Also check that uniform type in shader code matches type ${type}.
 Error code: ${gl.getError()}.`);
 				return;
 			}
@@ -513,38 +511,99 @@ Error code: ${gl.getError()}.`);
 		canvasEl.height = height;
 	};
 
+	private _step(
+		programName: string,
+		inputTextures: string[],
+		outputTexture?: string, // Undefined renders to screen.
+	) {
+		const { gl, programs, framebuffers } = this;
+		const program = programs[programName];
+		if (!program) {
+			throw new Error(`Invalid program name: ${programName}.`);
+		}
+		gl.useProgram(program.program);
+
+		const framebuffer = outputTexture ? framebuffers[outputTexture] : null;
+		if (framebuffer === undefined) {
+			throw new Error(`Invalid output texture: ${outputTexture}.`);
+		}
+		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+		
+		for (let i = 0; i < inputTextures.length; i++) {
+			gl.activeTexture(gl.TEXTURE0 + i);
+			gl.bindTexture(gl.TEXTURE_2D, this.textures[inputTextures[i]]);
+		}
+	};
+	
+	// Step for entire fullscreen rect.
 	step(
 		programName: string,
 		inputTextures: string[],
-		outputTexture: string | null, // Null renders to screen.
-		time?: number,
+		outputTexture?: string, // Undefined renders to screen.
 	) {
+		const { gl, errorState } = this;
+
 		// Ignore if we are in error state.
-		if (this.errorState) {
+		if (errorState) {
 			return;
 		}
-		const { gl, programs } = this;
-		const program = programs[programName];
-		if (program) gl.useProgram(program.program);
-		else throw new Error(`Invalid program name: ${programName}.`);
 
-		// // Optionally set time.
-        // if (time) {
-		// 	this.setUniformForProgram(programName, 'u_time', time, '1f');
-		// }
+		this._step(programName, inputTextures, outputTexture);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
+	}
 
-		if (outputTexture) {
-			gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers[outputTexture]);
-		} else {
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	// Step program only for a strip of px along the boundary.
+	stepBoundary(
+		programName: string,
+		inputTextures: string[],
+		outputTexture?: string, // Undefined renders to screen.
+	) {
+		const { gl, errorState } = this;
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
 		}
-        
-        for (let i = 0; i < inputTextures.length; i++) {
-            gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, this.textures[inputTextures[i]]);
-        }
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
-    };
+
+		this._step(programName, inputTextures, outputTexture);
+		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
+	}
+
+	// // Step program for all but a strip of px along the boundary.
+	// stepNonBoundary(
+	// 	programName: string,
+	// 	inputTextures: string[],
+	// 	outputTexture?: string, // Undefined renders to screen.
+	// ) {
+	// 	const { gl, errorState } = this;
+
+	// 	// Ignore if we are in error state.
+	// 	if (errorState) {
+	// 		return;
+	// 	}
+
+	// 	this._step(programName, inputTextures, outputTexture);
+	// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
+	// }
+
+	// // Step program only for a circular spot.
+	// stepSpot(
+	// 	programName: string,
+	// 	inputTextures: string[],
+	// 	outputTexture?: string, // Undefined renders to screen.
+	// 	position: [number, number],
+	// 	radius: number,
+	// ) {
+	// 	const { gl, errorState } = this;
+
+	// 	// Ignore if we are in error state.
+	// 	if (errorState) {
+	// 		return;
+	// 	}
+
+	// 	this._step(programName, inputTextures, outputTexture);
+	// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
+	// }
 
     swapTextures(
 		texture1Name: string,

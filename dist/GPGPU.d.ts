@@ -3,7 +3,7 @@ declare type TextureType = 'float16' | 'uint8';
 declare type TextureData = Uint8Array;
 declare type TextureNumChannels = 1 | 2 | 3 | 4;
 declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
-declare type UniformValueType = number | [number, number] | [number, number, number] | [number, number, number, number];
+declare type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
 export declare class GPGPU {
     private readonly gl;
     private errorState;
@@ -22,7 +22,7 @@ export declare class GPGPU {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
-    }[], vertexShaderSource?: string): void;
+    }[]): void;
     private uniformTypeForValue;
     setProgramUniform(programName: string, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
     private initFramebufferForTexture;
@@ -30,8 +30,9 @@ export declare class GPGPU {
     private glTextureTypeForType;
     initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData, shouldOverwrite?: boolean): void;
     onResize(canvasEl: HTMLCanvasElement): void;
-    step(programName: string, inputTextures: string[], outputTexture: string | null, // Null renders to screen.
-    time?: number): void;
+    private _step;
+    step(programName: string, inputTextures: string[], outputTexture?: string): void;
+    stepBoundary(programName: string, inputTextures: string[], outputTexture?: string): void;
     swapTextures(texture1Name: string, texture2Name: string): void;
     reset(): void;
 }
