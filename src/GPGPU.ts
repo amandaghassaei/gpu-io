@@ -104,9 +104,7 @@ export class GPGPU {
 		this.fsRectVertexShader = fsRectVertexShader;
 
 		// Canvas setup.
-		// @ts-ignore
-		canvasEl.addEventListener('resize', this.updateSize);
-		this.updateSize(canvasEl);
+		this.onResize(canvasEl);
 
 		// Log number of textures available.
 		const maxTexturesInFragmentShader = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
@@ -289,14 +287,12 @@ export class GPGPU {
 			gl.useProgram(program.program); // Seem to need this to get valid uniform location.
 			const location = gl.getUniformLocation(program.program, uniformName);
 			if (!location) {
-				this.errorCallback(`
-					Could not init uniform ${uniformName} for program ${programName}.
-					Check that uniform is present in shader code, unused uniforms may be removed by compiler.
-					Error code: ${gl.getError()}.
-				`);
+				this.errorCallback(`Could not init uniform ${uniformName} for program ${programName}.
+Check that uniform is present in shader code, unused uniforms may be removed by compiler.
+Error code: ${gl.getError()}.`);
 				return;
 			}
-            uniforms[uniformName] = {
+			uniforms[uniformName] = {
 				location,
 				type: type,
 			}
@@ -494,7 +490,7 @@ export class GPGPU {
 		this.initFramebufferForTexture(textureName);
 	};
 
-	private updateSize(canvasEl: HTMLCanvasElement): any {
+	private onResize(canvasEl: HTMLCanvasElement) {
 		const { gl } = this;
 		const width = canvasEl.clientWidth;
 		const height = canvasEl.clientHeight;

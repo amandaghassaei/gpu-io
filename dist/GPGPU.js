@@ -56,9 +56,7 @@ var GPGPU = /** @class */ (function () {
         }
         this.fsRectVertexShader = fsRectVertexShader;
         // Canvas setup.
-        // @ts-ignore
-        canvasEl.addEventListener('resize', this.updateSize);
-        this.updateSize(canvasEl);
+        this.onResize(canvasEl);
         // Log number of textures available.
         var maxTexturesInFragmentShader = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         console.log(maxTexturesInFragmentShader + " textures max.");
@@ -212,7 +210,7 @@ var GPGPU = /** @class */ (function () {
             gl.useProgram(program.program); // Seem to need this to get valid uniform location.
             var location_1 = gl.getUniformLocation(program.program, uniformName);
             if (!location_1) {
-                this.errorCallback("\n\t\t\t\t\tCould not init uniform " + uniformName + " for program " + programName + ".\n\t\t\t\t\tCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\n\t\t\t\t\tError code: " + gl.getError() + ".\n\t\t\t\t");
+                this.errorCallback("Could not init uniform " + uniformName + " for program " + programName + ".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nError code: " + gl.getError() + ".");
                 return;
             }
             uniforms[uniformName] = {
@@ -382,7 +380,7 @@ var GPGPU = /** @class */ (function () {
         this.initFramebufferForTexture(textureName);
     };
     ;
-    GPGPU.prototype.updateSize = function (canvasEl) {
+    GPGPU.prototype.onResize = function (canvasEl) {
         var gl = this.gl;
         var width = canvasEl.clientWidth;
         var height = canvasEl.clientHeight;
