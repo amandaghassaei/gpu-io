@@ -95,6 +95,10 @@ export class GPGPU {
 		// Disable depth testing globally.
 		gl.disable(gl.DEPTH_TEST);
 
+		// Set unpack alignment to 1.
+		// https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
+		gl.pixelStorei( gl.UNPACK_ALIGNMENT, 1 );
+
 		// Init a default vertex shader that just passes through screen coords.
 		const fsRectVertexShader = this.compileShader(fsRectVertexShaderSource, gl.VERTEX_SHADER);
 		if (!fsRectVertexShader) {
@@ -346,7 +350,7 @@ Error code: ${gl.getError()}.`);
 		const { gl, framebuffers } = this;
 
 		if (framebuffers[textureName]){
-			if (!shouldOverwrite) console.warn(`Already a framebuffer with the name ${textureName}.`);
+			if (!shouldOverwrite) console.warn(`Already a framebuffer with the name ${textureName}, use shouldOverwrite flag in initTexture() to ignore.`);
 			gl.deleteFramebuffer(framebuffers[textureName]);
 		}
 		
@@ -427,7 +431,7 @@ Error code: ${gl.getError()}.`);
 		const { gl, textures, framebuffers } = this;
 		
         if (textures[textureName]){
-            if (!shouldOverwrite) console.warn(`Already a texture with the name ${textureName}.`);
+            if (!shouldOverwrite) console.warn(`Already a texture with the name ${textureName}, use shouldOverwrite flag to ignore.`);
             gl.deleteTexture(textures[textureName]);
 		}
 		

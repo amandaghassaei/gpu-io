@@ -48,6 +48,9 @@ var GPGPU = /** @class */ (function () {
         this.linearFilterEnabled = this.loadExtension(OES_TEXTURE_HAlF_FLOAT_LINEAR, true);
         // Disable depth testing globally.
         gl.disable(gl.DEPTH_TEST);
+        // Set unpack alignment to 1.
+        // https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
         // Init a default vertex shader that just passes through screen coords.
         var fsRectVertexShader = this.compileShader(FSRectVertexShader_1.default, gl.VERTEX_SHADER);
         if (!fsRectVertexShader) {
@@ -262,7 +265,7 @@ var GPGPU = /** @class */ (function () {
         var _a = this, gl = _a.gl, framebuffers = _a.framebuffers;
         if (framebuffers[textureName]) {
             if (!shouldOverwrite)
-                console.warn("Already a framebuffer with the name " + textureName + ".");
+                console.warn("Already a framebuffer with the name " + textureName + ", use shouldOverwrite flag in initTexture() to ignore.");
             gl.deleteFramebuffer(framebuffers[textureName]);
         }
         var texture = this.textures[textureName];
@@ -327,7 +330,7 @@ var GPGPU = /** @class */ (function () {
         var _a = this, gl = _a.gl, textures = _a.textures, framebuffers = _a.framebuffers;
         if (textures[textureName]) {
             if (!shouldOverwrite)
-                console.warn("Already a texture with the name " + textureName + ".");
+                console.warn("Already a texture with the name " + textureName + ", use shouldOverwrite flag to ignore.");
             gl.deleteTexture(textures[textureName]);
         }
         // Check that data is correct length.
