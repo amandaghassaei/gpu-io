@@ -476,7 +476,7 @@ var GPGPU = /** @class */ (function () {
     // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
     // }
     // Step program only for a circular spot.
-    GPGPU.prototype.stepSpot = function (programName, inputTextures, outputTexture) {
+    GPGPU.prototype.stepCircle = function (programName, inputTextures, outputTexture) {
         var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer;
         // Ignore if we are in error state.
         if (errorState) {

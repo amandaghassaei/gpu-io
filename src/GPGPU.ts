@@ -615,7 +615,7 @@ Error code: ${gl.getError()}.`);
 	// }
 
 	// Step program only for a circular spot.
-	stepSpot(
+	stepCircle(
 		programName: string,
 		inputTextures: string[],
 		outputTexture?: string, // Undefined renders to screen.
