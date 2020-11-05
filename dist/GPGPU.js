@@ -117,6 +117,7 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         var fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+        // Load fullscreen rect vertex shader by default.
         var vertexShader = vertexShaderSource ?
             this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
             this.fsRectVertexShader;

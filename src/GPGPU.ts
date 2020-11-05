@@ -135,7 +135,7 @@ export class GPGPU {
 	private loadFSRectPositions(program: WebGLProgram) {
 		const { gl } = this;
 		gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]), gl.STATIC_DRAW);
 	
 		// Look up where the vertex data needs to go.
 		const positionLocation = gl.getAttribLocation(program, "a_position");
@@ -182,13 +182,14 @@ export class GPGPU {
 		}[],
 		vertexShaderSource?: string,
 	) {
-        const { programs, gl } = this;
-        if (programs[programName]) {
-            gl.useProgram(programs[programName].program);
-            console.warn(`Already a program with the name ${programName}.`);
-            return;
-        }		
+		const { programs, gl } = this;
+		if (programs[programName]) {
+			gl.useProgram(programs[programName].program);
+			console.warn(`Already a program with the name ${programName}.`);
+			return;
+		}
 		const fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+		// Load fullscreen rect vertex shader by default.
 		const vertexShader = vertexShaderSource ?
 			this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
 			this.fsRectVertexShader;
