@@ -208,6 +208,7 @@ var GPGPU = /** @class */ (function () {
         var type = this.uniformTypeForValue(value, dataType);
         if (!uniforms[uniformName]) {
             // Init uniform if needed.
+            gl.useProgram(program.program); // Seem to need this to get valid uniform location.
             var location_1 = gl.getUniformLocation(program.program, uniformName);
             if (!location_1) {
                 this.errorCallback("Could not init uniform: " + gl.getError());

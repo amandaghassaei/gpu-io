@@ -286,6 +286,7 @@ export class GPGPU {
 		const type = this.uniformTypeForValue(value, dataType);
 		if (!uniforms[uniformName]) {
 			// Init uniform if needed.
+			gl.useProgram(program.program); // Seem to need this to get valid uniform location.
 			const location = gl.getUniformLocation(program.program, uniformName);
 			if (!location) {
 				this.errorCallback(`Could not init uniform: ${gl.getError()}`);
