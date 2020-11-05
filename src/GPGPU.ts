@@ -243,9 +243,8 @@ export class GPGPU {
 		}
 	
 		const { uniforms } = program;
-		const uniform = uniforms[uniformName];
 		const type = this.uniformTypeForValue(value);
-        if (!uniform) {
+		if (!uniforms[uniformName]) {
 			// Init uniform if needed.
 			const location = gl.getUniformLocation(program.program, uniformName);
 			if (!location) {
@@ -256,29 +255,31 @@ export class GPGPU {
 				location,
 				type,
 			}
-		} else {
-			// Check that types match previously set uniform.
-			if (uniform.type != type) {
-				throw new Error(`Uniform ${uniformName} cannot change from type ${uniform.type} to type ${type}.`);
-			}
 		}
-		
+
+		const uniform = uniforms[uniformName];
+		// Check that types match previously set uniform.
+		if (uniform.type != type) {
+			throw new Error(`Uniform ${uniformName} cannot change from type ${uniform.type} to type ${type}.`);
+		}
+		const { location } = uniform;
+
 		// Set uniform.
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
-				gl.uniform1f(uniform.location, value as number);
+				gl.uniform1f(location, value as number);
 				break;
 			case FLOAT_2D_UNIFORM:
-				gl.uniform2f(uniform.location, (value as number[])[0], (value as number[])[1]);
+				gl.uniform2f(location, (value as number[])[0], (value as number[])[1]);
 				break;
 			case FLOAT_3D_UNIFORM:
-				gl.uniform3f(uniform.location, (value as number[])[0], (value as number[])[1], (value as number[])[2]);
+				gl.uniform3f(location, (value as number[])[0], (value as number[])[1], (value as number[])[2]);
 				break;
 			// case IMAGE_UNIFORM:
 			// 	if (isNaN(value as number)) {
 			// 		throw new Error(`Uniform ${uniformName} must be a number, got ${value}.`);
 			// 	}
-			// 	gl.uniform1i(uniform.location, value as number);
+			// 	gl.uniform1i(location, value as number);
 			// 	break;
 			default:
 				throw new Error(`Unknown uniform type: ${type}.`);

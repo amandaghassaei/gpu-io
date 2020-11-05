@@ -180,9 +180,8 @@ var GPGPU = /** @class */ (function () {
             throw new Error("Count not set uniform, no program of name: " + programName + ".");
         }
         var uniforms = program.uniforms;
-        var uniform = uniforms[uniformName];
         var type = this.uniformTypeForValue(value);
-        if (!uniform) {
+        if (!uniforms[uniformName]) {
             // Init uniform if needed.
             var location_1 = gl.getUniformLocation(program.program, uniformName);
             if (!location_1) {
@@ -194,28 +193,28 @@ var GPGPU = /** @class */ (function () {
                 type: type,
             };
         }
-        else {
-            // Check that types match previously set uniform.
-            if (uniform.type != type) {
-                throw new Error("Uniform " + uniformName + " cannot change from type " + uniform.type + " to type " + type + ".");
-            }
+        var uniform = uniforms[uniformName];
+        // Check that types match previously set uniform.
+        if (uniform.type != type) {
+            throw new Error("Uniform " + uniformName + " cannot change from type " + uniform.type + " to type " + type + ".");
         }
+        var location = uniform.location;
         // Set uniform.
         switch (type) {
             case constants_1.FLOAT_1D_UNIFORM:
-                gl.uniform1f(uniform.location, value);
+                gl.uniform1f(location, value);
                 break;
             case constants_1.FLOAT_2D_UNIFORM:
-                gl.uniform2f(uniform.location, value[0], value[1]);
+                gl.uniform2f(location, value[0], value[1]);
                 break;
             case constants_1.FLOAT_3D_UNIFORM:
-                gl.uniform3f(uniform.location, value[0], value[1], value[2]);
+                gl.uniform3f(location, value[0], value[1], value[2]);
                 break;
             // case IMAGE_UNIFORM:
             // 	if (isNaN(value as number)) {
             // 		throw new Error(`Uniform ${uniformName} must be a number, got ${value}.`);
             // 	}
-            // 	gl.uniform1i(uniform.location, value as number);
+            // 	gl.uniform1i(location, value as number);
             // 	break;
             default:
                 throw new Error("Unknown uniform type: " + type + ".");
