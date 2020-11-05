@@ -38,7 +38,16 @@ type Program = {
 };
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
-const boundaryPositions = new Float32Array([ -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5 ]);
+const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
+const circlePoints = [0, 0];
+const NUM_SEGMENTS_CIRCLE = 20;
+for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
+	circlePoints.push(
+		0.1 * Math.cos(2*Math.PI/NUM_SEGMENTS_CIRCLE),
+		0.1 * Math.sin(2*Math.PI/NUM_SEGMENTS_CIRCLE),
+	);
+}
+const circlePositions = new Float32Array(circlePoints);
 
 // Store extensions as constants.
 const OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
@@ -59,6 +68,7 @@ export class GPGPU {
 	private readonly defaultVertexShader!: WebGLShader;
 	private readonly quadPositionsBuffer!: WebGLBuffer;
 	private readonly boundaryPositionsBuffer!: WebGLBuffer;
+	private readonly circlePositionsBuffer!: WebGLBuffer;
 
 	// GL state.
 	private readonly linearFilterEnabled!: boolean;
@@ -105,7 +115,7 @@ export class GPGPU {
 
 		// Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
 		// https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
-		gl.pixelStorei( gl.UNPACK_ALIGNMENT, 1 );
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
 		// Init a default vertex shader that just passes through screen coords.
 		const defaultVertexShader = this.compileShader(defaultVertexShaderSource, gl.VERTEX_SHADER);
@@ -116,28 +126,10 @@ export class GPGPU {
 		this.defaultVertexShader = defaultVertexShader;
 
 		// Create vertex buffers.
-		const quadPositionsBuffer = gl.createBuffer();
-		if (!quadPositionsBuffer) {
-			errorCallback('Unable to allocate gl buffer.');
-			return;
-		}
-		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		// Add vertex data for drawing full screen quad via triangle strip.
-		gl.bufferData(gl.ARRAY_BUFFER, fsQuadPositions, gl.STATIC_DRAW);
-		// Save buffer.
-		this.quadPositionsBuffer = quadPositionsBuffer;
-		const boundaryPositionsBuffer = gl.createBuffer();
-		if (!boundaryPositionsBuffer) {
-			errorCallback('Unable to allocate gl buffer.');
-			return;
-		}
-		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		// Add vertex data for drawing full screen quad via traingle strip.
-		gl.bufferData(gl.ARRAY_BUFFER, boundaryPositions, gl.STATIC_DRAW);
-		// Save buffer.
-		this.boundaryPositionsBuffer = boundaryPositionsBuffer;
-
-		// Unbind buffer.
+		this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions)!;
+		this.boundaryPositionsBuffer = this.initVertexBuffer(boundaryPositions)!;
+		this.circlePositionsBuffer = this.initVertexBuffer(circlePositions)!;
+		// Unbind active buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		// Canvas setup.
@@ -146,6 +138,19 @@ export class GPGPU {
 		// Log number of textures available.
 		const maxTexturesInFragmentShader = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
 		console.log(`${maxTexturesInFragmentShader} textures max.`);
+	}
+
+	private initVertexBuffer(data: Float32Array) {
+		const { errorCallback, gl } = this;
+		const buffer = gl.createBuffer();
+		if (!buffer) {
+			errorCallback('Unable to allocate gl buffer.');
+			return;
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		// Add vertex data for drawing full screen quad via triangle strip.
+		gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+		return buffer;
 	}
 
 	private loadExtension(extension: string, optional = false) {
@@ -609,24 +614,25 @@ Error code: ${gl.getError()}.`);
 	// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
 	// }
 
-	// // Step program only for a circular spot.
-	// stepSpot(
-	// 	programName: string,
-	// 	inputTextures: string[],
-	// 	outputTexture?: string, // Undefined renders to screen.
-	// 	position: [number, number],
-	// 	radius: number,
-	// ) {
-	// 	const { gl, errorState } = this;
+	// Step program only for a circular spot.
+	stepSpot(
+		programName: string,
+		inputTextures: string[],
+		outputTexture?: string, // Undefined renders to screen.
+		// position: [number, number],
+		// radius: number,
+	) {
+		const { gl, errorState, circlePositionsBuffer } = this;
 
-	// 	// Ignore if we are in error state.
-	// 	if (errorState) {
-	// 		return;
-	// 	}
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
 
-	// 	this._step(programName, inputTextures, outputTexture);
-	// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
-	// }
+		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
+		this._step(programName, inputTextures, outputTexture);
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 1);// Draw to framebuffer.
+	}
 
     swapTextures(
 		texture1Name: string,

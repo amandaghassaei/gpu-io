@@ -4,7 +4,13 @@ exports.GPGPU = void 0;
 var DefaultVertexShader_1 = require("./kernels/DefaultVertexShader");
 var constants_1 = require("./constants");
 var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-var boundaryPositions = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5]);
+var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
+var circlePoints = [0, 0];
+var NUM_SEGMENTS_CIRCLE = 20;
+for (var i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
+    circlePoints.push(0.1 * Math.cos(2 * Math.PI / NUM_SEGMENTS_CIRCLE), 0.1 * Math.sin(2 * Math.PI / NUM_SEGMENTS_CIRCLE));
+}
+var circlePositions = new Float32Array(circlePoints);
 // Store extensions as constants.
 var OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
 var OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
@@ -61,27 +67,10 @@ var GPGPU = /** @class */ (function () {
         }
         this.defaultVertexShader = defaultVertexShader;
         // Create vertex buffers.
-        var quadPositionsBuffer = gl.createBuffer();
-        if (!quadPositionsBuffer) {
-            errorCallback('Unable to allocate gl buffer.');
-            return;
-        }
-        gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        // Add vertex data for drawing full screen quad via triangle strip.
-        gl.bufferData(gl.ARRAY_BUFFER, fsQuadPositions, gl.STATIC_DRAW);
-        // Save buffer.
-        this.quadPositionsBuffer = quadPositionsBuffer;
-        var boundaryPositionsBuffer = gl.createBuffer();
-        if (!boundaryPositionsBuffer) {
-            errorCallback('Unable to allocate gl buffer.');
-            return;
-        }
-        gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-        // Add vertex data for drawing full screen quad via traingle strip.
-        gl.bufferData(gl.ARRAY_BUFFER, boundaryPositions, gl.STATIC_DRAW);
-        // Save buffer.
-        this.boundaryPositionsBuffer = boundaryPositionsBuffer;
-        // Unbind buffer.
+        this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions);
+        this.boundaryPositionsBuffer = this.initVertexBuffer(boundaryPositions);
+        this.circlePositionsBuffer = this.initVertexBuffer(circlePositions);
+        // Unbind active buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         // Canvas setup.
         this.onResize(canvasEl);
@@ -89,6 +78,18 @@ var GPGPU = /** @class */ (function () {
         var maxTexturesInFragmentShader = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         console.log(maxTexturesInFragmentShader + " textures max.");
     }
+    GPGPU.prototype.initVertexBuffer = function (data) {
+        var _a = this, errorCallback = _a.errorCallback, gl = _a.gl;
+        var buffer = gl.createBuffer();
+        if (!buffer) {
+            errorCallback('Unable to allocate gl buffer.');
+            return;
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        // Add vertex data for drawing full screen quad via triangle strip.
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        return buffer;
+    };
     GPGPU.prototype.loadExtension = function (extension, optional) {
         if (optional === void 0) { optional = false; }
         var ext;
@@ -474,22 +475,17 @@ var GPGPU = /** @class */ (function () {
     // 	this._step(programName, inputTextures, outputTexture);
     // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
     // }
-    // // Step program only for a circular spot.
-    // stepSpot(
-    // 	programName: string,
-    // 	inputTextures: string[],
-    // 	outputTexture?: string, // Undefined renders to screen.
-    // 	position: [number, number],
-    // 	radius: number,
-    // ) {
-    // 	const { gl, errorState } = this;
-    // 	// Ignore if we are in error state.
-    // 	if (errorState) {
-    // 		return;
-    // 	}
-    // 	this._step(programName, inputTextures, outputTexture);
-    // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
-    // }
+    // Step program only for a circular spot.
+    GPGPU.prototype.stepSpot = function (programName, inputTextures, outputTexture) {
+        var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer;
+        // Ignore if we are in error state.
+        if (errorState) {
+            return;
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
+        this._step(programName, inputTextures, outputTexture);
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 1); // Draw to framebuffer.
+    };
     GPGPU.prototype.swapTextures = function (texture1Name, texture2Name) {
         var temp = this.textures[texture1Name];
         this.textures[texture1Name] = this.textures[texture2Name];

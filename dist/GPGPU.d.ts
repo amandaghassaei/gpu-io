@@ -15,8 +15,10 @@ export declare class GPGPU {
     private readonly defaultVertexShader;
     private readonly quadPositionsBuffer;
     private readonly boundaryPositionsBuffer;
+    private readonly circlePositionsBuffer;
     private readonly linearFilterEnabled;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
+    private initVertexBuffer;
     private loadExtension;
     private compileShader;
     initProgram(programName: string, fragmentShaderSource: string, uniforms?: {
@@ -34,6 +36,7 @@ export declare class GPGPU {
     private _step;
     step(programName: string, inputTextures?: string[], outputTexture?: string): void;
     stepBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
+    stepSpot(programName: string, inputTextures: string[], outputTexture?: string): void;
     swapTextures(texture1Name: string, texture2Name: string): void;
     reset(): void;
 }
