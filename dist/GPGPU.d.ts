@@ -12,13 +12,12 @@ export declare class GPGPU {
     private readonly textures;
     private readonly framebuffers;
     private readonly shaders;
-    private readonly fsRectVertexShader;
-    private readonly fsRectQuadBuffer;
-    private readonly fsRectBoundaryBuffer;
+    private readonly defaultVertexShader;
+    private readonly quadPositionsBuffer;
+    private readonly boundaryPositionsBuffer;
     private readonly linearFilterEnabled;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private loadExtension;
-    private loadFSRectPositions;
     private compileShader;
     initProgram(programName: string, fragmentShaderSource: string, uniforms?: {
         name: string;
@@ -33,8 +32,8 @@ export declare class GPGPU {
     initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData, shouldOverwrite?: boolean): void;
     onResize(canvasEl: HTMLCanvasElement): void;
     private _step;
-    step(programName: string, inputTextures: string[], outputTexture?: string): void;
-    stepBoundary(programName: string, inputTextures: string[], outputTexture?: string): void;
+    step(programName: string, inputTextures?: string[], outputTexture?: string): void;
+    stepBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
     swapTextures(texture1Name: string, texture2Name: string): void;
     reset(): void;
 }
