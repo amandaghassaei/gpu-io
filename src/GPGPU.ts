@@ -156,8 +156,7 @@ export class GPGPU {
 		fragmentShaderSource: string,
 		uniforms?: {
 			name: string,
-			type: UniformType,
-			value: number,
+			value: number | number[],
 		}[],
 		vertexShaderSource?: string,
 	) {

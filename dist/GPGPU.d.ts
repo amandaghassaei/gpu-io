@@ -1,9 +1,7 @@
-import { FLOAT_1D_UNIFORM, FLOAT_2D_UNIFORM, FLOAT_3D_UNIFORM, IMAGE_UNIFORM } from './constants';
 declare type TextureType = 'float16' | 'uint8';
 declare type TextureData = Uint8Array;
 declare type TextureNumChannels = 1 | 2 | 3 | 4;
 declare type ReadWrite = 'read' | 'write' | 'readwrite';
-declare type UniformType = typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof IMAGE_UNIFORM;
 export declare class GPGPU {
     private readonly canvasEl;
     private readonly gl;
@@ -21,8 +19,7 @@ export declare class GPGPU {
     private compileShader;
     initProgram(programName: string, fragmentShaderSource: string, uniforms?: {
         name: string;
-        type: UniformType;
-        value: number;
+        value: number | number[];
     }[], vertexShaderSource?: string): void;
     private uniformTypeForValue;
     setProgramUniform(programName: string, uniformName: string, value: number | number[]): void;
