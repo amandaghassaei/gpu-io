@@ -323,7 +323,7 @@ var GPGPU = /** @class */ (function () {
     GPGPU.prototype.initTexture = function (textureName, width, height, type, numChannels, writable, data, shouldOverwrite) {
         if (writable === void 0) { writable = false; }
         if (shouldOverwrite === void 0) { shouldOverwrite = false; }
-        var _a = this, gl = _a.gl, textures = _a.textures;
+        var _a = this, gl = _a.gl, textures = _a.textures, framebuffers = _a.framebuffers;
         if (textures[textureName]) {
             if (!shouldOverwrite)
                 console.warn("Already a texture with the name " + textureName + ".");
@@ -378,6 +378,11 @@ var GPGPU = /** @class */ (function () {
         gl.texImage2D(gl.TEXTURE_2D, 0, glFormat, width, height, 0, glFormat, glType, data ? data : null);
         textures[textureName] = texture;
         if (!writable) {
+            // Delete unused framebuffer if needed.
+            if (shouldOverwrite && framebuffers[textureName]) {
+                gl.deleteFramebuffer(framebuffers[textureName]);
+                delete framebuffers[textureName];
+            }
             return;
         }
         // Init a framebuffer for this texture so we can write to it.

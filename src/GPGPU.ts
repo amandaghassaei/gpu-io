@@ -422,7 +422,7 @@ Error code: ${gl.getError()}.`);
 		data?: TextureData,
 		shouldOverwrite = false,
 	) {
-		const { gl, textures } = this;
+		const { gl, textures, framebuffers } = this;
 		
         if (textures[textureName]){
             if (!shouldOverwrite) console.warn(`Already a texture with the name ${textureName}.`);
@@ -484,6 +484,11 @@ Error code: ${gl.getError()}.`);
 		textures[textureName] = texture;
 
 		if (!writable) {
+			// Delete unused framebuffer if needed.
+			if (shouldOverwrite && framebuffers[textureName]){
+				gl.deleteFramebuffer(framebuffers[textureName]);
+				delete framebuffers[textureName];
+			}
 			return;
 		}
 
