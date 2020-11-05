@@ -28,7 +28,7 @@ export class GPGPU {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 
 	private errorState = false;
-	private readonly errorCallback: (message: string) => void | never;
+	private readonly errorCallback: (message: string) => void;
 
 	private readonly programs: { [ key: string ] : Program } = {}; // All current gl programs.
 	private readonly textures: { [ key: string ] : WebGLTexture } = {}; // All current gl textures.
@@ -43,7 +43,7 @@ export class GPGPU {
 		canvasEl: HTMLCanvasElement,
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
 		// e.g. throw up a modal telling user this will not work on their device.
-		errorCallback = (message: string) => { throw new Error(message) }, 
+		errorCallback: (message: string) => void = (message: string) => { throw new Error(message) }, 
 	) {
 		// Save callback in case we run into an error.
 		const self = this;

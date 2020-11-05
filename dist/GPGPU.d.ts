@@ -15,7 +15,7 @@ export declare class GPGPU {
     private readonly shaders;
     private readonly fsRectVertexShader;
     private readonly linearFilterEnabled;
-    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => never);
+    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private loadExtension;
     private loadFSRectPositions;
     private compileShader;
