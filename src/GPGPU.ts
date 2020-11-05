@@ -552,7 +552,7 @@ Error code: ${gl.getError()}.`);
 		}
 
 		// Point attribute to the currently bound VBO.
-		const positionLocation = gl.getAttribLocation(program, 'aPosition');
+		const positionLocation = gl.getAttribLocation(program.program, 'aPosition');
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(positionLocation);

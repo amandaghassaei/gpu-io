@@ -430,7 +430,7 @@ var GPGPU = /** @class */ (function () {
             gl.bindTexture(gl.TEXTURE_2D, this.textures[inputTextures[i]]);
         }
         // Point attribute to the currently bound VBO.
-        var positionLocation = gl.getAttribLocation(program, 'aPosition');
+        var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
         // Enable the attribute.
         gl.enableVertexAttribArray(positionLocation);
