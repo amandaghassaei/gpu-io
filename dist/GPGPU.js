@@ -152,35 +152,58 @@ var GPGPU = /** @class */ (function () {
             uniforms: {},
         };
         uniforms === null || uniforms === void 0 ? void 0 : uniforms.forEach(function (uniform) {
-            var name = uniform.name, value = uniform.value;
-            _this.setProgramUniform(programName, name, value);
+            var name = uniform.name, value = uniform.value, dataType = uniform.dataType;
+            _this.setProgramUniform(programName, name, value, dataType);
         });
     };
     ;
-    GPGPU.prototype.uniformTypeForValue = function (value) {
-        if (!isNaN(value) || value.length === 1) {
-            return constants_1.FLOAT_1D_UNIFORM;
+    GPGPU.prototype.uniformTypeForValue = function (value, dataType) {
+        if (dataType === constants_1.FLOAT_TYPE) {
+            if (!isNaN(value) || value.length === 1) {
+                return constants_1.FLOAT_1D_UNIFORM;
+            }
+            if (value.length === 2) {
+                return constants_1.FLOAT_2D_UNIFORM;
+            }
+            if (value.length === 3) {
+                return constants_1.FLOAT_3D_UNIFORM;
+            }
+            if (value.length === 4) {
+                return constants_1.FLOAT_4D_UNIFORM;
+            }
+            throw new Error("Invalid uniform value: " + value);
         }
-        if (value.length === 2) {
-            return constants_1.FLOAT_2D_UNIFORM;
+        else if (dataType === constants_1.INT_TYPE) {
+            if (!isNaN(value) || value.length === 1) {
+                return constants_1.INT_1D_UNIFORM;
+            }
+            if (value.length === 2) {
+                return constants_1.INT_2D_UNIFORM;
+            }
+            if (value.length === 3) {
+                return constants_1.INT_3D_UNIFORM;
+            }
+            if (value.length === 4) {
+                return constants_1.INT_4D_UNIFORM;
+            }
+            throw new Error("Invalid uniform value: " + value);
         }
-        if (value.length === 3) {
-            return constants_1.FLOAT_3D_UNIFORM;
+        else {
+            throw new Error("Invalid uniform data type: " + dataType);
         }
-        throw new Error("Invalid uniform value: " + value);
     };
     // private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: [number, number], type: '2f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: [number, number, number], type: '3f'): void;
     // private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1i'): void;
-    GPGPU.prototype.setProgramUniform = function (programName, uniformName, value) {
+    GPGPU.prototype.setProgramUniform = function (programName, uniformName, value, dataType) {
         var _a = this, gl = _a.gl, programs = _a.programs;
         var program = programs[programName];
         if (!program) {
             throw new Error("Count not set uniform, no program of name: " + programName + ".");
         }
         var uniforms = program.uniforms;
-        var type = this.uniformTypeForValue(value);
+        var type = this.uniformTypeForValue(value, dataType);
         if (!uniforms[uniformName]) {
             // Init uniform if needed.
             var location_1 = gl.getUniformLocation(program.program, uniformName);
@@ -200,22 +223,32 @@ var GPGPU = /** @class */ (function () {
         }
         var location = uniform.location;
         // Set uniform.
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
         switch (type) {
             case constants_1.FLOAT_1D_UNIFORM:
                 gl.uniform1f(location, value);
                 break;
             case constants_1.FLOAT_2D_UNIFORM:
-                gl.uniform2f(location, value[0], value[1]);
+                gl.uniform2fv(location, value);
                 break;
             case constants_1.FLOAT_3D_UNIFORM:
-                gl.uniform3f(location, value[0], value[1], value[2]);
+                gl.uniform3fv(location, value);
                 break;
-            // case IMAGE_UNIFORM:
-            // 	if (isNaN(value as number)) {
-            // 		throw new Error(`Uniform ${uniformName} must be a number, got ${value}.`);
-            // 	}
-            // 	gl.uniform1i(location, value as number);
-            // 	break;
+            case constants_1.FLOAT_4D_UNIFORM:
+                gl.uniform4fv(location, value);
+                break;
+            case constants_1.INT_1D_UNIFORM:
+                gl.uniform1i(location, value);
+                break;
+            case constants_1.INT_2D_UNIFORM:
+                gl.uniform2iv(location, value);
+                break;
+            case constants_1.INT_3D_UNIFORM:
+                gl.uniform3iv(location, value);
+                break;
+            case constants_1.INT_4D_UNIFORM:
+                gl.uniform4iv(location, value);
+                break;
             default:
                 throw new Error("Unknown uniform type: " + type + ".");
         }

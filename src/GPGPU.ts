@@ -1,5 +1,16 @@
 import fsRectVertexShaderSource from './kernels/FSRectVertexShader';
-import { FLOAT_1D_UNIFORM, FLOAT_2D_UNIFORM, FLOAT_3D_UNIFORM, IMAGE_UNIFORM } from './constants';
+import {
+	FLOAT_1D_UNIFORM,
+	FLOAT_2D_UNIFORM,
+	FLOAT_3D_UNIFORM,
+	FLOAT_4D_UNIFORM,
+	INT_1D_UNIFORM,
+	INT_2D_UNIFORM,
+	INT_3D_UNIFORM,
+	INT_4D_UNIFORM,
+	FLOAT_TYPE,
+	INT_TYPE,
+} from './constants';
 
 type TextureType = 'float16' | 'uint8'; // 'float32'
 type TextureData =  Uint8Array;
@@ -7,7 +18,17 @@ type TextureNumChannels = 1 | 2 | 3 | 4;
 type ReadWrite = 'read' | 'write' | 'readwrite';
 
 
-type UniformType = typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof IMAGE_UNIFORM;
+type UniformType = 
+	typeof FLOAT_1D_UNIFORM |
+	typeof FLOAT_2D_UNIFORM |
+	typeof FLOAT_3D_UNIFORM |
+	typeof FLOAT_4D_UNIFORM |
+	typeof INT_1D_UNIFORM |
+	typeof INT_2D_UNIFORM |
+	typeof INT_3D_UNIFORM |
+	typeof INT_4D_UNIFORM;
+type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
+type UniformValueType = number | [number, number] | [number, number, number] | [number, number, number, number];
 type Uniform = { 
 	location: WebGLUniformLocation,
 	type: UniformType,
@@ -156,7 +177,8 @@ export class GPGPU {
 		fragmentShaderSource: string,
 		uniforms?: {
 			name: string,
-			value: number | number[],
+			value: UniformValueType,
+			dataType: UniformDataType,
 		}[],
 		vertexShaderSource?: string,
 	) {
@@ -208,22 +230,43 @@ export class GPGPU {
 		};
 		
 		uniforms?.forEach(uniform => {
-			const {name, value} = uniform;
-			this.setProgramUniform(programName, name, value);
+			const { name, value, dataType } = uniform;
+			this.setProgramUniform(programName, name, value, dataType);
 		});
 	};
 
-	private uniformTypeForValue(value: number | number[]) {
-		if (!isNaN(value as number) || (value as number[]).length === 1) {
-			return FLOAT_1D_UNIFORM;
+	private uniformTypeForValue(value: number | number[], dataType: UniformDataType) {
+		if (dataType === FLOAT_TYPE) {
+			if (!isNaN(value as number) || (value as number[]).length === 1) {
+				return FLOAT_1D_UNIFORM;
+			}
+			if ((value as number[]).length === 2) {
+				return FLOAT_2D_UNIFORM;
+			}
+			if ((value as number[]).length === 3) {
+				return FLOAT_3D_UNIFORM;
+			}
+			if ((value as number[]).length === 4) {
+				return FLOAT_4D_UNIFORM;
+			}
+			throw new Error(`Invalid uniform value: ${value}`);
+		} else if (dataType === INT_TYPE) {
+			if (!isNaN(value as number) || (value as number[]).length === 1) {
+				return INT_1D_UNIFORM;
+			}
+			if ((value as number[]).length === 2) {
+				return INT_2D_UNIFORM;
+			}
+			if ((value as number[]).length === 3) {
+				return INT_3D_UNIFORM;
+			}
+			if ((value as number[]).length === 4) {
+				return INT_4D_UNIFORM;
+			}
+			throw new Error(`Invalid uniform value: ${value}`);
+		} else {
+			throw new Error(`Invalid uniform data type: ${dataType}`);
 		}
-		if ((value as number[]).length === 2) {
-			return FLOAT_2D_UNIFORM;
-		}
-		if ((value as number[]).length === 3) {
-			return FLOAT_3D_UNIFORM;
-		}
-		throw new Error(`Invalid uniform value: ${value}`);
 	}
 
 	// private setUniformForProgram(programName: string, uniformName: string, value: number, type: '1f'): void;
@@ -233,7 +276,8 @@ export class GPGPU {
     setProgramUniform(
 		programName: string,
 		uniformName: string,
-		value: number | number[],
+		value: UniformValueType,
+		dataType: UniformDataType,
 	) {
 		const { gl, programs } = this;
 
@@ -243,7 +287,7 @@ export class GPGPU {
 		}
 	
 		const { uniforms } = program;
-		const type = this.uniformTypeForValue(value);
+		const type = this.uniformTypeForValue(value, dataType);
 		if (!uniforms[uniformName]) {
 			// Init uniform if needed.
 			const location = gl.getUniformLocation(program.program, uniformName);
@@ -253,7 +297,7 @@ export class GPGPU {
 			}
             uniforms[uniformName] = {
 				location,
-				type,
+				type: type,
 			}
 		}
 
@@ -265,22 +309,32 @@ export class GPGPU {
 		const { location } = uniform;
 
 		// Set uniform.
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
 				gl.uniform1f(location, value as number);
 				break;
 			case FLOAT_2D_UNIFORM:
-				gl.uniform2f(location, (value as number[])[0], (value as number[])[1]);
+				gl.uniform2fv(location, value as number[]);
 				break;
 			case FLOAT_3D_UNIFORM:
-				gl.uniform3f(location, (value as number[])[0], (value as number[])[1], (value as number[])[2]);
+				gl.uniform3fv(location, value as number[]);
 				break;
-			// case IMAGE_UNIFORM:
-			// 	if (isNaN(value as number)) {
-			// 		throw new Error(`Uniform ${uniformName} must be a number, got ${value}.`);
-			// 	}
-			// 	gl.uniform1i(location, value as number);
-			// 	break;
+			case FLOAT_4D_UNIFORM:
+				gl.uniform4fv(location, value as number[]);
+				break;
+			case INT_1D_UNIFORM:
+				gl.uniform1i(location, value as number);
+				break;
+			case INT_2D_UNIFORM:
+				gl.uniform2iv(location, value as number[]);
+				break;
+			case INT_3D_UNIFORM:
+				gl.uniform3iv(location, value as number[]);
+				break;
+			case INT_4D_UNIFORM:
+				gl.uniform4iv(location, value as number[]);
+				break;
 			default:
 				throw new Error(`Unknown uniform type: ${type}.`);
 		}

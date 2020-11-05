@@ -1,7 +1,10 @@
+import { FLOAT_TYPE, INT_TYPE } from './constants';
 declare type TextureType = 'float16' | 'uint8';
 declare type TextureData = Uint8Array;
 declare type TextureNumChannels = 1 | 2 | 3 | 4;
 declare type ReadWrite = 'read' | 'write' | 'readwrite';
+declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
+declare type UniformValueType = number | [number, number] | [number, number, number] | [number, number, number, number];
 export declare class GPGPU {
     private readonly canvasEl;
     private readonly gl;
@@ -19,10 +22,11 @@ export declare class GPGPU {
     private compileShader;
     initProgram(programName: string, fragmentShaderSource: string, uniforms?: {
         name: string;
-        value: number | number[];
+        value: UniformValueType;
+        dataType: UniformDataType;
     }[], vertexShaderSource?: string): void;
     private uniformTypeForValue;
-    setProgramUniform(programName: string, uniformName: string, value: number | number[]): void;
+    setProgramUniform(programName: string, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
     private initFramebufferForTexture;
     private glTextureFormatForNumChannels;
     private glTextureTypeForType;
