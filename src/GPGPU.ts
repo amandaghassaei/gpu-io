@@ -266,19 +266,19 @@ export class GPGPU {
 		// Set uniform.
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
-				gl.uniform1f(location, value as number);
+				gl.uniform1f(uniform.location, value as number);
 				break;
 			case FLOAT_2D_UNIFORM:
-				gl.uniform2f(location, (value as number[])[0], (value as number[])[1]);
+				gl.uniform2f(uniform.location, (value as number[])[0], (value as number[])[1]);
 				break;
 			case FLOAT_3D_UNIFORM:
-				gl.uniform3f(location, (value as number[])[0], (value as number[])[1], (value as number[])[2]);
+				gl.uniform3f(uniform.location, (value as number[])[0], (value as number[])[1], (value as number[])[2]);
 				break;
 			// case IMAGE_UNIFORM:
 			// 	if (isNaN(value as number)) {
 			// 		throw new Error(`Uniform ${uniformName} must be a number, got ${value}.`);
 			// 	}
-			// 	gl.uniform1i(location, value as number);
+			// 	gl.uniform1i(uniform.location, value as number);
 			// 	break;
 			default:
 				throw new Error(`Unknown uniform type: ${type}.`);
