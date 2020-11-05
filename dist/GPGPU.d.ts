@@ -28,7 +28,7 @@ export declare class GPGPU {
     private initFramebufferForTexture;
     private glTextureFormatForNumChannels;
     private glTextureTypeForType;
-    initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData): void;
+    initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData, shouldOverwrite?: boolean): void;
     private onResize;
     step(programName: string, inputTextures: string[], outputTexture: string | null, // Null renders to screen.
     time?: number): void;

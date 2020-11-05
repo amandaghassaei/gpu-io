@@ -256,10 +256,12 @@ var GPGPU = /** @class */ (function () {
         }
     };
     ;
-    GPGPU.prototype.initFramebufferForTexture = function (textureName) {
+    GPGPU.prototype.initFramebufferForTexture = function (textureName, shouldOverwrite) {
+        if (shouldOverwrite === void 0) { shouldOverwrite = false; }
         var _a = this, gl = _a.gl, framebuffers = _a.framebuffers;
         if (framebuffers[textureName]) {
-            console.warn("Already a framebuffer with the name " + textureName + ".");
+            if (!shouldOverwrite)
+                console.warn("Already a framebuffer with the name " + textureName + ".");
             gl.deleteFramebuffer(framebuffers[textureName]);
         }
         var texture = this.textures[textureName];
@@ -318,11 +320,13 @@ var GPGPU = /** @class */ (function () {
                 return gl.UNSIGNED_BYTE;
         }
     };
-    GPGPU.prototype.initTexture = function (textureName, width, height, type, numChannels, writable, data) {
+    GPGPU.prototype.initTexture = function (textureName, width, height, type, numChannels, writable, data, shouldOverwrite) {
         if (writable === void 0) { writable = false; }
+        if (shouldOverwrite === void 0) { shouldOverwrite = false; }
         var _a = this, gl = _a.gl, textures = _a.textures;
         if (textures[textureName]) {
-            console.warn("Already a texture with the name " + textureName + ".");
+            if (!shouldOverwrite)
+                console.warn("Already a texture with the name " + textureName + ".");
             gl.deleteTexture(textures[textureName]);
         }
         // Check that data is correct length.
@@ -341,7 +345,7 @@ var GPGPU = /** @class */ (function () {
         var filter = this.linearFilterEnabled ? gl.LINEAR : gl.NEAREST;
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-        // TODO: Check that data is correct type and size.
+        // TODO: Check that data is correct type.
         // if (data && type === 'float16') {
         // 	// // Since there is no Float16TypedArray, we must convert Float32
         // 	// // to Float16 and pass in as an Int16TypedArray.

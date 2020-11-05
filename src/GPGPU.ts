@@ -339,11 +339,12 @@ Error code: ${gl.getError()}.`);
 
 	private initFramebufferForTexture(
 		textureName: string,
+		shouldOverwrite = false,
 	) {
 		const { gl, framebuffers } = this;
 
 		if (framebuffers[textureName]){
-			console.warn(`Already a framebuffer with the name ${textureName}.`);
+			if (!shouldOverwrite) console.warn(`Already a framebuffer with the name ${textureName}.`);
 			gl.deleteFramebuffer(framebuffers[textureName]);
 		}
 		
@@ -419,11 +420,12 @@ Error code: ${gl.getError()}.`);
 		numChannels: TextureNumChannels,
 		writable = false,
 		data?: TextureData,
+		shouldOverwrite = false,
 	) {
 		const { gl, textures } = this;
 		
         if (textures[textureName]){
-            console.warn(`Already a texture with the name ${textureName}.`);
+            if (!shouldOverwrite) console.warn(`Already a texture with the name ${textureName}.`);
             gl.deleteTexture(textures[textureName]);
 		}
 		
@@ -446,13 +448,12 @@ Error code: ${gl.getError()}.`);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
-		// TODO: Check that data is correct type and size.
+		// TODO: Check that data is correct type.
 		// if (data && type === 'float16') {
 		// 	// // Since there is no Float16TypedArray, we must convert Float32
 		// 	// // to Float16 and pass in as an Int16TypedArray.
 		// 	// const float16Array = new Int16Array(data.length);
 		// 	// for (let i = 0; i < data.length; i++) {
-
 		// 	// }
 		// }
 
@@ -499,9 +500,9 @@ Error code: ${gl.getError()}.`);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
 		canvasEl.width = width;
 		canvasEl.height = height;
-    };
+	};
 
-    step(
+	step(
 		programName: string,
 		inputTextures: string[],
 		outputTexture: string | null, // Null renders to screen.
