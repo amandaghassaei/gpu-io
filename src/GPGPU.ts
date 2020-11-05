@@ -498,7 +498,7 @@ Error code: ${gl.getError()}.`);
 		this.initFramebufferForTexture(textureName);
 	};
 
-	private onResize(canvasEl: HTMLCanvasElement) {
+	onResize(canvasEl: HTMLCanvasElement) {
 		const { gl } = this;
 		const width = canvasEl.clientWidth;
 		const height = canvasEl.clientHeight;

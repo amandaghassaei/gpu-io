@@ -29,7 +29,7 @@ export declare class GPGPU {
     private glTextureFormatForNumChannels;
     private glTextureTypeForType;
     initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData, shouldOverwrite?: boolean): void;
-    private onResize;
+    onResize(canvasEl: HTMLCanvasElement): void;
     step(programName: string, inputTextures: string[], outputTexture: string | null, // Null renders to screen.
     time?: number): void;
     swapTextures(texture1Name: string, texture2Name: string): void;
