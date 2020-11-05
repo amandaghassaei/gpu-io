@@ -24,8 +24,9 @@ var GPGPU = /** @class */ (function () {
             errorCallback;
         };
         // Save canvas.
-        // TODO: do we need this?
-        this.canvasEl = canvasEl;
+        // @ts-ignore
+        canvasEl.addEventListener('resize', this.updateSize);
+        this.updateSize(canvasEl);
         if (!gl) {
             // Init a gl context if not passed in.
             gl = canvasEl.getContext('webgl2', { antialias: false })
@@ -36,7 +37,6 @@ var GPGPU = /** @class */ (function () {
                 return;
             }
         }
-        gl.viewport(0, 0, canvasEl.clientWidth, canvasEl.clientHeight); // TODO: need this?
         this.gl = gl;
         // GL setup.
         // Load extensions.
@@ -82,7 +82,7 @@ var GPGPU = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
         // Look up where the vertex data needs to go.
-        var positionLocation = gl.getAttribLocation(program, 'a_position');
+        var positionLocation = gl.getAttribLocation(program, 'position');
         gl.enableVertexAttribArray(positionLocation);
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
     };
@@ -342,11 +342,15 @@ var GPGPU = /** @class */ (function () {
         this.initFramebufferForTexture(textureName);
     };
     ;
-    GPGPU.prototype.setSize = function (width, height) {
+    GPGPU.prototype.updateSize = function (canvasEl) {
         var gl = this.gl;
+        var width = canvasEl.clientWidth;
+        var height = canvasEl.clientHeight;
         gl.viewport(0, 0, width, height);
-        // this.canvasEl.width = width;
-        // this.canvasEl.height = height;
+        // Set correct canvas pixel size.
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
+        canvasEl.width = width;
+        canvasEl.height = height;
     };
     ;
     // TODO: add option to draw to screen.

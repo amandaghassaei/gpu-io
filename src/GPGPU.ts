@@ -44,8 +44,6 @@ const OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
 const OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
 
 export class GPGPU {
-
-	private readonly canvasEl: HTMLCanvasElement;
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 
 	private errorState = false;
@@ -73,9 +71,11 @@ export class GPGPU {
 			errorCallback;
 		}
 
+		
 		// Save canvas.
-		// TODO: do we need this?
-		this.canvasEl = canvasEl;
+		// @ts-ignore
+		canvasEl.addEventListener('resize', this.updateSize);
+		this.updateSize(canvasEl);
 
 		if (!gl) {
 			// Init a gl context if not passed in.
@@ -87,7 +87,6 @@ export class GPGPU {
 				return;
 			}
 		}
-		gl.viewport(0, 0, canvasEl.clientWidth, canvasEl.clientHeight);// TODO: need this?
 
 		this.gl = gl;
 
@@ -139,7 +138,7 @@ export class GPGPU {
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]), gl.STATIC_DRAW);
 	
 		// Look up where the vertex data needs to go.
-		const positionLocation = gl.getAttribLocation(program, 'a_position');
+		const positionLocation = gl.getAttribLocation(program, 'position');
 		gl.enableVertexAttribArray(positionLocation);
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 	}
@@ -457,14 +456,15 @@ export class GPGPU {
 		this.initFramebufferForTexture(textureName);
 	};
 
-    setSize(
-		width: number,
-		height: number,
-	) {
+	private updateSize(canvasEl: HTMLCanvasElement): any {
 		const { gl } = this;
+		const width = canvasEl.clientWidth;
+		const height = canvasEl.clientHeight;
         gl.viewport(0, 0, width, height);
-        // this.canvasEl.width = width;
-        // this.canvasEl.height = height;
+		// Set correct canvas pixel size.
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
+		canvasEl.width = width;
+		canvasEl.height = height;
     };
 
 	// TODO: add option to draw to screen.

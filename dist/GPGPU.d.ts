@@ -6,7 +6,6 @@ declare type ReadWrite = 'read' | 'write' | 'readwrite';
 declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
 declare type UniformValueType = number | [number, number] | [number, number, number] | [number, number, number, number];
 export declare class GPGPU {
-    private readonly canvasEl;
     private readonly gl;
     private errorState;
     private readonly errorCallback;
@@ -31,7 +30,7 @@ export declare class GPGPU {
     private glTextureFormatForNumChannels;
     private glTextureTypeForType;
     initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, readwrite: ReadWrite, data: TextureData): void;
-    setSize(width: number, height: number): void;
+    private updateSize;
     step(programName: string, inputTextures: string[], outputTexture: string | null, // Null renders to screen.
     time?: number): void;
     swapTextures(texture1Name: string, texture2Name: string): void;
