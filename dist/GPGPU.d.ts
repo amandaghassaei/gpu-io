@@ -2,7 +2,6 @@ import { FLOAT_TYPE, INT_TYPE } from './constants';
 declare type TextureType = 'float16' | 'uint8';
 declare type TextureData = Uint8Array;
 declare type TextureNumChannels = 1 | 2 | 3 | 4;
-declare type ReadWrite = 'read' | 'write' | 'readwrite';
 declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
 declare type UniformValueType = number | [number, number] | [number, number, number] | [number, number, number, number];
 export declare class GPGPU {
@@ -29,7 +28,7 @@ export declare class GPGPU {
     private initFramebufferForTexture;
     private glTextureFormatForNumChannels;
     private glTextureTypeForType;
-    initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, readwrite: ReadWrite, data: TextureData): void;
+    initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData): void;
     private updateSize;
     step(programName: string, inputTextures: string[], outputTexture: string | null, // Null renders to screen.
     time?: number): void;

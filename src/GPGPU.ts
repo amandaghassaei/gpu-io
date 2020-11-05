@@ -15,8 +15,6 @@ import {
 type TextureType = 'float16' | 'uint8'; // 'float32'
 type TextureData =  Uint8Array;
 type TextureNumChannels = 1 | 2 | 3 | 4;
-type ReadWrite = 'read' | 'write' | 'readwrite';
-
 
 type UniformType = 
 	typeof FLOAT_1D_UNIFORM |
@@ -404,8 +402,8 @@ export class GPGPU {
 		height: number,
 		type: TextureType,
 		numChannels: TextureNumChannels,
-		readwrite: ReadWrite,
-		data: TextureData,
+		writable = false,
+		data?: TextureData,
 	) {
 		const { gl, textures } = this;
 		
@@ -445,7 +443,7 @@ export class GPGPU {
 
 		textures[textureName] = texture;
 
-		if (readwrite === 'read') {
+		if (!writable) {
 			return;
 		}
 
