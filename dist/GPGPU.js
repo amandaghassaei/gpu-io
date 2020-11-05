@@ -19,9 +19,10 @@ var GPGPU = /** @class */ (function () {
         this.shaders = []; // Keep track of all shaders inited so they can be properly deallocated.
         // Save callback in case we run into an error.
         var self = this;
-        this.errorCallback = function () {
+        this.errorCallback = function (message) {
             self.errorState = true;
-            errorCallback;
+            if (errorCallback)
+                errorCallback(message);
         };
         // Init GL.
         if (!gl) {

@@ -64,9 +64,9 @@ export class GPGPU {
 	) {
 		// Save callback in case we run into an error.
 		const self = this;
-		this.errorCallback = () => {
+		this.errorCallback = (message: string) => {
 			self.errorState = true;
-			errorCallback;
+			if (errorCallback) errorCallback(message);
 		}
 
 		// Init GL.
