@@ -6,8 +6,6 @@ varying vec2 uv;
 void main() {
 	// Calculate UV coordinates [0, 1] of canvas bounds.
 	uv = 0.5 * (position + 1.0);
-	// Flip y coordinate so that y increases vertically on screen.
-	uv.y = 1.0 - uv.y;
 
 	gl_Position = vec4(position, 0, 1);
 }
