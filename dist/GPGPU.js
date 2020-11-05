@@ -58,6 +58,29 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         this.fsRectVertexShader = fsRectVertexShader;
+        // Create vertex buffers.
+        var fsRectQuadBuffer = gl.createBuffer();
+        if (!fsRectQuadBuffer) {
+            errorCallback('Unable to allocate gl buffer.');
+            return;
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, fsRectQuadBuffer);
+        // Add vertex data for drawing full screen quad via traingle strip.
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        // Save buffer.
+        this.fsRectQuadBuffer = fsRectQuadBuffer;
+        var fsRectBoundaryBuffer = gl.createBuffer();
+        if (!fsRectBoundaryBuffer) {
+            errorCallback('Unable to allocate gl buffer.');
+            return;
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, fsRectBoundaryBuffer);
+        // Add vertex data for drawing full screen quad via traingle strip.
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+        // Save buffer.
+        this.fsRectBoundaryBuffer = fsRectBoundaryBuffer;
+        // Unbind buffer.
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
         // Canvas setup.
         this.onResize(canvasEl);
         // Log number of textures available.
@@ -81,13 +104,18 @@ var GPGPU = /** @class */ (function () {
         return !!ext;
     };
     GPGPU.prototype.loadFSRectPositions = function (program) {
-        var gl = this.gl;
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        var _a = this, gl = _a.gl, fsRectQuadBuffer = _a.fsRectQuadBuffer;
+        // Add position as vertex attribute.
+        // Bind buffer.
+        gl.bindBuffer(gl.ARRAY_BUFFER, fsRectQuadBuffer);
         // Look up where the vertex data needs to go.
         var positionLocation = gl.getAttribLocation(program, 'position');
-        gl.enableVertexAttribArray(positionLocation);
+        // Point attribute to the currently bound VBO.
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        // Enable the attribute.
+        gl.enableVertexAttribArray(positionLocation);
+        // Unbind the buffer.
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
     };
     // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
     GPGPU.prototype.compileShader = function (shaderSource, shaderType) {
@@ -421,21 +449,23 @@ var GPGPU = /** @class */ (function () {
     ;
     // Step for entire fullscreen rect.
     GPGPU.prototype.step = function (programName, inputTextures, outputTexture) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState;
+        var _a = this, gl = _a.gl, errorState = _a.errorState, fsRectQuadBuffer = _a.fsRectQuadBuffer;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
+        gl.bindBuffer(gl.ARRAY_BUFFER, fsRectQuadBuffer);
         this._step(programName, inputTextures, outputTexture);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // Draw to framebuffer.
     };
     // Step program only for a strip of px along the boundary.
     GPGPU.prototype.stepBoundary = function (programName, inputTextures, outputTexture) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState;
+        var _a = this, gl = _a.gl, errorState = _a.errorState, fsRectBoundaryBuffer = _a.fsRectBoundaryBuffer;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
+        gl.bindBuffer(gl.ARRAY_BUFFER, fsRectBoundaryBuffer);
         this._step(programName, inputTextures, outputTexture);
         gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
     };

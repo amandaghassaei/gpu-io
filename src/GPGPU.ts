@@ -51,7 +51,12 @@ export class GPGPU {
 	private readonly textures: { [ key: string ] : WebGLTexture } = {}; // All current gl textures.
 	private readonly framebuffers: { [ key: string ] : WebGLFramebuffer } = {}; // All current gl framebuffers.
 	private readonly shaders: WebGLShader[] = []; // Keep track of all shaders inited so they can be properly deallocated.
+	
+	// Some precomputed values.
 	private readonly fsRectVertexShader!: WebGLShader;
+	private readonly fsRectQuadBuffer!: WebGLBuffer;
+	private readonly fsRectBoundaryBuffer!: WebGLBuffer;
+
 	// GL state.
 	private readonly linearFilterEnabled!: boolean;
 
@@ -107,6 +112,31 @@ export class GPGPU {
 		}
 		this.fsRectVertexShader = fsRectVertexShader;
 
+		// Create vertex buffers.
+		const fsRectQuadBuffer = gl.createBuffer();
+		if (!fsRectQuadBuffer) {
+			errorCallback('Unable to allocate gl buffer.');
+			return;
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, fsRectQuadBuffer);
+		// Add vertex data for drawing full screen quad via traingle strip.
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]), gl.STATIC_DRAW);
+		// Save buffer.
+		this.fsRectQuadBuffer = fsRectQuadBuffer;
+		const fsRectBoundaryBuffer = gl.createBuffer();
+		if (!fsRectBoundaryBuffer) {
+			errorCallback('Unable to allocate gl buffer.');
+			return;
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, fsRectBoundaryBuffer);
+		// Add vertex data for drawing full screen quad via traingle strip.
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+		// Save buffer.
+		this.fsRectBoundaryBuffer = fsRectBoundaryBuffer;
+
+		// Unbind buffer.
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
 		// Canvas setup.
 		this.onResize(canvasEl);
 
@@ -114,6 +144,7 @@ export class GPGPU {
 		const maxTexturesInFragmentShader = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
 		console.log(`${maxTexturesInFragmentShader} textures max.`);
 	}
+
 
 	private loadExtension(extension: string, optional = false) {
 		let ext;
@@ -131,14 +162,18 @@ export class GPGPU {
 	}
 
 	private loadFSRectPositions(program: WebGLProgram) {
-		const { gl } = this;
-		gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]), gl.STATIC_DRAW);
-	
+		const { gl, fsRectQuadBuffer } = this;
+		// Add position as vertex attribute.
+		// Bind buffer.
+		gl.bindBuffer(gl.ARRAY_BUFFER, fsRectQuadBuffer);
 		// Look up where the vertex data needs to go.
 		const positionLocation = gl.getAttribLocation(program, 'position');
-		gl.enableVertexAttribArray(positionLocation);
+		// Point attribute to the currently bound VBO.
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(positionLocation);
+		// Unbind the buffer.
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 	}
 
 	// Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
@@ -541,13 +576,13 @@ Error code: ${gl.getError()}.`);
 		inputTextures: string[],
 		outputTexture?: string, // Undefined renders to screen.
 	) {
-		const { gl, errorState } = this;
+		const { gl, errorState, fsRectQuadBuffer } = this;
 
 		// Ignore if we are in error state.
 		if (errorState) {
 			return;
 		}
-
+		gl.bindBuffer(gl.ARRAY_BUFFER, fsRectQuadBuffer);
 		this._step(programName, inputTextures, outputTexture);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
 	}
@@ -558,13 +593,13 @@ Error code: ${gl.getError()}.`);
 		inputTextures: string[],
 		outputTexture?: string, // Undefined renders to screen.
 	) {
-		const { gl, errorState } = this;
+		const { gl, errorState, fsRectBoundaryBuffer } = this;
 
 		// Ignore if we are in error state.
 		if (errorState) {
 			return;
 		}
-
+		gl.bindBuffer(gl.ARRAY_BUFFER, fsRectBoundaryBuffer);
 		this._step(programName, inputTextures, outputTexture);
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}

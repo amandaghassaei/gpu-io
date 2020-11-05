@@ -13,6 +13,8 @@ export declare class GPGPU {
     private readonly framebuffers;
     private readonly shaders;
     private readonly fsRectVertexShader;
+    private readonly fsRectQuadBuffer;
+    private readonly fsRectBoundaryBuffer;
     private readonly linearFilterEnabled;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private loadExtension;
