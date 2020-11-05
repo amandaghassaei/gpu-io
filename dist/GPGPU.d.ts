@@ -19,7 +19,7 @@ export declare class GPGPU {
     private loadExtension;
     private loadFSRectPositions;
     private compileShader;
-    createProgram(programName: string, fragmentShaderSource: string, uniforms?: {
+    initProgram(programName: string, fragmentShaderSource: string, uniforms?: {
         name: string;
         type: UniformType;
         value: number;

@@ -108,7 +108,7 @@ var GPGPU = /** @class */ (function () {
         this.shaders.push(shader);
         return shader;
     };
-    GPGPU.prototype.createProgram = function (programName, fragmentShaderSource, uniforms, vertexShaderSource) {
+    GPGPU.prototype.initProgram = function (programName, fragmentShaderSource, uniforms, vertexShaderSource) {
         var _this = this;
         var _a = this, programs = _a.programs, gl = _a.gl;
         if (programs[programName]) {
@@ -124,7 +124,7 @@ var GPGPU = /** @class */ (function () {
             this.errorCallback("Unable to init shaders for program " + programName + ".");
             return;
         }
-        // create a program.
+        // Create a program.
         var program = gl.createProgram();
         if (!program) {
             this.errorCallback('Unable to init gl program.');

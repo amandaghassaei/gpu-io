@@ -151,7 +151,7 @@ export class GPGPU {
 		return shader;
 	}
 
-	createProgram(
+	initProgram(
 		programName: string,
 		fragmentShaderSource: string,
 		uniforms?: {
@@ -176,7 +176,7 @@ export class GPGPU {
 			return;
 		}
 		
-		// create a program.
+		// Create a program.
 		const program = gl.createProgram();
 		if (!program) {
 			this.errorCallback('Unable to init gl program.');
