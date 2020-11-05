@@ -212,7 +212,7 @@ var GPGPU = /** @class */ (function () {
             gl.useProgram(program.program); // Seem to need this to get valid uniform location.
             var location_1 = gl.getUniformLocation(program.program, uniformName);
             if (!location_1) {
-                this.errorCallback("Could not init uniform " + uniformName + " for program " + programName + ".  Check that uniform is present in shader code, unused uniforms may be removed by compiler.  Error code: " + gl.getError());
+                this.errorCallback("\n\t\t\t\t\tCould not init uniform " + uniformName + " for program " + programName + ".\n\t\t\t\t\tCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\n\t\t\t\t\tError code: " + gl.getError() + ".\n\t\t\t\t");
                 return;
             }
             uniforms[uniformName] = {
@@ -274,6 +274,7 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
         if (status != gl.FRAMEBUFFER_COMPLETE) {
@@ -283,16 +284,29 @@ var GPGPU = /** @class */ (function () {
     };
     ;
     GPGPU.prototype.glTextureFormatForNumChannels = function (numChannels) {
+        // TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
         var gl = this.gl;
         switch (numChannels) {
             case 1:
-                return gl.ALPHA;
+                return {
+                    glFormat: gl.RGB,
+                    glNumChannels: 3,
+                };
             case 2:
-                return gl.LUMINANCE_ALPHA;
+                return {
+                    glFormat: gl.RGB,
+                    glNumChannels: 3,
+                };
             case 3:
-                return gl.RGB;
+                return {
+                    glFormat: gl.RGB,
+                    glNumChannels: 3,
+                };
             case 4:
-                return gl.RGBA;
+                return {
+                    glFormat: gl.RGBA,
+                    glNumChannels: 4,
+                };
         }
     };
     GPGPU.prototype.glTextureTypeForType = function (type) {
@@ -313,6 +327,10 @@ var GPGPU = /** @class */ (function () {
             console.warn("Already a texture with the name " + textureName + ".");
             gl.deleteTexture(textures[textureName]);
         }
+        // Check that data is correct length.
+        if (data && data.length !== width * height * numChannels) {
+            throw new Error("Invalid data array of size " + data.length + " for texture of dimensions " + width + " x " + height + " x " + numChannels + ".");
+        }
         var texture = gl.createTexture();
         if (!texture) {
             this.errorCallback("Could not init " + textureName + " texture: " + gl.getError() + ".");
@@ -326,16 +344,35 @@ var GPGPU = /** @class */ (function () {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
         // TODO: Check that data is correct type and size.
-        if (data && type === 'float16') {
-            // // Since there is no Float16TypedArray, we must convert Float32
-            // // to Float16 and pass in as an Int16TypedArray.
-            // const float16Array = new Int16Array(data.length);
-            // for (let i = 0; i < data.length; i++) {
-            // }
-        }
+        // if (data && type === 'float16') {
+        // 	// // Since there is no Float16TypedArray, we must convert Float32
+        // 	// // to Float16 and pass in as an Int16TypedArray.
+        // 	// const float16Array = new Int16Array(data.length);
+        // 	// for (let i = 0; i < data.length; i++) {
+        // 	// }
+        // }
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
-        var glFormat = this.glTextureFormatForNumChannels(numChannels);
+        var _b = this.glTextureFormatForNumChannels(numChannels), glFormat = _b.glFormat, glNumChannels = _b.glNumChannels;
         var glType = this.glTextureTypeForType(type);
+        // Check that data is correct length.
+        if (data && numChannels !== glNumChannels) {
+            var imageSize = width * height;
+            var newArray = void 0;
+            switch (type) {
+                case 'uint8':
+                    newArray = new Uint8Array(width * height * glNumChannels);
+                    break;
+                default:
+                    throw new Error("Unsupported type " + type + " for initTexture.");
+            }
+            // Fill new data array with old data.
+            for (var i = 0; i < imageSize; i++) {
+                for (var j = 0; j < numChannels; j++) {
+                    newArray[glNumChannels * i + j] = data[i * numChannels + j];
+                }
+            }
+            data = newArray;
+        }
         gl.texImage2D(gl.TEXTURE_2D, 0, glFormat, width, height, 0, glFormat, glType, data ? data : null);
         textures[textureName] = texture;
         if (!writable) {

@@ -16,13 +16,6 @@ npm install --save-dev @types/git+https:github.com/amandaghassaei/webgl-gpgpu.gi
 
 ## Examples
 
-## Scripts
-
-To build Typescript from `src` to Javascript in `dist` run:
-
-`npm run build`
-
-(be sure you have done an `npm install` so that you have typescript installed)
 
 ## References
 
@@ -31,3 +24,11 @@ I used a few codebases as reference when writing this, thanks to their authors f
 - [three.js](https://github.com/mrdoob/three.js/) Javascript 3D library
 - [regl](https://github.com/regl-project/regl) - Fast, functional WebGL
 - [WebGL Boilerplate](https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html)
+
+## Development
+
+To build ts files from `src` to js in `dist` run:
+
+`npm run build`
+
+(be sure you have done an `npm install` so that you have typescript installed)
