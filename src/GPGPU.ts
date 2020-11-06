@@ -52,6 +52,7 @@ const circlePositions = new Float32Array(unitCirclePoints);
 // Store extension names as constants.
 const OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
 const OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
+const EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 
 export class GPGPU {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
@@ -103,15 +104,26 @@ export class GPGPU {
 			}
 		}
 		this.isWebGL2 = !!(gl as WebGL2RenderingContext).HALF_FLOAT;
+		if (this.isWebGL2) {
+			console.log('Using WebGL 2.0 context.');
+		} else {
+			console.log('Using WebGL 1.0 context.');
+		}
 		this.gl = gl;
 
 		// GL setup.
 		// Load extensions.
-		// https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_half_float
-		// Half float is supported by modern mobile browsers, float not yet supported.
-		// Half float is provided by default for Webgl2 contexts.
-		// This extension implicitly enables the EXT_color_buffer_half_float extension (if supported), which allows rendering to 16-bit floating point formats.
-		if (!this.isWebGL2) this.loadExtension(OES_TEXTURE_HALF_FLOAT);
+		if (this.isWebGL2) {
+			// EXT_COLOR_BUFFER_FLOAT adds ability to render to a variety of floating pt textures.
+			// https://developer.mozilla.org/en-US/docs/Web/API/EXT_color_buffer_float
+			this.loadExtension(EXT_COLOR_BUFFER_FLOAT);
+		} else {
+			// https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_half_float
+			// Half float is supported by modern mobile browsers, float not yet supported.
+			// Half float is provided by default for Webgl2 contexts.
+			// This extension implicitly enables the EXT_color_buffer_half_float extension (if supported), which allows rendering to 16-bit floating point formats.
+			this.loadExtension(OES_TEXTURE_HALF_FLOAT);
+		}
 		// Load optional extensions.
 		// TODO: need this for webgl2?
 		this.linearFilterEnabled = this.loadExtension(OES_TEXTURE_HAlF_FLOAT_LINEAR, true);
@@ -170,15 +182,16 @@ export class GPGPU {
 		try {
 			ext = gl.getExtension(extension);
 		} catch (e) {}
-		if (!ext) {
+		if (ext) {
+			extensions[extension] = ext;
+			console.log(`Loaded extension: ${extension}.`);
+		} else {
 			console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extension}.`);
 		}
 		// If the extension is not optional, throw error.
 		if (!ext && !optional) {
 			errorCallback(`Required extension unsupported by this device / browser: ${extension}.`);
 		}
-		extensions[extension] = ext;
-		console.log(`Loaded extension: ${extension}.`);
 		return !!ext;
 	}
 
@@ -406,6 +419,8 @@ Error code: ${gl.getError()}.`);
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
+		// https://stackoverflow.com/questions/34262493/framebuffer-incomplete-attachment-for-texture-with-internal-format
+		// https://stackoverflow.com/questions/36109347/framebuffer-incomplete-attachment-only-happens-on-android-w-firefox
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
 		const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
