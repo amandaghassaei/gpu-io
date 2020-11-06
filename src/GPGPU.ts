@@ -694,15 +694,17 @@ Error code: ${gl.getError()}.`);
 		inputTextures: string[] = [],
 		outputTexture?: string, // Undefined renders to screen.
 	) {
-		const { gl, errorState, boundaryPositionsBuffer } = this;
+		const { gl, errorState, boundaryPositionsBuffer, width, height } = this;
 
 		// Ignore if we are in error state.
 		if (errorState) {
 			return;
 		}
 		// Update uniforms and buffers.
-		this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
-		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+		// Frame needs to be offset and scaled so that all four sides are in viewport.
+		const onePx = [ 1 / width, 1 / height] as [number, number];
+		this.setProgramUniform(programName, 'u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
+		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 		this._step(programName, inputTextures, outputTexture);
 		// Draw.

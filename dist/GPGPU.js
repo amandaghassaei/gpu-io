@@ -547,14 +547,16 @@ var GPGPU = /** @class */ (function () {
     // Step program only for a strip of px along the boundary.
     GPGPU.prototype.stepBoundary = function (programName, inputTextures, outputTexture) {
         if (inputTextures === void 0) { inputTextures = []; }
-        var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer;
+        var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
         // Update uniforms and buffers.
-        this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
-        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+        // Frame needs to be offset and scaled so that all four sides are in viewport.
+        var onePx = [1 / width, 1 / height];
+        this.setProgramUniform(programName, 'u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
+        this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
         // Draw.
