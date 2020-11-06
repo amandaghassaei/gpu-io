@@ -7,6 +7,7 @@ declare type UniformValueType = number | [number] | [number, number] | [number, 
 export declare class GPGPU {
     private readonly gl;
     private readonly isWebGL2;
+    private readonly extensions;
     private width;
     private height;
     private errorState;

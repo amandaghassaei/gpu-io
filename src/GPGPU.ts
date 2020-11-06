@@ -49,13 +49,14 @@ for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 }
 const circlePositions = new Float32Array(unitCirclePoints);
 
-// Store extensions as constants.
+// Store extension names as constants.
 const OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
 const OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
 
 export class GPGPU {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	private readonly isWebGL2!: boolean;
+	private readonly extensions: { [ key: string ]: any } = {};
 	private width!: number;
 	private height!: number;
 
@@ -110,8 +111,9 @@ export class GPGPU {
 		// Half float is supported by modern mobile browsers, float not yet supported.
 		// Half float is provided by default for Webgl2 contexts.
 		// This extension implicitly enables the EXT_color_buffer_half_float extension (if supported), which allows rendering to 16-bit floating point formats.
-		if (!(gl as WebGL2RenderingContext).HALF_FLOAT) this.loadExtension(OES_TEXTURE_HALF_FLOAT);
+		if (!this.isWebGL2) this.loadExtension(OES_TEXTURE_HALF_FLOAT);
 		// Load optional extensions.
+		// TODO: need this for webgl2?
 		this.linearFilterEnabled = this.loadExtension(OES_TEXTURE_HAlF_FLOAT_LINEAR, true);
 	
 		// Disable depth testing globally.
@@ -163,17 +165,20 @@ export class GPGPU {
 		extension: string,
 		optional = false,
 	) {
+		const { extensions, gl, errorCallback } = this;
 		let ext;
 		try {
-			ext = this.gl.getExtension(extension);
+			ext = gl.getExtension(extension);
 		} catch (e) {}
 		if (!ext) {
 			console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extension}.`);
 		}
 		// If the extension is not optional, throw error.
 		if (!ext && !optional) {
-			this.errorCallback(`Required extension unsupported by this device / browser: ${extension}.`);
+			errorCallback(`Required extension unsupported by this device / browser: ${extension}.`);
 		}
+		extensions[extension] = ext;
+		console.log(`Loaded extension: ${extension}.`);
 		return !!ext;
 	}
 
@@ -182,12 +187,12 @@ export class GPGPU {
 		shaderSource: string,
 		shaderType: number,
 	) {
-		const { gl } = this;
+		const { gl, errorCallback, shaders } = this;
 
 		// Create the shader object
 		const shader = gl.createShader(shaderType);
 		if (!shader) {
-			this.errorCallback('Unable to init gl shader.');
+			errorCallback('Unable to init gl shader.');
 			return null;
 		}
 
@@ -201,11 +206,11 @@ export class GPGPU {
 		const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 		if (!success) {
 			// Something went wrong during compilation - print the error.
-			this.errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
+			errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
 				 shader: ${gl.getShaderInfoLog(shader)}`);
 			return null;
 		}
-		this.shaders.push(shader);
+		shaders.push(shader);
 		return shader;
 	}
 
@@ -219,7 +224,7 @@ export class GPGPU {
 		}[],
 		// vertexShaderSource?: string,
 	) {
-		const { programs, gl } = this;
+		const { programs, gl, errorCallback } = this;
 		if (programs[programName]) {
 			gl.useProgram(programs[programName].program);
 			console.warn(`Already a program with the name ${programName}.`);
@@ -232,14 +237,14 @@ export class GPGPU {
 		// 	this.fsQuadVertexShader;
 		const vertexShader = this.defaultVertexShader;
 		if (!fragmentShader || !vertexShader) {
-			this.errorCallback(`Unable to init shaders for program ${programName}.`);
+			errorCallback(`Unable to init shaders for program ${programName}.`);
 			return;
 		}
 		
 		// Create a program.
 		const program = gl.createProgram();
 		if (!program) {
-			this.errorCallback('Unable to init gl program.');
+			errorCallback('Unable to init gl program.');
 			return;
 		}
 
@@ -253,7 +258,7 @@ export class GPGPU {
 		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
 		if (!success) {
 			// Something went wrong with the link.
-			this.errorCallback(`Program ${programName} filed to link: ${gl.getProgramInfoLog(program)}`);
+			errorCallback(`Program ${programName} filed to link: ${gl.getProgramInfoLog(program)}`);
 		}
 
 		// Add new program.
@@ -311,7 +316,7 @@ export class GPGPU {
 		value: UniformValueType,
 		dataType: UniformDataType,
 	) {
-		const { gl, programs } = this;
+		const { gl, programs, errorCallback } = this;
 
 		const program = programs[programName];
 		if (!program) {
@@ -327,7 +332,7 @@ export class GPGPU {
 			// Init uniform if needed.
 			const location = gl.getUniformLocation(program.program, uniformName);
 			if (!location) {
-				this.errorCallback(`Could not init uniform ${uniformName} for program ${programName}.
+				errorCallback(`Could not init uniform ${uniformName} for program ${programName}.
 Check that uniform is present in shader code, unused uniforms may be removed by compiler.
 Also check that uniform type in shader code matches type ${type}.
 Error code: ${gl.getError()}.`);
@@ -382,21 +387,21 @@ Error code: ${gl.getError()}.`);
 		textureName: string,
 		shouldOverwrite = false,
 	) {
-		const { gl, framebuffers } = this;
+		const { gl, framebuffers, textures, errorCallback } = this;
 
 		if (framebuffers[textureName]){
 			if (!shouldOverwrite) console.warn(`Already a framebuffer with the name ${textureName}, use shouldOverwrite flag in initTexture() to ignore.`);
 			gl.deleteFramebuffer(framebuffers[textureName]);
 		}
 		
-		const texture = this.textures[textureName];
+		const texture = textures[textureName];
 		if (!texture) {
 			throw new Error(`Cannot init framebuffer, texture ${textureName} does not exist.`);
 		}
 
 		const framebuffer = gl.createFramebuffer();
 		if (!framebuffer) {
-			this.errorCallback(`Could not init ${textureName} framebuffer: ${gl.getError()}.`);
+			errorCallback(`Could not init ${textureName} framebuffer: ${gl.getError()}.`);
 			return;
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -405,10 +410,10 @@ Error code: ${gl.getError()}.`);
 
 		const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 		if(status != gl.FRAMEBUFFER_COMPLETE){
-			this.errorCallback(`Invalid status for ${textureName} framebuffer: ${status}.`);
+			errorCallback(`Invalid status for ${textureName} framebuffer: ${status}.`);
 		}
 
-		this.framebuffers[textureName] = framebuffer;
+		framebuffers[textureName] = framebuffer;
 	};
 
 	private glTextureParameters(
@@ -417,13 +422,13 @@ Error code: ${gl.getError()}.`);
 		writable: boolean,
 	) {
 		// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
-		const { gl, isWebGL2 } = this;
+		const { gl, isWebGL2, extensions } = this;
 		let glType: number | undefined, glFormat: number | undefined, glInternalFormat: number | undefined, glNumChannels: number | undefined;
 		if (isWebGL2) {
 			glNumChannels = numChannels;
-			if (writable && glNumChannels < 3) {
-				glNumChannels = 3;
-			}
+			// if (writable && glNumChannels < 3) {
+			// 	glNumChannels = 3;
+			// }
 			switch (glNumChannels) {
 				case 1:
 					glFormat = (gl as WebGL2RenderingContext).RED;
@@ -492,7 +497,7 @@ Error code: ${gl.getError()}.`);
 			}
 			switch (type) {
 				case 'float16':
-					glType = (gl as any).HALF_FLOAT_OES as number;
+					glType = extensions[OES_TEXTURE_HALF_FLOAT].HALF_FLOAT_OES as number;
 					break;
 				case 'uint8':
 					glType = gl.UNSIGNED_BYTE;
@@ -502,7 +507,7 @@ Error code: ${gl.getError()}.`);
 
 		// Check for missing params.
 		if (glType === undefined || glFormat === undefined || glInternalFormat === undefined) {
-			throw new Error(`Invalid type: ${type}.`);
+			throw new Error(`Invalid type: ${type} or numChannels ${numChannels}.`);
 		}
 		if (glNumChannels === undefined || numChannels < 1 || numChannels > 4) {
 			throw new Error(`Invalid numChannels: ${numChannels}.`);
@@ -526,7 +531,7 @@ Error code: ${gl.getError()}.`);
 		data?: TextureData,
 		shouldOverwrite = false,
 	) {
-		const { gl, textures, framebuffers } = this;
+		const { gl, textures, framebuffers, errorCallback } = this;
 		
         if (textures[textureName]){
             if (!shouldOverwrite) console.warn(`Already a texture with the name ${textureName}, use shouldOverwrite flag to ignore.`);
@@ -540,7 +545,7 @@ Error code: ${gl.getError()}.`);
 
 		const texture = gl.createTexture();
 		if (!texture) {
-			this.errorCallback(`Could not init ${textureName} texture: ${gl.getError()}.`);
+			errorCallback(`Could not init ${textureName} texture: ${gl.getError()}.`);
 			return;
 		}
 		gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -731,12 +736,13 @@ Error code: ${gl.getError()}.`);
 		texture1Name: string,
 		texture2Name: string,
 	) {
-        let temp = this.textures[texture1Name];
-        this.textures[texture1Name] = this.textures[texture2Name];
-        this.textures[texture2Name] = temp;
-        temp = this.framebuffers[texture1Name];
-        this.framebuffers[texture1Name] = this.framebuffers[texture2Name];
-        this.framebuffers[texture2Name] = temp;
+		const {textures, framebuffers } = this;
+        let temp = textures[texture1Name];
+        textures[texture1Name] = this.textures[texture2Name];
+        textures[texture2Name] = temp;
+        temp = framebuffers[texture1Name];
+        framebuffers[texture1Name] = this.framebuffers[texture2Name];
+        framebuffers[texture2Name] = temp;
     };
 
     // swap3Textures(
