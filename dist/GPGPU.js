@@ -55,9 +55,12 @@ var GPGPU = /** @class */ (function () {
         this.gl = gl;
         // GL setup.
         // Load extensions.
+        // TODO: load these extensions as needed.
         if (this.isWebGL2) {
             // EXT_COLOR_BUFFER_FLOAT adds ability to render to a variety of floating pt textures.
             // https://developer.mozilla.org/en-US/docs/Web/API/EXT_color_buffer_float
+            // https://stackoverflow.com/questions/34262493/framebuffer-incomplete-attachment-for-texture-with-internal-format
+            // https://stackoverflow.com/questions/36109347/framebuffer-incomplete-attachment-only-happens-on-android-w-firefox
             this.loadExtension(EXT_COLOR_BUFFER_FLOAT);
         }
         else {
@@ -310,8 +313,6 @@ var GPGPU = /** @class */ (function () {
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
-        // https://stackoverflow.com/questions/34262493/framebuffer-incomplete-attachment-for-texture-with-internal-format
-        // https://stackoverflow.com/questions/36109347/framebuffer-incomplete-attachment-only-happens-on-android-w-firefox
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
         if (status != gl.FRAMEBUFFER_COMPLETE) {
@@ -326,9 +327,12 @@ var GPGPU = /** @class */ (function () {
         var glType, glFormat, glInternalFormat, glNumChannels;
         if (isWebGL2) {
             glNumChannels = numChannels;
-            // if (writable && glNumChannels < 3) {
-            // 	glNumChannels = 3;
-            // }
+            // https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
+            // The sized internal format RGB16F is not color-renderable for some reason.
+            // If numChannels == 3 for a writable texture, use RGBA instead.
+            if (numChannels === 3 && writable) {
+                glNumChannels = 4;
+            }
             switch (glNumChannels) {
                 case 1:
                     glFormat = gl.RED;
