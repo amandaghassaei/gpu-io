@@ -414,13 +414,17 @@ Error code: ${gl.getError()}.`);
 	private glTextureParameters(
 		numChannels: TextureNumChannels,
 		type: TextureType,
+		writable: boolean,
 	) {
 		// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 		const { gl, isWebGL2 } = this;
 		let glType: number | undefined, glFormat: number | undefined, glInternalFormat: number | undefined, glNumChannels: number | undefined;
 		if (isWebGL2) {
 			glNumChannels = numChannels;
-			switch (numChannels) {
+			if (writable && glNumChannels < 3) {
+				glNumChannels = 3;
+			}
+			switch (glNumChannels) {
 				case 1:
 					glFormat = (gl as WebGL2RenderingContext).RED;
 					break;
@@ -437,7 +441,7 @@ Error code: ${gl.getError()}.`);
 			switch (type) {
 				case 'float16':
 					glType = (gl as WebGL2RenderingContext).HALF_FLOAT;
-					switch (numChannels) {
+					switch (glNumChannels) {
 						case 1:
 							glInternalFormat = (gl as WebGL2RenderingContext).R16F;
 							break;
@@ -454,7 +458,7 @@ Error code: ${gl.getError()}.`);
 					break;
 				case 'uint8':
 					glType = gl.UNSIGNED_BYTE;
-					switch (numChannels) {
+					switch (glNumChannels) {
 						case 1:
 							glInternalFormat = (gl as WebGL2RenderingContext).R8;
 							break;
@@ -557,7 +561,7 @@ Error code: ${gl.getError()}.`);
 		// }
 
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
-		const { glFormat, glInternalFormat, glNumChannels, glType } = this.glTextureParameters(numChannels, type);
+		const { glFormat, glInternalFormat, glNumChannels, glType } = this.glTextureParameters(numChannels, type, writable);
 		// Check that data is correct length.
 		// This only happens for webgl 1.0 contexts.
 		if (data && numChannels !== glNumChannels) {

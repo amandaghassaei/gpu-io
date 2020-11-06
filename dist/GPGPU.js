@@ -298,13 +298,16 @@ var GPGPU = /** @class */ (function () {
         this.framebuffers[textureName] = framebuffer;
     };
     ;
-    GPGPU.prototype.glTextureParameters = function (numChannels, type) {
+    GPGPU.prototype.glTextureParameters = function (numChannels, type, writable) {
         // https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
         var _a = this, gl = _a.gl, isWebGL2 = _a.isWebGL2;
         var glType, glFormat, glInternalFormat, glNumChannels;
         if (isWebGL2) {
             glNumChannels = numChannels;
-            switch (numChannels) {
+            if (writable && glNumChannels < 3) {
+                glNumChannels = 3;
+            }
+            switch (glNumChannels) {
                 case 1:
                     glFormat = gl.RED;
                     break;
@@ -321,7 +324,7 @@ var GPGPU = /** @class */ (function () {
             switch (type) {
                 case 'float16':
                     glType = gl.HALF_FLOAT;
-                    switch (numChannels) {
+                    switch (glNumChannels) {
                         case 1:
                             glInternalFormat = gl.R16F;
                             break;
@@ -338,7 +341,7 @@ var GPGPU = /** @class */ (function () {
                     break;
                 case 'uint8':
                     glType = gl.UNSIGNED_BYTE;
-                    switch (numChannels) {
+                    switch (glNumChannels) {
                         case 1:
                             glInternalFormat = gl.R8;
                             break;
@@ -427,7 +430,7 @@ var GPGPU = /** @class */ (function () {
         // 	// }
         // }
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
-        var _b = this.glTextureParameters(numChannels, type), glFormat = _b.glFormat, glInternalFormat = _b.glInternalFormat, glNumChannels = _b.glNumChannels, glType = _b.glType;
+        var _b = this.glTextureParameters(numChannels, type, writable), glFormat = _b.glFormat, glInternalFormat = _b.glInternalFormat, glNumChannels = _b.glNumChannels, glType = _b.glType;
         // Check that data is correct length.
         // This only happens for webgl 1.0 contexts.
         if (data && numChannels !== glNumChannels) {
