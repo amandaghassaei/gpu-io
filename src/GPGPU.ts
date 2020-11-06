@@ -142,7 +142,9 @@ export class GPGPU {
 		console.log(`${maxTexturesInFragmentShader} textures max.`);
 	}
 
-	private initVertexBuffer(data: Float32Array) {
+	private initVertexBuffer(
+		data: Float32Array,
+	) {
 		const { errorCallback, gl } = this;
 		const buffer = gl.createBuffer();
 		if (!buffer) {
@@ -155,7 +157,10 @@ export class GPGPU {
 		return buffer;
 	}
 
-	private loadExtension(extension: string, optional = false) {
+	private loadExtension(
+		extension: string,
+		optional = false,
+	) {
 		let ext;
 		try {
 			ext = this.gl.getExtension(extension);
@@ -171,7 +176,10 @@ export class GPGPU {
 	}
 
 	// Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
-	private compileShader(shaderSource: string, shaderType: number) {
+	private compileShader(
+		shaderSource: string,
+		shaderType: number,
+	) {
 		const { gl } = this;
 
 		// Create the shader object
@@ -258,7 +266,10 @@ export class GPGPU {
 		});
 	};
 
-	private uniformTypeForValue(value: number | number[], dataType: UniformDataType) {
+	private uniformTypeForValue(
+		value: number | number[],
+		dataType: UniformDataType,
+	) {
 		if (dataType === FLOAT_TYPE) {
 			if (!isNaN(value as number) || (value as number[]).length === 1) {
 				return FLOAT_1D_UNIFORM;

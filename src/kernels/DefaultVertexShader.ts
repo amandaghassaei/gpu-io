@@ -1,6 +1,6 @@
 // Vertex shader for fullscreen quad.
 export default `
-precision mediump float;
+precision highp float;
 attribute vec2 aPosition;
 uniform vec2 u_scale;
 uniform vec2 u_translation;
