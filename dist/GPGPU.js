@@ -498,7 +498,8 @@ var GPGPU = /** @class */ (function () {
         }
         // Update uniforms and buffers.
         this.setProgramUniform(programName, 'u_scale', [radius / width, radius / height], 'FLOAT');
-        this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
+        // Flip y axis.
+        this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, -2 * position[1] / height + 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
         this._step(programName, inputTextures, outputTexture);
         // Draw.
