@@ -39,6 +39,7 @@ export declare class GPGPU {
     private _step;
     step(programName: string, inputTextures?: string[], outputTexture?: string): void;
     stepBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
+    stepNonBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
     stepCircle(programName: string, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
     inputTextures?: string[], outputTexture?: string): void;

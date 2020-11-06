@@ -711,22 +711,27 @@ Error code: ${gl.getError()}.`);
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
 
-	// // Step program for all but a strip of px along the boundary.
-	// stepNonBoundary(
-	// 	programName: string,
-	// 	inputTextures: string[] = [],
-	// 	outputTexture?: string, // Undefined renders to screen.
-	// ) {
-	// 	const { gl, errorState } = this;
+	// Step program for all but a strip of px along the boundary.
+	stepNonBoundary(
+		programName: string,
+		inputTextures: string[] = [],
+		outputTexture?: string, // Undefined renders to screen.
+	) {
+		const { gl, errorState, quadPositionsBuffer, width, height } = this;
 
-	// 	// Ignore if we are in error state.
-	// 	if (errorState) {
-	// 		return;
-	// 	}
-
-	// 	this._step(programName, inputTextures, outputTexture);
-	// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);// Draw to framebuffer.
-	// }
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+		// Update uniforms and buffers.
+		const onePx = [ 1 / width, 1 / height] as [number, number];
+		this.setProgramUniform(programName, 'u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
+		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
+		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
+		this._step(programName, inputTextures, outputTexture);
+		// Draw.
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	}
 
 	// Step program only for a circular spot.
 	stepCircle(

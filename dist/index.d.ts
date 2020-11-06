@@ -1,2 +1,3 @@
 import { GPGPU } from './GPGPU';
-export { GPGPU, };
+import SingleColorShaderSource from './kernels/SingleColorShader';
+export { GPGPU, SingleColorShaderSource, };
