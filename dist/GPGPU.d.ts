@@ -6,6 +6,7 @@ declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
 declare type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
 export declare class GPGPU {
     private readonly gl;
+    private readonly isWebGL2;
     private width;
     private height;
     private errorState;
@@ -31,8 +32,7 @@ export declare class GPGPU {
     private uniformTypeForValue;
     setProgramUniform(programName: string, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
     private initFramebufferForTexture;
-    private glTextureFormatForNumChannels;
-    private glTextureTypeForType;
+    private glTextureParameters;
     initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData, shouldOverwrite?: boolean): void;
     onResize(canvasEl: HTMLCanvasElement): void;
     private _step;

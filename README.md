@@ -1,8 +1,8 @@
 # webgl-gpgpu
 
-This repo is under active development, really only posted here for internal use right now, but will have a more official release soon.
-
 GPGPU compute in the browser with WebGL.  Unlike other libraries out there, this is designed with WebGL 1.0 support, so it should run on mobile.  Additionally, it should be compatible with threejs.
+
+**This repo is under active development, really only posted here for internal use right now, but will have a more official release soon.  As it stands, the API may change at any moment.**
 
 ## Use
  
@@ -10,11 +10,9 @@ GPGPU compute in the browser with WebGL.  Unlike other libraries out there, this
 
 `npm install git+https:github.com/amandaghassaei/webgl-gpgpu.git`
 
-npm install --save-dev @types/git+https:github.com/amandaghassaei/webgl-gpgpu.git
-
-
-
 ## Examples
+
+[Conway's Game of Life shader](https://github.com/amandaghassaei/ConwayShader)
 
 
 ## References

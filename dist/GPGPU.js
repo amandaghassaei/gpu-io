@@ -43,6 +43,7 @@ var GPGPU = /** @class */ (function () {
                 return;
             }
         }
+        this.isWebGL2 = !!gl.HALF_FLOAT;
         this.gl = gl;
         // GL setup.
         // Load extensions.
@@ -297,42 +298,77 @@ var GPGPU = /** @class */ (function () {
         this.framebuffers[textureName] = framebuffer;
     };
     ;
-    GPGPU.prototype.glTextureFormatForNumChannels = function (numChannels) {
-        // TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
-        var gl = this.gl;
-        switch (numChannels) {
-            case 1:
-                return {
-                    glFormat: gl.RGB,
-                    glNumChannels: 3,
-                };
-            case 2:
-                return {
-                    glFormat: gl.RGB,
-                    glNumChannels: 3,
-                };
-            case 3:
-                return {
-                    glFormat: gl.RGB,
-                    glNumChannels: 3,
-                };
-            case 4:
-                return {
-                    glFormat: gl.RGBA,
-                    glNumChannels: 4,
-                };
+    GPGPU.prototype.glTextureParameters = function (numChannels, type) {
+        // https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
+        var _a = this, gl = _a.gl, isWebGL2 = _a.isWebGL2;
+        var glType, glFormat, glInternalFormat, glNumChannels;
+        if (isWebGL2) {
+            switch (type) {
+                case 'float16':
+                    glType = gl.HALF_FLOAT;
+                    glNumChannels = numChannels;
+                    switch (numChannels) {
+                        case 1:
+                            glFormat = gl.RED;
+                            glInternalFormat = gl.R16F;
+                            break;
+                        case 2:
+                            glFormat = gl.RG;
+                            glInternalFormat = gl.RG16F;
+                            break;
+                        case 3:
+                            glFormat = gl.RGB;
+                            glInternalFormat = gl.RGB16F;
+                            break;
+                        case 4:
+                            glFormat = gl.RGBA;
+                            glInternalFormat = gl.RGBA16F;
+                            break;
+                    }
+                    break;
+                case 'uint8':
+                    glType = gl.UNSIGNED_BYTE;
+                    break;
+            }
         }
-    };
-    GPGPU.prototype.glTextureTypeForType = function (type) {
-        var gl = this.gl;
-        switch (type) {
-            case 'float16':
-                if (gl.HALF_FLOAT)
-                    return gl.HALF_FLOAT;
-                return gl.HALF_FLOAT_OES;
-            case 'uint8':
-                return gl.UNSIGNED_BYTE;
+        else {
+            switch (type) {
+                case 'float16':
+                    glType = gl.HALF_FLOAT_OES;
+                    switch (numChannels) {
+                        // TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
+                        case 1:
+                        case 2:
+                        case 3:
+                            glFormat = gl.RGB;
+                            glInternalFormat = gl.RGB;
+                            glNumChannels = 3;
+                            break;
+                        case 4:
+                            glFormat = gl.RGBA;
+                            glInternalFormat = gl.RGBA;
+                            glNumChannels = 4;
+                            break;
+                    }
+                    break;
+                case 'uint8':
+                    glType = gl.UNSIGNED_BYTE;
+                    break;
+            }
         }
+        // Check for missing params.
+        if (glType === undefined || glFormat === undefined || glInternalFormat === undefined) {
+            throw new Error("Invalid type: " + type + ".");
+        }
+        if (glNumChannels === undefined || numChannels < 1 || numChannels > 4) {
+            throw new Error("Invalid numChannels: " + numChannels + ".");
+        }
+        return {
+            glFormat: glFormat,
+            glInternalFormat: glInternalFormat,
+            glType: glType,
+            glNumChannels: glNumChannels,
+        };
     };
     GPGPU.prototype.initTexture = function (textureName, width, height, type, numChannels, writable, data, shouldOverwrite) {
         if (writable === void 0) { writable = false; }
@@ -361,16 +397,15 @@ var GPGPU = /** @class */ (function () {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
         // TODO: Check that data is correct type.
         // if (data && type === 'float16') {
-        // 	// // Since there is no Float16TypedArray, we must convert Float32
-        // 	// // to Float16 and pass in as an Int16TypedArray.
+        // 	// // Since there is no Float16TypedArray, we must us Uint16TypedArray
         // 	// const float16Array = new Int16Array(data.length);
         // 	// for (let i = 0; i < data.length; i++) {
         // 	// }
         // }
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
-        var _b = this.glTextureFormatForNumChannels(numChannels), glFormat = _b.glFormat, glNumChannels = _b.glNumChannels;
-        var glType = this.glTextureTypeForType(type);
+        var _b = this.glTextureParameters(numChannels, type), glFormat = _b.glFormat, glInternalFormat = _b.glInternalFormat, glNumChannels = _b.glNumChannels, glType = _b.glType;
         // Check that data is correct length.
+        // This only happens for webgl 1.0 contexts.
         if (data && numChannels !== glNumChannels) {
             var imageSize = width * height;
             var newArray = void 0;
@@ -389,7 +424,7 @@ var GPGPU = /** @class */ (function () {
             }
             data = newArray;
         }
-        gl.texImage2D(gl.TEXTURE_2D, 0, glFormat, width, height, 0, glFormat, glType, data ? data : null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, data ? data : null);
         textures[textureName] = texture;
         if (!writable) {
             // Delete unused framebuffer if needed.
