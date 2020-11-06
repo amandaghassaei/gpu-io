@@ -303,53 +303,77 @@ var GPGPU = /** @class */ (function () {
         var _a = this, gl = _a.gl, isWebGL2 = _a.isWebGL2;
         var glType, glFormat, glInternalFormat, glNumChannels;
         if (isWebGL2) {
+            glNumChannels = numChannels;
+            switch (numChannels) {
+                case 1:
+                    glFormat = gl.RED;
+                    break;
+                case 2:
+                    glFormat = gl.RG;
+                    break;
+                case 3:
+                    glFormat = gl.RGB;
+                    break;
+                case 4:
+                    glFormat = gl.RGBA;
+                    break;
+            }
             switch (type) {
                 case 'float16':
                     glType = gl.HALF_FLOAT;
-                    glNumChannels = numChannels;
                     switch (numChannels) {
                         case 1:
-                            glFormat = gl.RED;
                             glInternalFormat = gl.R16F;
                             break;
                         case 2:
-                            glFormat = gl.RG;
                             glInternalFormat = gl.RG16F;
                             break;
                         case 3:
-                            glFormat = gl.RGB;
                             glInternalFormat = gl.RGB16F;
                             break;
                         case 4:
-                            glFormat = gl.RGBA;
                             glInternalFormat = gl.RGBA16F;
                             break;
                     }
                     break;
                 case 'uint8':
                     glType = gl.UNSIGNED_BYTE;
+                    switch (numChannels) {
+                        case 1:
+                            glInternalFormat = gl.R8;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG8;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB8;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA8;
+                            break;
+                    }
                     break;
             }
         }
         else {
+            switch (numChannels) {
+                // TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
+                case 1:
+                case 2:
+                case 3:
+                    glFormat = gl.RGB;
+                    glInternalFormat = gl.RGB;
+                    glNumChannels = 3;
+                    break;
+                case 4:
+                    glFormat = gl.RGBA;
+                    glInternalFormat = gl.RGBA;
+                    glNumChannels = 4;
+                    break;
+            }
             switch (type) {
                 case 'float16':
                     glType = gl.HALF_FLOAT_OES;
-                    switch (numChannels) {
-                        // TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
-                        case 1:
-                        case 2:
-                        case 3:
-                            glFormat = gl.RGB;
-                            glInternalFormat = gl.RGB;
-                            glNumChannels = 3;
-                            break;
-                        case 4:
-                            glFormat = gl.RGBA;
-                            glInternalFormat = gl.RGBA;
-                            glNumChannels = 4;
-                            break;
-                    }
                     break;
                 case 'uint8':
                     glType = gl.UNSIGNED_BYTE;

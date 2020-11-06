@@ -419,52 +419,76 @@ Error code: ${gl.getError()}.`);
 		const { gl, isWebGL2 } = this;
 		let glType: number | undefined, glFormat: number | undefined, glInternalFormat: number | undefined, glNumChannels: number | undefined;
 		if (isWebGL2) {
+			glNumChannels = numChannels;
+			switch (numChannels) {
+				case 1:
+					glFormat = (gl as WebGL2RenderingContext).RED;
+					break;
+				case 2:
+					glFormat = (gl as WebGL2RenderingContext).RG;
+					break;
+				case 3:
+					glFormat = gl.RGB;
+					break;
+				case 4:
+					glFormat = gl.RGBA;
+					break;
+			}
 			switch (type) {
 				case 'float16':
 					glType = (gl as WebGL2RenderingContext).HALF_FLOAT;
-					glNumChannels = numChannels;
 					switch (numChannels) {
 						case 1:
-							glFormat = (gl as WebGL2RenderingContext).RED;
 							glInternalFormat = (gl as WebGL2RenderingContext).R16F;
 							break;
 						case 2:
-							glFormat = (gl as WebGL2RenderingContext).RG;
 							glInternalFormat = (gl as WebGL2RenderingContext).RG16F;
 							break;
 						case 3:
-							glFormat = gl.RGB;
 							glInternalFormat = (gl as WebGL2RenderingContext).RGB16F;
 							break;
 						case 4:
-							glFormat = gl.RGBA;
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16F;
 							break;
 					}
 					break;
 				case 'uint8':
 					glType = gl.UNSIGNED_BYTE;
+					switch (numChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R8;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB8;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8;
+							break;
+					}
 					break;
 			}
 		} else {
+			switch (numChannels) {
+				// TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
+				case 1:
+				case 2:
+				case 3:
+					glFormat = gl.RGB;
+					glInternalFormat = gl.RGB;
+					glNumChannels = 3;
+					break;
+				case 4:
+					glFormat = gl.RGBA;
+					glInternalFormat = gl.RGBA;
+					glNumChannels = 4;
+					break;
+			}
 			switch (type) {
 				case 'float16':
 					glType = (gl as any).HALF_FLOAT_OES as number;
-					switch (numChannels) {
-						// TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
-						case 1:
-						case 2:
-						case 3:
-							glFormat = gl.RGB;
-							glInternalFormat = gl.RGB;
-							glNumChannels = 3;
-							break;
-						case 4:
-							glFormat = gl.RGBA;
-							glInternalFormat = gl.RGBA;
-							glNumChannels = 4;
-							break;
-					}
 					break;
 				case 'uint8':
 					glType = gl.UNSIGNED_BYTE;
