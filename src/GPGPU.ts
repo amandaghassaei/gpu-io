@@ -1,5 +1,5 @@
 import defaultVertexShaderSource from './kernels/DefaultVertexShader';
-
+import passThroughShaderSource from './kernels/PassThroughShader';
 import { DataLayer, DataArrayType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader } from './utils';
@@ -41,6 +41,7 @@ export class GPGPU {
 	private readonly quadPositionsBuffer!: WebGLBuffer;
 	private readonly boundaryPositionsBuffer!: WebGLBuffer;
 	private readonly circlePositionsBuffer!: WebGLBuffer;
+	private readonly passThroughProgram!: GPUProgram;
 
 	// GL state.
 	private readonly linearFilterEnabled!: boolean;
@@ -115,6 +116,15 @@ export class GPGPU {
 			return;
 		}
 		this.defaultVertexShader = defaultVertexShader;
+
+		// Init a program to pass values from one texture to another.
+		this.passThroughProgram = this.initProgram('passThrough', passThroughShaderSource, [
+			{
+				name: 'u_state',
+				value: 0,
+				dataType: 'INT',
+			}
+		]);
 
 		// Create vertex buffers.
 		this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions)!;
@@ -377,10 +387,9 @@ export class GPGPU {
 		this.height = height;
 	};
 
-	_step(
+	private drawSetup(
 		program: GPUProgram,
 		inputLayers: DataLayer[],
-		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl } = this;
 		// Check if we are in an error state.
@@ -389,22 +398,10 @@ export class GPGPU {
 		}
 
 		gl.useProgram(program.program);
-		
+
 		for (let i = 0; i < inputLayers.length; i++) {
 			gl.activeTexture(gl.TEXTURE0 + i);
 			gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
-		}
-
-		if (outputLayer) {
-			if (outputLayer.numBuffers === 1 && inputLayers.indexOf(outputLayer) > -1) {
-				throw new Error(`
-					Cannot use same buffer for input and output of a program.
-					Try increasing the number of buffers in your output layer to at least 2 so you
-					can render to nextState using currentState as an input.`);
-			}
-			outputLayer.setAsRenderTarget();
-		} else {
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		}
 
 		// Point attribute to the currently bound VBO.
@@ -412,6 +409,42 @@ export class GPGPU {
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(positionLocation);
+	}
+
+	private setOutput(
+		fullscreenRender: boolean,
+		inputLayers: DataLayer[],
+		outputLayer?: DataLayer, // Undefined renders to screen.
+	) {
+		const { gl, passThroughProgram } = this;
+
+		if (!outputLayer) {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			return;
+		}
+
+		// Check if output is same as one of input layers.
+		if (inputLayers.indexOf(outputLayer) > -1) {
+			if (outputLayer.numBuffers === 1) {
+				throw new Error(`
+				Cannot use same buffer for input and output of a program.
+				Try increasing the number of buffers in your output layer to at least 2 so you
+				can render to nextState using currentState as an input.`);
+			}
+			if (fullscreenRender) {
+				// Render and increment buffer so we are rendering to a different target
+				// than the input texture.
+				outputLayer.setAsRenderTarget(true);
+				return;
+			}
+			// Pass input texture through to output.
+			this.step(passThroughProgram, [outputLayer], outputLayer);
+			// Render to output without incrementing buffer.
+			outputLayer.setAsRenderTarget(false);
+			return;
+		}
+		// Render to current buffer.
+		outputLayer.setAsRenderTarget(false);
 	};
 
 	// Step for entire fullscreen quad.
@@ -426,12 +459,17 @@ export class GPGPU {
 		if (errorState) {
 			return;
 		}
+
+		// Set output target.
+		this.setOutput(true, inputLayers, outputLayer);
+
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [1, 1], 'FLOAT');
 		program.setUniform('u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(program, inputLayers, outputLayer);
+
 		// Draw.
+		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 
@@ -447,14 +485,19 @@ export class GPGPU {
 		if (errorState) {
 			return;
 		}
+
+		// Set output target.
+		this.setOutput(false, inputLayers, outputLayer);
+
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
 		program.setUniform('u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this._step(program, inputLayers, outputLayer);
+
 		// Draw.
+		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
 
@@ -470,13 +513,18 @@ export class GPGPU {
 		if (errorState) {
 			return;
 		}
+
+		// Set output target.
+		this.setOutput(false, inputLayers, outputLayer);
+
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
 		program.setUniform('u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(program, inputLayers, outputLayer);
+		
 		// Draw.
+		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 
@@ -495,13 +543,17 @@ export class GPGPU {
 			return;
 		}
 
+		// Set output target.
+		this.setOutput(false, inputLayers, outputLayer);
+
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
 		// Flip y axis.
 		program.setUniform('u_translation', [2 * position[0] / width - 1, - 2 * position[1] / height + 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this._step(program, inputLayers, outputLayer);
+		
 		// Draw.
+		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
 	}
 

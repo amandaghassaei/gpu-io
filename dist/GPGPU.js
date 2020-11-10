@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GPGPU = void 0;
 var DefaultVertexShader_1 = require("./kernels/DefaultVertexShader");
+var PassThroughShader_1 = require("./kernels/PassThroughShader");
 var DataLayer_1 = require("./DataLayer");
 var GPUProgram_1 = require("./GPUProgram");
 var utils_1 = require("./utils");
@@ -87,6 +88,14 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         this.defaultVertexShader = defaultVertexShader;
+        // Init a program to pass values from one texture to another.
+        this.passThroughProgram = this.initProgram('passThrough', PassThroughShader_1.default, [
+            {
+                name: 'u_state',
+                value: 0,
+                dataType: 'INT',
+            }
+        ]);
         // Create vertex buffers.
         this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions);
         this.boundaryPositionsBuffer = this.initVertexBuffer(boundaryPositions);
@@ -309,7 +318,7 @@ var GPGPU = /** @class */ (function () {
         this.height = height;
     };
     ;
-    GPGPU.prototype._step = function (program, inputLayers, outputLayer) {
+    GPGPU.prototype.drawSetup = function (program, inputLayers) {
         var gl = this.gl;
         // Check if we are in an error state.
         if (!program.program) {
@@ -320,20 +329,37 @@ var GPGPU = /** @class */ (function () {
             gl.activeTexture(gl.TEXTURE0 + i);
             gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
         }
-        if (outputLayer) {
-            if (outputLayer.numBuffers === 1 && inputLayers.indexOf(outputLayer) > -1) {
-                throw new Error("\n\t\t\t\t\tCannot use same buffer for input and output of a program.\n\t\t\t\t\tTry increasing the number of buffers in your output layer to at least 2 so you\n\t\t\t\t\tcan render to nextState using currentState as an input.");
-            }
-            outputLayer.setAsRenderTarget();
-        }
-        else {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        }
         // Point attribute to the currently bound VBO.
         var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
         // Enable the attribute.
         gl.enableVertexAttribArray(positionLocation);
+    };
+    GPGPU.prototype.setOutput = function (fullscreenRender, inputLayers, outputLayer) {
+        var _a = this, gl = _a.gl, passThroughProgram = _a.passThroughProgram;
+        if (!outputLayer) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            return;
+        }
+        // Check if output is same as one of input layers.
+        if (inputLayers.indexOf(outputLayer) > -1) {
+            if (outputLayer.numBuffers === 1) {
+                throw new Error("\n\t\t\t\tCannot use same buffer for input and output of a program.\n\t\t\t\tTry increasing the number of buffers in your output layer to at least 2 so you\n\t\t\t\tcan render to nextState using currentState as an input.");
+            }
+            if (fullscreenRender) {
+                // Render and increment buffer so we are rendering to a different target
+                // than the input texture.
+                outputLayer.setAsRenderTarget(true);
+                return;
+            }
+            // Pass input texture through to output.
+            this.step(passThroughProgram, [outputLayer], outputLayer);
+            // Render to output without incrementing buffer.
+            outputLayer.setAsRenderTarget(false);
+            return;
+        }
+        // Render to current buffer.
+        outputLayer.setAsRenderTarget(false);
     };
     ;
     // Step for entire fullscreen quad.
@@ -344,12 +370,14 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
+        // Set output target.
+        this.setOutput(true, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [1, 1], 'FLOAT');
         program.setUniform('u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this._step(program, inputLayers, outputLayer);
         // Draw.
+        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a strip of px along the boundary.
@@ -360,14 +388,16 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
+        // Set output target.
+        this.setOutput(false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-        this._step(program, inputLayers, outputLayer);
         // Draw.
+        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
     };
     // Step program for all but a strip of px along the boundary.
@@ -378,13 +408,15 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
+        // Set output target.
+        this.setOutput(false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this._step(program, inputLayers, outputLayer);
         // Draw.
+        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a circular spot.
@@ -397,13 +429,15 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
+        // Set output target.
+        this.setOutput(false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
         // Flip y axis.
         program.setUniform('u_translation', [2 * position[0] / width - 1, -2 * position[1] / height + 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-        this._step(program, inputLayers, outputLayer);
         // Draw.
+        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
     };
     // readyToRead() {

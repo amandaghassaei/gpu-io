@@ -72,10 +72,13 @@ var DataLayer = /** @class */ (function () {
         }
         return this.buffers[this.bufferIndex].texture;
     };
-    DataLayer.prototype.setAsRenderTarget = function () {
+    DataLayer.prototype.setAsRenderTarget = function (incrementBufferIndex) {
+        if (incrementBufferIndex === void 0) { incrementBufferIndex = true; }
         var gl = this.gl;
-        // Increment bufferIndex.
-        this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
+        if (!incrementBufferIndex) {
+            // Increment bufferIndex.
+            this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
+        }
         var framebuffer = this.buffers[this.bufferIndex].framebuffer;
         if (!framebuffer) {
             throw new Error("DataLayer " + this.name + " is not writable.");

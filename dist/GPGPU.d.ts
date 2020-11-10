@@ -15,6 +15,7 @@ export declare class GPGPU {
     private readonly quadPositionsBuffer;
     private readonly boundaryPositionsBuffer;
     private readonly circlePositionsBuffer;
+    private readonly passThroughProgram;
     private readonly linearFilterEnabled;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private initVertexBuffer;
@@ -33,7 +34,8 @@ export declare class GPGPU {
         data?: DataArrayType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
     onResize(canvasEl: HTMLCanvasElement): void;
-    _step(program: GPUProgram, inputLayers: DataLayer[], outputLayer?: DataLayer): void;
+    private drawSetup;
+    private setOutput;
     step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;

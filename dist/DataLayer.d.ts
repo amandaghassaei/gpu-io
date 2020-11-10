@@ -27,7 +27,7 @@ export declare class DataLayer {
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
     getLastStateTexture(): WebGLTexture;
-    setAsRenderTarget(): void;
+    setAsRenderTarget(incrementBufferIndex?: boolean): void;
     resize(width: number, height: number, data?: DataArrayType): void;
     private destroyBuffers;
     destroy(): void;

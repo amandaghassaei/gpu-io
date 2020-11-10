@@ -18,6 +18,7 @@ export class DataLayer {
 	private readonly glFormat: number;
 	private readonly glType: number;
 	private readonly writable: boolean;
+	
 
 	constructor(
 		name: string,
@@ -115,10 +116,12 @@ export class DataLayer {
 		return this.buffers[this.bufferIndex].texture;
 	}
 
-	setAsRenderTarget() {
+	setAsRenderTarget(incrementBufferIndex = true) {
 		const { gl } = this;
-		// Increment bufferIndex.
-		this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
+		if (!incrementBufferIndex) {
+			// Increment bufferIndex.
+			this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
+		}
 		const { framebuffer } = this.buffers[this.bufferIndex];
 		if (!framebuffer) {
 			throw new Error(`DataLayer ${this.name} is not writable.`);
