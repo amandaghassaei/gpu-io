@@ -318,13 +318,18 @@ var GPGPU = /** @class */ (function () {
         this.height = height;
     };
     ;
-    GPGPU.prototype.drawSetup = function (program, inputLayers) {
+    GPGPU.prototype.drawSetup = function (program, fullscreenRender, inputLayers, outputLayer) {
         var gl = this.gl;
         // Check if we are in an error state.
         if (!program.program) {
             return;
         }
+        // CAUTION: the order of these next few lines in important.
+        // Set output framebuffer.
+        this.setOutput(fullscreenRender, inputLayers, outputLayer);
+        // Set current program.
         gl.useProgram(program.program);
+        // Set input textures.
         for (var i = 0; i < inputLayers.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
             gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
@@ -370,14 +375,13 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        // Set output target.
-        this.setOutput(true, inputLayers, outputLayer);
+        // Do setup - this must come first.
+        this.drawSetup(program, true, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [1, 1], 'FLOAT');
         program.setUniform('u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         // Draw.
-        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a strip of px along the boundary.
@@ -388,8 +392,8 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        // Set output target.
-        this.setOutput(false, inputLayers, outputLayer);
+        // Do setup - this must come first.
+        this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
@@ -397,7 +401,6 @@ var GPGPU = /** @class */ (function () {
         program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
         // Draw.
-        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
     };
     // Step program for all but a strip of px along the boundary.
@@ -408,15 +411,14 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        // Set output target.
-        this.setOutput(false, inputLayers, outputLayer);
+        // Do setup - this must come first.
+        this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         // Draw.
-        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a circular spot.
@@ -429,15 +431,14 @@ var GPGPU = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        // Set output target.
-        this.setOutput(false, inputLayers, outputLayer);
+        // Do setup - this must come first.
+        this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
         // Flip y axis.
         program.setUniform('u_translation', [2 * position[0] / width - 1, -2 * position[1] / height + 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
         // Draw.
-        this.drawSetup(program, inputLayers);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
     };
     // readyToRead() {

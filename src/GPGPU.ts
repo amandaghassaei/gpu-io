@@ -389,7 +389,9 @@ export class GPGPU {
 
 	private drawSetup(
 		program: GPUProgram,
+		fullscreenRender: boolean,
 		inputLayers: DataLayer[],
+		outputLayer?: DataLayer,
 	) {
 		const { gl } = this;
 		// Check if we are in an error state.
@@ -397,8 +399,15 @@ export class GPGPU {
 			return;
 		}
 
+		// CAUTION: the order of these next few lines in important.
+
+		// Set output framebuffer.
+		this.setOutput(fullscreenRender, inputLayers, outputLayer);
+
+		// Set current program.
 		gl.useProgram(program.program);
 
+		// Set input textures.
 		for (let i = 0; i < inputLayers.length; i++) {
 			gl.activeTexture(gl.TEXTURE0 + i);
 			gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
@@ -460,8 +469,8 @@ export class GPGPU {
 			return;
 		}
 
-		// Set output target.
-		this.setOutput(true, inputLayers, outputLayer);
+		// Do setup - this must come first.
+		this.drawSetup(program, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [1, 1], 'FLOAT');
@@ -469,7 +478,6 @@ export class GPGPU {
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 
 		// Draw.
-		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 
@@ -486,8 +494,8 @@ export class GPGPU {
 			return;
 		}
 
-		// Set output target.
-		this.setOutput(false, inputLayers, outputLayer);
+		// Do setup - this must come first.
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
@@ -497,7 +505,6 @@ export class GPGPU {
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 
 		// Draw.
-		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
 
@@ -514,8 +521,8 @@ export class GPGPU {
 			return;
 		}
 
-		// Set output target.
-		this.setOutput(false, inputLayers, outputLayer);
+		// Do setup - this must come first.
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
@@ -524,7 +531,6 @@ export class GPGPU {
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		
 		// Draw.
-		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 
@@ -543,8 +549,8 @@ export class GPGPU {
 			return;
 		}
 
-		// Set output target.
-		this.setOutput(false, inputLayers, outputLayer);
+		// Do setup - this must come first.
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
@@ -553,7 +559,6 @@ export class GPGPU {
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		
 		// Draw.
-		this.drawSetup(program, inputLayers);
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
 	}
 
