@@ -5,7 +5,7 @@ export declare type DataLayerBuffer = {
 };
 export declare class DataLayer {
     private bufferIndex;
-    private readonly numBuffers;
+    readonly numBuffers: number;
     private readonly buffers;
     private readonly gl;
     private readonly errorCallback;

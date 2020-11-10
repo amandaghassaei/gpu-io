@@ -1,41 +1,10 @@
 import defaultVertexShaderSource from './kernels/DefaultVertexShader';
-import {
-	FLOAT_1D_UNIFORM,
-	FLOAT_2D_UNIFORM,
-	FLOAT_3D_UNIFORM,
-	FLOAT_4D_UNIFORM,
-	INT_1D_UNIFORM,
-	INT_2D_UNIFORM,
-	INT_3D_UNIFORM,
-	INT_4D_UNIFORM,
-	FLOAT_TYPE,
-	INT_TYPE,
-} from './constants';
+
 import { DataLayer, DataArrayType } from './DataLayer';
+import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 
 type TextureType = 'float16' | 'uint8'; // 'float32'
 type TextureNumChannels = 1 | 2 | 3 | 4;
-
-type UniformType = 
-	typeof FLOAT_1D_UNIFORM |
-	typeof FLOAT_2D_UNIFORM |
-	typeof FLOAT_3D_UNIFORM |
-	typeof FLOAT_4D_UNIFORM |
-	typeof INT_1D_UNIFORM |
-	typeof INT_2D_UNIFORM |
-	typeof INT_3D_UNIFORM |
-	typeof INT_4D_UNIFORM;
-type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
-type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
-type Uniform = { 
-	location: WebGLUniformLocation,
-	type: UniformType,
-};
-
-type Program = {
-	program: WebGLProgram,
-	uniforms: { [ key: string]: Uniform },
-};
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
@@ -64,7 +33,6 @@ export class GPGPU {
 	private errorState = false;
 	private readonly errorCallback: (message: string) => void;
 
-	private readonly programs: { [ key: string ] : Program } = {}; // All current gl programs.
 	private readonly shaders: WebGLShader[] = []; // Keep track of all shaders inited so they can be properly deallocated.
 	
 	// Some precomputed values.
@@ -238,12 +206,8 @@ export class GPGPU {
 		}[],
 		// vertexShaderSource?: string,
 	) {
-		const { programs, gl, errorCallback } = this;
-		if (programs[programName]) {
-			gl.useProgram(programs[programName].program);
-			console.warn(`Already a program with the name ${programName}.`);
-			return;
-		}
+		const { gl, errorCallback } = this;
+
 		const fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
 		// Load fullscreen quad vertex shader by default.
 		// const vertexShader = vertexShaderSource ?
@@ -255,147 +219,8 @@ export class GPGPU {
 			return;
 		}
 		
-		// Create a program.
-		const program = gl.createProgram();
-		if (!program) {
-			errorCallback('Unable to init gl program.');
-			return;
-		}
-
-		// Attach the shaders.
-		gl.attachShader(program, vertexShader);
-		gl.attachShader(program, fragmentShader);
-
-		// Link the program.
-		gl.linkProgram(program);
-		// Check if it linked.
-		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-		if (!success) {
-			// Something went wrong with the link.
-			errorCallback(`Program ${programName} filed to link: ${gl.getProgramInfoLog(program)}`);
-		}
-
-		// Add new program.
-        programs[programName] = {
-            program: program,
-			uniforms: {},
-		};
-		
-		uniforms?.forEach(uniform => {
-			const { name, value, dataType } = uniform;
-			this.setProgramUniform(programName, name, value, dataType);
-		});
+		return new GPUProgram(gl, errorCallback, vertexShader, fragmentShader, uniforms);
 	};
-
-	private uniformTypeForValue(
-		value: number | number[],
-		dataType: UniformDataType,
-	) {
-		if (dataType === FLOAT_TYPE) {
-			if (!isNaN(value as number) || (value as number[]).length === 1) {
-				return FLOAT_1D_UNIFORM;
-			}
-			if ((value as number[]).length === 2) {
-				return FLOAT_2D_UNIFORM;
-			}
-			if ((value as number[]).length === 3) {
-				return FLOAT_3D_UNIFORM;
-			}
-			if ((value as number[]).length === 4) {
-				return FLOAT_4D_UNIFORM;
-			}
-			throw new Error(`Invalid uniform value: ${value}`);
-		} else if (dataType === INT_TYPE) {
-			if (!isNaN(value as number) || (value as number[]).length === 1) {
-				return INT_1D_UNIFORM;
-			}
-			if ((value as number[]).length === 2) {
-				return INT_2D_UNIFORM;
-			}
-			if ((value as number[]).length === 3) {
-				return INT_3D_UNIFORM;
-			}
-			if ((value as number[]).length === 4) {
-				return INT_4D_UNIFORM;
-			}
-			throw new Error(`Invalid uniform value: ${value}`);
-		} else {
-			throw new Error(`Invalid uniform data type: ${dataType}`);
-		}
-	}
-
-	setProgramUniform(
-		programName: string,
-		uniformName: string,
-		value: UniformValueType,
-		dataType: UniformDataType,
-	) {
-		const { gl, programs, errorCallback } = this;
-
-		const program = programs[programName];
-		if (!program) {
-			throw new Error(`Count not set uniform, no program of name: ${programName}.`);
-		}
-
-		// Set active program.
-		gl.useProgram(program.program);
-	
-		const { uniforms } = program;
-		const type = this.uniformTypeForValue(value, dataType);
-		if (!uniforms[uniformName]) {
-			// Init uniform if needed.
-			const location = gl.getUniformLocation(program.program, uniformName);
-			if (!location) {
-				errorCallback(`Could not init uniform ${uniformName} for program ${programName}.
-Check that uniform is present in shader code, unused uniforms may be removed by compiler.
-Also check that uniform type in shader code matches type ${type}.
-Error code: ${gl.getError()}.`);
-				return;
-			}
-			uniforms[uniformName] = {
-				location,
-				type: type,
-			}
-		}
-
-		const uniform = uniforms[uniformName];
-		// Check that types match previously set uniform.
-		if (uniform.type != type) {
-			throw new Error(`Uniform ${uniformName} cannot change from type ${uniform.type} to type ${type}.`);
-		}
-		const { location } = uniform;
-
-		// Set uniform.
-		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
-		switch (type) {
-			case FLOAT_1D_UNIFORM:
-				gl.uniform1f(location, value as number);
-				break;
-			case FLOAT_2D_UNIFORM:
-				gl.uniform2fv(location, value as number[]);
-				break;
-			case FLOAT_3D_UNIFORM:
-				gl.uniform3fv(location, value as number[]);
-				break;
-			case FLOAT_4D_UNIFORM:
-				gl.uniform4fv(location, value as number[]);
-				break;
-			case INT_1D_UNIFORM:
-				gl.uniform1i(location, value as number);
-				break;
-			case INT_2D_UNIFORM:
-				gl.uniform2iv(location, value as number[]);
-				break;
-			case INT_3D_UNIFORM:
-				gl.uniform3iv(location, value as number[]);
-				break;
-			case INT_4D_UNIFORM:
-				gl.uniform4iv(location, value as number[]);
-				break;
-			default:
-				throw new Error(`Unknown uniform type: ${type}.`);
-		}
-    };
 
 	private glTextureParameters(
 		numChannels: TextureNumChannels,
@@ -584,16 +409,12 @@ Error code: ${gl.getError()}.`);
 		this.height = height;
 	};
 
-	private _step(
-		programName: string,
+	_step(
+		program: GPUProgram,
 		inputLayers: DataLayer[],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
-		const { gl, programs } = this;
-		const program = programs[programName];
-		if (!program) {
-			throw new Error(`Invalid program name: ${programName}.`);
-		}
+		const { gl } = this;
 		gl.useProgram(program.program);
 		
 		for (let i = 0; i < inputLayers.length; i++) {
@@ -602,6 +423,12 @@ Error code: ${gl.getError()}.`);
 		}
 
 		if (outputLayer) {
+			if (outputLayer.numBuffers === 1 && inputLayers.indexOf(outputLayer) > -1) {
+				throw new Error(`
+					Cannot use same buffer for input and output of a program.
+					Try increasing the number of buffers in your output layer to at least 2 so you
+					can render to nextState using currentState as an input.`);
+			}
 			outputLayer.setAsRenderTarget();
 		} else {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -613,10 +440,10 @@ Error code: ${gl.getError()}.`);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(positionLocation);
 	};
-	
+
 	// Step for entire fullscreen quad.
 	step(
-		programName: string,
+		program: GPUProgram,
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
@@ -627,17 +454,17 @@ Error code: ${gl.getError()}.`);
 			return;
 		}
 		// Update uniforms and buffers.
-		this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
-		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+		program.setUniform('u_scale', [1, 1], 'FLOAT');
+		program.setUniform('u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(programName, inputLayers, outputLayer);
+		this._step(program, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 
 	// Step program only for a strip of px along the boundary.
 	stepBoundary(
-		programName: string,
+		program: GPUProgram,
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
@@ -650,17 +477,17 @@ Error code: ${gl.getError()}.`);
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		this.setProgramUniform(programName, 'u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
-		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
+		program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
+		program.setUniform('u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this._step(programName, inputLayers, outputLayer);
+		this._step(program, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
 
 	// Step program for all but a strip of px along the boundary.
 	stepNonBoundary(
-		programName: string,
+		program: GPUProgram,
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
@@ -672,17 +499,17 @@ Error code: ${gl.getError()}.`);
 		}
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		this.setProgramUniform(programName, 'u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
-		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
+		program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
+		program.setUniform('u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(programName, inputLayers, outputLayer);
+		this._step(program, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
 
 	// Step program only for a circular spot.
 	stepCircle(
-		programName: string,
+		program: GPUProgram,
 		position: [number, number], // position is in screen space coords.
 		radius: number, // radius is in px.
 		inputLayers: DataLayer[] = [],
@@ -696,11 +523,11 @@ Error code: ${gl.getError()}.`);
 		}
 
 		// Update uniforms and buffers.
-		this.setProgramUniform(programName, 'u_scale', [radius / width, radius / height], 'FLOAT');
+		program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
 		// Flip y axis.
-		this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, - 2 * position[1] / height + 1], 'FLOAT');
+		program.setUniform('u_translation', [2 * position[0] / width - 1, - 2 * position[1] / height + 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this._step(programName, inputLayers, outputLayer);
+		this._step(program, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
 	}
@@ -717,14 +544,14 @@ Error code: ${gl.getError()}.`);
 
     reset() {
 		// TODO: make sure we are actually deallocating resources here.
-		const { gl, programs, shaders, defaultVertexShader } = this;
+		const { gl, shaders, defaultVertexShader } = this;
 		
-		// Unbind all data before deleting.
-		Object.keys(programs).forEach(key => {
-			const program = programs[key].program;
-			gl.deleteProgram(program);
-			delete programs[key];
-		});
+		// // Unbind all data before deleting.
+		// Object.keys(programs).forEach(key => {
+		// 	const program = programs[key].program;
+		// 	gl.deleteProgram(program);
+		// 	delete programs[key];
+		// });
 		for (let i = shaders.length - 1; i >= 0; i--) {
 			if (shaders[i] === defaultVertexShader) {
 				continue;

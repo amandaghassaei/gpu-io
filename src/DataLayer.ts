@@ -7,7 +7,7 @@ export type DataLayerBuffer = {
 
 export class DataLayer {
 	private bufferIndex = 0;
-	private readonly numBuffers;
+	readonly numBuffers;
 	private readonly buffers: DataLayerBuffer[] = [];
 	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private readonly errorCallback: (message: string) => void;

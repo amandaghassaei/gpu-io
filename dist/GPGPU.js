@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GPGPU = void 0;
 var DefaultVertexShader_1 = require("./kernels/DefaultVertexShader");
-var constants_1 = require("./constants");
 var DataLayer_1 = require("./DataLayer");
+var GPUProgram_1 = require("./GPUProgram");
 var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
 var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
 var unitCirclePoints = [0, 0];
@@ -24,7 +24,6 @@ var GPGPU = /** @class */ (function () {
         if (errorCallback === void 0) { errorCallback = function (message) { throw new Error(message); }; }
         this.extensions = {};
         this.errorState = false;
-        this.programs = {}; // All current gl programs.
         this.shaders = []; // Keep track of all shaders inited so they can be properly deallocated.
         // Save callback in case we run into an error.
         var self = this;
@@ -153,13 +152,7 @@ var GPGPU = /** @class */ (function () {
         return shader;
     };
     GPGPU.prototype.initProgram = function (programName, fragmentShaderSource, uniforms) {
-        var _this = this;
-        var _a = this, programs = _a.programs, gl = _a.gl, errorCallback = _a.errorCallback;
-        if (programs[programName]) {
-            gl.useProgram(programs[programName].program);
-            console.warn("Already a program with the name " + programName + ".");
-            return;
-        }
+        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         var fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
         // Load fullscreen quad vertex shader by default.
         // const vertexShader = vertexShaderSource ?
@@ -170,127 +163,7 @@ var GPGPU = /** @class */ (function () {
             errorCallback("Unable to init shaders for program " + programName + ".");
             return;
         }
-        // Create a program.
-        var program = gl.createProgram();
-        if (!program) {
-            errorCallback('Unable to init gl program.');
-            return;
-        }
-        // Attach the shaders.
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        // Link the program.
-        gl.linkProgram(program);
-        // Check if it linked.
-        var success = gl.getProgramParameter(program, gl.LINK_STATUS);
-        if (!success) {
-            // Something went wrong with the link.
-            errorCallback("Program " + programName + " filed to link: " + gl.getProgramInfoLog(program));
-        }
-        // Add new program.
-        programs[programName] = {
-            program: program,
-            uniforms: {},
-        };
-        uniforms === null || uniforms === void 0 ? void 0 : uniforms.forEach(function (uniform) {
-            var name = uniform.name, value = uniform.value, dataType = uniform.dataType;
-            _this.setProgramUniform(programName, name, value, dataType);
-        });
-    };
-    ;
-    GPGPU.prototype.uniformTypeForValue = function (value, dataType) {
-        if (dataType === constants_1.FLOAT_TYPE) {
-            if (!isNaN(value) || value.length === 1) {
-                return constants_1.FLOAT_1D_UNIFORM;
-            }
-            if (value.length === 2) {
-                return constants_1.FLOAT_2D_UNIFORM;
-            }
-            if (value.length === 3) {
-                return constants_1.FLOAT_3D_UNIFORM;
-            }
-            if (value.length === 4) {
-                return constants_1.FLOAT_4D_UNIFORM;
-            }
-            throw new Error("Invalid uniform value: " + value);
-        }
-        else if (dataType === constants_1.INT_TYPE) {
-            if (!isNaN(value) || value.length === 1) {
-                return constants_1.INT_1D_UNIFORM;
-            }
-            if (value.length === 2) {
-                return constants_1.INT_2D_UNIFORM;
-            }
-            if (value.length === 3) {
-                return constants_1.INT_3D_UNIFORM;
-            }
-            if (value.length === 4) {
-                return constants_1.INT_4D_UNIFORM;
-            }
-            throw new Error("Invalid uniform value: " + value);
-        }
-        else {
-            throw new Error("Invalid uniform data type: " + dataType);
-        }
-    };
-    GPGPU.prototype.setProgramUniform = function (programName, uniformName, value, dataType) {
-        var _a = this, gl = _a.gl, programs = _a.programs, errorCallback = _a.errorCallback;
-        var program = programs[programName];
-        if (!program) {
-            throw new Error("Count not set uniform, no program of name: " + programName + ".");
-        }
-        // Set active program.
-        gl.useProgram(program.program);
-        var uniforms = program.uniforms;
-        var type = this.uniformTypeForValue(value, dataType);
-        if (!uniforms[uniformName]) {
-            // Init uniform if needed.
-            var location_1 = gl.getUniformLocation(program.program, uniformName);
-            if (!location_1) {
-                errorCallback("Could not init uniform " + uniformName + " for program " + programName + ".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
-                return;
-            }
-            uniforms[uniformName] = {
-                location: location_1,
-                type: type,
-            };
-        }
-        var uniform = uniforms[uniformName];
-        // Check that types match previously set uniform.
-        if (uniform.type != type) {
-            throw new Error("Uniform " + uniformName + " cannot change from type " + uniform.type + " to type " + type + ".");
-        }
-        var location = uniform.location;
-        // Set uniform.
-        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
-        switch (type) {
-            case constants_1.FLOAT_1D_UNIFORM:
-                gl.uniform1f(location, value);
-                break;
-            case constants_1.FLOAT_2D_UNIFORM:
-                gl.uniform2fv(location, value);
-                break;
-            case constants_1.FLOAT_3D_UNIFORM:
-                gl.uniform3fv(location, value);
-                break;
-            case constants_1.FLOAT_4D_UNIFORM:
-                gl.uniform4fv(location, value);
-                break;
-            case constants_1.INT_1D_UNIFORM:
-                gl.uniform1i(location, value);
-                break;
-            case constants_1.INT_2D_UNIFORM:
-                gl.uniform2iv(location, value);
-                break;
-            case constants_1.INT_3D_UNIFORM:
-                gl.uniform3iv(location, value);
-                break;
-            case constants_1.INT_4D_UNIFORM:
-                gl.uniform4iv(location, value);
-                break;
-            default:
-                throw new Error("Unknown uniform type: " + type + ".");
-        }
+        return new GPUProgram_1.GPUProgram(gl, errorCallback, vertexShader, fragmentShader, uniforms);
     };
     ;
     GPGPU.prototype.glTextureParameters = function (numChannels, type, writable) {
@@ -460,18 +333,17 @@ var GPGPU = /** @class */ (function () {
         this.height = height;
     };
     ;
-    GPGPU.prototype._step = function (programName, inputLayers, outputLayer) {
-        var _a = this, gl = _a.gl, programs = _a.programs;
-        var program = programs[programName];
-        if (!program) {
-            throw new Error("Invalid program name: " + programName + ".");
-        }
+    GPGPU.prototype._step = function (program, inputLayers, outputLayer) {
+        var gl = this.gl;
         gl.useProgram(program.program);
         for (var i = 0; i < inputLayers.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
             gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
         }
         if (outputLayer) {
+            if (outputLayer.numBuffers === 1 && inputLayers.indexOf(outputLayer) > -1) {
+                throw new Error("\n\t\t\t\t\tCannot use same buffer for input and output of a program.\n\t\t\t\t\tTry increasing the number of buffers in your output layer to at least 2 so you\n\t\t\t\t\tcan render to nextState using currentState as an input.");
+            }
             outputLayer.setAsRenderTarget();
         }
         else {
@@ -485,7 +357,7 @@ var GPGPU = /** @class */ (function () {
     };
     ;
     // Step for entire fullscreen quad.
-    GPGPU.prototype.step = function (programName, inputLayers, outputLayer) {
+    GPGPU.prototype.step = function (program, inputLayers, outputLayer) {
         if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         // Ignore if we are in error state.
@@ -493,15 +365,15 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Update uniforms and buffers.
-        this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
-        this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
+        program.setUniform('u_scale', [1, 1], 'FLOAT');
+        program.setUniform('u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this._step(programName, inputLayers, outputLayer);
+        this._step(program, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a strip of px along the boundary.
-    GPGPU.prototype.stepBoundary = function (programName, inputLayers, outputLayer) {
+    GPGPU.prototype.stepBoundary = function (program, inputLayers, outputLayer) {
         if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
@@ -511,15 +383,15 @@ var GPGPU = /** @class */ (function () {
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
-        this.setProgramUniform(programName, 'u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
-        this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
+        program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
+        program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-        this._step(programName, inputLayers, outputLayer);
+        this._step(program, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
     };
     // Step program for all but a strip of px along the boundary.
-    GPGPU.prototype.stepNonBoundary = function (programName, inputLayers, outputLayer) {
+    GPGPU.prototype.stepNonBoundary = function (program, inputLayers, outputLayer) {
         if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
@@ -528,15 +400,15 @@ var GPGPU = /** @class */ (function () {
         }
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
-        this.setProgramUniform(programName, 'u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
-        this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
+        program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
+        program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this._step(programName, inputLayers, outputLayer);
+        this._step(program, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a circular spot.
-    GPGPU.prototype.stepCircle = function (programName, position, // position is in screen space coords.
+    GPGPU.prototype.stepCircle = function (program, position, // position is in screen space coords.
     radius, // radius is in px.
     inputLayers, outputLayer) {
         if (inputLayers === void 0) { inputLayers = []; }
@@ -546,11 +418,11 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Update uniforms and buffers.
-        this.setProgramUniform(programName, 'u_scale', [radius / width, radius / height], 'FLOAT');
+        program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
         // Flip y axis.
-        this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, -2 * position[1] / height + 1], 'FLOAT');
+        program.setUniform('u_translation', [2 * position[0] / width - 1, -2 * position[1] / height + 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-        this._step(programName, inputLayers, outputLayer);
+        this._step(program, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
     };
@@ -564,13 +436,13 @@ var GPGPU = /** @class */ (function () {
     // };
     GPGPU.prototype.reset = function () {
         // TODO: make sure we are actually deallocating resources here.
-        var _a = this, gl = _a.gl, programs = _a.programs, shaders = _a.shaders, defaultVertexShader = _a.defaultVertexShader;
-        // Unbind all data before deleting.
-        Object.keys(programs).forEach(function (key) {
-            var program = programs[key].program;
-            gl.deleteProgram(program);
-            delete programs[key];
-        });
+        var _a = this, gl = _a.gl, shaders = _a.shaders, defaultVertexShader = _a.defaultVertexShader;
+        // // Unbind all data before deleting.
+        // Object.keys(programs).forEach(key => {
+        // 	const program = programs[key].program;
+        // 	gl.deleteProgram(program);
+        // 	delete programs[key];
+        // });
         for (var i = shaders.length - 1; i >= 0; i--) {
             if (shaders[i] === defaultVertexShader) {
                 continue;

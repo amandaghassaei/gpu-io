@@ -1,9 +1,7 @@
-import { FLOAT_TYPE, INT_TYPE } from './constants';
 import { DataLayer, DataArrayType } from './DataLayer';
+import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 declare type TextureType = 'float16' | 'uint8';
 declare type TextureNumChannels = 1 | 2 | 3 | 4;
-declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
-declare type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
 export declare class GPGPU {
     private readonly gl;
     private readonly isWebGL2;
@@ -12,7 +10,6 @@ export declare class GPGPU {
     private height;
     private errorState;
     private readonly errorCallback;
-    private readonly programs;
     private readonly shaders;
     private readonly defaultVertexShader;
     private readonly quadPositionsBuffer;
@@ -27,9 +24,7 @@ export declare class GPGPU {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
-    }[]): void;
-    private uniformTypeForValue;
-    setProgramUniform(programName: string, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
+    }[]): GPUProgram | undefined;
     private glTextureParameters;
     initDataLayer(options: {
         width: number;
@@ -39,11 +34,11 @@ export declare class GPGPU {
         data?: DataArrayType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
     onResize(canvasEl: HTMLCanvasElement): void;
-    private _step;
-    step(programName: string, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    stepBoundary(programName: string, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    stepNonBoundary(programName: string, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    stepCircle(programName: string, position: [number, number], // position is in screen space coords.
+    _step(program: GPUProgram, inputLayers: DataLayer[], outputLayer?: DataLayer): void;
+    step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
     inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     reset(): void;
