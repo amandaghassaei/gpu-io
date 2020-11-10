@@ -11,9 +11,9 @@ import {
 	FLOAT_TYPE,
 	INT_TYPE,
 } from './constants';
+import { DataLayer, DataArrayType } from './DataLayer';
 
 type TextureType = 'float16' | 'uint8'; // 'float32'
-type TextureData =  Uint8Array;
 type TextureNumChannels = 1 | 2 | 3 | 4;
 
 type UniformType = 
@@ -65,8 +65,6 @@ export class GPGPU {
 	private readonly errorCallback: (message: string) => void;
 
 	private readonly programs: { [ key: string ] : Program } = {}; // All current gl programs.
-	private readonly textures: { [ key: string ] : WebGLTexture } = {}; // All current gl textures.
-	private readonly framebuffers: { [ key: string ] : WebGLFramebuffer } = {}; // All current gl framebuffers.
 	private readonly shaders: WebGLShader[] = []; // Keep track of all shaders inited so they can be properly deallocated.
 	
 	// Some precomputed values.
@@ -399,39 +397,6 @@ Error code: ${gl.getError()}.`);
 		}
     };
 
-	private initFramebufferForTexture(
-		textureName: string,
-		shouldOverwrite = false,
-	) {
-		const { gl, framebuffers, textures, errorCallback } = this;
-
-		if (framebuffers[textureName]){
-			if (!shouldOverwrite) console.warn(`Already a framebuffer with the name ${textureName}, use shouldOverwrite flag in initTexture() to ignore.`);
-			gl.deleteFramebuffer(framebuffers[textureName]);
-		}
-		
-		const texture = textures[textureName];
-		if (!texture) {
-			throw new Error(`Cannot init framebuffer, texture ${textureName} does not exist.`);
-		}
-
-		const framebuffer = gl.createFramebuffer();
-		if (!framebuffer) {
-			errorCallback(`Could not init ${textureName} framebuffer: ${gl.getError()}.`);
-			return;
-		}
-		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
-		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
-		const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-		if(status != gl.FRAMEBUFFER_COMPLETE){
-			errorCallback(`Invalid status for ${textureName} framebuffer: ${status}.`);
-		}
-
-		framebuffers[textureName] = framebuffer;
-	};
-
 	private glTextureParameters(
 		numChannels: TextureNumChannels,
 		type: TextureType,
@@ -539,42 +504,25 @@ Error code: ${gl.getError()}.`);
 			glNumChannels,
 		};
 	}
-	
-	initTexture(
-		textureName: string,
-		width: number,
-		height: number,
-		type: TextureType,
-		numChannels: TextureNumChannels,
+
+	initDataLayer(
+		options:{
+			width: number,
+			height: number,
+			type: TextureType,
+			numChannels: TextureNumChannels,
+			data?: DataArrayType,
+		},
 		writable = false,
-		data?: TextureData,
-		shouldOverwrite = false,
+		numBuffers = 1,
 	) {
-		const { gl, textures, framebuffers, errorCallback } = this;
-		
-        if (textures[textureName]){
-            if (!shouldOverwrite) console.warn(`Already a texture with the name ${textureName}, use shouldOverwrite flag to ignore.`);
-            gl.deleteTexture(textures[textureName]);
-		}
+		const { gl, errorCallback } = this;
+		const { data, width, height, type, numChannels } = options;
 		
 		// Check that data is correct length.
 		if (data && data.length !== width * height * numChannels) {
 			throw new Error(`Invalid data array of size ${data.length} for texture of dimensions ${width} x ${height} x ${numChannels}.`);
 		}
-
-		const texture = gl.createTexture();
-		if (!texture) {
-			errorCallback(`Could not init ${textureName} texture: ${gl.getError()}.`);
-			return;
-		}
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-
-		// TODO: dig into this.
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		const filter = gl.NEAREST;//this.linearFilterEnabled ? gl.LINEAR : gl.NEAREST;
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
 		// TODO: Check that data is correct type.
 		// if (data && type === 'float16') {
@@ -584,13 +532,16 @@ Error code: ${gl.getError()}.`);
 		// 	// }
 		// }
 
+		// Get texture params.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
 		const { glFormat, glInternalFormat, glNumChannels, glType } = this.glTextureParameters(numChannels, type, writable);
+
 		// Check that data is correct length.
 		// This only happens for webgl 1.0 contexts.
+		let dataResized = data;
 		if (data && numChannels !== glNumChannels) {
 			const imageSize = width * height;
-			let newArray: TextureData;
+			let newArray: DataArrayType;
 			switch (type) {
 				case 'uint8':
 					newArray = new Uint8Array(width * height * glNumChannels);
@@ -604,23 +555,19 @@ Error code: ${gl.getError()}.`);
 					newArray[glNumChannels * i + j] = data[i * numChannels + j];
 				}
 			}
-			data = newArray;
-		}
-		gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, data ? data : null);
-
-		textures[textureName] = texture;
-
-		if (!writable) {
-			// Delete unused framebuffer if needed.
-			if (shouldOverwrite && framebuffers[textureName]){
-				gl.deleteFramebuffer(framebuffers[textureName]);
-				delete framebuffers[textureName];
-			}
-			return;
+			dataResized = newArray;
 		}
 
-		// Init a framebuffer for this texture so we can write to it.
-		this.initFramebufferForTexture(textureName, shouldOverwrite);
+		const dataLayer = new DataLayer(gl, {
+			width,
+			height,
+			glInternalFormat,
+			glFormat,
+			glType,
+			data: dataResized,
+		}, errorCallback, numBuffers, writable);
+
+		return dataLayer;
 	};
 
 	onResize(canvasEl: HTMLCanvasElement) {
@@ -639,25 +586,25 @@ Error code: ${gl.getError()}.`);
 
 	private _step(
 		programName: string,
-		inputTextures: string[],
-		outputTexture?: string, // Undefined renders to screen.
+		inputTextures: WebGLTexture[],
+		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
-		const { gl, programs, framebuffers } = this;
+		const { gl, programs } = this;
 		const program = programs[programName];
 		if (!program) {
 			throw new Error(`Invalid program name: ${programName}.`);
 		}
 		gl.useProgram(program.program);
-
-		const framebuffer = outputTexture ? framebuffers[outputTexture] : null;
-		if (framebuffer === undefined) {
-			throw new Error(`Invalid output texture: ${outputTexture}.`);
-		}
-		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 		
 		for (let i = 0; i < inputTextures.length; i++) {
 			gl.activeTexture(gl.TEXTURE0 + i);
-			gl.bindTexture(gl.TEXTURE_2D, this.textures[inputTextures[i]]);
+			gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
+		}
+
+		if (outputLayer) {
+			outputLayer.renderTo(gl);
+		} else {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		}
 
 		// Point attribute to the currently bound VBO.
@@ -670,8 +617,8 @@ Error code: ${gl.getError()}.`);
 	// Step for entire fullscreen quad.
 	step(
 		programName: string,
-		inputTextures: string[] = [],
-		outputTexture?: string, // Undefined renders to screen.
+		inputTextures: WebGLTexture[] = [],
+		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
 
@@ -683,7 +630,7 @@ Error code: ${gl.getError()}.`);
 		this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
 		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(programName, inputTextures, outputTexture);
+		this._step(programName, inputTextures, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
@@ -691,8 +638,8 @@ Error code: ${gl.getError()}.`);
 	// Step program only for a strip of px along the boundary.
 	stepBoundary(
 		programName: string,
-		inputTextures: string[] = [],
-		outputTexture?: string, // Undefined renders to screen.
+		inputTextures: WebGLTexture[] = [],
+		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, boundaryPositionsBuffer, width, height } = this;
 
@@ -706,7 +653,7 @@ Error code: ${gl.getError()}.`);
 		this.setProgramUniform(programName, 'u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
 		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this._step(programName, inputTextures, outputTexture);
+		this._step(programName, inputTextures, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
@@ -714,8 +661,8 @@ Error code: ${gl.getError()}.`);
 	// Step program for all but a strip of px along the boundary.
 	stepNonBoundary(
 		programName: string,
-		inputTextures: string[] = [],
-		outputTexture?: string, // Undefined renders to screen.
+		inputTextures: WebGLTexture[] = [],
+		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, quadPositionsBuffer, width, height } = this;
 
@@ -728,7 +675,7 @@ Error code: ${gl.getError()}.`);
 		this.setProgramUniform(programName, 'u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
 		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(programName, inputTextures, outputTexture);
+		this._step(programName, inputTextures, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
@@ -738,8 +685,8 @@ Error code: ${gl.getError()}.`);
 		programName: string,
 		position: [number, number], // position is in screen space coords.
 		radius: number, // radius is in px.
-		inputTextures: string[] = [],
-		outputTexture?: string, // Undefined renders to screen.
+		inputTextures: WebGLTexture[] = [],
+		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, circlePositionsBuffer, width, height } = this;
 
@@ -753,38 +700,10 @@ Error code: ${gl.getError()}.`);
 		// Flip y axis.
 		this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, - 2 * position[1] / height + 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this._step(programName, inputTextures, outputTexture);
+		this._step(programName, inputTextures, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
 	}
-
-    swapTextures(
-		texture1Name: string,
-		texture2Name: string,
-	) {
-		const {textures, framebuffers } = this;
-        let temp = textures[texture1Name];
-        textures[texture1Name] = this.textures[texture2Name];
-        textures[texture2Name] = temp;
-        temp = framebuffers[texture1Name];
-        framebuffers[texture1Name] = this.framebuffers[texture2Name];
-        framebuffers[texture2Name] = temp;
-    };
-
-    // swap3Textures(
-	// 	texture1Name: string,
-	// 	texture2Name: string,
-	// 	texture3Name: string,
-	// ) {
-    //     let temp = this.textures[texture3Name];
-    //     this.textures[texture3Name] = this.textures[texture2Name];
-    //     this.textures[texture2Name] = this.textures[texture1Name];
-    //     this.textures[texture1Name] = temp;
-    //     temp = this.framebuffers[texture3Name];
-    //     this.framebuffers[texture3Name] = this.framebuffers[texture2Name];
-    //     this.framebuffers[texture2Name] = this.framebuffers[texture1Name];
-    //     this.framebuffers[texture1Name] = temp;
-    // };
 
     // readyToRead() {
 	// 	const { gl } = this;
@@ -798,23 +717,13 @@ Error code: ${gl.getError()}.`);
 
     reset() {
 		// TODO: make sure we are actually deallocating resources here.
-		const { gl, programs, framebuffers, textures, shaders, defaultVertexShader } = this;
+		const { gl, programs, shaders, defaultVertexShader } = this;
 		
 		// Unbind all data before deleting.
 		Object.keys(programs).forEach(key => {
 			const program = programs[key].program;
 			gl.deleteProgram(program);
 			delete programs[key];
-		});
-		Object.keys(framebuffers).forEach(key => {
-			const framebuffer = framebuffers[key];
-			gl.deleteFramebuffer(framebuffer);
-			delete framebuffers[key];
-		});
-        Object.keys(textures).forEach(key => {
-			const texture = textures[key];
-			gl.deleteTexture(texture);
-			delete textures[key];
 		});
 		for (let i = shaders.length - 1; i >= 0; i--) {
 			if (shaders[i] === defaultVertexShader) {

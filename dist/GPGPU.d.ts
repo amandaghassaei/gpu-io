@@ -1,6 +1,6 @@
 import { FLOAT_TYPE, INT_TYPE } from './constants';
+import { DataLayer, DataArrayType } from './DataLayer';
 declare type TextureType = 'float16' | 'uint8';
-declare type TextureData = Uint8Array;
 declare type TextureNumChannels = 1 | 2 | 3 | 4;
 declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
 declare type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
@@ -13,8 +13,6 @@ export declare class GPGPU {
     private errorState;
     private readonly errorCallback;
     private readonly programs;
-    private readonly textures;
-    private readonly framebuffers;
     private readonly shaders;
     private readonly defaultVertexShader;
     private readonly quadPositionsBuffer;
@@ -32,18 +30,22 @@ export declare class GPGPU {
     }[]): void;
     private uniformTypeForValue;
     setProgramUniform(programName: string, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
-    private initFramebufferForTexture;
     private glTextureParameters;
-    initTexture(textureName: string, width: number, height: number, type: TextureType, numChannels: TextureNumChannels, writable?: boolean, data?: TextureData, shouldOverwrite?: boolean): void;
+    initDataLayer(options: {
+        width: number;
+        height: number;
+        type: TextureType;
+        numChannels: TextureNumChannels;
+        data?: DataArrayType;
+    }, writable?: boolean, numBuffers?: number): DataLayer;
     onResize(canvasEl: HTMLCanvasElement): void;
     private _step;
-    step(programName: string, inputTextures?: string[], outputTexture?: string): void;
-    stepBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
-    stepNonBoundary(programName: string, inputTextures?: string[], outputTexture?: string): void;
+    step(programName: string, inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
+    stepBoundary(programName: string, inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
+    stepNonBoundary(programName: string, inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
     stepCircle(programName: string, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
-    inputTextures?: string[], outputTexture?: string): void;
-    swapTextures(texture1Name: string, texture2Name: string): void;
+    inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
     reset(): void;
 }
 export {};
