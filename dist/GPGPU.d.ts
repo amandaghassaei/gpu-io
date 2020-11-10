@@ -20,7 +20,7 @@ export declare class GPGPU {
     private initVertexBuffer;
     private loadExtension;
     private compileShader;
-    initProgram(programName: string, fragmentShaderSource: string, uniforms?: {
+    initProgram(fragmentShaderSource: string, uniforms?: {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;

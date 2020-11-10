@@ -197,7 +197,6 @@ export class GPGPU {
 	}
 
 	initProgram(
-		programName: string,
 		fragmentShaderSource: string,
 		uniforms?: {
 			name: string,
@@ -215,7 +214,7 @@ export class GPGPU {
 		// 	this.fsQuadVertexShader;
 		const vertexShader = this.defaultVertexShader;
 		if (!fragmentShader || !vertexShader) {
-			errorCallback(`Unable to init shaders for program ${programName}.`);
+			errorCallback(`Unable to init shaders for program.`);
 			return;
 		}
 		

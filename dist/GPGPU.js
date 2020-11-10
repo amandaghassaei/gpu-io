@@ -151,7 +151,7 @@ var GPGPU = /** @class */ (function () {
         shaders.push(shader);
         return shader;
     };
-    GPGPU.prototype.initProgram = function (programName, fragmentShaderSource, uniforms) {
+    GPGPU.prototype.initProgram = function (fragmentShaderSource, uniforms) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         var fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
         // Load fullscreen quad vertex shader by default.
@@ -160,7 +160,7 @@ var GPGPU = /** @class */ (function () {
         // 	this.fsQuadVertexShader;
         var vertexShader = this.defaultVertexShader;
         if (!fragmentShader || !vertexShader) {
-            errorCallback("Unable to init shaders for program " + programName + ".");
+            errorCallback("Unable to init shaders for program.");
             return;
         }
         return new GPUProgram_1.GPUProgram(gl, errorCallback, vertexShader, fragmentShader, uniforms);
