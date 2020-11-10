@@ -18,7 +18,6 @@ export class DataLayer {
 	private readonly glFormat: number;
 	private readonly glType: number;
 	private readonly writable: boolean;
-	
 
 	constructor(
 		name: string,
@@ -116,11 +115,11 @@ export class DataLayer {
 		return this.buffers[this.bufferIndex].texture;
 	}
 
-	setAsRenderTarget(incrementBufferIndex = true) {
+	setAsRenderTarget(incrementBufferIndex: boolean) {
 		const { gl } = this;
 		if (incrementBufferIndex) {
 			// Increment bufferIndex.
-			this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
+			this.bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
 		}
 		const { framebuffer } = this.buffers[this.bufferIndex];
 		if (!framebuffer) {

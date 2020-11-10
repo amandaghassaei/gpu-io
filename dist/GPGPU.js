@@ -325,6 +325,8 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // CAUTION: the order of these next few lines in important.
+        // Get textures before we have set the render target (this can modify some internal state).
+        var inputTextures = inputLayers.map(function (layer) { return layer.getCurrentStateTexture(); });
         // Set output framebuffer.
         this.setOutput(fullscreenRender, inputLayers, outputLayer);
         // Set current program.
@@ -332,7 +334,7 @@ var GPGPU = /** @class */ (function () {
         // Set input textures.
         for (var i = 0; i < inputLayers.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
+            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
         }
         // Point attribute to the currently bound VBO.
         var positionLocation = gl.getAttribLocation(program.program, 'aPosition');

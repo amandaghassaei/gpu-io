@@ -401,6 +401,9 @@ export class GPGPU {
 
 		// CAUTION: the order of these next few lines in important.
 
+		// Get textures before we have set the render target (this can modify some internal state).
+		const inputTextures = inputLayers.map(layer => layer.getCurrentStateTexture());
+
 		// Set output framebuffer.
 		this.setOutput(fullscreenRender, inputLayers, outputLayer);
 
@@ -410,7 +413,7 @@ export class GPGPU {
 		// Set input textures.
 		for (let i = 0; i < inputLayers.length; i++) {
 			gl.activeTexture(gl.TEXTURE0 + i);
-			gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
+			gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
 		}
 
 		// Point attribute to the currently bound VBO.
