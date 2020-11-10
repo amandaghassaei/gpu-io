@@ -118,7 +118,7 @@ export class DataLayer {
 
 	setAsRenderTarget(incrementBufferIndex = true) {
 		const { gl } = this;
-		if (!incrementBufferIndex) {
+		if (incrementBufferIndex) {
 			// Increment bufferIndex.
 			this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
 		}
