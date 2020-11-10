@@ -6,7 +6,7 @@ var DataLayer = /** @class */ (function () {
         this.bufferIndex = 0;
         this.buffers = [];
         if (numBuffers < 0 || numBuffers % 1 !== numBuffers) {
-            throw new Error('Invalid numBuffers, must be positive integer.');
+            throw new Error("Invalid numBuffers: " + numBuffers + ", must be positive integer.");
         }
         this.numBuffers = numBuffers;
         // Init a texture for each buffer.
