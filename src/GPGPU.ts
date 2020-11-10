@@ -602,7 +602,7 @@ Error code: ${gl.getError()}.`);
 		}
 
 		if (outputLayer) {
-			outputLayer.renderTo(gl);
+			outputLayer.setAsRenderTarget();
 		} else {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		}

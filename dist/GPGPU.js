@@ -472,7 +472,7 @@ var GPGPU = /** @class */ (function () {
             gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
         }
         if (outputLayer) {
-            outputLayer.renderTo(gl);
+            outputLayer.setAsRenderTarget();
         }
         else {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);

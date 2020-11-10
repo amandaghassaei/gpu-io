@@ -5,8 +5,16 @@ export declare type DataLayerBuffer = {
 };
 export declare class DataLayer {
     private bufferIndex;
-    private numBuffers;
-    private buffers;
+    private readonly numBuffers;
+    private readonly buffers;
+    private readonly gl;
+    private readonly errorCallback;
+    private width;
+    private height;
+    private readonly glInternalFormat;
+    private readonly glFormat;
+    private readonly glType;
+    private readonly writable;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, options: {
         width: number;
         height: number;
@@ -15,8 +23,11 @@ export declare class DataLayer {
         glType: number;
         data?: DataArrayType;
     }, errorCallback: (message: string) => void, numBuffers: number, writable: boolean);
+    private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
     getLastStateTexture(): WebGLTexture;
-    renderTo(gl: WebGLRenderingContext | WebGL2RenderingContext): void;
+    setAsRenderTarget(): void;
+    resize(width: number, height: number, data?: DataArrayType): void;
+    private destroyBuffers;
     destroy(): void;
 }

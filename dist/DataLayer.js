@@ -5,10 +5,25 @@ var DataLayer = /** @class */ (function () {
     function DataLayer(gl, options, errorCallback, numBuffers, writable) {
         this.bufferIndex = 0;
         this.buffers = [];
+        // check input parameters.
         if (numBuffers < 0 || numBuffers % 1 !== 0) {
             throw new Error("Invalid numBuffers: " + numBuffers + ", must be positive integer.");
         }
         this.numBuffers = numBuffers;
+        // Save options.
+        this.width = options.width;
+        this.height = options.height;
+        this.glInternalFormat = options.glInternalFormat;
+        this.glFormat = options.glFormat;
+        this.glType = options.glType;
+        this.writable = writable;
+        // Save ref to gl for later.
+        this.gl = gl;
+        this.errorCallback = errorCallback;
+        this.initBuffers(options.data);
+    }
+    DataLayer.prototype.initBuffers = function (data) {
+        var _a = this, numBuffers = _a.numBuffers, gl = _a.gl, width = _a.width, height = _a.height, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, writable = _a.writable, errorCallback = _a.errorCallback;
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
@@ -23,7 +38,7 @@ var DataLayer = /** @class */ (function () {
             var filter = gl.NEAREST; //this.linearFilterEnabled ? gl.LINEAR : gl.NEAREST;
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-            gl.texImage2D(gl.TEXTURE_2D, 0, options.glInternalFormat, options.width, options.height, 0, options.glFormat, options.glType, options.data ? options.data : null);
+            gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, data ? data : null);
             var buffer = {
                 texture: texture,
             };
@@ -47,7 +62,7 @@ var DataLayer = /** @class */ (function () {
             // Save this buffer to the list.
             this.buffers.push(buffer);
         }
-    }
+    };
     DataLayer.prototype.getCurrentStateTexture = function () {
         return this.buffers[this.bufferIndex].texture;
     };
@@ -57,7 +72,8 @@ var DataLayer = /** @class */ (function () {
         }
         return this.buffers[this.bufferIndex].texture;
     };
-    DataLayer.prototype.renderTo = function (gl) {
+    DataLayer.prototype.setAsRenderTarget = function () {
+        var gl = this.gl;
         // Increment bufferIndex.
         this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
         var framebuffer = this.buffers[this.bufferIndex].framebuffer;
@@ -66,17 +82,30 @@ var DataLayer = /** @class */ (function () {
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     };
+    DataLayer.prototype.resize = function (width, height, data) {
+        this.destroyBuffers();
+        this.width = width;
+        this.height = height;
+        this.initBuffers();
+    };
+    DataLayer.prototype.destroyBuffers = function () {
+        var _a = this, gl = _a.gl, buffers = _a.buffers;
+        buffers.forEach(function (buffer) {
+            var framebuffer = buffer.framebuffer, texture = buffer.texture;
+            gl.deleteTexture(texture);
+            if (framebuffer) {
+                gl.deleteFramebuffer(framebuffer);
+            }
+            // @ts-ignore;
+            delete buffer.texture;
+            delete buffer.framebuffer;
+        });
+        buffers.length = 0;
+    };
     DataLayer.prototype.destroy = function () {
-        // Object.keys(framebuffers).forEach(key => {
-        // 	const framebuffer = framebuffers[key];
-        // 	gl.deleteFramebuffer(framebuffer);
-        // 	delete framebuffers[key];
-        // });
-        // Object.keys(textures).forEach(key => {
-        // 	const texture = textures[key];
-        // 	gl.deleteTexture(texture);
-        // 	delete textures[key];
-        // });
+        this.destroyBuffers();
+        // @ts-ignore;
+        delete this.gl;
     };
     return DataLayer;
 }());
