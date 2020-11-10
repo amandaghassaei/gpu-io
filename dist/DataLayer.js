@@ -5,7 +5,7 @@ var DataLayer = /** @class */ (function () {
     function DataLayer(gl, options, errorCallback, numBuffers, writable) {
         this.bufferIndex = 0;
         this.buffers = [];
-        if (numBuffers < 0 || numBuffers % 1 !== numBuffers) {
+        if (numBuffers < 0 || numBuffers % 1 !== 0) {
             throw new Error("Invalid numBuffers: " + numBuffers + ", must be positive integer.");
         }
         this.numBuffers = numBuffers;

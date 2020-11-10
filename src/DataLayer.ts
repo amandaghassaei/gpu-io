@@ -23,7 +23,7 @@ export class DataLayer {
 		numBuffers: number,
 		writable: boolean,
 	) {
-		if (numBuffers < 0 || numBuffers % 1 !== numBuffers) {
+		if (numBuffers < 0 || numBuffers % 1 !== 0) {
 			throw new Error(`Invalid numBuffers: ${numBuffers}, must be positive integer.`);
 		}
 		this.numBuffers = numBuffers;
