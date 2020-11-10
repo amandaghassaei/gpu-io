@@ -86,7 +86,7 @@ var DataLayer = /** @class */ (function () {
         this.destroyBuffers();
         this.width = width;
         this.height = height;
-        this.initBuffers();
+        this.initBuffers(data);
     };
     DataLayer.prototype.destroyBuffers = function () {
         var _a = this, gl = _a.gl, buffers = _a.buffers;

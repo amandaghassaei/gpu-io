@@ -3,7 +3,6 @@ export type DataArrayType =  Uint8Array; // Uint16Array
 export type DataLayerBuffer = {
 	texture: WebGLTexture,
 	framebuffer?: WebGLFramebuffer,
-	
 }
 
 export class DataLayer {
@@ -76,7 +75,6 @@ export class DataLayer {
 			
 			const buffer: DataLayerBuffer = {
 				texture,
-				
 			};
 
 			if (writable) {
@@ -130,7 +128,7 @@ export class DataLayer {
 		this.destroyBuffers();
 		this.width = width;
 		this.height = height;
-		this.initBuffers();
+		this.initBuffers(data);
 	}
 
 	private destroyBuffers() {
