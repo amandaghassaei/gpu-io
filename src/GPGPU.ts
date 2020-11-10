@@ -401,6 +401,7 @@ export class GPGPU {
 
 		// CAUTION: the order of these next few lines in important.
 
+		// TODO: this is kind of fussy.
 		// Get textures before we have set the render target (this can modify some internal state).
 		const inputTextures = inputLayers.map(layer => layer.getCurrentStateTexture());
 
@@ -415,12 +416,6 @@ export class GPGPU {
 			gl.activeTexture(gl.TEXTURE0 + i);
 			gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
 		}
-
-		// Point attribute to the currently bound VBO.
-		const positionLocation = gl.getAttribLocation(program.program, 'aPosition');
-		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-		// Enable the attribute.
-		gl.enableVertexAttribArray(positionLocation);
 	}
 
 	private setOutput(
@@ -480,6 +475,12 @@ export class GPGPU {
 		program.setUniform('u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 
+		// Point attribute to the currently bound VBO.
+		const positionLocation = gl.getAttribLocation(program.program!, 'aPosition');
+		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(positionLocation);
+
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
@@ -507,6 +508,12 @@ export class GPGPU {
 		program.setUniform('u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 
+		// Point attribute to the currently bound VBO.
+		const positionLocation = gl.getAttribLocation(program.program!, 'aPosition');
+		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(positionLocation);
+
 		// Draw.
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
@@ -532,6 +539,12 @@ export class GPGPU {
 		program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
 		program.setUniform('u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
+
+		// Point attribute to the currently bound VBO.
+		const positionLocation = gl.getAttribLocation(program.program!, 'aPosition');
+		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(positionLocation);
 		
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -560,6 +573,12 @@ export class GPGPU {
 		// Flip y axis.
 		program.setUniform('u_translation', [2 * position[0] / width - 1, - 2 * position[1] / height + 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
+
+		// Point attribute to the currently bound VBO.
+		const positionLocation = gl.getAttribLocation(program.program!, 'aPosition');
+		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(positionLocation);
 		
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
