@@ -586,7 +586,7 @@ Error code: ${gl.getError()}.`);
 
 	private _step(
 		programName: string,
-		inputTextures: WebGLTexture[],
+		inputLayers: DataLayer[],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, programs } = this;
@@ -596,9 +596,9 @@ Error code: ${gl.getError()}.`);
 		}
 		gl.useProgram(program.program);
 		
-		for (let i = 0; i < inputTextures.length; i++) {
+		for (let i = 0; i < inputLayers.length; i++) {
 			gl.activeTexture(gl.TEXTURE0 + i);
-			gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
+			gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
 		}
 
 		if (outputLayer) {
@@ -617,7 +617,7 @@ Error code: ${gl.getError()}.`);
 	// Step for entire fullscreen quad.
 	step(
 		programName: string,
-		inputTextures: WebGLTexture[] = [],
+		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
@@ -630,7 +630,7 @@ Error code: ${gl.getError()}.`);
 		this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
 		this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(programName, inputTextures, outputLayer);
+		this._step(programName, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
@@ -638,7 +638,7 @@ Error code: ${gl.getError()}.`);
 	// Step program only for a strip of px along the boundary.
 	stepBoundary(
 		programName: string,
-		inputTextures: WebGLTexture[] = [],
+		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, boundaryPositionsBuffer, width, height } = this;
@@ -653,7 +653,7 @@ Error code: ${gl.getError()}.`);
 		this.setProgramUniform(programName, 'u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
 		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this._step(programName, inputTextures, outputLayer);
+		this._step(programName, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
 	}
@@ -661,7 +661,7 @@ Error code: ${gl.getError()}.`);
 	// Step program for all but a strip of px along the boundary.
 	stepNonBoundary(
 		programName: string,
-		inputTextures: WebGLTexture[] = [],
+		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, quadPositionsBuffer, width, height } = this;
@@ -675,7 +675,7 @@ Error code: ${gl.getError()}.`);
 		this.setProgramUniform(programName, 'u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
 		this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this._step(programName, inputTextures, outputLayer);
+		this._step(programName, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	}
@@ -685,7 +685,7 @@ Error code: ${gl.getError()}.`);
 		programName: string,
 		position: [number, number], // position is in screen space coords.
 		radius: number, // radius is in px.
-		inputTextures: WebGLTexture[] = [],
+		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, errorState, circlePositionsBuffer, width, height } = this;
@@ -700,7 +700,7 @@ Error code: ${gl.getError()}.`);
 		// Flip y axis.
 		this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, - 2 * position[1] / height + 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this._step(programName, inputTextures, outputLayer);
+		this._step(programName, inputLayers, outputLayer);
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
 	}

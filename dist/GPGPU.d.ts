@@ -40,12 +40,12 @@ export declare class GPGPU {
     }, writable?: boolean, numBuffers?: number): DataLayer;
     onResize(canvasEl: HTMLCanvasElement): void;
     private _step;
-    step(programName: string, inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
-    stepBoundary(programName: string, inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
-    stepNonBoundary(programName: string, inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
+    step(programName: string, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    stepBoundary(programName: string, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    stepNonBoundary(programName: string, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepCircle(programName: string, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
-    inputTextures?: WebGLTexture[], outputLayer?: DataLayer): void;
+    inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     reset(): void;
 }
 export {};

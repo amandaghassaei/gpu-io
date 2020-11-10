@@ -460,16 +460,16 @@ var GPGPU = /** @class */ (function () {
         this.height = height;
     };
     ;
-    GPGPU.prototype._step = function (programName, inputTextures, outputLayer) {
+    GPGPU.prototype._step = function (programName, inputLayers, outputLayer) {
         var _a = this, gl = _a.gl, programs = _a.programs;
         var program = programs[programName];
         if (!program) {
             throw new Error("Invalid program name: " + programName + ".");
         }
         gl.useProgram(program.program);
-        for (var i = 0; i < inputTextures.length; i++) {
+        for (var i = 0; i < inputLayers.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
+            gl.bindTexture(gl.TEXTURE_2D, inputLayers[i].getCurrentStateTexture());
         }
         if (outputLayer) {
             outputLayer.renderTo(gl);
@@ -485,8 +485,8 @@ var GPGPU = /** @class */ (function () {
     };
     ;
     // Step for entire fullscreen quad.
-    GPGPU.prototype.step = function (programName, inputTextures, outputLayer) {
-        if (inputTextures === void 0) { inputTextures = []; }
+    GPGPU.prototype.step = function (programName, inputLayers, outputLayer) {
+        if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         // Ignore if we are in error state.
         if (errorState) {
@@ -496,13 +496,13 @@ var GPGPU = /** @class */ (function () {
         this.setProgramUniform(programName, 'u_scale', [1, 1], 'FLOAT');
         this.setProgramUniform(programName, 'u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this._step(programName, inputTextures, outputLayer);
+        this._step(programName, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a strip of px along the boundary.
-    GPGPU.prototype.stepBoundary = function (programName, inputTextures, outputLayer) {
-        if (inputTextures === void 0) { inputTextures = []; }
+    GPGPU.prototype.stepBoundary = function (programName, inputLayers, outputLayer) {
+        if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
         if (errorState) {
@@ -514,13 +514,13 @@ var GPGPU = /** @class */ (function () {
         this.setProgramUniform(programName, 'u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
         this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-        this._step(programName, inputTextures, outputLayer);
+        this._step(programName, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
     };
     // Step program for all but a strip of px along the boundary.
-    GPGPU.prototype.stepNonBoundary = function (programName, inputTextures, outputLayer) {
-        if (inputTextures === void 0) { inputTextures = []; }
+    GPGPU.prototype.stepNonBoundary = function (programName, inputLayers, outputLayer) {
+        if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
         if (errorState) {
@@ -531,15 +531,15 @@ var GPGPU = /** @class */ (function () {
         this.setProgramUniform(programName, 'u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
         this.setProgramUniform(programName, 'u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this._step(programName, inputTextures, outputLayer);
+        this._step(programName, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
     // Step program only for a circular spot.
     GPGPU.prototype.stepCircle = function (programName, position, // position is in screen space coords.
     radius, // radius is in px.
-    inputTextures, outputLayer) {
-        if (inputTextures === void 0) { inputTextures = []; }
+    inputLayers, outputLayer) {
+        if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
         if (errorState) {
@@ -550,7 +550,7 @@ var GPGPU = /** @class */ (function () {
         // Flip y axis.
         this.setProgramUniform(programName, 'u_translation', [2 * position[0] / width - 1, -2 * position[1] / height + 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-        this._step(programName, inputTextures, outputLayer);
+        this._step(programName, inputLayers, outputLayer);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
     };
