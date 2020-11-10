@@ -2,18 +2,29 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GPUProgram = void 0;
 var constants_1 = require("./constants");
+var utils_1 = require("./utils");
 var GPUProgram = /** @class */ (function () {
-    function GPUProgram(gl, errorCallback, vertexShader, fragmentShader, uniforms) {
+    function GPUProgram(name, gl, errorCallback, vertexShader, fragmentShaderSource, uniforms) {
         var _this = this;
         this.uniforms = {};
+        this.shaders = []; // Save ref to shaders so we can deallocate.
+        // Save params.
+        this.name = name;
         this.gl = gl;
         this.errorCallback = errorCallback;
         // Create a program.
         var program = gl.createProgram();
         if (!program) {
-            errorCallback('Unable to init gl program.');
+            errorCallback("Unable to init gl program: " + name + ".");
             return;
         }
+        // Compile shader.
+        var fragmentShader = utils_1.compileShader(gl, errorCallback, fragmentShaderSource, gl.FRAGMENT_SHADER);
+        if (!fragmentShader) {
+            errorCallback("Unable to compile fragment shader for program " + name + ".");
+            return;
+        }
+        this.shaders.push(fragmentShader);
         // Attach the shaders.
         gl.attachShader(program, vertexShader);
         gl.attachShader(program, fragmentShader);
@@ -23,9 +34,10 @@ var GPUProgram = /** @class */ (function () {
         var success = gl.getProgramParameter(program, gl.LINK_STATUS);
         if (!success) {
             // Something went wrong with the link.
-            errorCallback("Program failed to link: " + gl.getProgramInfoLog(program));
+            errorCallback("Program " + name + " failed to link: " + gl.getProgramInfoLog(program));
             return;
         }
+        // Program has been successfully inited.
         this.program = program;
         uniforms === null || uniforms === void 0 ? void 0 : uniforms.forEach(function (uniform) {
             var name = uniform.name, value = uniform.value, dataType = uniform.dataType;
@@ -69,6 +81,10 @@ var GPUProgram = /** @class */ (function () {
     };
     GPUProgram.prototype.setUniform = function (uniformName, value, dataType) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, program = _a.program, uniforms = _a.uniforms;
+        if (!program) {
+            errorCallback("Program not inited.");
+            return;
+        }
         // Set active program.
         gl.useProgram(program);
         var type = this.uniformTypeForValue(value, dataType);
@@ -123,6 +139,20 @@ var GPUProgram = /** @class */ (function () {
     };
     ;
     GPUProgram.prototype.destroy = function () {
+        var _a = this, gl = _a.gl, program = _a.program, shaders = _a.shaders;
+        if (program)
+            gl.deleteProgram(program);
+        // Unbind all data before deleting.
+        for (var i = 0; i < shaders.length; i++) {
+            // From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
+            // This method has no effect if the shader has already been deleted
+            gl.deleteShader(shaders[i]);
+        }
+        shaders.length = 0;
+        // @ts-ignore;
+        delete this.gl;
+        // @ts-ignore;
+        delete this.program;
     };
     return GPUProgram;
 }());

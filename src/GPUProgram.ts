@@ -10,7 +10,7 @@ import {
 	FLOAT_TYPE,
 	INT_TYPE,
 } from './constants';
-import { DataLayer } from './DataLayer';
+import { compileShader } from './utils';
 
 export type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
 export type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
@@ -29,31 +29,44 @@ type Uniform = {
 };
 
 export class GPUProgram {
+	private readonly name: string;
 	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private readonly errorCallback: (message: string) => void;
-	readonly program!: WebGLProgram;
+	readonly program?: WebGLProgram;
 	private readonly uniforms: { [ key: string]: Uniform } = {};
+	private readonly shaders: WebGLShader[] = []; // Save ref to shaders so we can deallocate.
 
 	constructor(
+		name: string,
 		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		errorCallback: (message: string) => void,
 		vertexShader: WebGLShader,
-		fragmentShader: WebGLShader,
+		fragmentShaderSource: string,
 		uniforms?: {
 			name: string,
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
 	) {
+		// Save params.
+		this.name = name;
 		this.gl = gl;
 		this.errorCallback = errorCallback;
 
 		// Create a program.
 		const program = gl.createProgram();
 		if (!program) {
-			errorCallback('Unable to init gl program.');
+			errorCallback(`Unable to init gl program: ${name}.`);
 			return;
 		}
+
+		// Compile shader.
+		const fragmentShader = compileShader(gl, errorCallback, fragmentShaderSource, gl.FRAGMENT_SHADER);
+		if (!fragmentShader) {
+			errorCallback(`Unable to compile fragment shader for program ${name}.`);
+			return;
+		}
+		this.shaders.push(fragmentShader);
 
 		// Attach the shaders.
 		gl.attachShader(program, vertexShader);
@@ -65,16 +78,20 @@ export class GPUProgram {
 		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
 		if (!success) {
 			// Something went wrong with the link.
-			errorCallback(`Program failed to link: ${gl.getProgramInfoLog(program)}`);
+			errorCallback(`Program ${name} failed to link: ${gl.getProgramInfoLog(program)}`);
 			return;
 		}
 
+		// Program has been successfully inited.
 		this.program = program;
+
 		uniforms?.forEach(uniform => {
 			const { name, value, dataType } = uniform;
 			this.setUniform(name, value, dataType);
 		});
 	}
+
+	
 
 	private uniformTypeForValue(
 		value: number | number[],
@@ -119,6 +136,11 @@ export class GPUProgram {
 		dataType: UniformDataType,
 	) {
 		const { gl, errorCallback, program, uniforms } = this;
+
+		if (!program) {
+			errorCallback(`Program not inited.`);
+			return;
+		}
 
 		// Set active program.
 		gl.useProgram(program);
@@ -180,5 +202,18 @@ Error code: ${gl.getError()}.`);
 	};
 
 	destroy() {
+		const { gl, program, shaders } = this;
+		if (program) gl.deleteProgram(program);
+		// Unbind all data before deleting.
+		for (let i = 0; i < shaders.length; i++) {
+			// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
+			// This method has no effect if the shader has already been deleted
+			gl.deleteShader(shaders[i]);
+		}
+		shaders.length = 0;
+		// @ts-ignore;
+		delete this.gl;
+		// @ts-ignore;
+		delete this.program;
 	}
 }

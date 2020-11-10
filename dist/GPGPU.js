@@ -4,6 +4,7 @@ exports.GPGPU = void 0;
 var DefaultVertexShader_1 = require("./kernels/DefaultVertexShader");
 var DataLayer_1 = require("./DataLayer");
 var GPUProgram_1 = require("./GPUProgram");
+var utils_1 = require("./utils");
 var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
 var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
 var unitCirclePoints = [0, 0];
@@ -28,6 +29,9 @@ var GPGPU = /** @class */ (function () {
         // Save callback in case we run into an error.
         var self = this;
         this.errorCallback = function (message) {
+            if (self.errorState) {
+                return;
+            }
             self.errorState = true;
             if (errorCallback)
                 errorCallback(message);
@@ -39,7 +43,7 @@ var GPGPU = /** @class */ (function () {
                 || canvasEl.getContext('webgl', { antialias: false });
             // || canvasEl.getContext('experimental-webgl', {antialias:false}) as RenderingContext;
             if (gl === null) {
-                errorCallback('Unable to initialize WebGL context.');
+                this.errorCallback('Unable to initialize WebGL context.');
                 return;
             }
         }
@@ -77,9 +81,9 @@ var GPGPU = /** @class */ (function () {
         // https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
         // Init a default vertex shader that just passes through screen coords.
-        var defaultVertexShader = this.compileShader(DefaultVertexShader_1.default, gl.VERTEX_SHADER);
+        var defaultVertexShader = utils_1.compileShader(gl, this.errorCallback, DefaultVertexShader_1.default, gl.VERTEX_SHADER);
         if (!defaultVertexShader) {
-            errorCallback('Unable to initialize fullscreen quad vertex shader.');
+            this.errorCallback('Unable to initialize fullscreen quad vertex shader.');
             return;
         }
         this.defaultVertexShader = defaultVertexShader;
@@ -128,42 +132,14 @@ var GPGPU = /** @class */ (function () {
         }
         return !!ext;
     };
-    // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
-    GPGPU.prototype.compileShader = function (shaderSource, shaderType) {
-        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, shaders = _a.shaders;
-        // Create the shader object
-        var shader = gl.createShader(shaderType);
-        if (!shader) {
-            errorCallback('Unable to init gl shader.');
-            return null;
-        }
-        // Set the shader source code.
-        gl.shaderSource(shader, shaderSource);
-        // Compile the shader
-        gl.compileShader(shader);
-        // Check if it compiled
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-        if (!success) {
-            // Something went wrong during compilation - print the error.
-            errorCallback("Could not compile " + (shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex') + "\n\t\t\t\t shader: " + gl.getShaderInfoLog(shader));
-            return null;
-        }
-        shaders.push(shader);
-        return shader;
-    };
-    GPGPU.prototype.initProgram = function (fragmentShaderSource, uniforms) {
+    GPGPU.prototype.initProgram = function (name, fragmentShaderSource, uniforms) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
-        var fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
         // Load fullscreen quad vertex shader by default.
         // const vertexShader = vertexShaderSource ?
         // 	this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
         // 	this.fsQuadVertexShader;
         var vertexShader = this.defaultVertexShader;
-        if (!fragmentShader || !vertexShader) {
-            errorCallback("Unable to init shaders for program.");
-            return;
-        }
-        return new GPUProgram_1.GPUProgram(gl, errorCallback, vertexShader, fragmentShader, uniforms);
+        return new GPUProgram_1.GPUProgram(name, gl, errorCallback, this.defaultVertexShader, fragmentShaderSource, uniforms);
     };
     ;
     GPGPU.prototype.glTextureParameters = function (numChannels, type, writable) {
@@ -335,6 +311,10 @@ var GPGPU = /** @class */ (function () {
     ;
     GPGPU.prototype._step = function (program, inputLayers, outputLayer) {
         var gl = this.gl;
+        // Check if we are in an error state.
+        if (!program.program) {
+            return;
+        }
         gl.useProgram(program.program);
         for (var i = 0; i < inputLayers.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
@@ -435,23 +415,6 @@ var GPGPU = /** @class */ (function () {
     // 	gl.readPixels(xMin, yMin, width, height, gl.RGBA, gl.UNSIGNED_BYTE, array);
     // };
     GPGPU.prototype.reset = function () {
-        // TODO: make sure we are actually deallocating resources here.
-        var _a = this, gl = _a.gl, shaders = _a.shaders, defaultVertexShader = _a.defaultVertexShader;
-        // // Unbind all data before deleting.
-        // Object.keys(programs).forEach(key => {
-        // 	const program = programs[key].program;
-        // 	gl.deleteProgram(program);
-        // 	delete programs[key];
-        // });
-        for (var i = shaders.length - 1; i >= 0; i--) {
-            if (shaders[i] === defaultVertexShader) {
-                continue;
-            }
-            // From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
-            // This method has no effect if the shader has already been deleted
-            gl.deleteShader(shaders[i]);
-            shaders.splice(i, 1);
-        }
     };
     ;
     return GPGPU;

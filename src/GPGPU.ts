@@ -2,6 +2,7 @@ import defaultVertexShaderSource from './kernels/DefaultVertexShader';
 
 import { DataLayer, DataArrayType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
+import { compileShader } from './utils';
 
 type TextureType = 'float16' | 'uint8'; // 'float32'
 type TextureNumChannels = 1 | 2 | 3 | 4;
@@ -54,6 +55,9 @@ export class GPGPU {
 		// Save callback in case we run into an error.
 		const self = this;
 		this.errorCallback = (message: string) => {
+			if (self.errorState) {
+				return;
+			}
 			self.errorState = true;
 			if (errorCallback) errorCallback(message);
 		}
@@ -65,7 +69,7 @@ export class GPGPU {
 				|| canvasEl.getContext('webgl', {antialias:false})  as WebGLRenderingContext | null;
 			// || canvasEl.getContext('experimental-webgl', {antialias:false}) as RenderingContext;
 			if (gl === null) {
-			errorCallback('Unable to initialize WebGL context.');
+			this.errorCallback('Unable to initialize WebGL context.');
 				return;
 			}
 		}
@@ -105,9 +109,9 @@ export class GPGPU {
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
 		// Init a default vertex shader that just passes through screen coords.
-		const defaultVertexShader = this.compileShader(defaultVertexShaderSource, gl.VERTEX_SHADER);
+		const defaultVertexShader = compileShader(gl, this.errorCallback, defaultVertexShaderSource, gl.VERTEX_SHADER);
 		if (!defaultVertexShader) {
-			errorCallback('Unable to initialize fullscreen quad vertex shader.');
+			this.errorCallback('Unable to initialize fullscreen quad vertex shader.');
 			return;
 		}
 		this.defaultVertexShader = defaultVertexShader;
@@ -164,39 +168,8 @@ export class GPGPU {
 		return !!ext;
 	}
 
-	// Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
-	private compileShader(
-		shaderSource: string,
-		shaderType: number,
-	) {
-		const { gl, errorCallback, shaders } = this;
-
-		// Create the shader object
-		const shader = gl.createShader(shaderType);
-		if (!shader) {
-			errorCallback('Unable to init gl shader.');
-			return null;
-		}
-
-		// Set the shader source code.
-		gl.shaderSource(shader, shaderSource);
-
-		// Compile the shader
-		gl.compileShader(shader);
-
-		// Check if it compiled
-		const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-		if (!success) {
-			// Something went wrong during compilation - print the error.
-			errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
-				 shader: ${gl.getShaderInfoLog(shader)}`);
-			return null;
-		}
-		shaders.push(shader);
-		return shader;
-	}
-
 	initProgram(
+		name: string,
 		fragmentShaderSource: string,
 		uniforms?: {
 			name: string,
@@ -207,18 +180,13 @@ export class GPGPU {
 	) {
 		const { gl, errorCallback } = this;
 
-		const fragmentShader = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
 		// Load fullscreen quad vertex shader by default.
 		// const vertexShader = vertexShaderSource ?
 		// 	this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
 		// 	this.fsQuadVertexShader;
 		const vertexShader = this.defaultVertexShader;
-		if (!fragmentShader || !vertexShader) {
-			errorCallback(`Unable to init shaders for program.`);
-			return;
-		}
 		
-		return new GPUProgram(gl, errorCallback, vertexShader, fragmentShader, uniforms);
+		return new GPUProgram(name, gl, errorCallback, this.defaultVertexShader, fragmentShaderSource, uniforms);
 	};
 
 	private glTextureParameters(
@@ -414,6 +382,11 @@ export class GPGPU {
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl } = this;
+		// Check if we are in an error state.
+		if (!program.program) {
+			return;
+		}
+
 		gl.useProgram(program.program);
 		
 		for (let i = 0; i < inputLayers.length; i++) {
@@ -542,23 +515,5 @@ export class GPGPU {
     // };
 
     reset() {
-		// TODO: make sure we are actually deallocating resources here.
-		const { gl, shaders, defaultVertexShader } = this;
-		
-		// // Unbind all data before deleting.
-		// Object.keys(programs).forEach(key => {
-		// 	const program = programs[key].program;
-		// 	gl.deleteProgram(program);
-		// 	delete programs[key];
-		// });
-		for (let i = shaders.length - 1; i >= 0; i--) {
-			if (shaders[i] === defaultVertexShader) {
-				continue;
-			}
-			// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
-			// This method has no effect if the shader has already been deleted
-			gl.deleteShader(shaders[i]);
-			shaders.splice(i, 1);
-		}
     };
 }

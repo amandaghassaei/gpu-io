@@ -19,12 +19,11 @@ export declare class GPGPU {
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private initVertexBuffer;
     private loadExtension;
-    private compileShader;
-    initProgram(fragmentShaderSource: string, uniforms?: {
+    initProgram(name: string, fragmentShaderSource: string, uniforms?: {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
-    }[]): GPUProgram | undefined;
+    }[]): GPUProgram;
     private glTextureParameters;
     initDataLayer(options: {
         width: number;
