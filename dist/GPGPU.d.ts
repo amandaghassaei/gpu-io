@@ -25,7 +25,7 @@ export declare class GPGPU {
         dataType: UniformDataType;
     }[]): GPUProgram;
     private glTextureParameters;
-    initDataLayer(options: {
+    initDataLayer(name: string, options: {
         width: number;
         height: number;
         type: TextureType;

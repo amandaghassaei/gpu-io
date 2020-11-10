@@ -298,6 +298,7 @@ export class GPGPU {
 	}
 
 	initDataLayer(
+		name: string,
 		options:{
 			width: number,
 			height: number,
@@ -313,7 +314,7 @@ export class GPGPU {
 		
 		// Check that data is correct length.
 		if (data && data.length !== width * height * numChannels) {
-			throw new Error(`Invalid data array of size ${data.length} for texture of dimensions ${width} x ${height} x ${numChannels}.`);
+			throw new Error(`Invalid data array of size ${data.length} for DataLayer ${name} of dimensions ${width} x ${height} x ${numChannels}.`);
 		}
 
 		// TODO: Check that data is correct type.
@@ -339,7 +340,7 @@ export class GPGPU {
 					newArray = new Uint8Array(width * height * glNumChannels);
 					break;
 				default:
-					throw new Error(`Unsupported type ${type} for initTexture.`);
+					throw new Error(`Error initing ${name}.  Unsupported type ${type} for GPGPU.initDataLayer.`);
 			}
 			// Fill new data array with old data.
 			for (let i = 0; i < imageSize; i++) {
@@ -350,7 +351,7 @@ export class GPGPU {
 			dataResized = newArray;
 		}
 
-		const dataLayer = new DataLayer(gl, {
+		const dataLayer = new DataLayer(name, gl, {
 			width,
 			height,
 			glInternalFormat,

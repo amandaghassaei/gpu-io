@@ -6,11 +6,12 @@ export type DataLayerBuffer = {
 }
 
 export class DataLayer {
+	private readonly name: string;
+	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
+	private readonly errorCallback: (message: string) => void;
 	private bufferIndex = 0;
 	readonly numBuffers;
 	private readonly buffers: DataLayerBuffer[] = [];
-	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
-	private readonly errorCallback: (message: string) => void;
 	private width: number;
 	private height: number;
 	private readonly glInternalFormat: number;
@@ -19,6 +20,7 @@ export class DataLayer {
 	private readonly writable: boolean;
 
 	constructor(
+		name: string,
 		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		options: {
 			width: number,
@@ -32,12 +34,14 @@ export class DataLayer {
 		numBuffers: number,
 		writable: boolean,
 	) {
-		// check input parameters.
+		// Save params.
+		this.name = name;
+		this.gl = gl;
+		this.errorCallback = errorCallback;
 		if (numBuffers < 0 || numBuffers % 1 !== 0) {
-			throw new Error(`Invalid numBuffers: ${numBuffers}, must be positive integer.`);
+			throw new Error(`Invalid numBuffers: ${numBuffers} for DataLayer ${this.name}, must be positive integer.`);
 		}
 		this.numBuffers = numBuffers;
-
 		// Save options.
 		this.width = options.width;
 		this.height = options.height;
@@ -46,9 +50,7 @@ export class DataLayer {
 		this.glType = options.glType;
 		this.writable = writable;
 
-		// Save ref to gl for later.
-		this.gl = gl;
-		this.errorCallback = errorCallback;
+		
 
 		this.initBuffers(options.data)
 	}
@@ -59,7 +61,7 @@ export class DataLayer {
 		for (let i = 0; i < numBuffers; i++) {
 			const texture = gl.createTexture();
 			if (!texture) {
-				errorCallback(`Could not init texture: ${gl.getError()}.`);
+				errorCallback(`Could not init texture for DataLayer ${this.name}: ${gl.getError()}.`);
 				return;
 			}
 			gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -81,7 +83,7 @@ export class DataLayer {
 				// Init a framebuffer for this texture so we can write to it.
 				const framebuffer = gl.createFramebuffer();
 				if (!framebuffer) {
-					errorCallback(`Could not init framebuffer: ${gl.getError()}.`);
+					errorCallback(`Could not init framebuffer for DataLayer ${this.name}: ${gl.getError()}.`);
 					return;
 				}
 				gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -90,7 +92,7 @@ export class DataLayer {
 
 				const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 				if(status != gl.FRAMEBUFFER_COMPLETE){
-					errorCallback(`Invalid status for framebuffer: ${status}.`);
+					errorCallback(`Invalid status for framebuffer for DataLayer ${this.name}: ${status}.`);
 				}
 
 				// Add framebuffer.
@@ -108,7 +110,7 @@ export class DataLayer {
 
 	getLastStateTexture() {
 		if (this.numBuffers === 1) {
-			throw new Error('Calling getLastState on DataLayer with 1 buffer, no last state available.');
+			throw new Error(`Calling getLastState on DataLayer ${this.name} with 1 buffer, no last state available.`);
 		}
 		return this.buffers[this.bufferIndex].texture;
 	}
@@ -119,7 +121,7 @@ export class DataLayer {
 		this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
 		const { framebuffer } = this.buffers[this.bufferIndex];
 		if (!framebuffer) {
-			throw new Error('This DataLayer is not writable.');
+			throw new Error(`DataLayer ${this.name} is not writable.`);
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}

@@ -4,18 +4,19 @@ export declare type DataLayerBuffer = {
     framebuffer?: WebGLFramebuffer;
 };
 export declare class DataLayer {
+    private readonly name;
+    private readonly gl;
+    private readonly errorCallback;
     private bufferIndex;
     readonly numBuffers: number;
     private readonly buffers;
-    private readonly gl;
-    private readonly errorCallback;
     private width;
     private height;
     private readonly glInternalFormat;
     private readonly glFormat;
     private readonly glType;
     private readonly writable;
-    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, options: {
+    constructor(name: string, gl: WebGLRenderingContext | WebGL2RenderingContext, options: {
         width: number;
         height: number;
         glInternalFormat: number;

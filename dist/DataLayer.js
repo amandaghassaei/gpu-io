@@ -2,12 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataLayer = void 0;
 var DataLayer = /** @class */ (function () {
-    function DataLayer(gl, options, errorCallback, numBuffers, writable) {
+    function DataLayer(name, gl, options, errorCallback, numBuffers, writable) {
         this.bufferIndex = 0;
         this.buffers = [];
-        // check input parameters.
+        // Save params.
+        this.name = name;
+        this.gl = gl;
+        this.errorCallback = errorCallback;
         if (numBuffers < 0 || numBuffers % 1 !== 0) {
-            throw new Error("Invalid numBuffers: " + numBuffers + ", must be positive integer.");
+            throw new Error("Invalid numBuffers: " + numBuffers + " for DataLayer " + this.name + ", must be positive integer.");
         }
         this.numBuffers = numBuffers;
         // Save options.
@@ -17,9 +20,6 @@ var DataLayer = /** @class */ (function () {
         this.glFormat = options.glFormat;
         this.glType = options.glType;
         this.writable = writable;
-        // Save ref to gl for later.
-        this.gl = gl;
-        this.errorCallback = errorCallback;
         this.initBuffers(options.data);
     }
     DataLayer.prototype.initBuffers = function (data) {
@@ -28,7 +28,7 @@ var DataLayer = /** @class */ (function () {
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
             if (!texture) {
-                errorCallback("Could not init texture: " + gl.getError() + ".");
+                errorCallback("Could not init texture for DataLayer " + this.name + ": " + gl.getError() + ".");
                 return;
             }
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -46,7 +46,7 @@ var DataLayer = /** @class */ (function () {
                 // Init a framebuffer for this texture so we can write to it.
                 var framebuffer = gl.createFramebuffer();
                 if (!framebuffer) {
-                    errorCallback("Could not init framebuffer: " + gl.getError() + ".");
+                    errorCallback("Could not init framebuffer for DataLayer " + this.name + ": " + gl.getError() + ".");
                     return;
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -54,7 +54,7 @@ var DataLayer = /** @class */ (function () {
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
                 var status_1 = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
                 if (status_1 != gl.FRAMEBUFFER_COMPLETE) {
-                    errorCallback("Invalid status for framebuffer: " + status_1 + ".");
+                    errorCallback("Invalid status for framebuffer for DataLayer " + this.name + ": " + status_1 + ".");
                 }
                 // Add framebuffer.
                 buffer.framebuffer = framebuffer;
@@ -68,7 +68,7 @@ var DataLayer = /** @class */ (function () {
     };
     DataLayer.prototype.getLastStateTexture = function () {
         if (this.numBuffers === 1) {
-            throw new Error('Calling getLastState on DataLayer with 1 buffer, no last state available.');
+            throw new Error("Calling getLastState on DataLayer " + this.name + " with 1 buffer, no last state available.");
         }
         return this.buffers[this.bufferIndex].texture;
     };
@@ -78,7 +78,7 @@ var DataLayer = /** @class */ (function () {
         this.bufferIndex = (++this.bufferIndex) % this.numBuffers;
         var framebuffer = this.buffers[this.bufferIndex].framebuffer;
         if (!framebuffer) {
-            throw new Error('This DataLayer is not writable.');
+            throw new Error("DataLayer " + this.name + " is not writable.");
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     };

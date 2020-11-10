@@ -244,14 +244,14 @@ var GPGPU = /** @class */ (function () {
             glNumChannels: glNumChannels,
         };
     };
-    GPGPU.prototype.initDataLayer = function (options, writable, numBuffers) {
+    GPGPU.prototype.initDataLayer = function (name, options, writable, numBuffers) {
         if (writable === void 0) { writable = false; }
         if (numBuffers === void 0) { numBuffers = 1; }
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         var data = options.data, width = options.width, height = options.height, type = options.type, numChannels = options.numChannels;
         // Check that data is correct length.
         if (data && data.length !== width * height * numChannels) {
-            throw new Error("Invalid data array of size " + data.length + " for texture of dimensions " + width + " x " + height + " x " + numChannels + ".");
+            throw new Error("Invalid data array of size " + data.length + " for DataLayer " + name + " of dimensions " + width + " x " + height + " x " + numChannels + ".");
         }
         // TODO: Check that data is correct type.
         // if (data && type === 'float16') {
@@ -274,7 +274,7 @@ var GPGPU = /** @class */ (function () {
                     newArray = new Uint8Array(width * height * glNumChannels);
                     break;
                 default:
-                    throw new Error("Unsupported type " + type + " for initTexture.");
+                    throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GPGPU.initDataLayer.");
             }
             // Fill new data array with old data.
             for (var i = 0; i < imageSize; i++) {
@@ -284,7 +284,7 @@ var GPGPU = /** @class */ (function () {
             }
             dataResized = newArray;
         }
-        var dataLayer = new DataLayer_1.DataLayer(gl, {
+        var dataLayer = new DataLayer_1.DataLayer(name, gl, {
             width: width,
             height: height,
             glInternalFormat: glInternalFormat,
