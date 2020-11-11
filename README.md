@@ -25,7 +25,8 @@ Theoretically, this library should be compatible with threejs and even be able t
 
 ```
 const renderer = new WebGLRenderer();
-// Use renderer.autoClear = false if you want to overlay threejs stuff on top of things rendered to the screen from gpgpu.
+// Use renderer.autoClear = false if you want to overlay threejs stuff on top
+// of things rendered to the screen from gpgpu.
 renderer.autoClear = false;
 
 const gl = renderer.getContext();
