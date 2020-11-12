@@ -2,7 +2,7 @@
 
 GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of spatially-distributed state (such as 2D physics simulations or cellular automata).  It *will* also grow to include performing operations on large 1D arrays of data as well (via transform feedback with a fallback to a fragment shader implementation).
 
-It supports rendering directly to the screen and handling mouse/touch interactions.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region.  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on most mobile or older browsers.
+This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on most mobile or older browsers.
 
 **This repo is under active development, really only posted here for internal use right now, but will have a more official release soon.  As it stands, the API may (and probably will) change at any moment.**
 
