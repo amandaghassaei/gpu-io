@@ -36,13 +36,11 @@ var DataLayer = /** @class */ (function () {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         // TODO: need this for modern browsers?
         if (type === 'float16') {
-            var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
+            var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true) ||
+                extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
             if (!extension) {
-                var extension_1 = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
-                if (!extension_1) {
-                    //TODO: add a fallback that does this filtering in the frag shader.
-                    filter = 'NEAREST';
-                }
+                //TODO: add a fallback that does this filtering in the frag shader.
+                filter = 'NEAREST';
             }
         }
         if (type === 'float32') {

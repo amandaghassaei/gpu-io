@@ -24,7 +24,7 @@ exports.EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 function getExtension(gl, extensionName, errorCallback, optional) {
     if (optional === void 0) { optional = false; }
     // Check if we've already loaded the extension.
-    if (extensions[extensionName])
+    if (extensions[extensionName] !== undefined)
         return extensions[extensionName];
     var extension;
     try {
@@ -37,6 +37,7 @@ function getExtension(gl, extensionName, errorCallback, optional) {
         console.log("Loaded extension: " + extensionName + ".");
     }
     else {
+        extensions[extensionName] = false; // Cache the bad extension lookup.
         console.warn("Unsupported " + (optional ? 'optional ' : '') + "extension: " + extensionName + ".");
     }
     // If the extension is not optional, throw error.

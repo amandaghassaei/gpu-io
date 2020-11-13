@@ -27,7 +27,7 @@ export function getExtension(
 	optional = false,
 ) {
 	// Check if we've already loaded the extension.
-	if (extensions[extensionName]) return extensions[extensionName];
+	if (extensions[extensionName] !== undefined) return extensions[extensionName];
 
 	let extension;
 	try {
@@ -38,6 +38,7 @@ export function getExtension(
 		extensions[extensionName] = extension;
 		console.log(`Loaded extension: ${extensionName}.`);
 	} else {
+		extensions[extensionName] = false; // Cache the bad extension lookup.
 		console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extensionName}.`);
 	}
 	// If the extension is not optional, throw error.

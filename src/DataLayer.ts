@@ -92,13 +92,12 @@ export class DataLayer {
 
 		// TODO: need this for modern browsers?
 		if (type === 'float16') {
-			const extension = getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
+			const extension = 
+				getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true) ||
+				getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
-				const extension = getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
-				if (!extension) {
-					//TODO: add a fallback that does this filtering in the frag shader.
-					filter = 'NEAREST';
-				}
+				//TODO: add a fallback that does this filtering in the frag shader.
+				filter = 'NEAREST';
 			}
 		} if (type === 'float32') {
 			const extension = getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
