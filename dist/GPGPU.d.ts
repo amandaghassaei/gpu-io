@@ -1,4 +1,4 @@
-import { DataLayer, DataArrayType } from './DataLayer';
+import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 declare type TextureType = 'float16' | 'uint8';
 declare type TextureNumChannels = 1 | 2 | 3 | 4;
@@ -19,19 +19,20 @@ export declare class GPGPU {
     private readonly linearFilterEnabled;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private initVertexBuffer;
-    private loadExtension;
     initProgram(name: string, fragmentShaderSource: string, uniforms?: {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
     }[]): GPUProgram;
-    private glTextureParameters;
     initDataLayer(name: string, options: {
         width: number;
         height: number;
         type: TextureType;
         numChannels: TextureNumChannels;
-        data?: DataArrayType;
+        data?: DataLayerArrayType;
+        filter?: DataLayerFilterType;
+        wrapS?: DataLayerWrapType;
+        wrapT?: DataLayerWrapType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
     onResize(canvasEl: HTMLCanvasElement): void;
     private drawSetup;

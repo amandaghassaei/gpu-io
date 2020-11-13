@@ -1,8 +1,8 @@
 import defaultVertexShaderSource from './kernels/DefaultVertexShader';
 import passThroughShaderSource from './kernels/PassThroughShader';
-import { DataLayer, DataArrayType } from './DataLayer';
+import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
-import { compileShader } from './utils';
+import { compileShader, isWebGL2 } from './utils';
 
 type TextureType = 'float16' | 'uint8'; // 'float32'
 type TextureNumChannels = 1 | 2 | 3 | 4;
@@ -19,10 +19,7 @@ for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 }
 const circlePositions = new Float32Array(unitCirclePoints);
 
-// Store extension names as constants.
-const OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
-const OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
-const EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
+
 
 export class GPGPU {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
@@ -74,7 +71,7 @@ export class GPGPU {
 				return;
 			}
 		}
-		this.isWebGL2 = !!(gl as WebGL2RenderingContext).HALF_FLOAT;
+		this.isWebGL2 = isWebGL2(gl);
 		if (this.isWebGL2) {
 			console.log('Using WebGL 2.0 context.');
 		} else {
@@ -83,28 +80,8 @@ export class GPGPU {
 		this.gl = gl;
 
 		// GL setup.
-		// Load extensions.
-		// TODO: load these extensions as needed.
-		if (this.isWebGL2) {
-			// EXT_COLOR_BUFFER_FLOAT adds ability to render to a variety of floating pt textures.
-			// https://developer.mozilla.org/en-US/docs/Web/API/EXT_color_buffer_float
-			// https://stackoverflow.com/questions/34262493/framebuffer-incomplete-attachment-for-texture-with-internal-format
-			// https://stackoverflow.com/questions/36109347/framebuffer-incomplete-attachment-only-happens-on-android-w-firefox
-			this.loadExtension(EXT_COLOR_BUFFER_FLOAT);
-		} else {
-			// https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_half_float
-			// Half float is supported by modern mobile browsers, float not yet supported.
-			// Half float is provided by default for Webgl2 contexts.
-			// This extension implicitly enables the EXT_color_buffer_half_float extension (if supported), which allows rendering to 16-bit floating point formats.
-			this.loadExtension(OES_TEXTURE_HALF_FLOAT);
-		}
-		// Load optional extensions.
-		// TODO: need this for webgl2?
-		this.linearFilterEnabled = this.loadExtension(OES_TEXTURE_HAlF_FLOAT_LINEAR, true);
-	
 		// Disable depth testing globally.
 		gl.disable(gl.DEPTH_TEST);
-
 		// Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
 		// https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
@@ -156,28 +133,6 @@ export class GPGPU {
 		return buffer;
 	}
 
-	private loadExtension(
-		extension: string,
-		optional = false,
-	) {
-		const { extensions, gl, errorCallback } = this;
-		let ext;
-		try {
-			ext = gl.getExtension(extension);
-		} catch (e) {}
-		if (ext) {
-			extensions[extension] = ext;
-			console.log(`Loaded extension: ${extension}.`);
-		} else {
-			console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extension}.`);
-		}
-		// If the extension is not optional, throw error.
-		if (!ext && !optional) {
-			errorCallback(`Required extension unsupported by this device / browser: ${extension}.`);
-		}
-		return !!ext;
-	}
-
 	initProgram(
 		name: string,
 		fragmentShaderSource: string,
@@ -193,119 +148,9 @@ export class GPGPU {
 		// Load fullscreen quad vertex shader by default.
 		// const vertexShader = vertexShaderSource ?
 		// 	this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
-		// 	this.fsQuadVertexShader;
-		const vertexShader = this.defaultVertexShader;
-		
+		// 	this.fsQuadVertexShader;		
 		return new GPUProgram(name, gl, errorCallback, this.defaultVertexShader, fragmentShaderSource, uniforms);
 	};
-
-	private glTextureParameters(
-		numChannels: TextureNumChannels,
-		type: TextureType,
-		writable: boolean,
-	) {
-		// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
-		const { gl, isWebGL2, extensions } = this;
-		let glType: number | undefined, glFormat: number | undefined, glInternalFormat: number | undefined, glNumChannels: number | undefined;
-		if (isWebGL2) {
-			glNumChannels = numChannels;
-			// https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
-			// The sized internal format RGB16F is not color-renderable for some reason.
-			// If numChannels == 3 for a writable texture, use RGBA instead.
-			if (numChannels === 3 && writable) {
-				glNumChannels = 4;
-			}
-			switch (glNumChannels) {
-				case 1:
-					glFormat = (gl as WebGL2RenderingContext).RED;
-					break;
-				case 2:
-					glFormat = (gl as WebGL2RenderingContext).RG;
-					break;
-				case 3:
-					glFormat = gl.RGB;
-					break;
-				case 4:
-					glFormat = gl.RGBA;
-					break;
-			}
-			switch (type) {
-				case 'float16':
-					glType = (gl as WebGL2RenderingContext).HALF_FLOAT;
-					switch (glNumChannels) {
-						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R16F;
-							break;
-						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG16F;
-							break;
-						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB16F;
-							break;
-						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16F;
-							break;
-					}
-					break;
-				case 'uint8':
-					glType = gl.UNSIGNED_BYTE;
-					switch (glNumChannels) {
-						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8;
-							break;
-						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
-							break;
-						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8;
-							break;
-						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8;
-							break;
-					}
-					break;
-			}
-		} else {
-			switch (numChannels) {
-				// TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
-				case 1:
-				case 2:
-				case 3:
-					glFormat = gl.RGB;
-					glInternalFormat = gl.RGB;
-					glNumChannels = 3;
-					break;
-				case 4:
-					glFormat = gl.RGBA;
-					glInternalFormat = gl.RGBA;
-					glNumChannels = 4;
-					break;
-			}
-			switch (type) {
-				case 'float16':
-					glType = extensions[OES_TEXTURE_HALF_FLOAT].HALF_FLOAT_OES as number;
-					break;
-				case 'uint8':
-					glType = gl.UNSIGNED_BYTE;
-					break;
-			}
-		}
-
-		// Check for missing params.
-		if (glType === undefined || glFormat === undefined || glInternalFormat === undefined) {
-			throw new Error(`Invalid type: ${type} or numChannels ${numChannels}.`);
-		}
-		if (glNumChannels === undefined || numChannels < 1 || numChannels > 4) {
-			throw new Error(`Invalid numChannels: ${numChannels}.`);
-		}
-
-		return {
-			glFormat,
-			glInternalFormat,
-			glType,
-			glNumChannels,
-		};
-	}
 
 	initDataLayer(
 		name: string,
@@ -314,63 +159,16 @@ export class GPGPU {
 			height: number,
 			type: TextureType,
 			numChannels: TextureNumChannels,
-			data?: DataArrayType,
+			data?: DataLayerArrayType,
+			filter?: DataLayerFilterType,
+			wrapS?: DataLayerWrapType,
+			wrapT?: DataLayerWrapType,
 		},
 		writable = false,
 		numBuffers = 1,
 	) {
 		const { gl, errorCallback } = this;
-		const { data, width, height, type, numChannels } = options;
-		
-		// Check that data is correct length.
-		if (data && data.length !== width * height * numChannels) {
-			throw new Error(`Invalid data array of size ${data.length} for DataLayer ${name} of dimensions ${width} x ${height} x ${numChannels}.`);
-		}
-
-		// TODO: Check that data is correct type.
-		// if (data && type === 'float16') {
-		// 	// // Since there is no Float16TypedArray, we must us Uint16TypedArray
-		// 	// const float16Array = new Int16Array(data.length);
-		// 	// for (let i = 0; i < data.length; i++) {
-		// 	// }
-		// }
-
-		// Get texture params.
-		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
-		const { glFormat, glInternalFormat, glNumChannels, glType } = this.glTextureParameters(numChannels, type, writable);
-
-		// Check that data is correct length.
-		// This only happens for webgl 1.0 contexts.
-		let dataResized = data;
-		if (data && numChannels !== glNumChannels) {
-			const imageSize = width * height;
-			let newArray: DataArrayType;
-			switch (type) {
-				case 'uint8':
-					newArray = new Uint8Array(width * height * glNumChannels);
-					break;
-				default:
-					throw new Error(`Error initing ${name}.  Unsupported type ${type} for GPGPU.initDataLayer.`);
-			}
-			// Fill new data array with old data.
-			for (let i = 0; i < imageSize; i++) {
-				for (let j = 0; j < numChannels; j++) {
-					newArray[glNumChannels * i + j] = data[i * numChannels + j];
-				}
-			}
-			dataResized = newArray;
-		}
-
-		const dataLayer = new DataLayer(name, gl, {
-			width,
-			height,
-			glInternalFormat,
-			glFormat,
-			glType,
-			data: dataResized,
-		}, errorCallback, numBuffers, writable);
-
-		return dataLayer;
+		return new DataLayer(name, gl, options, errorCallback, writable, numBuffers);
 	};
 
 	onResize(canvasEl: HTMLCanvasElement) {
@@ -570,8 +368,7 @@ export class GPGPU {
 
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
-		// Flip y axis.
-		program.setUniform('u_translation', [2 * position[0] / width - 1, - 2 * position[1] / height + 1], 'FLOAT');
+		program.setUniform('u_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 
 		// Point attribute to the currently bound VBO.

@@ -28,3 +28,8 @@ export function compileShader(
 	}
 	return shader;
 }
+
+export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
+	// TODO: there is probably a better way to check this.
+	return !!(gl as WebGL2RenderingContext).HALF_FLOAT;
+}
