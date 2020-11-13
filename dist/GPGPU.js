@@ -20,9 +20,7 @@ var GPGPU = /** @class */ (function () {
     // e.g. throw up a modal telling user this will not work on their device.
     errorCallback) {
         if (errorCallback === void 0) { errorCallback = function (message) { throw new Error(message); }; }
-        this.extensions = {};
         this.errorState = false;
-        this.shaders = []; // Keep track of all shaders inited so they can be properly deallocated.
         // Save callback in case we run into an error.
         var self = this;
         this.errorCallback = function (message) {
@@ -44,8 +42,7 @@ var GPGPU = /** @class */ (function () {
                 return;
             }
         }
-        this.isWebGL2 = utils_1.isWebGL2(gl);
-        if (this.isWebGL2) {
+        if (utils_1.isWebGL2(gl)) {
             console.log('Using WebGL 2.0 context.');
         }
         else {
@@ -99,10 +96,6 @@ var GPGPU = /** @class */ (function () {
     };
     GPGPU.prototype.initProgram = function (name, fragmentShaderSource, uniforms) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
-        // Load fullscreen quad vertex shader by default.
-        // const vertexShader = vertexShaderSource ?
-        // 	this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
-        // 	this.fsQuadVertexShader;		
         return new GPUProgram_1.GPUProgram(name, gl, errorCallback, this.defaultVertexShader, fragmentShaderSource, uniforms);
     };
     ;
@@ -270,6 +263,9 @@ var GPGPU = /** @class */ (function () {
     GPGPU.prototype.reset = function () {
     };
     ;
+    GPGPU.prototype.destroy = function () {
+        // TODO: Need to implement this.
+    };
     return GPGPU;
 }());
 exports.GPGPU = GPGPU;

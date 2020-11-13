@@ -1,6 +1,19 @@
-import { FLOAT_TYPE, INT_TYPE } from './constants';
-export declare type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
-export declare type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
+export declare type UniformDataType = 'FLOAT' | 'INT';
+export declare type UniformValueType = number | [
+    number
+] | [
+    number,
+    number
+] | [
+    number,
+    number,
+    number
+] | [
+    number,
+    number,
+    number,
+    number
+];
 export declare class GPUProgram {
     private readonly name;
     private readonly gl;

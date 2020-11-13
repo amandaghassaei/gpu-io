@@ -1,17 +1,23 @@
-import { EXT_COLOR_BUFFER_FLOAT, getExtension, OES_TEXTURE_FLOAT, OES_TEXTURE_FLOAT_LINEAR, OES_TEXTURE_HALF_FLOAT, OES_TEXTURE_HAlF_FLOAT_LINEAR } from './extensions';
+import {
+	getExtension,
+	EXT_COLOR_BUFFER_FLOAT,
+	OES_TEXTURE_FLOAT,
+	OES_TEXTURE_FLOAT_LINEAR,
+	OES_TEXTURE_HALF_FLOAT,
+	OES_TEXTURE_HAlF_FLOAT_LINEAR,
+} from './extensions';
 import { isWebGL2 } from './utils';
 
-export type DataLayerArrayType =  Uint8Array; // Uint16Array
+export type DataLayerArrayType =  Float32Array | Uint8Array;
 export type DataLayerType = 'float32' | 'float16' | 'uint8';
 export type DataLayerNumChannels = 1 | 2 | 3 | 4;
+export type DataLayerFilterType = 'LINEAR' | 'NEAREST';
+export type DataLayerWrapType = 'REPEAT' | 'CLAMP_TO_EDGE' | 'MIRRORED_REPEAT';
 
 export type DataLayerBuffer = {
 	texture: WebGLTexture,
 	framebuffer?: WebGLFramebuffer,
 }
-
-export type DataLayerFilterType = 'LINEAR' | 'NEAREST';
-export type DataLayerWrapType = 'REPEAT' | 'CLAMP_TO_EDGE' | 'MIRRORED_REPEAT';
 
 export class DataLayer {
 	private readonly name: string;
@@ -75,7 +81,6 @@ export class DataLayer {
 			glType,
 			glNumChannels,
 		} = this.getGLTextureParameters();
-
 		this.glInternalFormat = glInternalFormat;
 		this.glFormat = glFormat;
 		this.glType = glType;
@@ -148,11 +153,14 @@ export class DataLayer {
 			const imageSize = width * height;
 			let newArray: DataLayerArrayType;
 			switch (type) {
-				case 'uint8':
-					newArray = new Uint8Array(width * height * glNumChannels);
-					break;
 				case 'float32':
 					newArray = new Float32Array(width * height * glNumChannels);
+					break;
+				// case 'float16':
+				// 	newArray = new Int16Array(width * height * glNumChannels);
+				// 	break;
+				case 'uint8':
+					newArray = new Uint8Array(width * height * glNumChannels);
 					break;
 				default:
 					throw new Error(`Error initing ${name}.  Unsupported type ${type} for GPGPU.initDataLayer.`);
@@ -361,12 +369,12 @@ export class DataLayer {
 		return this.buffers[this.bufferIndex].texture;
 	}
 
-	getLastStateTexture() {
-		if (this.numBuffers === 1) {
-			throw new Error(`Calling getLastState on DataLayer ${this.name} with 1 buffer, no last state available.`);
-		}
-		return this.buffers[this.bufferIndex].texture;
-	}
+	// getLastStateTexture() {
+	// 	if (this.numBuffers === 1) {
+	// 		throw new Error(`Calling getLastState on DataLayer ${this.name} with 1 buffer, no last state available.`);
+	// 	}
+	// 	return this.buffers[this.bufferIndex].texture;
+	// }
 
 	setAsRenderTarget(incrementBufferIndex: boolean) {
 		const { gl } = this;

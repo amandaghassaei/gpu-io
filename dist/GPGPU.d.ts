@@ -1,22 +1,16 @@
-import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerWrapType } from './DataLayer';
+import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumChannels, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
-declare type TextureType = 'float16' | 'uint8';
-declare type TextureNumChannels = 1 | 2 | 3 | 4;
 export declare class GPGPU {
     private readonly gl;
-    private readonly isWebGL2;
-    private readonly extensions;
     private width;
     private height;
     private errorState;
     private readonly errorCallback;
-    private readonly shaders;
     private readonly defaultVertexShader;
     private readonly quadPositionsBuffer;
     private readonly boundaryPositionsBuffer;
     private readonly circlePositionsBuffer;
     private readonly passThroughProgram;
-    private readonly linearFilterEnabled;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private initVertexBuffer;
     initProgram(name: string, fragmentShaderSource: string, uniforms?: {
@@ -27,8 +21,8 @@ export declare class GPGPU {
     initDataLayer(name: string, options: {
         width: number;
         height: number;
-        type: TextureType;
-        numChannels: TextureNumChannels;
+        type: DataLayerType;
+        numChannels: DataLayerNumChannels;
         data?: DataLayerArrayType;
         filter?: DataLayerFilterType;
         wrapS?: DataLayerWrapType;
@@ -45,5 +39,5 @@ export declare class GPGPU {
     radius: number, // radius is in px.
     inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     reset(): void;
+    destroy(): void;
 }
-export {};

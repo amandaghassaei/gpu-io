@@ -1,11 +1,8 @@
 import defaultVertexShaderSource from './kernels/DefaultVertexShader';
 import passThroughShaderSource from './kernels/PassThroughShader';
-import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerWrapType } from './DataLayer';
+import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumChannels, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader, isWebGL2 } from './utils';
-
-type TextureType = 'float16' | 'uint8'; // 'float32'
-type TextureNumChannels = 1 | 2 | 3 | 4;
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
@@ -19,19 +16,13 @@ for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 }
 const circlePositions = new Float32Array(unitCirclePoints);
 
-
-
 export class GPGPU {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
-	private readonly isWebGL2!: boolean;
-	private readonly extensions: { [ key: string ]: any } = {};
 	private width!: number;
 	private height!: number;
 
 	private errorState = false;
 	private readonly errorCallback: (message: string) => void;
-
-	private readonly shaders: WebGLShader[] = []; // Keep track of all shaders inited so they can be properly deallocated.
 	
 	// Some precomputed values.
 	private readonly defaultVertexShader!: WebGLShader;
@@ -39,9 +30,6 @@ export class GPGPU {
 	private readonly boundaryPositionsBuffer!: WebGLBuffer;
 	private readonly circlePositionsBuffer!: WebGLBuffer;
 	private readonly passThroughProgram!: GPUProgram;
-
-	// GL state.
-	private readonly linearFilterEnabled!: boolean;
 
 	constructor(
 		gl: WebGLRenderingContext | WebGL2RenderingContext | null,
@@ -71,8 +59,7 @@ export class GPGPU {
 				return;
 			}
 		}
-		this.isWebGL2 = isWebGL2(gl);
-		if (this.isWebGL2) {
+		if (isWebGL2(gl)) {
 			console.log('Using WebGL 2.0 context.');
 		} else {
 			console.log('Using WebGL 1.0 context.');
@@ -143,12 +130,7 @@ export class GPGPU {
 		}[],
 		// vertexShaderSource?: string,
 	) {
-		const { gl, errorCallback } = this;
-
-		// Load fullscreen quad vertex shader by default.
-		// const vertexShader = vertexShaderSource ?
-		// 	this.compileShader(vertexShaderSource, gl.VERTEX_SHADER) :
-		// 	this.fsQuadVertexShader;		
+		const { gl, errorCallback } = this;	
 		return new GPUProgram(name, gl, errorCallback, this.defaultVertexShader, fragmentShaderSource, uniforms);
 	};
 
@@ -157,8 +139,8 @@ export class GPGPU {
 		options:{
 			width: number,
 			height: number,
-			type: TextureType,
-			numChannels: TextureNumChannels,
+			type: DataLayerType,
+			numChannels: DataLayerNumChannels,
 			data?: DataLayerArrayType,
 			filter?: DataLayerFilterType,
 			wrapS?: DataLayerWrapType,
@@ -382,5 +364,9 @@ export class GPGPU {
     // };
 
     reset() {
-    };
+	};
+	
+	destroy() {
+		// TODO: Need to implement this.
+	}
 }

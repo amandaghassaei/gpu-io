@@ -1,12 +1,12 @@
-export declare type DataLayerArrayType = Uint8Array;
+export declare type DataLayerArrayType = Float32Array | Uint8Array;
 export declare type DataLayerType = 'float32' | 'float16' | 'uint8';
 export declare type DataLayerNumChannels = 1 | 2 | 3 | 4;
+export declare type DataLayerFilterType = 'LINEAR' | 'NEAREST';
+export declare type DataLayerWrapType = 'REPEAT' | 'CLAMP_TO_EDGE' | 'MIRRORED_REPEAT';
 export declare type DataLayerBuffer = {
     texture: WebGLTexture;
     framebuffer?: WebGLFramebuffer;
 };
-export declare type DataLayerFilterType = 'LINEAR' | 'NEAREST';
-export declare type DataLayerWrapType = 'REPEAT' | 'CLAMP_TO_EDGE' | 'MIRRORED_REPEAT';
 export declare class DataLayer {
     private readonly name;
     private readonly gl;
@@ -42,7 +42,6 @@ export declare class DataLayer {
     private getGLTextureParameters;
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
-    getLastStateTexture(): WebGLTexture;
     setAsRenderTarget(incrementBufferIndex: boolean): void;
     resize(width: number, height: number, data?: DataLayerArrayType): void;
     private destroyBuffers;

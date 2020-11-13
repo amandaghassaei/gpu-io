@@ -1,8 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GPUProgram = void 0;
-var constants_1 = require("./constants");
 var utils_1 = require("./utils");
+// Uniform types.
+var FLOAT_1D_UNIFORM = '1f';
+var FLOAT_2D_UNIFORM = '2f';
+var FLOAT_3D_UNIFORM = '3f';
+var FLOAT_4D_UNIFORM = '3f';
+var INT_1D_UNIFORM = '1i';
+var INT_2D_UNIFORM = '2i';
+var INT_3D_UNIFORM = '3i';
+var INT_4D_UNIFORM = '3i';
 var GPUProgram = /** @class */ (function () {
     function GPUProgram(name, gl, errorCallback, vertexShader, fragmentShaderSource, uniforms) {
         var _this = this;
@@ -45,33 +53,33 @@ var GPUProgram = /** @class */ (function () {
         });
     }
     GPUProgram.prototype.uniformTypeForValue = function (value, dataType) {
-        if (dataType === constants_1.FLOAT_TYPE) {
+        if (dataType === 'FLOAT') {
             if (!isNaN(value) || value.length === 1) {
-                return constants_1.FLOAT_1D_UNIFORM;
+                return FLOAT_1D_UNIFORM;
             }
             if (value.length === 2) {
-                return constants_1.FLOAT_2D_UNIFORM;
+                return FLOAT_2D_UNIFORM;
             }
             if (value.length === 3) {
-                return constants_1.FLOAT_3D_UNIFORM;
+                return FLOAT_3D_UNIFORM;
             }
             if (value.length === 4) {
-                return constants_1.FLOAT_4D_UNIFORM;
+                return FLOAT_4D_UNIFORM;
             }
             throw new Error("Invalid uniform value: " + value);
         }
-        else if (dataType === constants_1.INT_TYPE) {
+        else if (dataType === 'INT') {
             if (!isNaN(value) || value.length === 1) {
-                return constants_1.INT_1D_UNIFORM;
+                return INT_1D_UNIFORM;
             }
             if (value.length === 2) {
-                return constants_1.INT_2D_UNIFORM;
+                return INT_2D_UNIFORM;
             }
             if (value.length === 3) {
-                return constants_1.INT_3D_UNIFORM;
+                return INT_3D_UNIFORM;
             }
             if (value.length === 4) {
-                return constants_1.INT_4D_UNIFORM;
+                return INT_4D_UNIFORM;
             }
             throw new Error("Invalid uniform value: " + value);
         }
@@ -109,28 +117,28 @@ var GPUProgram = /** @class */ (function () {
         // Set uniform.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
         switch (type) {
-            case constants_1.FLOAT_1D_UNIFORM:
+            case FLOAT_1D_UNIFORM:
                 gl.uniform1f(location, value);
                 break;
-            case constants_1.FLOAT_2D_UNIFORM:
+            case FLOAT_2D_UNIFORM:
                 gl.uniform2fv(location, value);
                 break;
-            case constants_1.FLOAT_3D_UNIFORM:
+            case FLOAT_3D_UNIFORM:
                 gl.uniform3fv(location, value);
                 break;
-            case constants_1.FLOAT_4D_UNIFORM:
+            case FLOAT_4D_UNIFORM:
                 gl.uniform4fv(location, value);
                 break;
-            case constants_1.INT_1D_UNIFORM:
+            case INT_1D_UNIFORM:
                 gl.uniform1i(location, value);
                 break;
-            case constants_1.INT_2D_UNIFORM:
+            case INT_2D_UNIFORM:
                 gl.uniform2iv(location, value);
                 break;
-            case constants_1.INT_3D_UNIFORM:
+            case INT_3D_UNIFORM:
                 gl.uniform3iv(location, value);
                 break;
-            case constants_1.INT_4D_UNIFORM:
+            case INT_4D_UNIFORM:
                 gl.uniform4iv(location, value);
                 break;
             default:

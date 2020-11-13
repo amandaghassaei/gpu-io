@@ -1,19 +1,22 @@
-import {
-	FLOAT_1D_UNIFORM,
-	FLOAT_2D_UNIFORM,
-	FLOAT_3D_UNIFORM,
-	FLOAT_4D_UNIFORM,
-	INT_1D_UNIFORM,
-	INT_2D_UNIFORM,
-	INT_3D_UNIFORM,
-	INT_4D_UNIFORM,
-	FLOAT_TYPE,
-	INT_TYPE,
-} from './constants';
 import { compileShader } from './utils';
 
-export type UniformDataType = typeof FLOAT_TYPE | typeof INT_TYPE;
-export type UniformValueType = number | [number] | [number, number] | [number, number, number] | [number, number, number, number];
+// Uniform types.
+const FLOAT_1D_UNIFORM = '1f';
+const FLOAT_2D_UNIFORM = '2f';
+const FLOAT_3D_UNIFORM = '3f';
+const FLOAT_4D_UNIFORM = '3f';
+const INT_1D_UNIFORM = '1i';
+const INT_2D_UNIFORM = '2i';
+const INT_3D_UNIFORM = '3i';
+const INT_4D_UNIFORM = '3i';
+
+export type UniformDataType = 'FLOAT' | 'INT';
+export type UniformValueType = 
+	number |
+	[number] |
+	[number, number] |
+	[number, number, number] |
+	[number, number, number, number];
 type UniformType = 
 	typeof FLOAT_1D_UNIFORM |
 	typeof FLOAT_2D_UNIFORM |
@@ -95,7 +98,7 @@ export class GPUProgram {
 		value: number | number[],
 		dataType: UniformDataType,
 	) {
-		if (dataType === FLOAT_TYPE) {
+		if (dataType === 'FLOAT') {
 			if (!isNaN(value as number) || (value as number[]).length === 1) {
 				return FLOAT_1D_UNIFORM;
 			}
@@ -109,7 +112,7 @@ export class GPUProgram {
 				return FLOAT_4D_UNIFORM;
 			}
 			throw new Error(`Invalid uniform value: ${value}`);
-		} else if (dataType === INT_TYPE) {
+		} else if (dataType === 'INT') {
 			if (!isNaN(value as number) || (value as number[]).length === 1) {
 				return INT_1D_UNIFORM;
 			}

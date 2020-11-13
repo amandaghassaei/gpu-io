@@ -86,11 +86,14 @@ var DataLayer = /** @class */ (function () {
             var imageSize = width * height;
             var newArray = void 0;
             switch (type) {
-                case 'uint8':
-                    newArray = new Uint8Array(width * height * glNumChannels);
-                    break;
                 case 'float32':
                     newArray = new Float32Array(width * height * glNumChannels);
+                    break;
+                // case 'float16':
+                // 	newArray = new Int16Array(width * height * glNumChannels);
+                // 	break;
+                case 'uint8':
+                    newArray = new Uint8Array(width * height * glNumChannels);
                     break;
                 default:
                     throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GPGPU.initDataLayer.");
@@ -279,12 +282,12 @@ var DataLayer = /** @class */ (function () {
     DataLayer.prototype.getCurrentStateTexture = function () {
         return this.buffers[this.bufferIndex].texture;
     };
-    DataLayer.prototype.getLastStateTexture = function () {
-        if (this.numBuffers === 1) {
-            throw new Error("Calling getLastState on DataLayer " + this.name + " with 1 buffer, no last state available.");
-        }
-        return this.buffers[this.bufferIndex].texture;
-    };
+    // getLastStateTexture() {
+    // 	if (this.numBuffers === 1) {
+    // 		throw new Error(`Calling getLastState on DataLayer ${this.name} with 1 buffer, no last state available.`);
+    // 	}
+    // 	return this.buffers[this.bufferIndex].texture;
+    // }
     DataLayer.prototype.setAsRenderTarget = function (incrementBufferIndex) {
         var gl = this.gl;
         if (incrementBufferIndex) {
