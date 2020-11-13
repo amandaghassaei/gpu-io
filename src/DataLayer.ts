@@ -90,19 +90,18 @@ export class DataLayer {
 	) {
 		const { gl, errorCallback } = this;
 
-		// TODO: need this for modern browsers?
 		if (type === 'float16') {
 			const extension = 
 				getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true) ||
 				getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
-				//TODO: add a fallback that does this filtering in the frag shader.
+				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = 'NEAREST';
 			}
 		} if (type === 'float32') {
 			const extension = getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
-				//TODO: add a fallback that does this filtering in the frag shader.
+				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = 'NEAREST';
 			}
 		}
@@ -168,12 +167,12 @@ export class DataLayer {
 		}
 
 		// TODO: Check that data is correct type.
-		// if (data && type === 'float16') {
-		// 	// // Since there is no Float16TypedArray, we must us Uint16TypedArray
-		// 	// const float16Array = new Int16Array(data.length);
-		// 	// for (let i = 0; i < data.length; i++) {
-		// 	// }
-		// }
+		if (type === 'float16') {
+			// // Since there is no Float16TypedArray, we must us Uint16TypedArray
+			// const float16Array = new Int16Array(data.length);
+			// for (let i = 0; i < data.length; i++) {
+			// }
+		}
 
 		return dataResized;
 	}

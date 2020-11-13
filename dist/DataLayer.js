@@ -34,19 +34,18 @@ var DataLayer = /** @class */ (function () {
     }
     DataLayer.prototype.checkFilter = function (filter, type) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
-        // TODO: need this for modern browsers?
         if (type === 'float16') {
             var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true) ||
                 extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
             if (!extension) {
-                //TODO: add a fallback that does this filtering in the frag shader.
+                //TODO: add a fallback that does this filtering in the frag shader?.
                 filter = 'NEAREST';
             }
         }
         if (type === 'float32') {
             var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
             if (!extension) {
-                //TODO: add a fallback that does this filtering in the frag shader.
+                //TODO: add a fallback that does this filtering in the frag shader?.
                 filter = 'NEAREST';
             }
         }
@@ -105,12 +104,12 @@ var DataLayer = /** @class */ (function () {
             dataResized = newArray;
         }
         // TODO: Check that data is correct type.
-        // if (data && type === 'float16') {
-        // 	// // Since there is no Float16TypedArray, we must us Uint16TypedArray
-        // 	// const float16Array = new Int16Array(data.length);
-        // 	// for (let i = 0; i < data.length; i++) {
-        // 	// }
-        // }
+        if (type === 'float16') {
+            // // Since there is no Float16TypedArray, we must us Uint16TypedArray
+            // const float16Array = new Int16Array(data.length);
+            // for (let i = 0; i < data.length; i++) {
+            // }
+        }
         return dataResized;
     };
     DataLayer.prototype.getGLTextureParameters = function () {

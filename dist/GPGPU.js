@@ -127,22 +127,22 @@ var GPGPU = /** @class */ (function () {
         this.height = height;
     };
     ;
-    GPGPU.prototype.drawSetup = function (program, fullscreenRender, inputLayers, outputLayer) {
+    GPGPU.prototype.setDrawInputsAndOutputs = function (program, fullscreenRender, inputLayers, outputLayer) {
         var gl = this.gl;
         // Check if we are in an error state.
         if (!program.program) {
             return;
         }
         // CAUTION: the order of these next few lines in important.
-        // TODO: this is kind of fussy.
-        // Get textures before we have set the render target (this can modify some internal state).
+        // Get a shallow copy of current textures.
+        // This line must come before this.setOutput() as it can modify some internal state.
         var inputTextures = inputLayers.map(function (layer) { return layer.getCurrentStateTexture(); });
         // Set output framebuffer.
         this.setOutput(fullscreenRender, inputLayers, outputLayer);
         // Set current program.
         gl.useProgram(program.program);
         // Set input textures.
-        for (var i = 0; i < inputLayers.length; i++) {
+        for (var i = 0; i < inputTextures.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
             gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
         }
@@ -174,6 +174,14 @@ var GPGPU = /** @class */ (function () {
         outputLayer.setAsRenderTarget(false);
     };
     ;
+    GPGPU.prototype.setPositionAttribute = function (program) {
+        var gl = this.gl;
+        // Point attribute to the currently bound VBO.
+        var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        // Enable the attribute.
+        gl.enableVertexAttribArray(positionLocation);
+    };
     // Step for entire fullscreen quad.
     GPGPU.prototype.step = function (program, inputLayers, outputLayer) {
         if (inputLayers === void 0) { inputLayers = []; }
@@ -183,16 +191,12 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Do setup - this must come first.
-        this.drawSetup(program, true, inputLayers, outputLayer);
+        this.setDrawInputsAndOutputs(program, true, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [1, 1], 'FLOAT');
         program.setUniform('u_translation', [0, 0], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        // Point attribute to the currently bound VBO.
-        var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        // Enable the attribute.
-        gl.enableVertexAttribArray(positionLocation);
+        this.setPositionAttribute(program);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
@@ -205,18 +209,14 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Do setup - this must come first.
-        this.drawSetup(program, false, inputLayers, outputLayer);
+        this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-        // Point attribute to the currently bound VBO.
-        var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        // Enable the attribute.
-        gl.enableVertexAttribArray(positionLocation);
+        this.setPositionAttribute(program);
         // Draw.
         gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
     };
@@ -229,17 +229,13 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Do setup - this must come first.
-        this.drawSetup(program, false, inputLayers, outputLayer);
+        this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        // Point attribute to the currently bound VBO.
-        var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        // Enable the attribute.
-        gl.enableVertexAttribArray(positionLocation);
+        this.setPositionAttribute(program);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
@@ -254,16 +250,12 @@ var GPGPU = /** @class */ (function () {
             return;
         }
         // Do setup - this must come first.
-        this.drawSetup(program, false, inputLayers, outputLayer);
+        this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
         program.setUniform('u_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-        // Point attribute to the currently bound VBO.
-        var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        // Enable the attribute.
-        gl.enableVertexAttribArray(positionLocation);
+        this.setPositionAttribute(program);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
     };

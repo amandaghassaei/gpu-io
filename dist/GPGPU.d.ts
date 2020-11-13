@@ -35,8 +35,9 @@ export declare class GPGPU {
         wrapT?: DataLayerWrapType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
     onResize(canvasEl: HTMLCanvasElement): void;
-    private drawSetup;
+    private setDrawInputsAndOutputs;
     private setOutput;
+    private setPositionAttribute;
     step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
