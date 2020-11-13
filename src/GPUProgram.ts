@@ -91,8 +91,6 @@ export class GPUProgram {
 		});
 	}
 
-	
-
 	private uniformTypeForValue(
 		value: number | number[],
 		dataType: UniformDataType,
@@ -211,9 +209,11 @@ Error code: ${gl.getError()}.`);
 			gl.deleteShader(shaders[i]);
 		}
 		shaders.length = 0;
-		// @ts-ignore;
+		// @ts-ignore
 		delete this.gl;
-		// @ts-ignore;
+		// @ts-ignore
+		delete this.errorCallback;
+		// @ts-ignore
 		delete this.program;
 	}
 }

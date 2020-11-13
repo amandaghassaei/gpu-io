@@ -188,9 +188,9 @@ export class DataLayer {
 		if (isWebGL2(gl)) {
 			glNumChannels = numChannels;
 			// https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
-			// The sized internal format RGB16F is not color-renderable for some reason.
+			// The sized internal format RGB16F and RGB32F is not color-renderable for some reason.
 			// If numChannels == 3 for a writable texture, use RGBA instead.
-			if (numChannels === 3 && writable) {
+			if (numChannels === 3 && writable && (type === 'float32' || type === 'float16')) {
 				glNumChannels = 4;
 			}
 			switch (glNumChannels) {
@@ -208,6 +208,23 @@ export class DataLayer {
 					break;
 			}
 			switch (type) {
+				case 'float32':
+					glType = (gl as WebGL2RenderingContext).FLOAT;
+					switch (glNumChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R32F;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG32F;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB32F;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32F;
+							break;
+					}
+					break;
 				case 'float16':
 					glType = (gl as WebGL2RenderingContext).HALF_FLOAT;
 					switch (glNumChannels) {
@@ -260,6 +277,9 @@ export class DataLayer {
 					break;
 			}
 			switch (type) {
+				case 'float32':
+					glType = gl.FLOAT;
+					break;
 				case 'float16':
 					glType = getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback).HALF_FLOAT_OES as number;
 					break;
@@ -376,7 +396,7 @@ export class DataLayer {
 			if (framebuffer) {
 				gl.deleteFramebuffer(framebuffer);
 			}
-			// @ts-ignore;
+			// @ts-ignore
 			delete buffer.texture;
 			delete buffer.framebuffer;
 		});
@@ -385,7 +405,9 @@ export class DataLayer {
 
 	destroy() {
 		this.destroyBuffers();
-		// @ts-ignore;
+		// @ts-ignore
 		delete this.gl;
+		// @ts-ignore
+		delete this.errorCallback;
 	}
 }

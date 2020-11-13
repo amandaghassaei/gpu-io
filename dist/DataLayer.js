@@ -119,9 +119,9 @@ var DataLayer = /** @class */ (function () {
         if (utils_1.isWebGL2(gl)) {
             glNumChannels = numChannels;
             // https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
-            // The sized internal format RGB16F is not color-renderable for some reason.
+            // The sized internal format RGB16F and RGB32F is not color-renderable for some reason.
             // If numChannels == 3 for a writable texture, use RGBA instead.
-            if (numChannels === 3 && writable) {
+            if (numChannels === 3 && writable && (type === 'float32' || type === 'float16')) {
                 glNumChannels = 4;
             }
             switch (glNumChannels) {
@@ -139,6 +139,23 @@ var DataLayer = /** @class */ (function () {
                     break;
             }
             switch (type) {
+                case 'float32':
+                    glType = gl.FLOAT;
+                    switch (glNumChannels) {
+                        case 1:
+                            glInternalFormat = gl.R32F;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG32F;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB32F;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA32F;
+                            break;
+                    }
+                    break;
                 case 'float16':
                     glType = gl.HALF_FLOAT;
                     switch (glNumChannels) {
@@ -192,6 +209,9 @@ var DataLayer = /** @class */ (function () {
                     break;
             }
             switch (type) {
+                case 'float32':
+                    glType = gl.FLOAT;
+                    break;
                 case 'float16':
                     glType = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HALF_FLOAT, errorCallback).HALF_FLOAT_OES;
                     break;
@@ -291,7 +311,7 @@ var DataLayer = /** @class */ (function () {
             if (framebuffer) {
                 gl.deleteFramebuffer(framebuffer);
             }
-            // @ts-ignore;
+            // @ts-ignore
             delete buffer.texture;
             delete buffer.framebuffer;
         });
@@ -299,8 +319,10 @@ var DataLayer = /** @class */ (function () {
     };
     DataLayer.prototype.destroy = function () {
         this.destroyBuffers();
-        // @ts-ignore;
+        // @ts-ignore
         delete this.gl;
+        // @ts-ignore
+        delete this.errorCallback;
     };
     return DataLayer;
 }());

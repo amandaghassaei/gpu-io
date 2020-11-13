@@ -11,7 +11,7 @@ exports.OES_TEXTURE_FLOAT = 'OES_texture_float';
 // Half float is provided by default for Webgl2 contexts.
 // This extension implicitly enables the EXT_color_buffer_half_float extension (if supported), which allows rendering to 16-bit floating point formats.
 exports.OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
-// TODO: Seems like linear filtering of floats is supported in many browsers without these extensions.
+// TODO: Seems like linear filtering of floats may be supported in some browsers without these extensions?
 // https://www.khronos.org/registry/OpenGL/extensions/OES/OES_texture_float_linear.txt
 exports.OES_TEXTURE_FLOAT_LINEAR = 'OES_texture_float_linear';
 exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';

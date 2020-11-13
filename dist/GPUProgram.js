@@ -149,9 +149,11 @@ var GPUProgram = /** @class */ (function () {
             gl.deleteShader(shaders[i]);
         }
         shaders.length = 0;
-        // @ts-ignore;
+        // @ts-ignore
         delete this.gl;
-        // @ts-ignore;
+        // @ts-ignore
+        delete this.errorCallback;
+        // @ts-ignore
         delete this.program;
     };
     return GPUProgram;

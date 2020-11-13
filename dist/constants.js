@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.INT_TYPE = exports.FLOAT_TYPE = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = void 0;
+// Uniform types.
 exports.FLOAT_1D_UNIFORM = '1f';
 exports.FLOAT_2D_UNIFORM = '2f';
 exports.FLOAT_3D_UNIFORM = '3f';
