@@ -24,7 +24,7 @@ function compileShader(gl, errorCallback, shaderSource, shaderType) {
 }
 exports.compileShader = compileShader;
 function isWebGL2(gl) {
-    // TODO: there is probably a better way to check this.
+    // TODO: I'm sure there is a better way to check this.
     return !!gl.HALF_FLOAT;
 }
 exports.isWebGL2 = isWebGL2;

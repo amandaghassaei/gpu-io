@@ -20,7 +20,7 @@ var DataLayer = /** @class */ (function () {
         this.height = options.height;
         // Check that gl will support the datatype.
         this.type = this.checkType(options.type);
-        this.numChannels = options.numChannels;
+        this.numComponents = options.numComponents;
         this.writable = writable;
         this.filter = this.checkFilter(options.filter ? options.filter : 'LINEAR', this.type);
         this.wrapS = gl[options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE'];
@@ -54,15 +54,17 @@ var DataLayer = /** @class */ (function () {
     DataLayer.prototype.checkType = function (type) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         // Check if float32 supported.
-        if (!utils_1.isWebGL2(gl) && type === 'float32') {
-            var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT, errorCallback, true);
-            if (!extension) {
-                type = 'float16';
+        if (!utils_1.isWebGL2(gl)) {
+            if (type === 'float32') {
+                var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT, errorCallback, true);
+                if (!extension) {
+                    type = 'float16';
+                }
             }
-        }
-        // Must support at least half float if using a float type.
-        if (!utils_1.isWebGL2(gl) && type === 'float16') {
-            extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HALF_FLOAT, errorCallback);
+            // Must support at least half float if using a float type.
+            if (type === 'float16') {
+                extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HALF_FLOAT, errorCallback);
+            }
         }
         // Load additional extensions if needed.
         if (utils_1.isWebGL2(gl) && (type === 'float16' || type === 'float32')) {
@@ -70,61 +72,103 @@ var DataLayer = /** @class */ (function () {
         }
         return type;
     };
-    DataLayer.prototype.checkDataArray = function (data) {
-        if (!data) {
+    DataLayer.prototype.checkDataArray = function (_data) {
+        if (!_data) {
             return;
         }
+        var _a = this, width = _a.width, height = _a.height, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, type = _a.type, name = _a.name;
         // Check that data is correct length.
-        var _a = this, width = _a.width, height = _a.height, numChannels = _a.numChannels, glNumChannels = _a.glNumChannels, type = _a.type, name = _a.name;
         // First check for a user error.
-        if (data.length !== width * height * numChannels) {
-            throw new Error("Invalid data length " + data.length + " for DataLayer " + name + " of size " + width + "x" + height + "x" + numChannels + ".");
+        if (_data.length !== width * height * numComponents) {
+            throw new Error("Invalid data length " + _data.length + " for DataLayer " + name + " of size " + width + "x" + height + "x" + numComponents + ".");
         }
-        // Then check if we are using glNumChannels !== numChannels.
-        var dataResized = data;
+        // Check that data is correct type.
+        var invalidTypeFound = false;
+        switch (type) {
+            case 'float32':
+                invalidTypeFound = invalidTypeFound || _data.name !== 'Float32Array';
+                break;
+            case 'float16':
+                // Since there is no Float16TypedArray, we must us Uint16TypedArray
+                // TODO: how to cast as Int16Array.
+                throw new Error('setting float16 from data not supported yet.');
+                break;
+            case 'uint8':
+                invalidTypeFound = invalidTypeFound || _data.name !== 'Uint8Array';
+                break;
+            case 'int8':
+                invalidTypeFound = invalidTypeFound || _data.name !== 'Int8Array';
+                break;
+            case 'uint16':
+                invalidTypeFound = invalidTypeFound || _data.name !== 'Uint16Array';
+                break;
+            case 'int16':
+                invalidTypeFound = invalidTypeFound || _data.name !== 'Int16Array';
+                break;
+            case 'uint32':
+                invalidTypeFound = invalidTypeFound || _data.name !== 'Uint32Array';
+                break;
+            case 'int32':
+                invalidTypeFound = invalidTypeFound || _data.name !== 'Int32Array';
+                break;
+            default:
+                throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GPGPU.initDataLayer.");
+        }
+        if (invalidTypeFound) {
+            throw new Error("Invalid TypedArray of type " + _data.name + " supplied to DataLayer " + name + " of type " + type + ".");
+        }
+        // Then check if we are using glNumChannels !== numComponents.
+        var data = _data;
         if (data.length !== width * height * glNumChannels) {
             var imageSize = width * height;
-            var newArray = void 0;
             switch (type) {
                 case 'float32':
-                    newArray = new Float32Array(width * height * glNumChannels);
+                    data = new Float32Array(width * height * glNumChannels);
                     break;
                 // case 'float16':
-                // 	newArray = new Int16Array(width * height * glNumChannels);
+                // 	// 	newArray = new Int16Array(width * height * glNumChannels);
+                // 	throw new Error('setting float16 from data not supported yet.');
                 // 	break;
                 case 'uint8':
-                    newArray = new Uint8Array(width * height * glNumChannels);
+                    data = new Uint8Array(width * height * glNumChannels);
+                    break;
+                case 'int8':
+                    data = new Int8Array(width * height * glNumChannels);
+                    break;
+                case 'uint16':
+                    data = new Uint16Array(width * height * glNumChannels);
+                    break;
+                case 'int16':
+                    data = new Int16Array(width * height * glNumChannels);
+                    break;
+                case 'uint32':
+                    data = new Uint32Array(width * height * glNumChannels);
+                    break;
+                case 'int32':
+                    data = new Int32Array(width * height * glNumChannels);
                     break;
                 default:
                     throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GPGPU.initDataLayer.");
             }
             // Fill new data array with old data.
             for (var i = 0; i < imageSize; i++) {
-                for (var j = 0; j < numChannels; j++) {
-                    newArray[glNumChannels * i + j] = data[i * numChannels + j];
+                for (var j = 0; j < numComponents; j++) {
+                    data[glNumChannels * i + j] = _data[i * numComponents + j];
                 }
             }
-            dataResized = newArray;
         }
-        // TODO: Check that data is correct type.
-        if (type === 'float16') {
-            // // Since there is no Float16TypedArray, we must us Uint16TypedArray
-            // const float16Array = new Int16Array(data.length);
-            // for (let i = 0; i < data.length; i++) {
-            // }
-        }
-        return dataResized;
+        return data;
     };
     DataLayer.prototype.getGLTextureParameters = function () {
-        var _a = this, gl = _a.gl, numChannels = _a.numChannels, type = _a.type, writable = _a.writable, errorCallback = _a.errorCallback;
+        var _a = this, gl = _a.gl, numComponents = _a.numComponents, type = _a.type, writable = _a.writable, errorCallback = _a.errorCallback;
         // https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
         var glType, glFormat, glInternalFormat, glNumChannels;
         if (utils_1.isWebGL2(gl)) {
-            glNumChannels = numChannels;
+            glNumChannels = numComponents;
             // https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
             // The sized internal format RGB16F and RGB32F is not color-renderable for some reason.
-            // If numChannels == 3 for a writable texture, use RGBA instead.
-            if (numChannels === 3 && writable && (type === 'float32' || type === 'float16')) {
+            // If numComponents == 3 for a writable texture, use RGBA instead.
+            if (numComponents === 3 && writable && (type === 'float32' || type === 'float16')) {
                 glNumChannels = 4;
             }
             switch (glNumChannels) {
@@ -140,6 +184,8 @@ var DataLayer = /** @class */ (function () {
                 case 4:
                     glFormat = gl.RGBA;
                     break;
+                default:
+                    throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
             }
             switch (type) {
                 case 'float32':
@@ -157,6 +203,8 @@ var DataLayer = /** @class */ (function () {
                         case 4:
                             glInternalFormat = gl.RGBA32F;
                             break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
                     }
                     break;
                 case 'float16':
@@ -174,29 +222,128 @@ var DataLayer = /** @class */ (function () {
                         case 4:
                             glInternalFormat = gl.RGBA16F;
                             break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                    }
+                    break;
+                case 'int8':
+                    glType = gl.BYTE;
+                    switch (glNumChannels) {
+                        case 1:
+                            glInternalFormat = gl.R8I;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG8I;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB8I;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA8I;
+                            break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
                     }
                     break;
                 case 'uint8':
                     glType = gl.UNSIGNED_BYTE;
                     switch (glNumChannels) {
                         case 1:
-                            glInternalFormat = gl.R8;
+                            glInternalFormat = gl.R8UI;
                             break;
                         case 2:
-                            glInternalFormat = gl.RG8;
+                            glInternalFormat = gl.RG8UI;
                             break;
                         case 3:
-                            glInternalFormat = gl.RGB8;
+                            glInternalFormat = gl.RGB8UI;
                             break;
                         case 4:
-                            glInternalFormat = gl.RGBA8;
+                            glInternalFormat = gl.RGBA8UI;
                             break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
                     }
                     break;
+                case 'int16':
+                    glType = gl.SHORT;
+                    switch (glNumChannels) {
+                        case 1:
+                            glInternalFormat = gl.R16I;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG16I;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB16I;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA16I;
+                            break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                    }
+                case 'uint16':
+                    glType = gl.UNSIGNED_SHORT;
+                    switch (glNumChannels) {
+                        case 1:
+                            glInternalFormat = gl.R16UI;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG16UI;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB16UI;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA16UI;
+                            break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                    }
+                    break;
+                case 'int32':
+                    glType = gl.INT;
+                    switch (glNumChannels) {
+                        case 1:
+                            glInternalFormat = gl.R32I;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG32I;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB32I;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA32I;
+                            break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                    }
+                case 'uint32':
+                    glType = gl.UNSIGNED_INT;
+                    switch (glNumChannels) {
+                        case 1:
+                            glInternalFormat = gl.R32UI;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG32UI;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB32UI;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA32UI;
+                            break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                    }
+                    break;
+                default:
+                    throw new Error("Unsupported type " + type + " for DataLayer " + name + ".");
             }
         }
         else {
-            switch (numChannels) {
+            switch (numComponents) {
                 // TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
                 case 1:
                 case 2:
@@ -210,7 +357,10 @@ var DataLayer = /** @class */ (function () {
                     glInternalFormat = gl.RGBA;
                     glNumChannels = 4;
                     break;
+                default:
+                    throw new Error("Unsupported numComponents " + numComponents + " for DataLayer " + name + ".");
             }
+            // TODO: how to support signed ints, maybe cast as floats instead?
             switch (type) {
                 case 'float32':
                     glType = gl.FLOAT;
@@ -221,14 +371,33 @@ var DataLayer = /** @class */ (function () {
                 case 'uint8':
                     glType = gl.UNSIGNED_BYTE;
                     break;
+                // case 'int8':
+                // 	glType = gl.BYTE;
+                // 	break;
+                case 'uint16':
+                    extensions_1.getExtension(gl, extensions_1.WEBGL_DEPTH_TEXTURE, errorCallback);
+                    glType = gl.UNSIGNED_SHORT;
+                    break;
+                // case 'int16':
+                // 	glType = gl.SHORT;
+                // 	break;
+                case 'uint32':
+                    extensions_1.getExtension(gl, extensions_1.WEBGL_DEPTH_TEXTURE, errorCallback);
+                    glType = gl.UNSIGNED_INT;
+                    break;
+                // case 'int32':
+                // 	glType = gl.INT;
+                // 	break;
+                default:
+                    throw new Error("Unsupported type " + type + " for DataLayer " + name + ".");
             }
         }
         // Check for missing params.
         if (glType === undefined || glFormat === undefined || glInternalFormat === undefined) {
-            throw new Error("Invalid type: " + type + " or numChannels " + numChannels + ".");
+            throw new Error("Invalid type: " + type + " or numComponents " + numComponents + ".");
         }
-        if (glNumChannels === undefined || numChannels < 1 || numChannels > 4) {
-            throw new Error("Invalid numChannels: " + numChannels + ".");
+        if (glNumChannels === undefined || numComponents < 1 || numComponents > 4) {
+            throw new Error("Invalid numChannels: " + numComponents + ".");
         }
         return {
             glFormat: glFormat,
@@ -278,17 +447,13 @@ var DataLayer = /** @class */ (function () {
             // Save this buffer to the list.
             this.buffers.push(buffer);
         }
+        // Unbind.
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     };
     DataLayer.prototype.getCurrentStateTexture = function () {
         return this.buffers[this.bufferIndex].texture;
     };
-    // getLastStateTexture() {
-    // 	if (this.numBuffers === 1) {
-    // 		throw new Error(`Calling getLastState on DataLayer ${this.name} with 1 buffer, no last state available.`);
-    // 	}
-    // 	return this.buffers[this.bufferIndex].texture;
-    // }
-    DataLayer.prototype.setAsRenderTarget = function (incrementBufferIndex) {
+    DataLayer.prototype.bindOutputBuffer = function (incrementBufferIndex) {
         var gl = this.gl;
         if (incrementBufferIndex) {
             // Increment bufferIndex.

@@ -1,4 +1,4 @@
-import { compileShader } from './utils';
+import { compileShader, isWebGL2 } from './utils';
 
 // Uniform types.
 const FLOAT_1D_UNIFORM = '1f';
@@ -31,13 +31,21 @@ type Uniform = {
 	type: UniformType,
 };
 
+export type AttributeDataType = 'float32' | 'float16' | 'uint8' | 'int8' | 'uint16' | 'int16';
+type Attribute = { 
+	location: number,
+	type: AttributeDataType,
+};
+
 export class GPUProgram {
-	private readonly name: string;
+	readonly name: string;
 	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private readonly errorCallback: (message: string) => void;
 	readonly program?: WebGLProgram;
 	private readonly uniforms: { [ key: string]: Uniform } = {};
 	private readonly shaders: WebGLShader[] = []; // Save ref to shaders so we can deallocate.
+	private readonly attributes: { [ key: string]: Attribute } = {};
+	private readonly attributeNames: string[] = [];
 
 	constructor(
 		name: string,
@@ -50,6 +58,7 @@ export class GPUProgram {
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
+		transformFeedbackVaryings?: string[],
 	) {
 		// Save params.
 		this.name = name;
@@ -74,6 +83,19 @@ export class GPUProgram {
 		// Attach the shaders.
 		gl.attachShader(program, vertexShader);
 		gl.attachShader(program, fragmentShader);
+
+		// Specify transformFeedback varyings (if needed).
+		// We must specify the varyings that we want to capture before we link the program.
+		if (transformFeedbackVaryings) {
+			if (!isWebGL2(gl)) {
+				throw new Error(`Can't use transformFeedback varyings for program ${name} in WebGL1.0.`)
+			}
+			(gl as WebGL2RenderingContext).transformFeedbackVaryings(
+				program,
+				transformFeedbackVaryings,
+				(gl as WebGL2RenderingContext).SEPARATE_ATTRIBS,
+			);
+		}
 
 		// Link the program.
 		gl.linkProgram(program);
@@ -201,6 +223,61 @@ Error code: ${gl.getError()}.`);
 				throw new Error(`Unknown uniform type: ${type}.`);
 		}
 	};
+
+	setVertexAttribute(
+		attributeName: string,
+		dataType: AttributeDataType,
+	) {
+		const { gl, errorCallback, program, attributes, attributeNames } = this;
+
+		if (!program) {
+			errorCallback(`Program not inited.`);
+			return;
+		}
+
+		if (!isWebGL2(gl)) {
+			// TODO: provide a fallback here.
+			throw new Error('Must use a webgl2 context for transform feedback.');
+		}
+
+		// Set active program.
+		gl.useProgram(program);
+	
+		if (!attributes[attributeName]) {
+			// Init uniform if needed.
+			const location = gl.getAttribLocation(program, attributeName);
+			if (!location) {
+				errorCallback(
+`Could not init vertexAttribute ${attributeName}.
+Error code: ${gl.getError()}.`);
+				return;
+			}
+			attributes[attributeName] = {
+				location,
+				type: dataType,
+			}
+			attributeNames.push(attributeName);
+		}
+
+		const attribute = attributes[attributeName];
+		// Check that types match previously set uniform.
+		if (attribute.type != dataType) {
+			throw new Error(`Vertex attribute ${attributeName} cannot change from type ${attribute.type} to type ${dataType}.`);
+		}
+	}
+
+	getAttributeLocation(index: number) {
+		const { attributes, attributeNames, name } = this;
+		const attributeName = attributeNames[index];
+		if (!attributeName) {
+			throw new Error(`Invalid attribute index ${index} for program ${name}, current attributes: ${attributeNames.join(', ')}.`);
+		}
+		const attribute = attributes[attributeName];
+		if (!attribute) {
+			throw new Error(`Invalid attribute ${attributeName} for program ${name}.`);
+		}
+		return attribute.location;
+	}
 
 	destroy() {
 		const { gl, program, shaders } = this;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getExtension = exports.EXT_COLOR_BUFFER_FLOAT = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
+exports.getExtension = exports.EXT_COLOR_BUFFER_FLOAT = exports.WEBGL_DEPTH_TEXTURE = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
 var extensions = {};
 // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float
 // Float is provided by default in WebGL2 contexts.
@@ -15,6 +15,9 @@ exports.OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
 // https://www.khronos.org/registry/OpenGL/extensions/OES/OES_texture_float_linear.txt
 exports.OES_TEXTURE_FLOAT_LINEAR = 'OES_texture_float_linear';
 exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
+// https://developer.mozilla.org/en-US/docs/Web/API/WEBGL_depth_texture
+// Adds gl.UNSIGNED_SHORT, gl.UNSIGNED_INT types to textImage2D in WebGL1.0
+exports.WEBGL_DEPTH_TEXTURE = 'WEBGL_depth_texture';
 // EXT_COLOR_BUFFER_FLOAT adds ability to render to a variety of floating pt textures.
 // This is needed for the WebGL2 contexts that do not support OES_TEXTURE_FLOAT / OES_TEXTURE_HALF_FLOAT extensions.
 // https://developer.mozilla.org/en-US/docs/Web/API/EXT_color_buffer_float

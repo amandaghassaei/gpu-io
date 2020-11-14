@@ -1,8 +1,9 @@
 import defaultVertexShaderSource from './kernels/DefaultVertexShader';
 import passThroughShaderSource from './kernels/PassThroughShader';
-import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumChannels, DataLayerType, DataLayerWrapType } from './DataLayer';
+import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader, isWebGL2 } from './utils';
+import { DataArray } from './DataArray';
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
@@ -72,6 +73,14 @@ export class GPGPU {
 		// Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
 		// https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+		// TODO: set more of these: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/pixelStorei
+		// // Some implementations of HTMLCanvasElement's or OffscreenCanvas's CanvasRenderingContext2D store color values
+		// // internally in premultiplied form. If such a canvas is uploaded to a WebGL texture with the
+		// // UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter set to false, the color channels will have to be un-multiplied
+		// // by the alpha channel, which is a lossy operation. The WebGL implementation therefore can not guarantee that colors
+		// // with alpha < 1.0 will be preserved losslessly when first drawn to a canvas via CanvasRenderingContext2D and then
+		// // uploaded to a WebGL texture when the UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter is set to false.
+		// gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
 		// Init a default vertex shader that just passes through screen coords.
 		const defaultVertexShader = compileShader(gl, this.errorCallback, defaultVertexShaderSource, gl.VERTEX_SHADER);
@@ -140,7 +149,7 @@ export class GPGPU {
 			width: number,
 			height: number,
 			type: DataLayerType,
-			numChannels: DataLayerNumChannels,
+			numComponents: DataLayerNumComponents,
 			data?: DataLayerArrayType,
 			filter?: DataLayerFilterType,
 			wrapS?: DataLayerWrapType,
@@ -179,14 +188,15 @@ export class GPGPU {
 			return;
 		}
 
-		// CAUTION: the order of these next few lines in important.
+		// CAUTION: the order of these next few lines is important.
 
 		// Get a shallow copy of current textures.
-		// This line must come before this.setOutput() as it can modify some internal state.
+		// This line must come before this.setOutput() as it depends on current internal state.
 		const inputTextures = inputLayers.map(layer => layer.getCurrentStateTexture());
 
 		// Set output framebuffer.
-		this.setOutput(fullscreenRender, inputLayers, outputLayer);
+		// This may modify WebGL internal state.
+		this.setOutputLayer(fullscreenRender, inputLayers, outputLayer);
 
 		// Set current program.
 		gl.useProgram(program.program);
@@ -198,7 +208,7 @@ export class GPGPU {
 		}
 	}
 
-	private setOutput(
+	private setOutputLayer(
 		fullscreenRender: boolean,
 		inputLayers: DataLayer[],
 		outputLayer?: DataLayer, // Undefined renders to screen.
@@ -214,24 +224,24 @@ export class GPGPU {
 		if (inputLayers.indexOf(outputLayer) > -1) {
 			if (outputLayer.numBuffers === 1) {
 				throw new Error(`
-				Cannot use same buffer for input and output of a program.
-				Try increasing the number of buffers in your output layer to at least 2 so you
-				can render to nextState using currentState as an input.`);
+Cannot use same buffer for input and output of a program.
+Try increasing the number of buffers in your output layer to at least 2 so you
+can render to nextState using currentState as an input.`);
 			}
 			if (fullscreenRender) {
 				// Render and increment buffer so we are rendering to a different target
 				// than the input texture.
-				outputLayer.setAsRenderTarget(true);
+				outputLayer.bindOutputBuffer(true);
 				return;
 			}
 			// Pass input texture through to output.
 			this.step(passThroughProgram, [outputLayer], outputLayer);
 			// Render to output without incrementing buffer.
-			outputLayer.setAsRenderTarget(false);
+			outputLayer.bindOutputBuffer(false);
 			return;
 		}
 		// Render to current buffer.
-		outputLayer.setAsRenderTarget(false);
+		outputLayer.bindOutputBuffer(false);
 	};
 
 	private setPositionAttribute(program: GPUProgram) {
@@ -351,6 +361,66 @@ export class GPGPU {
 		
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
+	}
+
+	stepFeedback(
+		program: GPUProgram,
+		inputArrays: DataArray[] = [],
+		outputArrays: DataArray[], // Undefined renders to screen.
+	) {
+		const { gl, errorState } = this;
+
+		// Ignore if we are in error state.
+		if (errorState || !program.program) {
+			return;
+		}
+
+		if (!outputArrays.length) {
+			throw new Error(`Must provide an output dataArray for stepFeedback() on program ${program.name}.`);
+		}
+
+		const length = outputArrays[0].length;
+
+		// Set current program.
+		gl.useProgram(program.program);
+
+		// Set input arrays.
+		for (let i = 0; i < inputArrays.length; i++) {
+			const array = inputArrays[i];
+			if (array.length !== length) {
+				throw new Error(`Invalid length of input dataArray for stepFeedback() on program ${program.name}:
+					expected length ${length}, got length ${array.length}.`);
+			}
+			array.bindInputArray(program.getAttributeLocation(i));
+		}
+
+		// Set output arrays.
+		for (let i = 0; i < outputArrays.length; i++) {
+			const outputArray = outputArrays[i];
+			// Check if output is same as one of input arrays.
+			if (inputArrays.indexOf(outputArray) > -1) {
+				if (outputArray.numBuffers === 1) {
+					throw new Error(`
+						Cannot use same vertexArray for input and output of a program.
+						Try increasing the number of buffers in your output dataArray to at least 2 so you
+						can render to nextState using currentState as an input.`
+					);
+				}
+			}
+			outputArray.bindOutputBuffer(i);
+		}
+
+		// Draw.
+		gl.enable((gl as WebGL2RenderingContext).RASTERIZER_DISCARD); // Disable rasterization.
+		(gl as WebGL2RenderingContext).beginTransformFeedback(gl.POINTS);
+		gl.drawArrays(gl.POINTS, 0, length);
+		(gl as WebGL2RenderingContext).endTransformFeedback();
+		gl.disable((gl as WebGL2RenderingContext).RASTERIZER_DISCARD); // Enable rasterization.
+
+		// Unset output.
+		for (let i = 0; i < outputArrays.length; i++) {
+			(gl as WebGL2RenderingContext).bindBufferBase((gl as WebGL2RenderingContext).TRANSFORM_FEEDBACK_BUFFER, i, null);
+		}
 	}
 
     // readyToRead() {

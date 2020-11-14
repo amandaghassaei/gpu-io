@@ -1,5 +1,6 @@
-import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumChannels, DataLayerType, DataLayerWrapType } from './DataLayer';
+import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
+import { DataArray } from './DataArray';
 export declare class GPGPU {
     private readonly gl;
     private width;
@@ -22,7 +23,7 @@ export declare class GPGPU {
         width: number;
         height: number;
         type: DataLayerType;
-        numChannels: DataLayerNumChannels;
+        numComponents: DataLayerNumComponents;
         data?: DataLayerArrayType;
         filter?: DataLayerFilterType;
         wrapS?: DataLayerWrapType;
@@ -30,7 +31,7 @@ export declare class GPGPU {
     }, writable?: boolean, numBuffers?: number): DataLayer;
     onResize(canvasEl: HTMLCanvasElement): void;
     private setDrawInputsAndOutputs;
-    private setOutput;
+    private setOutputLayer;
     private setPositionAttribute;
     step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
@@ -38,6 +39,7 @@ export declare class GPGPU {
     stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
     inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    stepFeedback(program: GPUProgram, inputArrays: DataArray[] | undefined, outputArrays: DataArray[]): void;
     reset(): void;
     destroy(): void;
 }

@@ -12,10 +12,12 @@ var INT_2D_UNIFORM = '2i';
 var INT_3D_UNIFORM = '3i';
 var INT_4D_UNIFORM = '3i';
 var GPUProgram = /** @class */ (function () {
-    function GPUProgram(name, gl, errorCallback, vertexShader, fragmentShaderSource, uniforms) {
+    function GPUProgram(name, gl, errorCallback, vertexShader, fragmentShaderSource, uniforms, transformFeedbackVaryings) {
         var _this = this;
         this.uniforms = {};
         this.shaders = []; // Save ref to shaders so we can deallocate.
+        this.attributes = {};
+        this.attributeNames = [];
         // Save params.
         this.name = name;
         this.gl = gl;
@@ -36,6 +38,14 @@ var GPUProgram = /** @class */ (function () {
         // Attach the shaders.
         gl.attachShader(program, vertexShader);
         gl.attachShader(program, fragmentShader);
+        // Specify transformFeedback varyings (if needed).
+        // We must specify the varyings that we want to capture before we link the program.
+        if (transformFeedbackVaryings) {
+            if (!utils_1.isWebGL2(gl)) {
+                throw new Error("Can't use transformFeedback varyings for program " + name + " in WebGL1.0.");
+            }
+            gl.transformFeedbackVaryings(program, transformFeedbackVaryings, gl.SEPARATE_ATTRIBS);
+        }
         // Link the program.
         gl.linkProgram(program);
         // Check if it linked.
@@ -146,6 +156,49 @@ var GPUProgram = /** @class */ (function () {
         }
     };
     ;
+    GPUProgram.prototype.setVertexAttribute = function (attributeName, dataType) {
+        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, program = _a.program, attributes = _a.attributes, attributeNames = _a.attributeNames;
+        if (!program) {
+            errorCallback("Program not inited.");
+            return;
+        }
+        if (!utils_1.isWebGL2(gl)) {
+            // TODO: provide a fallback here.
+            throw new Error('Must use a webgl2 context for transform feedback.');
+        }
+        // Set active program.
+        gl.useProgram(program);
+        if (!attributes[attributeName]) {
+            // Init uniform if needed.
+            var location_2 = gl.getAttribLocation(program, attributeName);
+            if (!location_2) {
+                errorCallback("Could not init vertexAttribute " + attributeName + ".\nError code: " + gl.getError() + ".");
+                return;
+            }
+            attributes[attributeName] = {
+                location: location_2,
+                type: dataType,
+            };
+            attributeNames.push(attributeName);
+        }
+        var attribute = attributes[attributeName];
+        // Check that types match previously set uniform.
+        if (attribute.type != dataType) {
+            throw new Error("Vertex attribute " + attributeName + " cannot change from type " + attribute.type + " to type " + dataType + ".");
+        }
+    };
+    GPUProgram.prototype.getAttributeLocation = function (index) {
+        var _a = this, attributes = _a.attributes, attributeNames = _a.attributeNames, name = _a.name;
+        var attributeName = attributeNames[index];
+        if (!attributeName) {
+            throw new Error("Invalid attribute index " + index + " for program " + name + ", current attributes: " + attributeNames.join(', ') + ".");
+        }
+        var attribute = attributes[attributeName];
+        if (!attribute) {
+            throw new Error("Invalid attribute " + attributeName + " for program " + name + ".");
+        }
+        return attribute.location;
+    };
     GPUProgram.prototype.destroy = function () {
         var _a = this, gl = _a.gl, program = _a.program, shaders = _a.shaders;
         if (program)
