@@ -23,7 +23,7 @@ Because this repo is under active development, you may also want to include a sp
 
 ## Compatibility with threejs
 
-Theoretically, this library should be compatible with threejs and even be able to share a GL context like so:
+Currently, this library can run in a separate webgl context from threejs with no problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so:
 
 ```
 const renderer = new WebGLRenderer();
@@ -37,7 +37,7 @@ const canvas = renderer.domElement;
 const gpgpu = new GPGPU(gl, canvas);
 ```
 
-I have noticed that there can be some issues due to threejs's caching system since it expects that nothing else is interacting with the context.  This is still being sorted out....
+I have noticed that there can be some issues due to threejs's caching system since it expects that nothing else is interacting with the context.  This is still being sorted out....  
 
 ## References
 
@@ -46,6 +46,7 @@ I used a few codebases as reference when writing this, thanks to their authors f
 - [three.js](https://github.com/mrdoob/three.js/) Javascript 3D library
 - [regl](https://github.com/regl-project/regl) - Fast, functional WebGL
 - [WebGL Boilerplate](https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html)
+- [GPU Accelerated Particles with WebGL 2](https://gpfault.net/posts/webgl2-particles.txt.html)
 
 ## Development
 

@@ -1,6 +1,6 @@
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
-import { DataArray } from './DataArray';
+import { DataArray, DataArrayArrayType, DataArrayNumComponents, DataArrayType } from './DataArray-Feedback';
 export declare class GPGPU {
     private readonly gl;
     private width;
@@ -18,7 +18,7 @@ export declare class GPGPU {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
-    }[]): GPUProgram;
+    }[], vertexShaderSource?: string): GPUProgram;
     initDataLayer(name: string, options: {
         width: number;
         height: number;
@@ -29,6 +29,12 @@ export declare class GPGPU {
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
+    initDataArray(name: string, options: {
+        length: number;
+        type: DataArrayType;
+        numComponents: DataArrayNumComponents;
+        data?: DataArrayArrayType;
+    }, writable?: boolean, numBuffers?: number): DataArray;
     onResize(canvasEl: HTMLCanvasElement): void;
     private setDrawInputsAndOutputs;
     private setOutputLayer;
@@ -39,7 +45,6 @@ export declare class GPGPU {
     stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
     inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    stepFeedback(program: GPUProgram, inputArrays: DataArray[] | undefined, outputArrays: DataArray[]): void;
     reset(): void;
     destroy(): void;
 }

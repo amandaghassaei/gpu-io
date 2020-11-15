@@ -12,7 +12,7 @@ var INT_2D_UNIFORM = '2i';
 var INT_3D_UNIFORM = '3i';
 var INT_4D_UNIFORM = '3i';
 var GPUProgram = /** @class */ (function () {
-    function GPUProgram(name, gl, errorCallback, vertexShader, fragmentShaderSource, uniforms, transformFeedbackVaryings) {
+    function GPUProgram(name, gl, errorCallback, vertexShader, fragmentShaderSource, uniforms) {
         var _this = this;
         this.uniforms = {};
         this.shaders = []; // Save ref to shaders so we can deallocate.
@@ -38,14 +38,6 @@ var GPUProgram = /** @class */ (function () {
         // Attach the shaders.
         gl.attachShader(program, vertexShader);
         gl.attachShader(program, fragmentShader);
-        // Specify transformFeedback varyings (if needed).
-        // We must specify the varyings that we want to capture before we link the program.
-        if (transformFeedbackVaryings) {
-            if (!utils_1.isWebGL2(gl)) {
-                throw new Error("Can't use transformFeedback varyings for program " + name + " in WebGL1.0.");
-            }
-            gl.transformFeedbackVaryings(program, transformFeedbackVaryings, gl.SEPARATE_ATTRIBS);
-        }
         // Link the program.
         gl.linkProgram(program);
         // Check if it linked.

@@ -58,7 +58,6 @@ export class GPUProgram {
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
-		transformFeedbackVaryings?: string[],
 	) {
 		// Save params.
 		this.name = name;
@@ -83,19 +82,6 @@ export class GPUProgram {
 		// Attach the shaders.
 		gl.attachShader(program, vertexShader);
 		gl.attachShader(program, fragmentShader);
-
-		// Specify transformFeedback varyings (if needed).
-		// We must specify the varyings that we want to capture before we link the program.
-		if (transformFeedbackVaryings) {
-			if (!isWebGL2(gl)) {
-				throw new Error(`Can't use transformFeedback varyings for program ${name} in WebGL1.0.`)
-			}
-			(gl as WebGL2RenderingContext).transformFeedbackVaryings(
-				program,
-				transformFeedbackVaryings,
-				(gl as WebGL2RenderingContext).SEPARATE_ATTRIBS,
-			);
-		}
 
 		// Link the program.
 		gl.linkProgram(program);

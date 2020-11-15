@@ -28,7 +28,7 @@ export declare class GPUProgram {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
-    }[], transformFeedbackVaryings?: string[]);
+    }[]);
     private uniformTypeForValue;
     setUniform(uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
     setVertexAttribute(attributeName: string, dataType: AttributeDataType): void;

@@ -6,6 +6,7 @@ var PassThroughShader_1 = require("./kernels/PassThroughShader");
 var DataLayer_1 = require("./DataLayer");
 var GPUProgram_1 = require("./GPUProgram");
 var utils_1 = require("./utils");
+var DataArray_Feedback_1 = require("./DataArray-Feedback");
 var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
 var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
 var unitCirclePoints = [0, 0];
@@ -35,8 +36,8 @@ var GPGPU = /** @class */ (function () {
         if (!gl) {
             // Init a gl context if not passed in.
             gl = canvasEl.getContext('webgl2', { antialias: false })
-                || canvasEl.getContext('webgl', { antialias: false });
-            // || canvasEl.getContext('experimental-webgl', {antialias:false}) as RenderingContext;
+                || canvasEl.getContext('webgl', { antialias: false })
+                || canvasEl.getContext('experimental-webgl', { antialias: false });
             if (gl === null) {
                 this.errorCallback('Unable to initialize WebGL context.');
                 return;
@@ -55,7 +56,7 @@ var GPGPU = /** @class */ (function () {
         // Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
         // https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-        // TODO: set more of these: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/pixelStorei
+        // TODO: look into more of these: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/pixelStorei
         // // Some implementations of HTMLCanvasElement's or OffscreenCanvas's CanvasRenderingContext2D store color values
         // // internally in premultiplied form. If such a canvas is uploaded to a WebGL texture with the
         // // UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter set to false, the color channels will have to be un-multiplied
@@ -102,9 +103,9 @@ var GPGPU = /** @class */ (function () {
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         return buffer;
     };
-    GPGPU.prototype.initProgram = function (name, fragmentShaderSource, uniforms) {
+    GPGPU.prototype.initProgram = function (name, fragmentShaderSource, uniforms, vertexShaderSource) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
-        return new GPUProgram_1.GPUProgram(name, gl, errorCallback, this.defaultVertexShader, fragmentShaderSource, uniforms);
+        return new GPUProgram_1.GPUProgram(name, gl, errorCallback, vertexShaderSource ? vertexShaderSource : this.defaultVertexShader, fragmentShaderSource, uniforms);
     };
     ;
     GPGPU.prototype.initDataLayer = function (name, options, writable, numBuffers) {
@@ -112,6 +113,13 @@ var GPGPU = /** @class */ (function () {
         if (numBuffers === void 0) { numBuffers = 1; }
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         return new DataLayer_1.DataLayer(name, gl, options, errorCallback, writable, numBuffers);
+    };
+    ;
+    GPGPU.prototype.initDataArray = function (name, options, writable, numBuffers) {
+        if (writable === void 0) { writable = false; }
+        if (numBuffers === void 0) { numBuffers = 1; }
+        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
+        return new DataArray_Feedback_1.DataArray(name, gl, options, errorCallback, writable, numBuffers);
     };
     ;
     GPGPU.prototype.onResize = function (canvasEl) {
@@ -260,49 +268,6 @@ var GPGPU = /** @class */ (function () {
         this.setPositionAttribute(program);
         // Draw.
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
-    };
-    GPGPU.prototype.stepFeedback = function (program, inputArrays, outputArrays) {
-        if (inputArrays === void 0) { inputArrays = []; }
-        var _a = this, gl = _a.gl, errorState = _a.errorState;
-        // Ignore if we are in error state.
-        if (errorState || !program.program) {
-            return;
-        }
-        if (!outputArrays.length) {
-            throw new Error("Must provide an output dataArray for stepFeedback() on program " + program.name + ".");
-        }
-        var length = outputArrays[0].length;
-        // Set current program.
-        gl.useProgram(program.program);
-        // Set input arrays.
-        for (var i = 0; i < inputArrays.length; i++) {
-            var array = inputArrays[i];
-            if (array.length !== length) {
-                throw new Error("Invalid length of input dataArray for stepFeedback() on program " + program.name + ":\n\t\t\t\t\texpected length " + length + ", got length " + array.length + ".");
-            }
-            array.bindInputArray(program.getAttributeLocation(i));
-        }
-        // Set output arrays.
-        for (var i = 0; i < outputArrays.length; i++) {
-            var outputArray = outputArrays[i];
-            // Check if output is same as one of input arrays.
-            if (inputArrays.indexOf(outputArray) > -1) {
-                if (outputArray.numBuffers === 1) {
-                    throw new Error("\n\t\t\t\t\t\tCannot use same vertexArray for input and output of a program.\n\t\t\t\t\t\tTry increasing the number of buffers in your output dataArray to at least 2 so you\n\t\t\t\t\t\tcan render to nextState using currentState as an input.");
-                }
-            }
-            outputArray.bindOutputBuffer(i);
-        }
-        // Draw.
-        gl.enable(gl.RASTERIZER_DISCARD); // Disable rasterization.
-        gl.beginTransformFeedback(gl.POINTS);
-        gl.drawArrays(gl.POINTS, 0, length);
-        gl.endTransformFeedback();
-        gl.disable(gl.RASTERIZER_DISCARD); // Enable rasterization.
-        // Unset output.
-        for (var i = 0; i < outputArrays.length; i++) {
-            gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, i, null);
-        }
     };
     // readyToRead() {
     // 	const { gl } = this;

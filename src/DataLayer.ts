@@ -10,7 +10,6 @@ import {
 import { isWebGL2 } from './utils';
 
 export type DataLayerArrayType =  Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
-// TODO: support for int32?
 export type DataLayerType = 'float32' | 'float16' | 'uint8' | 'int8' | 'uint16' | 'int16' | 'uint32' | 'int32';
 export type DataLayerNumComponents = 1 | 2 | 3 | 4;
 export type DataLayerFilterType = 'LINEAR' | 'NEAREST';

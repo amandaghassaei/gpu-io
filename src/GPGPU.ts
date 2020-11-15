@@ -3,7 +3,7 @@ import passThroughShaderSource from './kernels/PassThroughShader';
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader, isWebGL2 } from './utils';
-import { DataArray } from './DataArray';
+import { DataArray, DataArrayArrayType, DataArrayNumComponents, DataArrayType } from './DataArray-Feedback';
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
@@ -53,8 +53,8 @@ export class GPGPU {
 		if (!gl) {
 			// Init a gl context if not passed in.
 			gl = canvasEl.getContext('webgl2', {antialias:false})  as WebGL2RenderingContext | null
-				|| canvasEl.getContext('webgl', {antialias:false})  as WebGLRenderingContext | null;
-			// || canvasEl.getContext('experimental-webgl', {antialias:false}) as RenderingContext;
+				|| canvasEl.getContext('webgl', {antialias:false})  as WebGLRenderingContext | null
+				|| canvasEl.getContext('experimental-webgl', {antialias:false})  as WebGLRenderingContext | null;
 			if (gl === null) {
 			this.errorCallback('Unable to initialize WebGL context.');
 				return;
@@ -73,7 +73,7 @@ export class GPGPU {
 		// Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
 		// https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-		// TODO: set more of these: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/pixelStorei
+		// TODO: look into more of these: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/pixelStorei
 		// // Some implementations of HTMLCanvasElement's or OffscreenCanvas's CanvasRenderingContext2D store color values
 		// // internally in premultiplied form. If such a canvas is uploaded to a WebGL texture with the
 		// // UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter set to false, the color channels will have to be un-multiplied
@@ -137,10 +137,17 @@ export class GPGPU {
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
-		// vertexShaderSource?: string,
+		vertexShaderSource?: string,
 	) {
 		const { gl, errorCallback } = this;	
-		return new GPUProgram(name, gl, errorCallback, this.defaultVertexShader, fragmentShaderSource, uniforms);
+		return new GPUProgram(
+			name,
+			gl,
+			errorCallback,
+			vertexShaderSource ? vertexShaderSource : this.defaultVertexShader,
+			fragmentShaderSource,
+			uniforms,
+		);
 	};
 
 	initDataLayer(
@@ -160,6 +167,21 @@ export class GPGPU {
 	) {
 		const { gl, errorCallback } = this;
 		return new DataLayer(name, gl, options, errorCallback, writable, numBuffers);
+	};
+
+	initDataArray(
+		name: string,
+		options:{
+			length: number,
+			type: DataArrayType,
+			numComponents: DataArrayNumComponents,
+			data?: DataArrayArrayType,
+		},
+		writable = false,
+		numBuffers = 1,
+	) {
+		const { gl, errorCallback } = this;
+		return new DataArray(name, gl, options, errorCallback, writable, numBuffers);
 	};
 
 	onResize(canvasEl: HTMLCanvasElement) {
@@ -361,66 +383,6 @@ can render to nextState using currentState as an input.`);
 		
 		// Draw.
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
-	}
-
-	stepFeedback(
-		program: GPUProgram,
-		inputArrays: DataArray[] = [],
-		outputArrays: DataArray[], // Undefined renders to screen.
-	) {
-		const { gl, errorState } = this;
-
-		// Ignore if we are in error state.
-		if (errorState || !program.program) {
-			return;
-		}
-
-		if (!outputArrays.length) {
-			throw new Error(`Must provide an output dataArray for stepFeedback() on program ${program.name}.`);
-		}
-
-		const length = outputArrays[0].length;
-
-		// Set current program.
-		gl.useProgram(program.program);
-
-		// Set input arrays.
-		for (let i = 0; i < inputArrays.length; i++) {
-			const array = inputArrays[i];
-			if (array.length !== length) {
-				throw new Error(`Invalid length of input dataArray for stepFeedback() on program ${program.name}:
-					expected length ${length}, got length ${array.length}.`);
-			}
-			array.bindInputArray(program.getAttributeLocation(i));
-		}
-
-		// Set output arrays.
-		for (let i = 0; i < outputArrays.length; i++) {
-			const outputArray = outputArrays[i];
-			// Check if output is same as one of input arrays.
-			if (inputArrays.indexOf(outputArray) > -1) {
-				if (outputArray.numBuffers === 1) {
-					throw new Error(`
-						Cannot use same vertexArray for input and output of a program.
-						Try increasing the number of buffers in your output dataArray to at least 2 so you
-						can render to nextState using currentState as an input.`
-					);
-				}
-			}
-			outputArray.bindOutputBuffer(i);
-		}
-
-		// Draw.
-		gl.enable((gl as WebGL2RenderingContext).RASTERIZER_DISCARD); // Disable rasterization.
-		(gl as WebGL2RenderingContext).beginTransformFeedback(gl.POINTS);
-		gl.drawArrays(gl.POINTS, 0, length);
-		(gl as WebGL2RenderingContext).endTransformFeedback();
-		gl.disable((gl as WebGL2RenderingContext).RASTERIZER_DISCARD); // Enable rasterization.
-
-		// Unset output.
-		for (let i = 0; i < outputArrays.length; i++) {
-			(gl as WebGL2RenderingContext).bindBufferBase((gl as WebGL2RenderingContext).TRANSFORM_FEEDBACK_BUFFER, i, null);
-		}
 	}
 
     // readyToRead() {
