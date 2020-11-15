@@ -1,7 +1,7 @@
-import { GPGPU } from './GPGPU';
+import { GLCompute } from './GLCompute';
 import SingleColorFragShader from './kernels/SingleColorFragShader';
 
 export {
-	GPGPU,
+	GLCompute,
 	SingleColorFragShader,
 };

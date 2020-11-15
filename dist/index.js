@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SingleColorFragShader = exports.GPGPU = void 0;
-var GPGPU_1 = require("./GPGPU");
-Object.defineProperty(exports, "GPGPU", { enumerable: true, get: function () { return GPGPU_1.GPGPU; } });
+exports.SingleColorFragShader = exports.GLCompute = void 0;
+var GLCompute_1 = require("./GLCompute");
+Object.defineProperty(exports, "GLCompute", { enumerable: true, get: function () { return GLCompute_1.GLCompute; } });
 var SingleColorFragShader_1 = require("./kernels/SingleColorFragShader");
 exports.SingleColorFragShader = SingleColorFragShader_1.default;
 //# sourceMappingURL=index.js.map

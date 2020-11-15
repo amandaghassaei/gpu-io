@@ -17,7 +17,7 @@ for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 }
 const circlePositions = new Float32Array(unitCirclePoints);
 
-export class GPGPU {
+export class GLCompute {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	private width!: number;
 	private height!: number;

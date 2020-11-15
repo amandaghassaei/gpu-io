@@ -1,4 +1,4 @@
-# webgl-gpgpu
+# glcompute
 
 GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of spatially-distributed state (such as 2D physics simulations or cellular automata).  It *will* also grow to include performing operations on large 1D arrays of data as well (via transform feedback with a fallback to a fragment shader implementation).
 
@@ -10,11 +10,11 @@ This library supports rendering directly to the screen.  It also has some built-
  
  To install:
 
-`npm install github:amandaghassaei/webgl-gpgpu`
+`npm install github:amandaghassaei/glcompute`
 
 Because this repo is under active development, you may also want to include a specific commit in your install:
 
-`npm install github:amandaghassaei/webgl-gpgpu#d6c75dd`
+`npm install github:amandaghassaei/glcompute#d6c75dd`
 
 ## Examples
 
@@ -34,7 +34,7 @@ renderer.autoClear = false;
 const gl = renderer.getContext();
 const canvas = renderer.domElement;
 
-const gpgpu = new GPGPU(gl, canvas);
+const glcompute = new GLCompute(gl, canvas);
 ```
 
 I have noticed that there can be some issues due to threejs's caching system since it expects that nothing else is interacting with the context.  This is still being sorted out....  
