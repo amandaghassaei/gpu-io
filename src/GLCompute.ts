@@ -395,9 +395,9 @@ can render to nextState using currentState as an input.`);
 
 	drawPoints(
 		program: GPUProgram,
-		positionLayer: DataLayer,
+		inputLayers: DataLayer[],
 		pointSize: number = 1,
-		numPoints = positionLayer.getLength(),
+		numPoints?: number,
 	) {
 		const { gl, errorState, width, height, pointIndexArray } = this;
 
@@ -406,8 +406,16 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
+		if (inputLayers.length < 1) {
+			throw new Error(`Invalid inputLayers for drawPoints on ${program.name}: must pass a positionDataLayer as first element of inputLayers.`);
+		}
+		const positionLayer = inputLayers[0];
+
 		// Check that numPoints is valid.
 		const length = positionLayer.getLength();
+		if (numPoints === undefined) {
+			numPoints = length;
+		}
 		if (numPoints > length) {
 			throw new Error(`Invalid numPoint ${numPoints} for positionDataLayer of length ${length}.`);
 		}

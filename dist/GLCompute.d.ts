@@ -40,7 +40,7 @@ export declare class GLCompute {
     stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
     inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    drawPoints(program: GPUProgram, positionLayer: DataLayer, pointSize?: number, numPoints?: number): void;
+    drawPoints(program: GPUProgram, inputLayers: DataLayer[], pointSize?: number, numPoints?: number): void;
     reset(): void;
     destroy(): void;
 }

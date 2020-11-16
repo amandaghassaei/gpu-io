@@ -281,16 +281,22 @@ var GLCompute = /** @class */ (function () {
         // Draw.
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
     };
-    GLCompute.prototype.drawPoints = function (program, positionLayer, pointSize, numPoints) {
+    GLCompute.prototype.drawPoints = function (program, inputLayers, pointSize, numPoints) {
         if (pointSize === void 0) { pointSize = 1; }
-        if (numPoints === void 0) { numPoints = positionLayer.getLength(); }
         var _a = this, gl = _a.gl, errorState = _a.errorState, width = _a.width, height = _a.height, pointIndexArray = _a.pointIndexArray;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
+        if (inputLayers.length < 1) {
+            throw new Error("Invalid inputLayers for drawPoints on " + program.name + ": must pass a positionDataLayer as first element of inputLayers.");
+        }
+        var positionLayer = inputLayers[0];
         // Check that numPoints is valid.
         var length = positionLayer.getLength();
+        if (numPoints === undefined) {
+            numPoints = length;
+        }
         if (numPoints > length) {
             throw new Error("Invalid numPoint " + numPoints + " for positionDataLayer of length " + length + ".");
         }
