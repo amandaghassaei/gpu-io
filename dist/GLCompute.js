@@ -301,7 +301,7 @@ var GLCompute = /** @class */ (function () {
             throw new Error("Invalid numPoint " + numPoints + " for positionDataLayer of length " + length + ".");
         }
         // Do setup - this must come first.
-        this.drawSetup(program, false, [positionLayer]);
+        this.drawSetup(program, false, inputLayers);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
         program.setUniform('u_pointSize', pointSize, 'FLOAT');
