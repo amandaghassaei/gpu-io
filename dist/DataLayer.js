@@ -205,21 +205,41 @@ var DataLayer = /** @class */ (function () {
             if (numComponents === 3 && writable) {
                 glNumChannels = 4;
             }
-            switch (glNumChannels) {
-                case 1:
-                    glFormat = gl.RED_INTEGER;
-                    break;
-                case 2:
-                    glFormat = gl.RG_INTEGER;
-                    break;
-                case 3:
-                    glFormat = gl.RGB;
-                    break;
-                case 4:
-                    glFormat = gl.RGBA;
-                    break;
-                default:
-                    throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+            if (type === 'float16' || type === 'float32') {
+                switch (glNumChannels) {
+                    case 1:
+                        glFormat = gl.RED;
+                        break;
+                    case 2:
+                        glFormat = gl.RG;
+                        break;
+                    case 3:
+                        glFormat = gl.RGB;
+                        break;
+                    case 4:
+                        glFormat = gl.RGBA;
+                        break;
+                    default:
+                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                }
+            }
+            else {
+                switch (glNumChannels) {
+                    case 1:
+                        glFormat = gl.RED_INTEGER;
+                        break;
+                    case 2:
+                        glFormat = gl.RG_INTEGER;
+                        break;
+                    case 3:
+                        glFormat = gl.RGB;
+                        break;
+                    case 4:
+                        glFormat = gl.RGBA;
+                        break;
+                    default:
+                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                }
             }
             switch (type) {
                 case 'float32':
