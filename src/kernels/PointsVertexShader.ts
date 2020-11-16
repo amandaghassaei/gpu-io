@@ -13,7 +13,7 @@ varying vec2 vUV;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
-	vec2 positionUV = vec2(aIndex % u_positionDimensions, floor(aIndex / u_positionDimensions)) / u_positionDimensions;
+	vec2 positionUV = vec2(aIndex % u_positionDimensions.x, floor(aIndex / u_positionDimensions.x)) / u_positionDimensions;
 
 	// Lookup vertex position.
 	vec2 position = texture2D(u_position, positionUV) * u_scale;
