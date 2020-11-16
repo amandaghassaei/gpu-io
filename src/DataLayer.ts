@@ -279,17 +279,18 @@ export class DataLayer {
 		if (isWebGL2(gl)) {
 			glNumChannels = numComponents;
 			// https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
-			// The sized internal format RGB16F and RGB32F is not color-renderable for some reason.
+			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
+			// The sized internal format RGBxxx are not color-renderable for some reason.
 			// If numComponents == 3 for a writable texture, use RGBA instead.
-			if (numComponents === 3 && writable && (type === 'float32' || type === 'float16')) {
+			if (numComponents === 3 && writable) {
 				glNumChannels = 4;
 			}
 			switch (glNumChannels) {
 				case 1:
-					glFormat = (gl as WebGL2RenderingContext).RED;
+					glFormat = (gl as WebGL2RenderingContext).RED_INTEGER;
 					break;
 				case 2:
-					glFormat = (gl as WebGL2RenderingContext).RG;
+					glFormat = (gl as WebGL2RenderingContext).RG_INTEGER;
 					break;
 				case 3:
 					glFormat = gl.RGB;
@@ -343,16 +344,16 @@ export class DataLayer {
 					glType = gl.BYTE;
 					switch (glNumChannels) {
 						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8;
+							glInternalFormat = (gl as WebGL2RenderingContext).R8I;
 							break;
 						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8I;
 							break;
 						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB8I;
 							break;
 						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8I;
 							break;
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
@@ -362,16 +363,16 @@ export class DataLayer {
 					glType = gl.UNSIGNED_BYTE;
 					switch (glNumChannels) {
 						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8;
+							glInternalFormat = (gl as WebGL2RenderingContext).R8UI;
 							break;
 						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
 							break;
 						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI;
 							break;
 						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
 							break;
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);

@@ -421,7 +421,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.drawSetup(program, false, inputLayers);
+		this.drawSetup(program, true, inputLayers);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');

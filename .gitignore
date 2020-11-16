@@ -1,3 +1,4 @@
 node_modules/
 src/DataArray-Feedback.ts
 dist/DataArray-Feedback*
+*.DS_Store

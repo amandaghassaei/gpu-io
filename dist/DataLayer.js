@@ -199,17 +199,18 @@ var DataLayer = /** @class */ (function () {
         if (utils_1.isWebGL2(gl)) {
             glNumChannels = numComponents;
             // https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
-            // The sized internal format RGB16F and RGB32F is not color-renderable for some reason.
+            // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
+            // The sized internal format RGBxxx are not color-renderable for some reason.
             // If numComponents == 3 for a writable texture, use RGBA instead.
-            if (numComponents === 3 && writable && (type === 'float32' || type === 'float16')) {
+            if (numComponents === 3 && writable) {
                 glNumChannels = 4;
             }
             switch (glNumChannels) {
                 case 1:
-                    glFormat = gl.RED;
+                    glFormat = gl.RED_INTEGER;
                     break;
                 case 2:
-                    glFormat = gl.RG;
+                    glFormat = gl.RG_INTEGER;
                     break;
                 case 3:
                     glFormat = gl.RGB;
@@ -263,16 +264,16 @@ var DataLayer = /** @class */ (function () {
                     glType = gl.BYTE;
                     switch (glNumChannels) {
                         case 1:
-                            glInternalFormat = gl.R8;
+                            glInternalFormat = gl.R8I;
                             break;
                         case 2:
-                            glInternalFormat = gl.RG8;
+                            glInternalFormat = gl.RG8I;
                             break;
                         case 3:
-                            glInternalFormat = gl.RGB8;
+                            glInternalFormat = gl.RGB8I;
                             break;
                         case 4:
-                            glInternalFormat = gl.RGBA8;
+                            glInternalFormat = gl.RGBA8I;
                             break;
                         default:
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
@@ -282,16 +283,16 @@ var DataLayer = /** @class */ (function () {
                     glType = gl.UNSIGNED_BYTE;
                     switch (glNumChannels) {
                         case 1:
-                            glInternalFormat = gl.R8;
+                            glInternalFormat = gl.R8UI;
                             break;
                         case 2:
-                            glInternalFormat = gl.RG8;
+                            glInternalFormat = gl.RG8UI;
                             break;
                         case 3:
-                            glInternalFormat = gl.RGB8;
+                            glInternalFormat = gl.RGB8UI;
                             break;
                         case 4:
-                            glInternalFormat = gl.RGBA8;
+                            glInternalFormat = gl.RGBA8UI;
                             break;
                         default:
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
