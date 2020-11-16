@@ -13,7 +13,9 @@ export declare class GLCompute {
     private pointIndexArray?;
     private pointIndexBuffer?;
     private readonly passThroughProgram;
-    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
+    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, options?: {
+        antialias?: boolean;
+    }, errorCallback?: (message: string) => void);
     private initVertexBuffer;
     initProgram(name: string, fragmentShaderOrSource: string | WebGLShader, uniforms?: {
         name: string;

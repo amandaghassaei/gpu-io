@@ -15,7 +15,7 @@ for (var i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 }
 var circlePositions = new Float32Array(unitCirclePoints);
 var GLCompute = /** @class */ (function () {
-    function GLCompute(gl, canvasEl, 
+    function GLCompute(gl, canvasEl, options, 
     // Optionally pass in an error callback in case we want to handle errors related to webgl support.
     // e.g. throw up a modal telling user this will not work on their device.
     errorCallback) {
@@ -34,9 +34,9 @@ var GLCompute = /** @class */ (function () {
         // Init GL.
         if (!gl) {
             // Init a gl context if not passed in.
-            gl = canvasEl.getContext('webgl2', { antialias: false })
-                || canvasEl.getContext('webgl', { antialias: false })
-                || canvasEl.getContext('experimental-webgl', { antialias: false });
+            gl = canvasEl.getContext('webgl2', options)
+                || canvasEl.getContext('webgl', options)
+                || canvasEl.getContext('experimental-webgl', options);
             if (gl === null) {
                 this.errorCallback('Unable to initialize WebGL context.');
                 return;

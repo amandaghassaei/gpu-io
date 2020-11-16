@@ -36,6 +36,9 @@ export class GLCompute {
 	constructor(
 		gl: WebGLRenderingContext | WebGL2RenderingContext | null,
 		canvasEl: HTMLCanvasElement,
+		options?: {
+			antialias?: boolean,
+		},
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
 		// e.g. throw up a modal telling user this will not work on their device.
 		errorCallback: (message: string) => void = (message: string) => { throw new Error(message) }, 
@@ -53,9 +56,9 @@ export class GLCompute {
 		// Init GL.
 		if (!gl) {
 			// Init a gl context if not passed in.
-			gl = canvasEl.getContext('webgl2', {antialias:false})  as WebGL2RenderingContext | null
-				|| canvasEl.getContext('webgl', {antialias:false})  as WebGLRenderingContext | null
-				|| canvasEl.getContext('experimental-webgl', {antialias:false})  as WebGLRenderingContext | null;
+			gl = canvasEl.getContext('webgl2', options)  as WebGL2RenderingContext | null
+				|| canvasEl.getContext('webgl', options)  as WebGLRenderingContext | null
+				|| canvasEl.getContext('experimental-webgl', options)  as WebGLRenderingContext | null;
 			if (gl === null) {
 			this.errorCallback('Unable to initialize WebGL context.');
 				return;
