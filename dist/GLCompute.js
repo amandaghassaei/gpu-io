@@ -281,7 +281,7 @@ var GLCompute = /** @class */ (function () {
         // Draw.
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
     };
-    GLCompute.prototype.drawPoints = function (program, inputLayers, pointSize, numPoints) {
+    GLCompute.prototype.drawPoints = function (program, inputLayers, outputLayer, pointSize, numPoints) {
         if (pointSize === void 0) { pointSize = 1; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, width = _a.width, height = _a.height, pointIndexArray = _a.pointIndexArray;
         // Ignore if we are in error state.
@@ -301,7 +301,7 @@ var GLCompute = /** @class */ (function () {
             throw new Error("Invalid numPoint " + numPoints + " for positionDataLayer of length " + length + ".");
         }
         // Do setup - this must come first.
-        this.drawSetup(program, true, inputLayers);
+        this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
         program.setUniform('u_pointSize', pointSize, 'FLOAT');

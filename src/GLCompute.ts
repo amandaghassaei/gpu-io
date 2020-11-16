@@ -399,6 +399,7 @@ can render to nextState using currentState as an input.`);
 	drawPoints(
 		program: GPUProgram,
 		inputLayers: DataLayer[],
+		outputLayer: DataLayer,
 		pointSize: number = 1,
 		numPoints?: number,
 	) {
@@ -424,7 +425,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.drawSetup(program, true, inputLayers);
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
