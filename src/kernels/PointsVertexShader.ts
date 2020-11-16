@@ -28,7 +28,7 @@ void main() {
 
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
-	vUV = 0.5 * (u_positions, vParticleUV).xy + 1.0);
+	vUV = 0.5 * (u_positions, vParticleUV).xy + 1.0;
 
 	// Calculate position in [-1, 1] range.
 	vec2 position = vUV * 2.0 - 1.0;
