@@ -4,6 +4,7 @@ export function compileShader(
 	errorCallback: (message: string) => void,
 	shaderSource: string,
 	shaderType: number,
+	programName?: string,
 ) {
 	// Create the shader object
 	const shader = gl.createShader(shaderType);
@@ -23,7 +24,7 @@ export function compileShader(
 	if (!success) {
 		// Something went wrong during compilation - print the error.
 		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
-			 shader: ${gl.getShaderInfoLog(shader)}`);
+			 shader${programName ? ` for program ${programName}` : ''}: ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}
 	return shader;

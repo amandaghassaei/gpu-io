@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isWebGL2 = exports.compileShader = void 0;
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
-function compileShader(gl, errorCallback, shaderSource, shaderType) {
+function compileShader(gl, errorCallback, shaderSource, shaderType, programName) {
     // Create the shader object
     var shader = gl.createShader(shaderType);
     if (!shader) {
@@ -17,7 +17,7 @@ function compileShader(gl, errorCallback, shaderSource, shaderType) {
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print the error.
-        errorCallback("Could not compile " + (shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex') + "\n\t\t\t shader: " + gl.getShaderInfoLog(shader));
+        errorCallback("Could not compile " + (shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex') + "\n\t\t\t shader" + (programName ? " for program " + programName : '') + ": " + gl.getShaderInfoLog(shader) + ".");
         return null;
     }
     return shader;

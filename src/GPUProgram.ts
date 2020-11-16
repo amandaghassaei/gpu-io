@@ -73,7 +73,7 @@ export class GPUProgram {
 
 		// Compile shaders.
 		if (typeof(fragmentShaderOrSource) === 'string') {
-			const fragmentShader = compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER);
+			const fragmentShader = compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER, name);
 			if (!fragmentShader) {
 				errorCallback(`Unable to compile fragment shader for program ${name}.`);
 				return;
@@ -84,7 +84,7 @@ export class GPUProgram {
 			gl.attachShader(program, fragmentShaderOrSource);
 		}
 		if (typeof(vertexShaderOrSource) === 'string') {
-			const vertexShader = compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER);
+			const vertexShader = compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
 			if (!vertexShader) {
 				errorCallback(`Unable to compile vertex shader for program ${name}.`);
 				return;

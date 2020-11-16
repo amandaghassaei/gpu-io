@@ -30,7 +30,7 @@ var GPUProgram = /** @class */ (function () {
         }
         // Compile shaders.
         if (typeof (fragmentShaderOrSource) === 'string') {
-            var fragmentShader = utils_1.compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER);
+            var fragmentShader = utils_1.compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER, name);
             if (!fragmentShader) {
                 errorCallback("Unable to compile fragment shader for program " + name + ".");
                 return;
@@ -42,7 +42,7 @@ var GPUProgram = /** @class */ (function () {
             gl.attachShader(program, fragmentShaderOrSource);
         }
         if (typeof (vertexShaderOrSource) === 'string') {
-            var vertexShader = utils_1.compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER);
+            var vertexShader = utils_1.compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
             if (!vertexShader) {
                 errorCallback("Unable to compile vertex shader for program " + name + ".");
                 return;

@@ -26,11 +26,12 @@ void main() {
 	// Calculate a uv based on the point's index attribute.
 	vParticleUV = vec2(modI(aIndex, u_positionDimensions.x), floor(floor(aIndex + 0.5) / u_positionDimensions.x)) / u_positionDimensions;
 
-	// Lookup vertex position.
-	vec2 position = texture2D(u_positions, vParticleUV).xy * u_scale;
-
 	// Calculate a global uv for the viewport.
-	vUV = 0.5 * (position + 1.0);
+	// Lookup vertex position and scale to [0, 1] range.
+	vUV = 0.5 * (u_positions, vParticleUV).xy + 1.0);
+
+	// Calculate position in [-1, 1] range.
+	vec2 position = vUV * 2.0 - 1.0;
 
 	gl_PointSize = u_pointSize;
 	gl_Position = vec4(position, 0, 1);
