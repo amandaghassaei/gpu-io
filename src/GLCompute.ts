@@ -1,9 +1,8 @@
 import defaultVertexShaderSource from './kernels/DefaultVertexShader';
-import passThroughShaderSource from './kernels/PassThroughShader';
+import passThroughFragmentShaderSource from './kernels/PassThroughFragmentShader';
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader, isWebGL2 } from './utils';
-import { DataArray, DataArrayArrayType, DataArrayNumComponents, DataArrayType } from './DataArray-Feedback';
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
@@ -30,6 +29,8 @@ export class GLCompute {
 	private readonly quadPositionsBuffer!: WebGLBuffer;
 	private readonly boundaryPositionsBuffer!: WebGLBuffer;
 	private readonly circlePositionsBuffer!: WebGLBuffer;
+	private pointIndexArray?: Uint16Array;
+	private pointIndexBuffer?: WebGLBuffer;
 	private readonly passThroughProgram!: GPUProgram;
 
 	constructor(
@@ -91,13 +92,17 @@ export class GLCompute {
 		this.defaultVertexShader = defaultVertexShader;
 
 		// Init a program to pass values from one texture to another.
-		this.passThroughProgram = this.initProgram('passThrough', passThroughShaderSource, [
-			{
-				name: 'u_state',
-				value: 0,
-				dataType: 'INT',
-			}
-		]);
+		this.passThroughProgram = this.initProgram(
+			'passThrough',
+			passThroughFragmentShaderSource,
+			[
+				{
+					name: 'u_state',
+					value: 0,
+					dataType: 'INT',
+				},
+			],
+		);
 
 		// Create vertex buffers.
 		this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions)!;
@@ -115,7 +120,7 @@ export class GLCompute {
 	}
 
 	private initVertexBuffer(
-		data: Float32Array,
+		data: Float32Array | Uint16Array,
 	) {
 		const { errorCallback, gl } = this;
 		const buffer = gl.createBuffer();
@@ -124,7 +129,7 @@ export class GLCompute {
 			return;
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-		// Add vertex data for drawing full screen quad via triangle strip.
+		// Add buffer data.
 		gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 		return buffer;
 	}
@@ -153,8 +158,7 @@ export class GLCompute {
 	initDataLayer(
 		name: string,
 		options:{
-			width: number,
-			height: number,
+			dimensions: number | [number, number],
 			type: DataLayerType,
 			numComponents: DataLayerNumComponents,
 			data?: DataLayerArrayType,
@@ -169,26 +173,10 @@ export class GLCompute {
 		return new DataLayer(name, gl, options, errorCallback, writable, numBuffers);
 	};
 
-	initDataArray(
-		name: string,
-		options:{
-			length: number,
-			type: DataArrayType,
-			numComponents: DataArrayNumComponents,
-			data?: DataArrayArrayType,
-		},
-		writable = false,
-		numBuffers = 1,
-	) {
-		const { gl, errorCallback } = this;
-		return new DataArray(name, gl, options, errorCallback, writable, numBuffers);
-	};
-
 	onResize(canvasEl: HTMLCanvasElement) {
 		const { gl } = this;
 		const width = canvasEl.clientWidth;
 		const height = canvasEl.clientHeight;
-        gl.viewport(0, 0, width, height);
 		// Set correct canvas pixel size.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
 		canvasEl.width = width;
@@ -198,7 +186,7 @@ export class GLCompute {
 		this.height = height;
 	};
 
-	private setDrawInputsAndOutputs(
+	private drawSetup(
 		program: GPUProgram,
 		fullscreenRender: boolean,
 		inputLayers: DataLayer[],
@@ -237,8 +225,12 @@ export class GLCompute {
 	) {
 		const { gl, passThroughProgram } = this;
 
+		// Render to screen.
 		if (!outputLayer) {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			// Resize viewport.
+			const { width, height } = this;
+			gl.viewport(0, 0, width, height);
 			return;
 		}
 
@@ -254,26 +246,38 @@ can render to nextState using currentState as an input.`);
 				// Render and increment buffer so we are rendering to a different target
 				// than the input texture.
 				outputLayer.bindOutputBuffer(true);
-				return;
+			} else {
+				// Pass input texture through to output.
+				this.step(passThroughProgram, [outputLayer], outputLayer);
+				// Render to output without incrementing buffer.
+				outputLayer.bindOutputBuffer(false);
 			}
-			// Pass input texture through to output.
-			this.step(passThroughProgram, [outputLayer], outputLayer);
-			// Render to output without incrementing buffer.
+		} else {
+			// Render to current buffer.
 			outputLayer.bindOutputBuffer(false);
-			return;
 		}
-		// Render to current buffer.
-		outputLayer.bindOutputBuffer(false);
+		
+		// Resize viewport.
+		const { width, height } = outputLayer.getDimensions();
+		gl.viewport(0, 0, width, height);
 	};
 
 	private setPositionAttribute(program: GPUProgram) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const positionLocation = gl.getAttribLocation(program.program!, 'aPosition');
-		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+		const location = gl.getAttribLocation(program.program!, 'aPosition');
+		gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
-		gl.enableVertexAttribArray(positionLocation);
+		gl.enableVertexAttribArray(location);
+	}
 
+	private setIndexAttribute(program: GPUProgram) {
+		const { gl } = this;
+		// Point attribute to the currently bound VBO.
+		const location = gl.getAttribLocation(program.program!, 'aIndex');
+		gl.vertexAttribPointer(location, 1, gl.UNSIGNED_SHORT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(location);
 	}
 
 	// Step for entire fullscreen quad.
@@ -290,7 +294,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.setDrawInputsAndOutputs(program, true, inputLayers, outputLayer);
+		this.drawSetup(program, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [1, 1], 'FLOAT');
@@ -308,7 +312,7 @@ can render to nextState using currentState as an input.`);
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
-		const { gl, errorState, boundaryPositionsBuffer, width, height } = this;
+		const { gl, errorState, boundaryPositionsBuffer} = this;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -316,10 +320,12 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
+		// @ts-ignore
+		const { width, height } = outputLayer ? outputLayer.getDimensions() : this;
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
 		program.setUniform('u_translation', onePx, 'FLOAT');
@@ -336,7 +342,7 @@ can render to nextState using currentState as an input.`);
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
-		const { gl, errorState, quadPositionsBuffer, width, height } = this;
+		const { gl, errorState, quadPositionsBuffer } = this;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -344,9 +350,11 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
+		// @ts-ignore
+		const { width, height } = outputLayer ? outputLayer.getDimensions() : this;
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
 		program.setUniform('u_translation', onePx, 'FLOAT');
@@ -373,7 +381,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
@@ -382,7 +390,49 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 		
 		// Draw.
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);// Draw to framebuffer.
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+	}
+
+	drawPoints(
+		program: GPUProgram,
+		positionLayer: DataLayer,
+		pointSize: number = 1,
+		numPoints = positionLayer.getLength(),
+	) {
+		const { gl, errorState, width, height, pointIndexArray } = this;
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+
+		// Check that numPoints is valid.
+		const length = positionLayer.getLength();
+		if (numPoints > length) {
+			throw new Error(`Invalid numPoint ${numPoints} for positionDataLayer of length ${length}.`);
+		}
+
+		// Do setup - this must come first.
+		this.drawSetup(program, false, [positionLayer]);
+
+		// Update uniforms and buffers.
+		program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
+		program.setUniform('u_pointSize', pointSize, 'FLOAT');
+		const positionLayerDimensions = positionLayer.getDimensions();
+		program.setUniform('u_positionDimensions', [positionLayerDimensions.width, positionLayerDimensions.height], 'FLOAT');
+		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
+			const indices = new Uint16Array(length);
+			for (let i = 0; i < length; i++) {
+				indices[i] = i;
+			}
+			this.pointIndexArray = indices;
+			this.pointIndexBuffer = this.initVertexBuffer(indices);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer!);
+		this.setIndexAttribute(program);
+
+		// Draw.
+		gl.drawArrays(gl.POINTS, 0, numPoints);
 	}
 
     // readyToRead() {
