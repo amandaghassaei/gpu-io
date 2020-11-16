@@ -288,6 +288,9 @@ can render to nextState using currentState as an input.`);
 		program: GPUProgram,
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
+		options?: {
+			shouldBlendAlpha?: boolean,
+		},
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
 
@@ -306,7 +309,13 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 
 		// Draw.
+		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		gl.disable(gl.BLEND);
 	}
 
 	// Step program only for a strip of px along the boundary.
@@ -314,6 +323,9 @@ can render to nextState using currentState as an input.`);
 		program: GPUProgram,
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
+		options?: {
+			shouldBlendAlpha?: boolean,
+		},
 	) {
 		const { gl, errorState, boundaryPositionsBuffer} = this;
 
@@ -336,7 +348,13 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 
 		// Draw.
-		gl.drawArrays(gl.LINE_LOOP, 0, 4);// Draw to framebuffer.
+		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
+		gl.drawArrays(gl.LINE_LOOP, 0, 4);
+		gl.disable(gl.BLEND);
 	}
 
 	// Step program for all but a strip of px along the boundary.
@@ -344,6 +362,9 @@ can render to nextState using currentState as an input.`);
 		program: GPUProgram,
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
+		options?: {
+			shouldBlendAlpha?: boolean,
+		},
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
 
@@ -365,7 +386,13 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 		
 		// Draw.
+		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		gl.disable(gl.BLEND);
 	}
 
 	// Step program only for a circular spot.
@@ -375,6 +402,9 @@ can render to nextState using currentState as an input.`);
 		radius: number, // radius is in px.
 		inputLayers: DataLayer[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
+		options?: {
+			shouldBlendAlpha?: boolean,
+		},
 	) {
 		const { gl, errorState, circlePositionsBuffer, width, height } = this;
 
@@ -393,15 +423,24 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 		
 		// Draw.
+		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+		gl.disable(gl.BLEND);
 	}
 
 	drawPoints(
 		program: GPUProgram,
 		inputLayers: DataLayer[],
 		outputLayer: DataLayer,
-		pointSize: number = 1,
-		numPoints?: number,
+		options?: {
+			pointSize?: number,
+			numPoints?: number,
+			shouldBlendAlpha?: boolean,
+		}
 	) {
 		const { gl, errorState, width, height, pointIndexArray } = this;
 
@@ -417,12 +456,13 @@ can render to nextState using currentState as an input.`);
 
 		// Check that numPoints is valid.
 		const length = positionLayer.getLength();
-		if (numPoints === undefined) {
-			numPoints = length;
-		}
+		const numPoints = options?.numPoints || length;
 		if (numPoints > length) {
 			throw new Error(`Invalid numPoint ${numPoints} for positionDataLayer of length ${length}.`);
 		}
+
+		// Set default pointSize.
+		const pointSize = options?.pointSize || 1;
 
 		// Do setup - this must come first.
 		this.drawSetup(program, false, inputLayers, outputLayer);
@@ -445,8 +485,11 @@ can render to nextState using currentState as an input.`);
 		this.setIndexAttribute(program);
 
 		// Draw.
-		gl.enable(gl.BLEND);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
 		gl.drawArrays(gl.POINTS, 0, numPoints);
 		gl.disable(gl.BLEND);
 	}

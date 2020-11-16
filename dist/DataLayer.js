@@ -312,10 +312,10 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RG8UI;
                             break;
                         case 3:
-                            glInternalFormat = gl.RGB8UI;
+                            glInternalFormat = gl.RGB;
                             break;
                         case 4:
-                            glInternalFormat = gl.RGBA8UI;
+                            glInternalFormat = gl.RGBA;
                             break;
                         default:
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");

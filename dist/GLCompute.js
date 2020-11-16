@@ -201,7 +201,8 @@ var GLCompute = /** @class */ (function () {
         gl.enableVertexAttribArray(location);
     };
     // Step for entire fullscreen quad.
-    GLCompute.prototype.step = function (program, inputLayers, outputLayer) {
+    GLCompute.prototype.step = function (program, inputLayers, outputLayer, // Undefined renders to screen.
+    options) {
         if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         // Ignore if we are in error state.
@@ -216,10 +217,17 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
+        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
+        if (shouldBlendAlpha) {
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.disable(gl.BLEND);
     };
     // Step program only for a strip of px along the boundary.
-    GLCompute.prototype.stepBoundary = function (program, inputLayers, outputLayer) {
+    GLCompute.prototype.stepBoundary = function (program, inputLayers, outputLayer, // Undefined renders to screen.
+    options) {
         if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer;
         // Ignore if we are in error state.
@@ -238,10 +246,17 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
-        gl.drawArrays(gl.LINE_LOOP, 0, 4); // Draw to framebuffer.
+        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
+        if (shouldBlendAlpha) {
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
+        gl.drawArrays(gl.LINE_LOOP, 0, 4);
+        gl.disable(gl.BLEND);
     };
     // Step program for all but a strip of px along the boundary.
-    GLCompute.prototype.stepNonBoundary = function (program, inputLayers, outputLayer) {
+    GLCompute.prototype.stepNonBoundary = function (program, inputLayers, outputLayer, // Undefined renders to screen.
+    options) {
         if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         // Ignore if we are in error state.
@@ -259,12 +274,19 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
+        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
+        if (shouldBlendAlpha) {
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.disable(gl.BLEND);
     };
     // Step program only for a circular spot.
     GLCompute.prototype.stepCircle = function (program, position, // position is in screen space coords.
     radius, // radius is in px.
-    inputLayers, outputLayer) {
+    inputLayers, outputLayer, // Undefined renders to screen.
+    options) {
         if (inputLayers === void 0) { inputLayers = []; }
         var _a = this, gl = _a.gl, errorState = _a.errorState, circlePositionsBuffer = _a.circlePositionsBuffer, width = _a.width, height = _a.height;
         // Ignore if we are in error state.
@@ -279,10 +301,15 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
+        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
+        if (shouldBlendAlpha) {
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
         gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+        gl.disable(gl.BLEND);
     };
-    GLCompute.prototype.drawPoints = function (program, inputLayers, outputLayer, pointSize, numPoints) {
-        if (pointSize === void 0) { pointSize = 1; }
+    GLCompute.prototype.drawPoints = function (program, inputLayers, outputLayer, options) {
         var _a = this, gl = _a.gl, errorState = _a.errorState, width = _a.width, height = _a.height, pointIndexArray = _a.pointIndexArray;
         // Ignore if we are in error state.
         if (errorState) {
@@ -294,12 +321,12 @@ var GLCompute = /** @class */ (function () {
         var positionLayer = inputLayers[0];
         // Check that numPoints is valid.
         var length = positionLayer.getLength();
-        if (numPoints === undefined) {
-            numPoints = length;
-        }
+        var numPoints = (options === null || options === void 0 ? void 0 : options.numPoints) || length;
         if (numPoints > length) {
             throw new Error("Invalid numPoint " + numPoints + " for positionDataLayer of length " + length + ".");
         }
+        // Set default pointSize.
+        var pointSize = (options === null || options === void 0 ? void 0 : options.pointSize) || 1;
         // Do setup - this must come first.
         this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
@@ -319,8 +346,11 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer);
         this.setIndexAttribute(program);
         // Draw.
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
+        if (shouldBlendAlpha) {
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
         gl.drawArrays(gl.POINTS, 0, numPoints);
         gl.disable(gl.BLEND);
     };

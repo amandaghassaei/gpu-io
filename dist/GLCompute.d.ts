@@ -36,13 +36,29 @@ export declare class GLCompute {
     private setOutputLayer;
     private setPositionAttribute;
     private setIndexAttribute;
-    step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    options?: {
+        shouldBlendAlpha?: boolean;
+    }): void;
+    stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    options?: {
+        shouldBlendAlpha?: boolean;
+    }): void;
+    stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    options?: {
+        shouldBlendAlpha?: boolean;
+    }): void;
     stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
-    inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
-    drawPoints(program: GPUProgram, inputLayers: DataLayer[], outputLayer: DataLayer, pointSize?: number, numPoints?: number): void;
+    inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    options?: {
+        shouldBlendAlpha?: boolean;
+    }): void;
+    drawPoints(program: GPUProgram, inputLayers: DataLayer[], outputLayer: DataLayer, options?: {
+        pointSize?: number;
+        numPoints?: number;
+        shouldBlendAlpha?: boolean;
+    }): void;
     reset(): void;
     destroy(): void;
 }

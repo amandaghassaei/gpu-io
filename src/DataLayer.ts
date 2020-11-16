@@ -391,10 +391,10 @@ export class DataLayer {
 							glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
 							break;
 						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB;
 							break;
 						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA;
 							break;
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
