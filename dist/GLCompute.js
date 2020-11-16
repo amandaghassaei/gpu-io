@@ -319,7 +319,10 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer);
         this.setIndexAttribute(program);
         // Draw.
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.drawArrays(gl.POINTS, 0, numPoints);
+        gl.disable(gl.BLEND);
     };
     // readyToRead() {
     // 	const { gl } = this;

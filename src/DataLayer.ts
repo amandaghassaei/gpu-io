@@ -269,6 +269,9 @@ export class DataLayer {
 	}
 
 	private getGLTextureParameters() {
+		// TODO: we may not want to support int and unsigned int textures
+		// because they require modifications to the shader code:
+		// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
 		const { gl, numComponents, type, writable, name, errorCallback } = this;
 		// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 		let glType: number | undefined,
