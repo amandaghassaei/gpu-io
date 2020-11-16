@@ -32,6 +32,6 @@ void main() {
 	vUV = 0.5 * (position + 1.0);
 
 	gl_PointSize = u_pointSize;
-	gl_Position = vec4(positionUV, 0, 1);
+	gl_Position = vec4(aIndex / 100.0, aIndex / 100.0, 0, 1);
 }
 `;

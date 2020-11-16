@@ -196,7 +196,7 @@ var GLCompute = /** @class */ (function () {
         var gl = this.gl;
         // Point attribute to the currently bound VBO.
         var location = gl.getAttribLocation(program.program, 'aIndex');
-        gl.vertexAttribPointer(location, 1, gl.UNSIGNED_SHORT, false, 0, 0);
+        gl.vertexAttribPointer(location, 1, gl.FLOAT, false, 0, 0);
         // Enable the attribute.
         gl.enableVertexAttribArray(location);
     };

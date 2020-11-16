@@ -24,7 +24,6 @@ var DataLayer = /** @class */ (function () {
             var _a = this.calcWidthHeight(options.dimensions), width = _a[0], height = _a[1];
             this.width = width;
             this.height = height;
-            console.log(this.length, this.width, this.height);
         }
         else {
             this.width = options.dimensions[0];

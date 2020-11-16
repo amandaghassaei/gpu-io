@@ -275,7 +275,7 @@ can render to nextState using currentState as an input.`);
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
 		const location = gl.getAttribLocation(program.program!, 'aIndex');
-		gl.vertexAttribPointer(location, 1, gl.UNSIGNED_SHORT, false, 0, 0);
+		gl.vertexAttribPointer(location, 1, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
 	}

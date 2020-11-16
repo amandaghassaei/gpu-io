@@ -74,7 +74,6 @@ export class DataLayer {
 			const [width, height] = this.calcWidthHeight(options.dimensions as number);
 			this.width = width;
 			this.height = height;
-			console.log(this.length, this.width, this.height);
 		} else {
 			this.width = (options.dimensions as [number, number])[0];
 			this.height = (options.dimensions as [number, number])[1];
