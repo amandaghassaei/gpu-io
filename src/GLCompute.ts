@@ -421,7 +421,7 @@ can render to nextState using currentState as an input.`);
 		const positionLayerDimensions = positionLayer.getDimensions();
 		program.setUniform('u_positionDimensions', [positionLayerDimensions.width, positionLayerDimensions.height], 'FLOAT');
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
-			// Have to use float32 array bc int is nut supported as a vertex attribute type.
+			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
 			for (let i = 0; i < length; i++) {
 				indices[i] = i;
