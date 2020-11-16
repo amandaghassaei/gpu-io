@@ -223,43 +223,45 @@ export class DataLayer {
 			throw new Error(`Invalid TypedArray of type ${(_data.constructor as any).name} supplied to DataLayer ${name} of type ${type}.`);
 		}
 
-		// Then check if we are using glNumChannels !== numComponents.
+		// Then check if array needs to be lengthened.
+		// This could be because glNumChannels !== numComponents.
+		// Or because length !== width * height.
 		let data = _data;
-		if (glNumChannels !== numComponents) {
-			const imageSize = length ? length : width * height;
+		const imageSize = width * height * glNumChannels;
+		if (data.length < imageSize) {
 			switch (type) {
 				case 'float32':
-					data = new Float32Array(imageSize * glNumChannels);
+					data = new Float32Array(imageSize);
 					break;
 				// case 'float16':
 				// 	// 	newArray = new Int16Array(imageSize * glNumChannels);
 				// 	throw new Error('setting float16 from data not supported yet.');
 				// 	break;
 				case 'uint8':
-					data = new Uint8Array(imageSize * glNumChannels);
+					data = new Uint8Array(imageSize);
 					break;
 				case 'int8':
-					data = new Int8Array(imageSize * glNumChannels);
+					data = new Int8Array(imageSize);
 					break;
 				case 'uint16':
-					data = new Uint16Array(imageSize * glNumChannels);
+					data = new Uint16Array(imageSize);
 					break;
 				case 'int16':
-					data = new Int16Array(imageSize * glNumChannels);
+					data = new Int16Array(imageSize);
 					break;
 				case 'uint32':
-					data = new Uint32Array(imageSize * glNumChannels);
+					data = new Uint32Array(imageSize);
 					break;
 				case 'int32':
-					data = new Int32Array(imageSize * glNumChannels);
+					data = new Int32Array(imageSize);
 					break;
 			default:
 					throw new Error(`Error initing ${name}.  Unsupported type ${type} for GLCompute.initDataLayer.`);
 			}
 			// Fill new data array with old data.
-			for (let i = 0; i < imageSize; i++) {
+			for (let i = 0, _len = _data.length / numComponents; i < _len; i++) {
 				for (let j = 0; j < numComponents; j++) {
-					data[glNumChannels * i + j] = _data[i * numComponents + j];
+					data[i * glNumChannels + j] = _data[i * numComponents + j];
 				}
 			}
 		}
