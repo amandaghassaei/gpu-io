@@ -15,11 +15,11 @@ export declare class GLCompute {
     private readonly passThroughProgram;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private initVertexBuffer;
-    initProgram(name: string, fragmentShaderSource: string, uniforms?: {
+    initProgram(name: string, fragmentShaderOrSource: string | WebGLShader, uniforms?: {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
-    }[], vertexShaderSource?: string): GPUProgram;
+    }[], vertexShaderOrSource?: string | WebGLShader): GPUProgram;
     initDataLayer(name: string, options: {
         dimensions: number | [number, number];
         type: DataLayerType;

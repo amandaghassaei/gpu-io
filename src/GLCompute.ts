@@ -136,21 +136,21 @@ export class GLCompute {
 
 	initProgram(
 		name: string,
-		fragmentShaderSource: string,
+		fragmentShaderOrSource: string | WebGLShader,
 		uniforms?: {
 			name: string,
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
-		vertexShaderSource?: string,
+		vertexShaderOrSource?: string | WebGLShader,
 	) {
 		const { gl, errorCallback } = this;	
 		return new GPUProgram(
 			name,
 			gl,
 			errorCallback,
-			vertexShaderSource ? vertexShaderSource : this.defaultVertexShader,
-			fragmentShaderSource,
+			vertexShaderOrSource ? vertexShaderOrSource : this.defaultVertexShader,
+			fragmentShaderOrSource,
 			uniforms,
 		);
 	};

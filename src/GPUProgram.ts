@@ -51,8 +51,8 @@ export class GPUProgram {
 		name: string,
 		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		errorCallback: (message: string) => void,
-		vertexShader: WebGLShader,
-		fragmentShaderSource: string,
+		vertexShaderOrSource: string | WebGLShader,
+		fragmentShaderOrSource: string | WebGLShader,
 		uniforms?: {
 			name: string,
 			value: UniformValueType,
@@ -71,17 +71,29 @@ export class GPUProgram {
 			return;
 		}
 
-		// Compile shader.
-		const fragmentShader = compileShader(gl, errorCallback, fragmentShaderSource, gl.FRAGMENT_SHADER);
-		if (!fragmentShader) {
-			errorCallback(`Unable to compile fragment shader for program ${name}.`);
-			return;
+		// Compile shaders.
+		if (typeof(fragmentShaderOrSource) === 'string') {
+			const fragmentShader = compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER);
+			if (!fragmentShader) {
+				errorCallback(`Unable to compile fragment shader for program ${name}.`);
+				return;
+			}
+			this.shaders.push(fragmentShader);
+			gl.attachShader(program, fragmentShader);
+		} else {
+			gl.attachShader(program, fragmentShaderOrSource);
 		}
-		this.shaders.push(fragmentShader);
-
-		// Attach the shaders.
-		gl.attachShader(program, vertexShader);
-		gl.attachShader(program, fragmentShader);
+		if (typeof(vertexShaderOrSource) === 'string') {
+			const vertexShader = compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER);
+			if (!vertexShader) {
+				errorCallback(`Unable to compile vertex shader for program ${name}.`);
+				return;
+			}
+			this.shaders.push(vertexShader);
+			gl.attachShader(program, vertexShader);
+		} else {
+			gl.attachShader(program, vertexShaderOrSource);
+		}
 
 		// Link the program.
 		gl.linkProgram(program);

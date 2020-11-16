@@ -12,7 +12,7 @@ var INT_2D_UNIFORM = '2i';
 var INT_3D_UNIFORM = '3i';
 var INT_4D_UNIFORM = '3i';
 var GPUProgram = /** @class */ (function () {
-    function GPUProgram(name, gl, errorCallback, vertexShader, fragmentShaderSource, uniforms) {
+    function GPUProgram(name, gl, errorCallback, vertexShaderOrSource, fragmentShaderOrSource, uniforms) {
         var _this = this;
         this.uniforms = {};
         this.shaders = []; // Save ref to shaders so we can deallocate.
@@ -28,16 +28,31 @@ var GPUProgram = /** @class */ (function () {
             errorCallback("Unable to init gl program: " + name + ".");
             return;
         }
-        // Compile shader.
-        var fragmentShader = utils_1.compileShader(gl, errorCallback, fragmentShaderSource, gl.FRAGMENT_SHADER);
-        if (!fragmentShader) {
-            errorCallback("Unable to compile fragment shader for program " + name + ".");
-            return;
+        // Compile shaders.
+        if (typeof (fragmentShaderOrSource) === 'string') {
+            var fragmentShader = utils_1.compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER);
+            if (!fragmentShader) {
+                errorCallback("Unable to compile fragment shader for program " + name + ".");
+                return;
+            }
+            this.shaders.push(fragmentShader);
+            gl.attachShader(program, fragmentShader);
         }
-        this.shaders.push(fragmentShader);
-        // Attach the shaders.
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
+        else {
+            gl.attachShader(program, fragmentShaderOrSource);
+        }
+        if (typeof (vertexShaderOrSource) === 'string') {
+            var vertexShader = utils_1.compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER);
+            if (!vertexShader) {
+                errorCallback("Unable to compile vertex shader for program " + name + ".");
+                return;
+            }
+            this.shaders.push(vertexShader);
+            gl.attachShader(program, vertexShader);
+        }
+        else {
+            gl.attachShader(program, vertexShaderOrSource);
+        }
         // Link the program.
         gl.linkProgram(program);
         // Check if it linked.
