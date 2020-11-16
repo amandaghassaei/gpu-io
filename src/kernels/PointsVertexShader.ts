@@ -12,6 +12,7 @@ uniform vec2 u_scale;
 uniform float u_pointSize;
 
 varying vec2 vUV;
+varying vec2 vParticleUV;
 
 /**
  * Returns accurate MOD when arguments are approximate integers.
@@ -23,10 +24,10 @@ float modI(float a, float b) {
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
-	vec2 positionUV = vec2(modI(aIndex, u_positionDimensions.x), floor(floor(aIndex + 0.5) / u_positionDimensions.x)) / u_positionDimensions;
+	vParticleUV = vec2(modI(aIndex, u_positionDimensions.x), floor(floor(aIndex + 0.5) / u_positionDimensions.x)) / u_positionDimensions;
 
 	// Lookup vertex position.
-	vec2 position = texture2D(u_positions, positionUV).xy * u_scale;
+	vec2 position = texture2D(u_positions, vParticleUV).xy * u_scale;
 
 	// Calculate a global uv for the viewport.
 	vUV = 0.5 * (position + 1.0);
