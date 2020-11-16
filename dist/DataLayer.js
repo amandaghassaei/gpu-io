@@ -118,7 +118,7 @@ var DataLayer = /** @class */ (function () {
         var invalidTypeFound = false;
         switch (type) {
             case 'float32':
-                invalidTypeFound = invalidTypeFound || _data.name !== 'Float32Array';
+                invalidTypeFound = invalidTypeFound || _data.constructor === Float32Array;
                 break;
             case 'float16':
                 // Since there is no Float16TypedArray, we must us Uint16TypedArray
@@ -126,22 +126,22 @@ var DataLayer = /** @class */ (function () {
                 throw new Error('setting float16 from data not supported yet.');
                 break;
             case 'uint8':
-                invalidTypeFound = invalidTypeFound || _data.name !== 'Uint8Array';
+                invalidTypeFound = invalidTypeFound || _data.constructor === Uint8Array;
                 break;
             case 'int8':
-                invalidTypeFound = invalidTypeFound || _data.name !== 'Int8Array';
+                invalidTypeFound = invalidTypeFound || _data.constructor === Int8Array;
                 break;
             case 'uint16':
-                invalidTypeFound = invalidTypeFound || _data.name !== 'Uint16Array';
+                invalidTypeFound = invalidTypeFound || _data.constructor === Uint16Array;
                 break;
             case 'int16':
-                invalidTypeFound = invalidTypeFound || _data.name !== 'Int16Array';
+                invalidTypeFound = invalidTypeFound || _data.constructor === Int16Array;
                 break;
             case 'uint32':
-                invalidTypeFound = invalidTypeFound || _data.name !== 'Uint32Array';
+                invalidTypeFound = invalidTypeFound || _data.constructor === Uint32Array;
                 break;
             case 'int32':
-                invalidTypeFound = invalidTypeFound || _data.name !== 'Int32Array';
+                invalidTypeFound = invalidTypeFound || _data.constructor === Int32Array;
                 break;
             default:
                 throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GLCompute.initDataLayer.");
