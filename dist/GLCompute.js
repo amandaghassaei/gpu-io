@@ -302,7 +302,8 @@ var GLCompute = /** @class */ (function () {
         var positionLayerDimensions = positionLayer.getDimensions();
         program.setUniform('u_positionDimensions', [positionLayerDimensions.width, positionLayerDimensions.height], 'FLOAT');
         if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
-            var indices = new Uint16Array(length);
+            // Have to use float32 array bc int is nut supported as a vertex attribute type.
+            var indices = new Float32Array(length);
             for (var i = 0; i < length; i++) {
                 indices[i] = i;
             }

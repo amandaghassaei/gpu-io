@@ -29,7 +29,7 @@ export class GLCompute {
 	private readonly quadPositionsBuffer!: WebGLBuffer;
 	private readonly boundaryPositionsBuffer!: WebGLBuffer;
 	private readonly circlePositionsBuffer!: WebGLBuffer;
-	private pointIndexArray?: Uint16Array;
+	private pointIndexArray?: Float32Array;
 	private pointIndexBuffer?: WebGLBuffer;
 	private readonly passThroughProgram!: GPUProgram;
 
@@ -120,7 +120,7 @@ export class GLCompute {
 	}
 
 	private initVertexBuffer(
-		data: Float32Array | Uint16Array,
+		data: Float32Array,
 	) {
 		const { errorCallback, gl } = this;
 		const buffer = gl.createBuffer();
@@ -421,7 +421,8 @@ can render to nextState using currentState as an input.`);
 		const positionLayerDimensions = positionLayer.getDimensions();
 		program.setUniform('u_positionDimensions', [positionLayerDimensions.width, positionLayerDimensions.height], 'FLOAT');
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
-			const indices = new Uint16Array(length);
+			// Have to use float32 array bc int is nut supported as a vertex attribute type.
+			const indices = new Float32Array(length);
 			for (let i = 0; i < length; i++) {
 				indices[i] = i;
 			}

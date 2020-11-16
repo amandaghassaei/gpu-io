@@ -1,1 +1,1 @@
-{"version":3,"file":"PointsVertexShader.js","sourceRoot":"","sources":["../../src/kernels/PointsVertexShader.ts"],"names":[],"mappings":";;AAAA,4BAA4B;AAC5B,kBAAe,8rBAyBd,CAAC"}
+{"version":3,"file":"PointsVertexShader.js","sourceRoot":"","sources":["../../src/kernels/PointsVertexShader.ts"],"names":[],"mappings":";;AAAA,4BAA4B;AAC5B,kBAAe,o1BA2Bd,CAAC"}
