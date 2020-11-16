@@ -111,7 +111,7 @@ var DataLayer = /** @class */ (function () {
         var _a = this, width = _a.width, height = _a.height, length = _a.length, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, type = _a.type, name = _a.name;
         // Check that data is correct length.
         // First check for a user error.
-        if ((length && _data.length !== length) || _data.length !== width * height * numComponents) {
+        if ((length && _data.length !== length * numComponents) || (!length && _data.length !== width * height * numComponents)) {
             throw new Error("Invalid data length " + _data.length + " for DataLayer " + name + " of size " + (length ? length : width + "x" + height) + "x" + numComponents + ".");
         }
         // Check that data is correct type.

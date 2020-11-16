@@ -183,7 +183,7 @@ export class DataLayer {
 
 		// Check that data is correct length.
 		// First check for a user error.
-		if ((length && _data.length !== length) || _data.length !== width * height * numComponents) {
+		if ((length && _data.length !== length * numComponents) || (!length && _data.length !== width * height * numComponents)) {
 			throw new Error(`Invalid data length ${_data.length} for DataLayer ${name} of size ${length ? length : `${width}x${height}`}x${numComponents}.`);
 		}
 
