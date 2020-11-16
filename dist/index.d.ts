@@ -1,3 +1,4 @@
 import { GLCompute } from './GLCompute';
 import SingleColorFragShader from './kernels/SingleColorFragShader';
-export { GLCompute, SingleColorFragShader, };
+import PointsVertexShader from './kernels/PointsVertexShader';
+export { GLCompute, SingleColorFragShader, PointsVertexShader, };

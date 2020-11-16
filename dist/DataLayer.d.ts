@@ -14,6 +14,7 @@ export declare class DataLayer {
     private bufferIndex;
     readonly numBuffers: number;
     private readonly buffers;
+    private length?;
     private width;
     private height;
     private readonly type;
@@ -27,8 +28,7 @@ export declare class DataLayer {
     private readonly wrapT;
     private readonly writable;
     constructor(name: string, gl: WebGLRenderingContext | WebGL2RenderingContext, options: {
-        width: number;
-        height: number;
+        dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
         data?: DataLayerArrayType;
@@ -36,6 +36,7 @@ export declare class DataLayer {
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
     }, errorCallback: (message: string) => void, writable: boolean, numBuffers: number);
+    private calcWidthHeight;
     private checkFilter;
     private checkType;
     private checkDataArray;
@@ -43,7 +44,12 @@ export declare class DataLayer {
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
     bindOutputBuffer(incrementBufferIndex: boolean): void;
-    resize(width: number, height: number, data?: DataLayerArrayType): void;
+    resize(dimensions: number | [number, number], data?: DataLayerArrayType): void;
+    getDimensions(): {
+        width: number;
+        height: number;
+    };
+    getLength(): number;
     private destroyBuffers;
     destroy(): void;
 }

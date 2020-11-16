@@ -2,11 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GLCompute = void 0;
 var DefaultVertexShader_1 = require("./kernels/DefaultVertexShader");
-var PassThroughShader_1 = require("./kernels/PassThroughShader");
+var PassThroughFragmentShader_1 = require("./kernels/PassThroughFragmentShader");
 var DataLayer_1 = require("./DataLayer");
 var GPUProgram_1 = require("./GPUProgram");
 var utils_1 = require("./utils");
-var DataArray_Feedback_1 = require("./DataArray-Feedback");
 var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
 var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
 var unitCirclePoints = [0, 0];
@@ -72,12 +71,12 @@ var GLCompute = /** @class */ (function () {
         }
         this.defaultVertexShader = defaultVertexShader;
         // Init a program to pass values from one texture to another.
-        this.passThroughProgram = this.initProgram('passThrough', PassThroughShader_1.default, [
+        this.passThroughProgram = this.initProgram('passThrough', PassThroughFragmentShader_1.default, [
             {
                 name: 'u_state',
                 value: 0,
                 dataType: 'INT',
-            }
+            },
         ]);
         // Create vertex buffers.
         this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions);
@@ -99,7 +98,7 @@ var GLCompute = /** @class */ (function () {
             return;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        // Add vertex data for drawing full screen quad via triangle strip.
+        // Add buffer data.
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         return buffer;
     };
@@ -115,18 +114,10 @@ var GLCompute = /** @class */ (function () {
         return new DataLayer_1.DataLayer(name, gl, options, errorCallback, writable, numBuffers);
     };
     ;
-    GLCompute.prototype.initDataArray = function (name, options, writable, numBuffers) {
-        if (writable === void 0) { writable = false; }
-        if (numBuffers === void 0) { numBuffers = 1; }
-        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
-        return new DataArray_Feedback_1.DataArray(name, gl, options, errorCallback, writable, numBuffers);
-    };
-    ;
     GLCompute.prototype.onResize = function (canvasEl) {
         var gl = this.gl;
         var width = canvasEl.clientWidth;
         var height = canvasEl.clientHeight;
-        gl.viewport(0, 0, width, height);
         // Set correct canvas pixel size.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
         canvasEl.width = width;
@@ -136,7 +127,7 @@ var GLCompute = /** @class */ (function () {
         this.height = height;
     };
     ;
-    GLCompute.prototype.setDrawInputsAndOutputs = function (program, fullscreenRender, inputLayers, outputLayer) {
+    GLCompute.prototype.drawSetup = function (program, fullscreenRender, inputLayers, outputLayer) {
         var gl = this.gl;
         // Check if we are in an error state.
         if (!program.program) {
@@ -159,8 +150,12 @@ var GLCompute = /** @class */ (function () {
     };
     GLCompute.prototype.setOutputLayer = function (fullscreenRender, inputLayers, outputLayer) {
         var _a = this, gl = _a.gl, passThroughProgram = _a.passThroughProgram;
+        // Render to screen.
         if (!outputLayer) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            // Resize viewport.
+            var _b = this, width_1 = _b.width, height_1 = _b.height;
+            gl.viewport(0, 0, width_1, height_1);
             return;
         }
         // Check if output is same as one of input layers.
@@ -172,25 +167,38 @@ var GLCompute = /** @class */ (function () {
                 // Render and increment buffer so we are rendering to a different target
                 // than the input texture.
                 outputLayer.bindOutputBuffer(true);
-                return;
             }
-            // Pass input texture through to output.
-            this.step(passThroughProgram, [outputLayer], outputLayer);
-            // Render to output without incrementing buffer.
-            outputLayer.bindOutputBuffer(false);
-            return;
+            else {
+                // Pass input texture through to output.
+                this.step(passThroughProgram, [outputLayer], outputLayer);
+                // Render to output without incrementing buffer.
+                outputLayer.bindOutputBuffer(false);
+            }
         }
-        // Render to current buffer.
-        outputLayer.bindOutputBuffer(false);
+        else {
+            // Render to current buffer.
+            outputLayer.bindOutputBuffer(false);
+        }
+        // Resize viewport.
+        var _c = outputLayer.getDimensions(), width = _c.width, height = _c.height;
+        gl.viewport(0, 0, width, height);
     };
     ;
     GLCompute.prototype.setPositionAttribute = function (program) {
         var gl = this.gl;
         // Point attribute to the currently bound VBO.
-        var positionLocation = gl.getAttribLocation(program.program, 'aPosition');
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        var location = gl.getAttribLocation(program.program, 'aPosition');
+        gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
         // Enable the attribute.
-        gl.enableVertexAttribArray(positionLocation);
+        gl.enableVertexAttribArray(location);
+    };
+    GLCompute.prototype.setIndexAttribute = function (program) {
+        var gl = this.gl;
+        // Point attribute to the currently bound VBO.
+        var location = gl.getAttribLocation(program.program, 'aIndex');
+        gl.vertexAttribPointer(location, 1, gl.UNSIGNED_SHORT, false, 0, 0);
+        // Enable the attribute.
+        gl.enableVertexAttribArray(location);
     };
     // Step for entire fullscreen quad.
     GLCompute.prototype.step = function (program, inputLayers, outputLayer) {
@@ -201,7 +209,7 @@ var GLCompute = /** @class */ (function () {
             return;
         }
         // Do setup - this must come first.
-        this.setDrawInputsAndOutputs(program, true, inputLayers, outputLayer);
+        this.drawSetup(program, true, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [1, 1], 'FLOAT');
         program.setUniform('u_translation', [0, 0], 'FLOAT');
@@ -213,15 +221,17 @@ var GLCompute = /** @class */ (function () {
     // Step program only for a strip of px along the boundary.
     GLCompute.prototype.stepBoundary = function (program, inputLayers, outputLayer) {
         if (inputLayers === void 0) { inputLayers = []; }
-        var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer, width = _a.width, height = _a.height;
+        var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
         // Do setup - this must come first.
-        this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
+        this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
+        // @ts-ignore
+        var _b = outputLayer ? outputLayer.getDimensions() : this, width = _b.width, height = _b.height;
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
@@ -233,14 +243,16 @@ var GLCompute = /** @class */ (function () {
     // Step program for all but a strip of px along the boundary.
     GLCompute.prototype.stepNonBoundary = function (program, inputLayers, outputLayer) {
         if (inputLayers === void 0) { inputLayers = []; }
-        var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer, width = _a.width, height = _a.height;
+        var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         // Ignore if we are in error state.
         if (errorState) {
             return;
         }
         // Do setup - this must come first.
-        this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
+        this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
+        // @ts-ignore
+        var _b = outputLayer ? outputLayer.getDimensions() : this, width = _b.width, height = _b.height;
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
@@ -260,14 +272,47 @@ var GLCompute = /** @class */ (function () {
             return;
         }
         // Do setup - this must come first.
-        this.setDrawInputsAndOutputs(program, false, inputLayers, outputLayer);
+        this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
         program.setUniform('u_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2); // Draw to framebuffer.
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+    };
+    GLCompute.prototype.drawPoints = function (program, positionLayer, pointSize, numPoints) {
+        if (pointSize === void 0) { pointSize = 1; }
+        if (numPoints === void 0) { numPoints = positionLayer.getLength(); }
+        var _a = this, gl = _a.gl, errorState = _a.errorState, width = _a.width, height = _a.height, pointIndexArray = _a.pointIndexArray;
+        // Ignore if we are in error state.
+        if (errorState) {
+            return;
+        }
+        // Check that numPoints is valid.
+        var length = positionLayer.getLength();
+        if (numPoints > length) {
+            throw new Error("Invalid numPoint " + numPoints + " for positionDataLayer of length " + length + ".");
+        }
+        // Do setup - this must come first.
+        this.drawSetup(program, false, [positionLayer]);
+        // Update uniforms and buffers.
+        program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
+        program.setUniform('u_pointSize', pointSize, 'FLOAT');
+        var positionLayerDimensions = positionLayer.getDimensions();
+        program.setUniform('u_positionDimensions', [positionLayerDimensions.width, positionLayerDimensions.height], 'FLOAT');
+        if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
+            var indices = new Uint16Array(length);
+            for (var i = 0; i < length; i++) {
+                indices[i] = i;
+            }
+            this.pointIndexArray = indices;
+            this.pointIndexBuffer = this.initVertexBuffer(indices);
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer);
+        this.setIndexAttribute(program);
+        // Draw.
+        gl.drawArrays(gl.POINTS, 0, numPoints);
     };
     // readyToRead() {
     // 	const { gl } = this;

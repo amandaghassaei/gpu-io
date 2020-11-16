@@ -1,6 +1,5 @@
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
-import { DataArray, DataArrayArrayType, DataArrayNumComponents, DataArrayType } from './DataArray-Feedback';
 export declare class GLCompute {
     private readonly gl;
     private width;
@@ -11,6 +10,8 @@ export declare class GLCompute {
     private readonly quadPositionsBuffer;
     private readonly boundaryPositionsBuffer;
     private readonly circlePositionsBuffer;
+    private pointIndexArray?;
+    private pointIndexBuffer?;
     private readonly passThroughProgram;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, errorCallback?: (message: string) => void);
     private initVertexBuffer;
@@ -20,8 +21,7 @@ export declare class GLCompute {
         dataType: UniformDataType;
     }[], vertexShaderSource?: string): GPUProgram;
     initDataLayer(name: string, options: {
-        width: number;
-        height: number;
+        dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
         data?: DataLayerArrayType;
@@ -29,22 +29,18 @@ export declare class GLCompute {
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
-    initDataArray(name: string, options: {
-        length: number;
-        type: DataArrayType;
-        numComponents: DataArrayNumComponents;
-        data?: DataArrayArrayType;
-    }, writable?: boolean, numBuffers?: number): DataArray;
     onResize(canvasEl: HTMLCanvasElement): void;
-    private setDrawInputsAndOutputs;
+    private drawSetup;
     private setOutputLayer;
     private setPositionAttribute;
+    private setIndexAttribute;
     step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
     stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
     inputLayers?: DataLayer[], outputLayer?: DataLayer): void;
+    drawPoints(program: GPUProgram, positionLayer: DataLayer, pointSize?: number, numPoints?: number): void;
     reset(): void;
     destroy(): void;
 }

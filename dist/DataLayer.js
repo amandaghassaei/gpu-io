@@ -16,24 +16,56 @@ var DataLayer = /** @class */ (function () {
         }
         this.numBuffers = numBuffers;
         // Save options.
-        this.width = options.width;
-        this.height = options.height;
+        if (!isNaN(options.dimensions)) {
+            if (options.dimensions < 1) {
+                throw new Error("Invalid length " + options.dimensions + " for DataLayer " + name + ".");
+            }
+            this.length = options.dimensions;
+            var _a = this.calcWidthHeight(options.dimensions), width = _a[0], height = _a[1];
+            this.width = width;
+            this.height = height;
+            console.log(this.length, this.width, this.height);
+        }
+        else {
+            this.width = options.dimensions[0];
+            this.height = options.dimensions[1];
+        }
         // Check that gl will support the datatype.
         this.type = this.checkType(options.type);
         this.numComponents = options.numComponents;
         this.writable = writable;
-        this.filter = this.checkFilter(options.filter ? options.filter : 'LINEAR', this.type);
+        // Get current filter setting.
+        // If we are processing a 1D array, default to nearest filtering.
+        // Else default to linear filtering.
+        var filter = options.filter ? options.filter : (this.length ? 'LINEAR' : 'NEAREST');
+        this.filter = this.checkFilter(filter, this.type);
         this.wrapS = gl[options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE'];
         this.wrapT = gl[options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE'];
-        var _a = this.getGLTextureParameters(), glFormat = _a.glFormat, glInternalFormat = _a.glInternalFormat, glType = _a.glType, glNumChannels = _a.glNumChannels;
+        var _b = this.getGLTextureParameters(), glFormat = _b.glFormat, glInternalFormat = _b.glInternalFormat, glType = _b.glType, glNumChannels = _b.glNumChannels;
         this.glInternalFormat = glInternalFormat;
         this.glFormat = glFormat;
         this.glType = glType;
         this.glNumChannels = glNumChannels;
         this.initBuffers(options.data);
     }
+    DataLayer.prototype.calcWidthHeight = function (length) {
+        // Calc power of two width and height for length.
+        var exp = 1;
+        var remainder = length;
+        while (remainder > 2) {
+            exp++;
+            remainder /= 2;
+        }
+        return [
+            Math.pow(2, Math.floor(exp / 2) + exp % 2),
+            Math.pow(2, Math.floor(exp / 2)),
+        ];
+    };
     DataLayer.prototype.checkFilter = function (filter, type) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
+        if (filter === 'NEAREST') {
+            return gl[filter];
+        }
         if (type === 'float16') {
             var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true) ||
                 extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
@@ -76,11 +108,11 @@ var DataLayer = /** @class */ (function () {
         if (!_data) {
             return;
         }
-        var _a = this, width = _a.width, height = _a.height, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, type = _a.type, name = _a.name;
+        var _a = this, width = _a.width, height = _a.height, length = _a.length, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, type = _a.type, name = _a.name;
         // Check that data is correct length.
         // First check for a user error.
-        if (_data.length !== width * height * numComponents) {
-            throw new Error("Invalid data length " + _data.length + " for DataLayer " + name + " of size " + width + "x" + height + "x" + numComponents + ".");
+        if ((length && _data.length !== length) || _data.length !== width * height * numComponents) {
+            throw new Error("Invalid data length " + _data.length + " for DataLayer " + name + " of size " + (length ? length : width + "x" + height) + "x" + numComponents + ".");
         }
         // Check that data is correct type.
         var invalidTypeFound = false;
@@ -112,43 +144,43 @@ var DataLayer = /** @class */ (function () {
                 invalidTypeFound = invalidTypeFound || _data.name !== 'Int32Array';
                 break;
             default:
-                throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GPGPU.initDataLayer.");
+                throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GLCompute.initDataLayer.");
         }
         if (invalidTypeFound) {
             throw new Error("Invalid TypedArray of type " + _data.name + " supplied to DataLayer " + name + " of type " + type + ".");
         }
         // Then check if we are using glNumChannels !== numComponents.
         var data = _data;
-        if (data.length !== width * height * glNumChannels) {
-            var imageSize = width * height;
+        if (glNumChannels !== numComponents) {
+            var imageSize = length ? length : width * height;
             switch (type) {
                 case 'float32':
-                    data = new Float32Array(width * height * glNumChannels);
+                    data = new Float32Array(imageSize * glNumChannels);
                     break;
                 // case 'float16':
-                // 	// 	newArray = new Int16Array(width * height * glNumChannels);
+                // 	// 	newArray = new Int16Array(imageSize * glNumChannels);
                 // 	throw new Error('setting float16 from data not supported yet.');
                 // 	break;
                 case 'uint8':
-                    data = new Uint8Array(width * height * glNumChannels);
+                    data = new Uint8Array(imageSize * glNumChannels);
                     break;
                 case 'int8':
-                    data = new Int8Array(width * height * glNumChannels);
+                    data = new Int8Array(imageSize * glNumChannels);
                     break;
                 case 'uint16':
-                    data = new Uint16Array(width * height * glNumChannels);
+                    data = new Uint16Array(imageSize * glNumChannels);
                     break;
                 case 'int16':
-                    data = new Int16Array(width * height * glNumChannels);
+                    data = new Int16Array(imageSize * glNumChannels);
                     break;
                 case 'uint32':
-                    data = new Uint32Array(width * height * glNumChannels);
+                    data = new Uint32Array(imageSize * glNumChannels);
                     break;
                 case 'int32':
-                    data = new Int32Array(width * height * glNumChannels);
+                    data = new Int32Array(imageSize * glNumChannels);
                     break;
                 default:
-                    throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GPGPU.initDataLayer.");
+                    throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GLCompute.initDataLayer.");
             }
             // Fill new data array with old data.
             for (var i = 0; i < imageSize; i++) {
@@ -160,7 +192,7 @@ var DataLayer = /** @class */ (function () {
         return data;
     };
     DataLayer.prototype.getGLTextureParameters = function () {
-        var _a = this, gl = _a.gl, numComponents = _a.numComponents, type = _a.type, writable = _a.writable, errorCallback = _a.errorCallback;
+        var _a = this, gl = _a.gl, numComponents = _a.numComponents, type = _a.type, writable = _a.writable, name = _a.name, errorCallback = _a.errorCallback;
         // https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
         var glType, glFormat, glInternalFormat, glNumChannels;
         if (utils_1.isWebGL2(gl)) {
@@ -465,11 +497,37 @@ var DataLayer = /** @class */ (function () {
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     };
-    DataLayer.prototype.resize = function (width, height, data) {
+    DataLayer.prototype.resize = function (dimensions, data) {
+        if (!isNaN(dimensions)) {
+            if (!this.length) {
+                throw new Error("Invalid dimensions " + dimensions + " for 2D DataLayer " + this.name + ", please specify a width and height as an array.");
+            }
+            this.length = dimensions;
+            var _a = this.calcWidthHeight(this.length), width = _a[0], height = _a[1];
+            this.width = width;
+            this.height = height;
+        }
+        else {
+            if (this.length) {
+                throw new Error("Invalid dimensions " + dimensions + " for 1D DataLayer " + this.name + ", please specify a length as a number.");
+            }
+            this.width = dimensions[0];
+            this.height = dimensions[1];
+        }
         this.destroyBuffers();
-        this.width = width;
-        this.height = height;
         this.initBuffers(data);
+    };
+    DataLayer.prototype.getDimensions = function () {
+        return {
+            width: this.width,
+            height: this.height,
+        };
+    };
+    DataLayer.prototype.getLength = function () {
+        if (!this.length) {
+            throw new Error("Cannot call getLength() on 2D DataLayer " + this.name + ".");
+        }
+        return this.length;
     };
     DataLayer.prototype.destroyBuffers = function () {
         var _a = this, gl = _a.gl, buffers = _a.buffers;
