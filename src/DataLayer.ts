@@ -343,16 +343,16 @@ export class DataLayer {
 					glType = gl.BYTE;
 					switch (glNumChannels) {
 						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8I;
+							glInternalFormat = (gl as WebGL2RenderingContext).R8;
 							break;
 						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8I;
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
 							break;
 						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8I;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB8;
 							break;
 						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8I;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8;
 							break;
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
@@ -362,16 +362,16 @@ export class DataLayer {
 					glType = gl.UNSIGNED_BYTE;
 					switch (glNumChannels) {
 						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).R8;
 							break;
 						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
 							break;
 						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB8;
 							break;
 						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8;
 							break;
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);

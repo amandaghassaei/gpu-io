@@ -263,16 +263,16 @@ var DataLayer = /** @class */ (function () {
                     glType = gl.BYTE;
                     switch (glNumChannels) {
                         case 1:
-                            glInternalFormat = gl.R8I;
+                            glInternalFormat = gl.R8;
                             break;
                         case 2:
-                            glInternalFormat = gl.RG8I;
+                            glInternalFormat = gl.RG8;
                             break;
                         case 3:
-                            glInternalFormat = gl.RGB8I;
+                            glInternalFormat = gl.RGB8;
                             break;
                         case 4:
-                            glInternalFormat = gl.RGBA8I;
+                            glInternalFormat = gl.RGBA8;
                             break;
                         default:
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
@@ -282,16 +282,16 @@ var DataLayer = /** @class */ (function () {
                     glType = gl.UNSIGNED_BYTE;
                     switch (glNumChannels) {
                         case 1:
-                            glInternalFormat = gl.R8UI;
+                            glInternalFormat = gl.R8;
                             break;
                         case 2:
-                            glInternalFormat = gl.RG8UI;
+                            glInternalFormat = gl.RG8;
                             break;
                         case 3:
-                            glInternalFormat = gl.RGB8UI;
+                            glInternalFormat = gl.RGB8;
                             break;
                         case 4:
-                            glInternalFormat = gl.RGBA8UI;
+                            glInternalFormat = gl.RGBA8;
                             break;
                         default:
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
