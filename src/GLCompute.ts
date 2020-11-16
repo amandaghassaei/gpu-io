@@ -309,8 +309,7 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 
 		// Draw.
-		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
-		if (shouldBlendAlpha) {
+		if (options?.shouldBlendAlpha) {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
@@ -348,8 +347,7 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 
 		// Draw.
-		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
-		if (shouldBlendAlpha) {
+		if (options?.shouldBlendAlpha) {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
@@ -386,8 +384,7 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 		
 		// Draw.
-		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
-		if (shouldBlendAlpha) {
+		if (options?.shouldBlendAlpha) {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
@@ -423,8 +420,7 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(program);
 		
 		// Draw.
-		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
-		if (shouldBlendAlpha) {
+		if (options?.shouldBlendAlpha) {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
@@ -485,6 +481,7 @@ can render to nextState using currentState as an input.`);
 		this.setIndexAttribute(program);
 
 		// Draw.
+		// Default to blend === true.
 		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
 		if (shouldBlendAlpha) {
 			gl.enable(gl.BLEND);

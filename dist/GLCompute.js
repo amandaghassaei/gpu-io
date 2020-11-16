@@ -217,8 +217,7 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
-        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
-        if (shouldBlendAlpha) {
+        if (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
@@ -246,8 +245,7 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
-        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
-        if (shouldBlendAlpha) {
+        if (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
@@ -274,8 +272,7 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
-        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
-        if (shouldBlendAlpha) {
+        if (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
@@ -301,8 +298,7 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
         this.setPositionAttribute(program);
         // Draw.
-        var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
-        if (shouldBlendAlpha) {
+        if (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
@@ -346,6 +342,7 @@ var GLCompute = /** @class */ (function () {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer);
         this.setIndexAttribute(program);
         // Draw.
+        // Default to blend === true.
         var shouldBlendAlpha = (options === null || options === void 0 ? void 0 : options.shouldBlendAlpha) === false ? false : true;
         if (shouldBlendAlpha) {
             gl.enable(gl.BLEND);
