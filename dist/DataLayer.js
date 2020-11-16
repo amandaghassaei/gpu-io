@@ -37,7 +37,7 @@ var DataLayer = /** @class */ (function () {
         // Get current filter setting.
         // If we are processing a 1D array, default to nearest filtering.
         // Else default to linear filtering.
-        var filter = options.filter ? options.filter : (this.length ? 'LINEAR' : 'NEAREST');
+        var filter = options.filter ? options.filter : (this.length ? 'NEAREST' : 'LINEAR');
         this.filter = this.checkFilter(filter, this.type);
         this.wrapS = gl[options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE'];
         this.wrapT = gl[options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE'];
