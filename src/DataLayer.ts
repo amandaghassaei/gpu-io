@@ -220,7 +220,7 @@ export class DataLayer {
 				throw new Error(`Error initing ${name}.  Unsupported type ${type} for GLCompute.initDataLayer.`);
 		}
 		if (invalidTypeFound) {
-			throw new Error(`Invalid TypedArray of type ${(_data as any).name} supplied to DataLayer ${name} of type ${type}.`);
+			throw new Error(`Invalid TypedArray of type ${(_data.constructor as any).name} supplied to DataLayer ${name} of type ${type}.`);
 		}
 
 		// Then check if we are using glNumChannels !== numComponents.

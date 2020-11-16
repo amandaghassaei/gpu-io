@@ -147,7 +147,7 @@ var DataLayer = /** @class */ (function () {
                 throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GLCompute.initDataLayer.");
         }
         if (invalidTypeFound) {
-            throw new Error("Invalid TypedArray of type " + _data.name + " supplied to DataLayer " + name + " of type " + type + ".");
+            throw new Error("Invalid TypedArray of type " + _data.constructor.name + " supplied to DataLayer " + name + " of type " + type + ".");
         }
         // Then check if we are using glNumChannels !== numComponents.
         var data = _data;
