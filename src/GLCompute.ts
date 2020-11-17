@@ -431,7 +431,7 @@ can render to nextState using currentState as an input.`);
 	drawPoints(
 		program: GPUProgram,
 		inputLayers: DataLayer[],
-		outputLayer: DataLayer,
+		outputLayer?: DataLayer,
 		options?: {
 			pointSize?: number,
 			numPoints?: number,

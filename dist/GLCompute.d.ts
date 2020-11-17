@@ -54,7 +54,7 @@ export declare class GLCompute {
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
-    drawPoints(program: GPUProgram, inputLayers: DataLayer[], outputLayer: DataLayer, options?: {
+    drawPoints(program: GPUProgram, inputLayers: DataLayer[], outputLayer?: DataLayer, options?: {
         pointSize?: number;
         numPoints?: number;
         shouldBlendAlpha?: boolean;
