@@ -38,6 +38,7 @@ var DataLayer = /** @class */ (function () {
         // Else default to linear filtering.
         var filter = options.filter ? options.filter : (this.length ? 'NEAREST' : 'LINEAR');
         this.filter = this.checkFilter(filter, this.type);
+        // TODO: REPEAT wrap not supported for non-power of 2 textures, possibly only applies to float textures?
         this.wrapS = gl[options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE'];
         this.wrapT = gl[options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE'];
         var _b = this.getGLTextureParameters(), glFormat = _b.glFormat, glInternalFormat = _b.glInternalFormat, glType = _b.glType, glNumChannels = _b.glNumChannels;
@@ -66,8 +67,8 @@ var DataLayer = /** @class */ (function () {
             return gl[filter];
         }
         if (type === 'float16') {
-            var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true) ||
-                extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
+            var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true)
+                || extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
             if (!extension) {
                 //TODO: add a fallback that does this filtering in the frag shader?.
                 filter = 'NEAREST';
@@ -208,41 +209,21 @@ var DataLayer = /** @class */ (function () {
             if (numComponents === 3 && writable) {
                 glNumChannels = 4;
             }
-            if (type === 'float16' || type === 'float32') {
-                switch (glNumChannels) {
-                    case 1:
-                        glFormat = gl.RED;
-                        break;
-                    case 2:
-                        glFormat = gl.RG;
-                        break;
-                    case 3:
-                        glFormat = gl.RGB;
-                        break;
-                    case 4:
-                        glFormat = gl.RGBA;
-                        break;
-                    default:
-                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
-                }
-            }
-            else {
-                switch (glNumChannels) {
-                    case 1:
-                        glFormat = gl.RED_INTEGER;
-                        break;
-                    case 2:
-                        glFormat = gl.RG_INTEGER;
-                        break;
-                    case 3:
-                        glFormat = gl.RGB;
-                        break;
-                    case 4:
-                        glFormat = gl.RGBA;
-                        break;
-                    default:
-                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
-                }
+            switch (glNumChannels) {
+                case 1:
+                    glFormat = gl.RED;
+                    break;
+                case 2:
+                    glFormat = gl.RG;
+                    break;
+                case 3:
+                    glFormat = gl.RGB;
+                    break;
+                case 4:
+                    glFormat = gl.RGBA;
+                    break;
+                default:
+                    throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
             }
             switch (type) {
                 case 'float32':
@@ -306,10 +287,10 @@ var DataLayer = /** @class */ (function () {
                     glType = gl.UNSIGNED_BYTE;
                     switch (glNumChannels) {
                         case 1:
-                            glInternalFormat = gl.R8UI;
+                            glInternalFormat = gl.R8;
                             break;
                         case 2:
-                            glInternalFormat = gl.RG8UI;
+                            glInternalFormat = gl.RG8;
                             break;
                         case 3:
                             glInternalFormat = gl.RGB;

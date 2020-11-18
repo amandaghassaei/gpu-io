@@ -88,6 +88,7 @@ export class DataLayer {
 		// Else default to linear filtering.
 		const filter = options.filter ? options.filter : (this.length ? 'NEAREST' : 'LINEAR');
 		this.filter = this.checkFilter(filter, this.type);
+		// TODO: REPEAT wrap not supported for non-power of 2 textures, possibly only applies to float textures?
 		this.wrapS = gl[options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE'];
 		this.wrapT = gl[options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE'];
 
@@ -130,9 +131,8 @@ export class DataLayer {
 		}
 
 		if (type === 'float16') {
-			const extension = 
-				getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true) ||
-				getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true);
+			const extension = getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true)
+				|| getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
 				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = 'NEAREST';
@@ -288,40 +288,21 @@ export class DataLayer {
 			if (numComponents === 3 && writable) {
 				glNumChannels = 4;
 			}
-			if (type === 'float16' || type === 'float32') {
-				switch (glNumChannels) {
-					case 1:
-						glFormat = (gl as WebGL2RenderingContext).RED;
-						break;
-					case 2:
-						glFormat = (gl as WebGL2RenderingContext).RG;
-						break;
-					case 3:
-						glFormat = gl.RGB;
-						break;
-					case 4:
-						glFormat = gl.RGBA;
-						break;
-					default:
-						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
-				}
-			} else {
-				switch (glNumChannels) {
-					case 1:
-						glFormat = (gl as WebGL2RenderingContext).RED_INTEGER;
-						break;
-					case 2:
-						glFormat = (gl as WebGL2RenderingContext).RG_INTEGER;
-						break;
-					case 3:
-						glFormat = gl.RGB;
-						break;
-					case 4:
-						glFormat = gl.RGBA;
-						break;
-					default:
-						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
-				}
+			switch (glNumChannels) {
+				case 1:
+					glFormat = (gl as WebGL2RenderingContext).RED;
+					break;
+				case 2:
+					glFormat = (gl as WebGL2RenderingContext).RG;
+					break;
+				case 3:
+					glFormat = gl.RGB;
+					break;
+				case 4:
+					glFormat = gl.RGBA;
+					break;
+				default:
+					throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
 			}
 			switch (type) {
 				case 'float32':
@@ -385,10 +366,10 @@ export class DataLayer {
 					glType = gl.UNSIGNED_BYTE;
 					switch (glNumChannels) {
 						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).R8;
 							break;
 						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
 							break;
 						case 3:
 							glInternalFormat = (gl as WebGL2RenderingContext).RGB;
