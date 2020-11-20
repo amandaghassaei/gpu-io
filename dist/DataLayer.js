@@ -523,6 +523,12 @@ var DataLayer = /** @class */ (function () {
         this.destroyBuffers();
         this.initBuffers(data);
     };
+    DataLayer.prototype.clear = function () {
+        // Reset everything to zero.
+        // This is not the most efficient way to do this (reallocating all textures and framebuffers).
+        // but ok for now.
+        this.initBuffers();
+    };
     DataLayer.prototype.getDimensions = function () {
         return {
             width: this.width,

@@ -636,6 +636,13 @@ export class DataLayer {
 		this.initBuffers(data);
 	}
 
+	clear() {
+		// Reset everything to zero.
+		// This is not the most efficient way to do this (reallocating all textures and framebuffers).
+		// but ok for now.
+		this.initBuffers();
+	}
+
 	getDimensions() {
 		return {
 			width: this.width,

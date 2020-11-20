@@ -45,6 +45,7 @@ export declare class DataLayer {
     getCurrentStateTexture(): WebGLTexture;
     bindOutputBuffer(incrementBufferIndex: boolean): void;
     resize(dimensions: number | [number, number], data?: DataLayerArrayType): void;
+    clear(): void;
     getDimensions(): {
         width: number;
         height: number;
