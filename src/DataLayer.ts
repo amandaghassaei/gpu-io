@@ -640,6 +640,7 @@ export class DataLayer {
 		// Reset everything to zero.
 		// This is not the most efficient way to do this (reallocating all textures and framebuffers).
 		// but ok for now.
+		this.destroyBuffers();
 		this.initBuffers();
 	}
 
