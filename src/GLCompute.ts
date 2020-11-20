@@ -1,5 +1,6 @@
 import defaultVertexShaderSource from './kernels/DefaultVertexShader';
 import passThroughFragmentShaderSource from './kernels/PassThroughFragmentShader';
+import packFloat32ToRGBA8ShaderSource from './kernels/packFloat32ToRGBA8FragmentShader';
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader, isWebGL2 } from './utils';
@@ -32,6 +33,8 @@ export class GLCompute {
 	private pointIndexArray?: Float32Array;
 	private pointIndexBuffer?: WebGLBuffer;
 	private readonly passThroughProgram!: GPUProgram;
+	private packFloat32ToRGBA8Program?: GPUProgram;
+	private packToRGBA8OutputBuffer?: DataLayer;
 
 	constructor(
 		gl: WebGLRenderingContext | WebGL2RenderingContext | null,
@@ -490,20 +493,72 @@ can render to nextState using currentState as an input.`);
 		gl.drawArrays(gl.POINTS, 0, numPoints);
 		gl.disable(gl.BLEND);
 	}
-
-    // readyToRead() {
-	// 	const { gl } = this;
-    //     return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
-    // };
-
-    // readPixels(xMin: number, yMin: number, width: number, height: number, array: TextureDataType) {
-	// 	const { gl } = this;
-	// 	gl.readPixels(xMin, yMin, width, height, gl.RGBA, gl.UNSIGNED_BYTE, array);
-	// };
 	
 	getContext() {
 		return this.gl;
 	}
+
+	getValues(dataLayer: DataLayer) {
+		const { gl, errorCallback, defaultVertexShader } = this;
+		let { packFloat32ToRGBA8Program, packToRGBA8OutputBuffer } = this;
+
+		// Init program if needed.
+		if (!packFloat32ToRGBA8Program) {
+			packFloat32ToRGBA8Program = new GPUProgram(
+				'packFloat32ToRGBA8',
+				gl,
+				errorCallback,
+				defaultVertexShader,
+				packFloat32ToRGBA8ShaderSource, [
+					{ 
+						name: 'u_floatTexture',
+						value: 0,
+						dataType: 'INT',
+					},
+				]);
+			this.packFloat32ToRGBA8Program = packFloat32ToRGBA8Program;
+		}
+		
+		const type = dataLayer.getType();
+		if (type !== 'float16' && type !== 'float32') {
+			throw new Error(`Unsupported type ${type} for getValues().`);
+		}
+		const dimensions = dataLayer.getDimensions();
+		const numComponents = dataLayer.getNumComponent();
+		const outputWidth = dimensions.width * numComponents;
+		const outputHeight = dimensions.height;
+
+		// Init output buffer if needed.
+		if (!packToRGBA8OutputBuffer) {
+			packToRGBA8OutputBuffer = new DataLayer('packToRGBA8Output', gl, {
+				dimensions: [outputWidth, outputHeight],
+				type: 'uint8',
+				numComponents: 4,
+			}, errorCallback, true, 1);
+		} else {
+			// Resize if needed.
+			packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
+		}
+
+		// Pack to bytes.
+		packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [dimensions.width, dimensions.height], 'FLOAT');
+		packFloat32ToRGBA8Program.setUniform('u_numFloatComponents', numComponents, 'FLOAT');
+		this.step(packFloat32ToRGBA8Program, [dataLayer], packToRGBA8OutputBuffer);
+
+		// Read result.
+		if (this.readyToRead()) {
+			const pixels = new Uint8Array(outputWidth * outputHeight * 4);
+			gl.readPixels(0, 0, outputWidth, outputHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+			return new Float32Array(pixels.buffer);
+		} else {
+			throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
+		}
+	}
+
+	readyToRead() {
+		const { gl } = this;
+		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
+	};
 
     reset() {
 	};

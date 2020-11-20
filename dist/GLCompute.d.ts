@@ -13,6 +13,8 @@ export declare class GLCompute {
     private pointIndexArray?;
     private pointIndexBuffer?;
     private readonly passThroughProgram;
+    private packFloat32ToRGBA8Program?;
+    private packToRGBA8OutputBuffer?;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, options?: {
         antialias?: boolean;
     }, errorCallback?: (message: string) => void);
@@ -60,6 +62,8 @@ export declare class GLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
+    getValues(dataLayer: DataLayer): Float32Array;
+    readyToRead(): boolean;
     reset(): void;
     destroy(): void;
 }

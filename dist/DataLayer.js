@@ -508,6 +508,9 @@ var DataLayer = /** @class */ (function () {
             if (!this.length) {
                 throw new Error("Invalid dimensions " + dimensions + " for 2D DataLayer " + this.name + ", please specify a width and height as an array.");
             }
+            if (this.length === dimensions) {
+                return;
+            }
             this.length = dimensions;
             var _a = this.calcWidthHeight(this.length), width = _a[0], height = _a[1];
             this.width = width;
@@ -516,6 +519,10 @@ var DataLayer = /** @class */ (function () {
         else {
             if (this.length) {
                 throw new Error("Invalid dimensions " + dimensions + " for 1D DataLayer " + this.name + ", please specify a length as a number.");
+            }
+            if (this.width === dimensions[0] &&
+                this.height === dimensions[1]) {
+                return;
             }
             this.width = dimensions[0];
             this.height = dimensions[1];
@@ -541,6 +548,12 @@ var DataLayer = /** @class */ (function () {
             throw new Error("Cannot call getLength() on 2D DataLayer " + this.name + ".");
         }
         return this.length;
+    };
+    DataLayer.prototype.getNumComponent = function () {
+        return this.numComponents;
+    };
+    DataLayer.prototype.getType = function () {
+        return this.type;
     };
     DataLayer.prototype.destroyBuffers = function () {
         var _a = this, gl = _a.gl, buffers = _a.buffers;

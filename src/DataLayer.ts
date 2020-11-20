@@ -621,6 +621,9 @@ export class DataLayer {
 			if (!this.length) {
 				throw new Error(`Invalid dimensions ${dimensions} for 2D DataLayer ${this.name}, please specify a width and height as an array.`)
 			}
+			if (this.length === dimensions as number) {
+				return;
+			}
 			this.length = dimensions as number;
 			const [ width, height ] = this.calcWidthHeight(this.length);
 			this.width = width;
@@ -628,6 +631,10 @@ export class DataLayer {
 		} else {
 			if (this.length) {
 				throw new Error(`Invalid dimensions ${dimensions} for 1D DataLayer ${this.name}, please specify a length as a number.`)
+			}
+			if (this.width === (dimensions as [number, number])[0] &&
+				this.height === (dimensions as [number, number])[1]) {
+				return;
 			}
 			this.width = (dimensions as [number, number])[0];
 			this.height = (dimensions as [number, number])[1];
@@ -656,6 +663,14 @@ export class DataLayer {
 			throw new Error(`Cannot call getLength() on 2D DataLayer ${this.name}.`);
 		}
 		return this.length;
+	}
+
+	getNumComponent() {
+		return this.numComponents;
+	}
+
+	getType() {
+		return this.type;
 	}
 
 	private destroyBuffers() {
