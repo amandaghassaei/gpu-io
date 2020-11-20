@@ -359,6 +359,9 @@ var GLCompute = /** @class */ (function () {
     // 	const { gl } = this;
     // 	gl.readPixels(xMin, yMin, width, height, gl.RGBA, gl.UNSIGNED_BYTE, array);
     // };
+    GLCompute.prototype.getContext = function () {
+        return this.gl;
+    };
     GLCompute.prototype.reset = function () {
     };
     ;

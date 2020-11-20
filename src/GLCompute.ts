@@ -499,7 +499,11 @@ can render to nextState using currentState as an input.`);
     // readPixels(xMin: number, yMin: number, width: number, height: number, array: TextureDataType) {
 	// 	const { gl } = this;
 	// 	gl.readPixels(xMin, yMin, width, height, gl.RGBA, gl.UNSIGNED_BYTE, array);
-    // };
+	// };
+	
+	getContext() {
+		return this.gl;
+	}
 
     reset() {
 	};

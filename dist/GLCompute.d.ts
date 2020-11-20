@@ -59,6 +59,7 @@ export declare class GLCompute {
         numPoints?: number;
         shouldBlendAlpha?: boolean;
     }): void;
+    getContext(): WebGLRenderingContext | WebGL2RenderingContext;
     reset(): void;
     destroy(): void;
 }
