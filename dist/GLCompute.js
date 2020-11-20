@@ -387,7 +387,10 @@ var GLCompute = /** @class */ (function () {
         }
         else {
             // Resize if needed.
-            packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
+            var outputDimensions = packToRGBA8OutputBuffer.getDimensions();
+            if (outputDimensions.width !== outputWidth || outputDimensions.height !== outputHeight) {
+                packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
+            }
         }
         // Pack to bytes.
         packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [dimensions.width, dimensions.height], 'FLOAT');

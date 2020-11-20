@@ -508,9 +508,6 @@ var DataLayer = /** @class */ (function () {
             if (!this.length) {
                 throw new Error("Invalid dimensions " + dimensions + " for 2D DataLayer " + this.name + ", please specify a width and height as an array.");
             }
-            if (this.length === dimensions) {
-                return;
-            }
             this.length = dimensions;
             var _a = this.calcWidthHeight(this.length), width = _a[0], height = _a[1];
             this.width = width;
@@ -519,10 +516,6 @@ var DataLayer = /** @class */ (function () {
         else {
             if (this.length) {
                 throw new Error("Invalid dimensions " + dimensions + " for 1D DataLayer " + this.name + ", please specify a length as a number.");
-            }
-            if (this.width === dimensions[0] &&
-                this.height === dimensions[1]) {
-                return;
             }
             this.width = dimensions[0];
             this.height = dimensions[1];

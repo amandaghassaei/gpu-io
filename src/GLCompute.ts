@@ -537,7 +537,10 @@ can render to nextState using currentState as an input.`);
 			}, errorCallback, true, 1);
 		} else {
 			// Resize if needed.
-			packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
+			const outputDimensions = packToRGBA8OutputBuffer.getDimensions();
+			if (outputDimensions.width !== outputWidth || outputDimensions.height !== outputHeight) {
+				packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
+			}
 		}
 
 		// Pack to bytes.
