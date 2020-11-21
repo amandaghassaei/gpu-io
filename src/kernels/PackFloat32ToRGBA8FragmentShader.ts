@@ -1,5 +1,5 @@
 export default `
-precision mediump float;
+precision highp float;
 
 uniform vec2 u_floatTextureDim;
 uniform sampler2D u_floatTexture;
