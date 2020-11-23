@@ -88,9 +88,8 @@ export class DataLayer {
 		// Else default to linear filtering.
 		const filter = options.filter ? options.filter : (this.length ? 'NEAREST' : 'LINEAR');
 		this.filter = this.checkFilter(filter, this.type);
-		// TODO: REPEAT wrap not supported for non-power of 2 textures, possibly only applies to float textures?
-		this.wrapS = gl[options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE'];
-		this.wrapT = gl[options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE'];
+		this.wrapS = gl[this.checkWrap(gl, options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE', this.type)];
+		this.wrapT = gl[this.checkWrap(gl, options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE', this.type)];
 
 		const {
 			glFormat,
@@ -118,6 +117,27 @@ export class DataLayer {
 			Math.pow(2, Math.floor(exp / 2) + exp % 2),
 			Math.pow(2, Math.floor(exp/2)),
 		];
+	}
+
+	private checkWrap(
+		gl: WebGLRenderingContext | WebGL2RenderingContext,
+		wrap: DataLayerWrapType,
+		type: DataLayerType,
+	) {
+		if (isWebGL2(gl)) {
+			return wrap;
+		}
+		if (wrap === 'CLAMP_TO_EDGE') {
+			return wrap;
+		}
+		if (type === 'float32' || type === 'float16') {
+			// TODO: we may want to handle this in the frag shader.
+			// REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 float textures in safari.
+			// I've tested this and it seems that some power of 2 textures will work (512 x 512),
+			// but not others (1024x1024), so let's just change all WebGL 1.0 to CLAMP.
+			return 'CLAMP_TO_EDGE';
+		}
+		return wrap;
 	}
 
 	private checkFilter(

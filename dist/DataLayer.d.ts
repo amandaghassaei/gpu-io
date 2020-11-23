@@ -37,6 +37,7 @@ export declare class DataLayer {
         wrapT?: DataLayerWrapType;
     }, errorCallback: (message: string) => void, writable: boolean, numBuffers: number);
     private calcWidthHeight;
+    private checkWrap;
     private checkFilter;
     private checkType;
     private checkDataArray;
