@@ -7,6 +7,7 @@ export declare type DataLayerBuffer = {
     texture: WebGLTexture;
     framebuffer?: WebGLFramebuffer;
 };
+declare type ErrorCallback = (message: string) => void;
 export declare class DataLayer {
     private readonly name;
     private readonly gl;
@@ -35,13 +36,14 @@ export declare class DataLayer {
         filter?: DataLayerFilterType;
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
-    }, errorCallback: (message: string) => void, writable: boolean, numBuffers: number);
+    }, errorCallback: ErrorCallback, writable: boolean, numBuffers: number);
     private calcWidthHeight;
-    private checkWrap;
-    private checkFilter;
-    private checkType;
+    private static checkWrap;
+    private static checkFilter;
+    private static checkType;
     private checkDataArray;
-    private getGLTextureParameters;
+    private static getGLTextureParameters;
+    private static testFramebufferWrite;
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
     bindOutputBuffer(incrementBufferIndex: boolean): void;
@@ -57,3 +59,4 @@ export declare class DataLayer {
     private destroyBuffers;
     destroy(): void;
 }
+export {};

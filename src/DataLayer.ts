@@ -20,10 +20,12 @@ export type DataLayerBuffer = {
 	framebuffer?: WebGLFramebuffer,
 }
 
+type ErrorCallback = (message: string) => void;
+
 export class DataLayer {
 	private readonly name: string;
 	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
-	private readonly errorCallback: (message: string) => void;
+	private readonly errorCallback: ErrorCallback;
 	private bufferIndex = 0;
 	readonly numBuffers;
 	private readonly buffers: DataLayerBuffer[] = [];
@@ -53,7 +55,7 @@ export class DataLayer {
 			wrapS?: DataLayerWrapType,
 			wrapT?: DataLayerWrapType,
 		},
-		errorCallback: (message: string) => void,
+		errorCallback: ErrorCallback,
 		writable: boolean,
 		numBuffers: number,
 	) {
@@ -79,24 +81,28 @@ export class DataLayer {
 			this.height = (options.dimensions as [number, number])[1];
 		}
 		
-		// Check that gl will support the datatype.
-		this.type = this.checkType(options.type);
 		this.numComponents = options.numComponents;
 		this.writable = writable;
+		// Check that gl will support the datatype.
+		this.type = DataLayer.checkType(this.gl, options.type, this.writable, this.errorCallback);
 		// Get current filter setting.
 		// If we are processing a 1D array, default to nearest filtering.
 		// Else default to linear filtering.
 		const filter = options.filter ? options.filter : (this.length ? 'NEAREST' : 'LINEAR');
-		this.filter = this.checkFilter(filter, this.type);
-		this.wrapS = gl[this.checkWrap(gl, options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE', this.type)];
-		this.wrapT = gl[this.checkWrap(gl, options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE', this.type)];
+		this.filter = gl[DataLayer.checkFilter(this.gl, filter, this.type, this.errorCallback)];
+		this.wrapS = gl[DataLayer.checkWrap(this.gl, options.wrapS ? options.wrapS : 'CLAMP_TO_EDGE', this.type)];
+		this.wrapT = gl[DataLayer.checkWrap(this.gl, options.wrapT ? options.wrapT : 'CLAMP_TO_EDGE', this.type)];
 
 		const {
 			glFormat,
 			glInternalFormat,
 			glType,
 			glNumChannels,
-		} = this.getGLTextureParameters();
+		} = DataLayer.getGLTextureParameters(this.gl, this.name, {
+			numComponents: this.numComponents,
+			writable: this.writable,
+			type: this.type,
+		}, this.errorCallback);
 		this.glInternalFormat = glInternalFormat;
 		this.glFormat = glFormat;
 		this.glType = glType;
@@ -119,7 +125,7 @@ export class DataLayer {
 		];
 	}
 
-	private checkWrap(
+	private static checkWrap(
 		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		wrap: DataLayerWrapType,
 		type: DataLayerType,
@@ -140,14 +146,14 @@ export class DataLayer {
 		return wrap;
 	}
 
-	private checkFilter(
+	private static checkFilter(
+		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		filter: DataLayerFilterType,
 		type: DataLayerType,
+		errorCallback: ErrorCallback,
 	) {
-		const { gl, errorCallback } = this;
-
 		if (filter === 'NEAREST') {
-			return gl[filter];
+			return filter;
 		}
 
 		if (type === 'float16') {
@@ -165,20 +171,33 @@ export class DataLayer {
 			}
 		}
 
-		return gl[filter];
+		return filter;
 	}
 
-	private checkType(
+	private static checkType(
+		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		type: DataLayerType,
+		writable: boolean,
+		errorCallback: ErrorCallback,
 	) {
-		const { gl, errorCallback } = this;
-
 		// Check if float32 supported.
 		if (!isWebGL2(gl)) {
 			if (type === 'float32') {
 				const extension = getExtension(gl, OES_TEXTURE_FLOAT, errorCallback, true);
 				if (!extension) {
 					type = 'float16';
+				}
+				// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
+				// Rendering to a floating-point texture may not be supported,
+				// even if the OES_texture_float extension is supported.
+				// Typically, this fails on current mobile hardware.
+				// To check if this is supported, you have to call the WebGL
+				// checkFramebufferStatus() function.
+				if (writable) {
+					const valid = DataLayer.testFramebufferWrite(gl, type);
+					if (!valid) {
+						type = 'float16';
+					}
 				}
 			}
 			// Must support at least half float if using a float type.
@@ -288,11 +307,20 @@ export class DataLayer {
 		return data;
 	}
 
-	private getGLTextureParameters() {
+	private static getGLTextureParameters(
+		gl: WebGLRenderingContext | WebGL2RenderingContext,
+		name: string,
+		params: {
+			numComponents: DataLayerNumComponents,
+			type: DataLayerType,
+			writable: boolean,
+		},
+		errorCallback: ErrorCallback,
+	) {
 		// TODO: we may not want to support int and unsigned int textures
 		// because they require modifications to the shader code:
 		// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
-		const { gl, numComponents, type, writable, name, errorCallback } = this;
+		const { numComponents, type, writable } = params;
 		// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 		let glType: number | undefined,
 			glFormat: number | undefined,
@@ -543,6 +571,50 @@ export class DataLayer {
 			glType,
 			glNumChannels,
 		};
+	}
+
+	private static testFramebufferWrite(
+		gl: WebGLRenderingContext | WebGL2RenderingContext, type: DataLayerType,
+		options: {
+			numComponents?: DataLayerNumComponents,
+			wrapS?: DataLayerWrapType,
+			wrapT?: DataLayerWrapType,
+			filter?: DataLayerFilterType,
+			width?: number
+			height?: number,
+	} = {}) {
+		const texture = gl.createTexture();
+		if (!texture) {
+			return false;
+		}
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+
+		const wrapS = gl[options.wrapS || 'CLAMP_TO_EDGE'];
+		const wrapT = gl[options.wrapT || 'CLAMP_TO_EDGE'];
+		const filter = gl[options.filter || 'NEAREST'];
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapS);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+
+		const { glInternalFormat, glFormat, glType } = DataLayer.getGLTextureParameters(gl, 'test', {
+			numComponents: options.numComponents || 1,
+			writable: true,
+			type: type,
+		}, () => {});
+		gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, options.width || 100, options.height || 100, 0, glFormat, glType, null);
+
+		// Init a framebuffer for this texture so we can write to it.
+		const framebuffer = gl.createFramebuffer();
+		if (!framebuffer) {
+			return false;
+		}
+		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+		const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+		return status === gl.FRAMEBUFFER_COMPLETE;
 	}
 
 	private initBuffers(
