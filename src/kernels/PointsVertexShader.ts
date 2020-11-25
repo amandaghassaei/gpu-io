@@ -30,7 +30,7 @@ void main() {
 	// Lookup vertex position and scale to [0, 1] range.
 	// u_positions may be a float16 or float32, explicitly cast it to current precision.
 	vec2 position_raw = texture2D(u_positions, vParticleUV).xy;
-	vec2 vUV = vec2(float(position.x), float(position.y)) * u_scale;
+	vec2 vUV = vec2(float(position_raw.x), float(position_raw.y)) * u_scale;
 
 	// Calculate position in [-1, 1] range.
 	vec2 position = vUV * 2.0 - 1.0;
