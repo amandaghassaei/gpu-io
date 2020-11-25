@@ -8,12 +8,15 @@
     "url": "https://github.com/amandaghassaei/glcompute.git"
   },
   "scripts": {
-	"test": "echo \"Error: no test specified\" && exit 1",
-	"build": "tsc"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "author": "Amanda Ghassaei",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^4.0.5"
+  },
+  "dependencies": {
+    "@petamoriken/float16": "^2.0.0"
   }
 }

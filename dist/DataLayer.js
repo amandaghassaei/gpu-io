@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataLayer = void 0;
+var float16_1 = require("@petamoriken/float16");
 var extensions_1 = require("./extensions");
 var utils_1 = require("./utils");
 var DataLayer = /** @class */ (function () {
@@ -76,6 +77,12 @@ var DataLayer = /** @class */ (function () {
             // REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 float textures in safari.
             // I've tested this and it seems that some power of 2 textures will work (512 x 512),
             // but not others (1024x1024), so let's just change all WebGL 1.0 to CLAMP.
+            // TODO: test for this more thoroughly.
+            // Without this, we currently get an error at drawArrays():
+            // WebGL: drawArrays: texture bound to texture unit 0 is not renderable.
+            // It maybe non-power-of-2 and have incompatible texture filtering or is not
+            // 'texture complete', or it is a float/half-float type with linear filtering and
+            // without the relevant float/half-float linear extension enabled.
             return 'CLAMP_TO_EDGE';
         }
         return wrap;
@@ -85,6 +92,7 @@ var DataLayer = /** @class */ (function () {
             return filter;
         }
         if (type === 'float16') {
+            // TODO: test if float linear extension is actually working.
             var extension = extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true)
                 || extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
             if (!extension) {
@@ -125,6 +133,12 @@ var DataLayer = /** @class */ (function () {
             // Must support at least half float if using a float type.
             if (type === 'float16') {
                 extensions_1.getExtension(gl, extensions_1.OES_TEXTURE_HALF_FLOAT, errorCallback);
+                if (writable) {
+                    var valid = DataLayer.testFramebufferWrite(gl, type);
+                    if (!valid) {
+                        errorCallback("This browser does not support rendering to half-float textures.");
+                    }
+                }
             }
         }
         // Load additional extensions if needed.
@@ -150,9 +164,9 @@ var DataLayer = /** @class */ (function () {
                 invalidTypeFound = invalidTypeFound || _data.constructor !== Float32Array;
                 break;
             case 'float16':
-                // Since there is no Float16TypedArray, we must us Uint16TypedArray
-                // TODO: how to cast as Int16Array.
-                throw new Error('setting float16 from data not supported yet.');
+                // Since there is no Float16Array, we must us Uint16Array to init texture.
+                // We will allow Float32Arrays to be passed in as well and do the conversion automatically.
+                invalidTypeFound = invalidTypeFound || (_data.constructor !== Float32Array && _data.constructor !== Uint16Array);
                 break;
             case 'uint8':
                 invalidTypeFound = invalidTypeFound || _data.constructor !== Uint8Array;
@@ -188,10 +202,9 @@ var DataLayer = /** @class */ (function () {
                 case 'float32':
                     data = new Float32Array(imageSize);
                     break;
-                // case 'float16':
-                // 	// 	newArray = new Int16Array(imageSize * glNumChannels);
-                // 	throw new Error('setting float16 from data not supported yet.');
-                // 	break;
+                case 'float16':
+                    data = new Uint16Array(imageSize);
+                    break;
                 case 'uint8':
                     data = new Uint8Array(imageSize);
                     break;
@@ -214,9 +227,17 @@ var DataLayer = /** @class */ (function () {
                     throw new Error("Error initing " + name + ".  Unsupported type " + type + " for GLCompute.initDataLayer.");
             }
             // Fill new data array with old data.
+            // We have to handle the case of Float16 specially.
+            var handleFloat16 = type === 'float16' && _data.constructor === Float32Array;
+            var view = handleFloat16 ? new DataView(data.buffer) : null;
             for (var i = 0, _len = _data.length / numComponents; i < _len; i++) {
                 for (var j = 0; j < numComponents; j++) {
-                    data[i * glNumChannels + j] = _data[i * numComponents + j];
+                    if (handleFloat16) {
+                        float16_1.setFloat16(view, 2 * i, _data[i], true);
+                    }
+                    else {
+                        data[i * glNumChannels + j] = _data[i * numComponents + j];
+                    }
                 }
             }
         }

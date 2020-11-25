@@ -2,10 +2,12 @@
   "compilerOptions": {
     "target": "es5",
     "allowJs": false,
-  "strict": true,
-  "sourceMap": true,
-  "outDir": "./dist/",
-  "declaration": true
+    "lib": ["es2015", "dom"],
+    "strict": true,
+    "sourceMap": true,
+    "outDir": "./dist/",
+    "declaration": true,
+    "typeRoots": ["node_modules/@types"]
   },
   "include": [
     "src"

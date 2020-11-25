@@ -54,7 +54,7 @@ export declare class DataLayer {
         height: number;
     };
     getLength(): number;
-    getNumComponent(): 1 | 2 | 3 | 4;
+    getNumComponent(): 1 | 2 | 4 | 3;
     getType(): DataLayerType;
     private destroyBuffers;
     destroy(): void;
