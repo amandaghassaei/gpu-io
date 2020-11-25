@@ -316,7 +316,7 @@ export class DataLayer {
 			for (let i = 0, _len = _data.length / numComponents; i < _len; i++) {
 				for (let j = 0; j < numComponents; j++) {
 					if (handleFloat16) {
-						setFloat16(view!, 2 * i, _data[i], true);
+						setFloat16(view!, 2 * (i * glNumChannels + j), _data[i * numComponents + j], true);
 					} else {
 						data[i * glNumChannels + j] = _data[i * numComponents + j];
 					}

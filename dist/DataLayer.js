@@ -233,7 +233,7 @@ var DataLayer = /** @class */ (function () {
             for (var i = 0, _len = _data.length / numComponents; i < _len; i++) {
                 for (var j = 0; j < numComponents; j++) {
                     if (handleFloat16) {
-                        float16_1.setFloat16(view, 2 * i, _data[i], true);
+                        float16_1.setFloat16(view, 2 * (i * glNumChannels + j), _data[i * numComponents + j], true);
                     }
                     else {
                         data[i * glNumChannels + j] = _data[i * numComponents + j];

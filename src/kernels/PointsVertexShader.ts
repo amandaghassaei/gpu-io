@@ -28,7 +28,9 @@ void main() {
 
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
-	vUV = texture2D(u_positions, vParticleUV).xy * u_scale;
+	// u_positions may be a float16 or float32, explicitly cast it to current precision.
+	vec2 position_raw = texture2D(u_positions, vParticleUV).xy;
+	vec2 vUV = vec2(float(position.x), float(position.y)) * u_scale;
 
 	// Calculate position in [-1, 1] range.
 	vec2 position = vUV * 2.0 - 1.0;
