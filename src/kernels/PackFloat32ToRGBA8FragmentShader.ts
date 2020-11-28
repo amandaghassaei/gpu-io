@@ -1,3 +1,5 @@
+// TODO: this is still off by a factor of 2 sometimes.
+
 export default `
 precision highp float;
 
