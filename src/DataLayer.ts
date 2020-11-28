@@ -523,6 +523,7 @@ export class DataLayer {
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
 					}
+					break;
 				case 'uint32':
 					glType = gl.UNSIGNED_INT;
 					switch (glNumChannels) {
