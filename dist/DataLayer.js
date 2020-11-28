@@ -259,21 +259,41 @@ var DataLayer = /** @class */ (function () {
             if (numComponents === 3 && writable) {
                 glNumChannels = 4;
             }
-            switch (glNumChannels) {
-                case 1:
-                    glFormat = gl.RED;
-                    break;
-                case 2:
-                    glFormat = gl.RG;
-                    break;
-                case 3:
-                    glFormat = gl.RGB;
-                    break;
-                case 4:
-                    glFormat = gl.RGBA;
-                    break;
-                default:
-                    throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+            if (type === 'float32' || type === 'float16' || type === 'uint8') {
+                switch (glNumChannels) {
+                    case 1:
+                        glFormat = gl.RED;
+                        break;
+                    case 2:
+                        glFormat = gl.RG;
+                        break;
+                    case 3:
+                        glFormat = gl.RGB;
+                        break;
+                    case 4:
+                        glFormat = gl.RGBA;
+                        break;
+                    default:
+                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                }
+            }
+            else {
+                switch (glNumChannels) {
+                    case 1:
+                        glFormat = gl.RED_INTEGER;
+                        break;
+                    case 2:
+                        glFormat = gl.RG_INTEGER;
+                        break;
+                    case 3:
+                        glFormat = gl.RGB_INTEGER;
+                        break;
+                    case 4:
+                        glFormat = gl.RGBA_INTEGER;
+                        break;
+                    default:
+                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                }
             }
             switch (type) {
                 case 'float32':
@@ -314,25 +334,6 @@ var DataLayer = /** @class */ (function () {
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
                     }
                     break;
-                case 'int8':
-                    glType = gl.BYTE;
-                    switch (glNumChannels) {
-                        case 1:
-                            glInternalFormat = gl.R8I;
-                            break;
-                        case 2:
-                            glInternalFormat = gl.RG8I;
-                            break;
-                        case 3:
-                            glInternalFormat = gl.RGB8I;
-                            break;
-                        case 4:
-                            glInternalFormat = gl.RGBA8I;
-                            break;
-                        default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
-                    }
-                    break;
                 case 'uint8':
                     glType = gl.UNSIGNED_BYTE;
                     switch (glNumChannels) {
@@ -347,6 +348,25 @@ var DataLayer = /** @class */ (function () {
                             break;
                         case 4:
                             glInternalFormat = gl.RGBA;
+                            break;
+                        default:
+                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
+                    }
+                    break;
+                case 'int8':
+                    glType = gl.BYTE;
+                    switch (glNumChannels) {
+                        case 1:
+                            glInternalFormat = gl.R8I;
+                            break;
+                        case 2:
+                            glInternalFormat = gl.RG8I;
+                            break;
+                        case 3:
+                            glInternalFormat = gl.RGB8I;
+                            break;
+                        case 4:
+                            glInternalFormat = gl.RGBA8I;
                             break;
                         default:
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
@@ -407,6 +427,7 @@ var DataLayer = /** @class */ (function () {
                         default:
                             throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer " + name + ".");
                     }
+                    break;
                 case 'uint32':
                     glType = gl.UNSIGNED_INT;
                     switch (glNumChannels) {
