@@ -30,7 +30,7 @@ void main() {
 	// Lookup vertex position and scale to [0, 1] range.
 	// We have packed a 2D displacement with the position.
 	vec4 positionData = texture2D(u_positions, vParticleUV);
-	vec2 positionAbsolute = positionData.xy + positionData.za;
+	vec2 positionAbsolute = positionData.rg + positionData.ba;
 	vUV = positionAbsolute * u_scale;
 
 	// Calculate position in [-1, 1] range.
