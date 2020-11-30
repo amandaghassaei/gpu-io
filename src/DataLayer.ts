@@ -211,6 +211,7 @@ export class DataLayer {
 			// Must support at least half float if using a float type.
 			if (type === 'float16') {
 				getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback);
+				// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 				if (writable) {
 					const valid = DataLayer.testFramebufferWrite(gl, type);
 					if (!valid) {
