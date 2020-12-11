@@ -8,7 +8,7 @@ var DataLayer_1 = require("./DataLayer");
 var GPUProgram_1 = require("./GPUProgram");
 var utils_1 = require("./utils");
 var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]);
+var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1, -1, -1]);
 var unitCirclePoints = [0, 0];
 var NUM_SEGMENTS_CIRCLE = 20;
 for (var i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
@@ -250,7 +250,27 @@ var GLCompute = /** @class */ (function () {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
-        gl.drawArrays(gl.LINE_LOOP, 0, 4);
+        if (options === null || options === void 0 ? void 0 : options.singleEdge) {
+            switch (options === null || options === void 0 ? void 0 : options.singleEdge) {
+                case 'LEFT':
+                    gl.drawArrays(gl.LINES, 3, 2);
+                    break;
+                case 'RIGHT':
+                    gl.drawArrays(gl.LINES, 1, 2);
+                    break;
+                case 'TOP':
+                    gl.drawArrays(gl.LINES, 2, 2);
+                    break;
+                case 'BOTTOM':
+                    gl.drawArrays(gl.LINES, 0, 2);
+                    break;
+                default:
+                    throw new Error("Unknown boundary edge type: " + (options === null || options === void 0 ? void 0 : options.singleEdge) + ".");
+            }
+        }
+        else {
+            gl.drawArrays(gl.LINE_LOOP, 0, 4);
+        }
         gl.disable(gl.BLEND);
     };
     // Step program for all but a strip of px along the boundary.

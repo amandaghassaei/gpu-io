@@ -6,7 +6,7 @@ import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader, isWebGL2 } from './utils';
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
-const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1 ]);
+const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
 const unitCirclePoints = [0, 0];
 const NUM_SEGMENTS_CIRCLE = 20;
 for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
@@ -327,6 +327,7 @@ can render to nextState using currentState as an input.`);
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
+			singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
 		},
 	) {
 		const { gl, errorState, boundaryPositionsBuffer} = this;
@@ -354,7 +355,27 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.LINE_LOOP, 0, 4);
+		if (options?.singleEdge) {
+			switch(options?.singleEdge) {
+				case 'LEFT':
+					gl.drawArrays(gl.LINES, 3, 2);
+					break;
+				case 'RIGHT':
+					gl.drawArrays(gl.LINES, 1, 2);
+					break;
+				case 'TOP':
+					gl.drawArrays(gl.LINES, 2, 2);
+					break;
+				case 'BOTTOM':
+					gl.drawArrays(gl.LINES, 0, 2);
+					break;
+				default:
+					throw new Error(`Unknown boundary edge type: ${options?.singleEdge}.`);
+			}
+		} else {
+			gl.drawArrays(gl.LINE_LOOP, 0, 4);
+		}
+		
 		gl.disable(gl.BLEND);
 	}
 

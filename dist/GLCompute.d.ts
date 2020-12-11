@@ -45,6 +45,7 @@ export declare class GLCompute {
     stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
+        singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
     }): void;
     stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
