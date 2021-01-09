@@ -33,7 +33,7 @@ export declare class GLCompute {
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
-    initTexture(url: string): WebGLTexture | null;
+    initTexture(url: string): WebGLTexture;
     onResize(canvasEl: HTMLCanvasElement): void;
     private drawSetup;
     private setOutputLayer;

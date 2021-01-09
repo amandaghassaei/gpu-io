@@ -184,6 +184,9 @@ export class GLCompute {
 	) {
 		const { gl, errorCallback } = this;
 		const texture = gl.createTexture();
+		if (texture === null) {
+			throw new Error('Unable to init texture.');
+		}
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		// Because images have to be downloaded over the internet
 		// they might take a moment until they are ready.
