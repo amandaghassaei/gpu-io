@@ -34,3 +34,7 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 	// TODO: I'm sure there is a better way to check this.
 	return !!(gl as WebGL2RenderingContext).HALF_FLOAT;
 }
+
+export function isPowerOf2(value: number) {
+	return (value & (value - 1)) == 0;
+}

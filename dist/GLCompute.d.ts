@@ -33,31 +33,32 @@ export declare class GLCompute {
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
     }, writable?: boolean, numBuffers?: number): DataLayer;
+    initTexture(url: string): WebGLTexture | null;
     onResize(canvasEl: HTMLCanvasElement): void;
     private drawSetup;
     private setOutputLayer;
     private setPositionAttribute;
     private setIndexAttribute;
-    step(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    step(program: GPUProgram, inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
-    stepBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    stepBoundary(program: GPUProgram, inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
         singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
     }): void;
-    stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    stepNonBoundary(program: GPUProgram, inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
     stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
-    inputLayers?: DataLayer[], outputLayer?: DataLayer, // Undefined renders to screen.
+    inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
-    drawPoints(program: GPUProgram, inputLayers: DataLayer[], outputLayer?: DataLayer, options?: {
+    drawPoints(program: GPUProgram, inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
         pointSize?: number;
         numPoints?: number;
         shouldBlendAlpha?: boolean;

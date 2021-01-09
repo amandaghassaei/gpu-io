@@ -115,6 +115,50 @@ var GLCompute = /** @class */ (function () {
         return new DataLayer_1.DataLayer(name, gl, options, errorCallback, writable, numBuffers);
     };
     ;
+    GLCompute.prototype.initTexture = function (url) {
+        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        // Because images have to be downloaded over the internet
+        // they might take a moment until they are ready.
+        // Until then put a single pixel in the texture so we can
+        // use it immediately. When the image has finished downloading
+        // we'll update the texture with the contents of the image.
+        var level = 0;
+        var internalFormat = gl.RGBA;
+        var width = 1;
+        var height = 1;
+        var border = 0;
+        var srcFormat = gl.RGBA;
+        var srcType = gl.UNSIGNED_BYTE;
+        var pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
+        var image = new Image();
+        image.onload = function () {
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
+            // WebGL1 has different requirements for power of 2 images
+            // vs non power of 2 images so check if the image is a
+            // power of 2 in both dimensions.
+            if (utils_1.isPowerOf2(image.width) && utils_1.isPowerOf2(image.height)) {
+                // Yes, it's a power of 2. Generate mips.
+                gl.generateMipmap(gl.TEXTURE_2D);
+            }
+            else {
+                console.warn("Texture " + url + " dimensions [" + image.width + ", " + image.height + "] are not power of 2.");
+                // No, it's not a power of 2. Turn off mips and set
+                // wrapping to clamp to edge
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            }
+        };
+        image.onerror = function (e) {
+            errorCallback("Error loading image " + url + ": " + e);
+        };
+        image.src = url;
+        return texture;
+    };
     GLCompute.prototype.onResize = function (canvasEl) {
         var gl = this.gl;
         var width = canvasEl.clientWidth;
@@ -137,7 +181,8 @@ var GLCompute = /** @class */ (function () {
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
         // This line must come before this.setOutput() as it depends on current internal state.
-        var inputTextures = inputLayers.map(function (layer) { return layer.getCurrentStateTexture(); });
+        // @ts-ignore
+        var inputTextures = inputLayers.map(function (layer) { return layer.getCurrentStateTexture ? layer.getCurrentStateTexture() : layer; });
         // Set output framebuffer.
         // This may modify WebGL internal state.
         this.setOutputLayer(fullscreenRender, inputLayers, outputLayer);

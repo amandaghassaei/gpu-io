@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isWebGL2 = exports.compileShader = void 0;
+exports.isPowerOf2 = exports.isWebGL2 = exports.compileShader = void 0;
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
 function compileShader(gl, errorCallback, shaderSource, shaderType, programName) {
     // Create the shader object
@@ -28,4 +28,8 @@ function isWebGL2(gl) {
     return !!gl.HALF_FLOAT;
 }
 exports.isWebGL2 = isWebGL2;
+function isPowerOf2(value) {
+    return (value & (value - 1)) == 0;
+}
+exports.isPowerOf2 = isPowerOf2;
 //# sourceMappingURL=utils.js.map

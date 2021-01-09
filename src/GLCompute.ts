@@ -3,7 +3,7 @@ import passThroughFragmentShaderSource from './kernels/PassThroughFragmentShader
 import packFloat32ToRGBA8ShaderSource from './kernels/packFloat32ToRGBA8FragmentShader';
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
-import { compileShader, isWebGL2 } from './utils';
+import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
@@ -179,6 +179,58 @@ export class GLCompute {
 		return new DataLayer(name, gl, options, errorCallback, writable, numBuffers);
 	};
 
+	initTexture(
+		url: string,
+	) {
+		const { gl, errorCallback } = this;
+		const texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		// Because images have to be downloaded over the internet
+		// they might take a moment until they are ready.
+		// Until then put a single pixel in the texture so we can
+		// use it immediately. When the image has finished downloading
+		// we'll update the texture with the contents of the image.
+		const level = 0;
+		const internalFormat = gl.RGBA;
+		const width = 1;
+		const height = 1;
+		const border = 0;
+		const srcFormat = gl.RGBA;
+		const srcType = gl.UNSIGNED_BYTE;
+		const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+						width, height, border, srcFormat, srcType,
+						pixel);
+
+		const image = new Image();
+		image.onload = () => {
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+						srcFormat, srcType, image);
+
+			// WebGL1 has different requirements for power of 2 images
+			// vs non power of 2 images so check if the image is a
+			// power of 2 in both dimensions.
+			if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+				// Yes, it's a power of 2. Generate mips.
+				gl.generateMipmap(gl.TEXTURE_2D);
+			} else {
+				console.warn(`Texture ${url} dimensions [${image.width}, ${image.height}] are not power of 2.`);
+				// No, it's not a power of 2. Turn off mips and set
+				// wrapping to clamp to edge
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			}
+		};
+		image.onerror = (e) => {
+			errorCallback(`Error loading image ${url}: ${e}`);
+		}
+		image.src = url;
+
+		return texture;
+	}
+
 	onResize(canvasEl: HTMLCanvasElement) {
 		const { gl } = this;
 		const width = canvasEl.clientWidth;
@@ -195,7 +247,7 @@ export class GLCompute {
 	private drawSetup(
 		program: GPUProgram,
 		fullscreenRender: boolean,
-		inputLayers: DataLayer[],
+		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer,
 	) {
 		const { gl } = this;
@@ -208,7 +260,8 @@ export class GLCompute {
 
 		// Get a shallow copy of current textures.
 		// This line must come before this.setOutput() as it depends on current internal state.
-		const inputTextures = inputLayers.map(layer => layer.getCurrentStateTexture());
+		// @ts-ignore
+		const inputTextures = inputLayers.map(layer => layer.getCurrentStateTexture ? (layer as DataLayer).getCurrentStateTexture() : layer);
 
 		// Set output framebuffer.
 		// This may modify WebGL internal state.
@@ -226,7 +279,7 @@ export class GLCompute {
 
 	private setOutputLayer(
 		fullscreenRender: boolean,
-		inputLayers: DataLayer[],
+		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl, passThroughProgram } = this;
@@ -289,7 +342,7 @@ can render to nextState using currentState as an input.`);
 	// Step for entire fullscreen quad.
 	step(
 		program: GPUProgram,
-		inputLayers: DataLayer[] = [],
+		inputLayers: (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -323,7 +376,7 @@ can render to nextState using currentState as an input.`);
 	// Step program only for a strip of px along the boundary.
 	stepBoundary(
 		program: GPUProgram,
-		inputLayers: DataLayer[] = [],
+		inputLayers: (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -382,7 +435,7 @@ can render to nextState using currentState as an input.`);
 	// Step program for all but a strip of px along the boundary.
 	stepNonBoundary(
 		program: GPUProgram,
-		inputLayers: DataLayer[] = [],
+		inputLayers: (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -421,7 +474,7 @@ can render to nextState using currentState as an input.`);
 		program: GPUProgram,
 		position: [number, number], // position is in screen space coords.
 		radius: number, // radius is in px.
-		inputLayers: DataLayer[] = [],
+		inputLayers: (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -454,7 +507,7 @@ can render to nextState using currentState as an input.`);
 
 	drawPoints(
 		program: GPUProgram,
-		inputLayers: DataLayer[],
+		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer,
 		options?: {
 			pointSize?: number,
@@ -472,7 +525,7 @@ can render to nextState using currentState as an input.`);
 		if (inputLayers.length < 1) {
 			throw new Error(`Invalid inputLayers for drawPoints on ${program.name}: must pass a positionDataLayer as first element of inputLayers.`);
 		}
-		const positionLayer = inputLayers[0];
+		const positionLayer = inputLayers[0] as DataLayer;
 
 		// Check that numPoints is valid.
 		const length = positionLayer.getLength();
