@@ -43,8 +43,8 @@ I have noticed that there can be some issues due to threejs's caching system sin
 
 I used a few codebases as reference when writing this, thanks to their authors for making the repos available:
 
-- [three.js](https://github.com/mrdoob/three.js/) Javascript 3D library
-- [regl](https://github.com/regl-project/regl) - Fast, functional WebGL
+- [three.js](https://github.com/mrdoob/three.js/)
+- [regl](https://github.com/regl-project/regl)
 - [WebGL Boilerplate](https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html)
 - [GPU Accelerated Particles with WebGL 2](https://gpfault.net/posts/webgl2-particles.txt.html)
 
