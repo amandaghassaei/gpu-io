@@ -28,7 +28,7 @@ Currently, this library can run in a separate webgl context from threejs with no
 ```
 const renderer = new WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff on top
-// of things rendered to the screen from gpgpu.
+// of things rendered to the screen from glcompute.
 renderer.autoClear = false;
 
 const gl = renderer.getContext();
