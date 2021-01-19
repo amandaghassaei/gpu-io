@@ -595,6 +595,17 @@ var DataLayer = /** @class */ (function () {
     DataLayer.prototype.getCurrentStateTexture = function () {
         return this.buffers[this.bufferIndex].texture;
     };
+    DataLayer.prototype.getPreviousStateTexture = function (index) {
+        if (index === void 0) { index = -1; }
+        if (this.numBuffers === 1) {
+            throw new Error("Cannot call getPreviousStateTexture on DataLayer " + this.name + " with only one buffer.");
+        }
+        var previousIndex = this.bufferIndex + index + this.numBuffers;
+        if (previousIndex < 0 || previousIndex >= this.numBuffers) {
+            throw new Error("Invalid index " + index + " passed to getPreviousStateTexture on DataLayer " + this.name + " with " + this.numBuffers + " buffers.");
+        }
+        return this.buffers[previousIndex].texture;
+    };
     DataLayer.prototype.bindOutputBuffer = function (incrementBufferIndex) {
         var gl = this.gl;
         if (incrementBufferIndex) {
