@@ -732,6 +732,17 @@ export class DataLayer {
 		return this.buffers[this.bufferIndex].texture;
 	}
 
+	getPreviousStateTexture(index = -1) {
+		if (this.numBuffers === 1) {
+			throw new Error(`Cannot call getPreviousStateTexture on DataLayer ${this.name} with only one buffer.`);
+		}
+		const previousIndex = this.bufferIndex + index + this.numBuffers;
+		if (previousIndex < 0 || previousIndex >= this.numBuffers) {
+			throw new Error(`Invalid index ${index} passed to getPreviousStateTexture on DataLayer ${this.name} with ${this.numBuffers} buffers.`);
+		}
+		return this.buffers[previousIndex].texture;
+	}
+
 	bindOutputBuffer(
 		incrementBufferIndex: boolean,
 	) {
