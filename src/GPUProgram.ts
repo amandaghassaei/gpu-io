@@ -171,7 +171,7 @@ export class GPUProgram {
 			// Init uniform if needed.
 			const location = gl.getUniformLocation(program, uniformName);
 			if (!location) {
-				errorCallback(`Could not init uniform ${uniformName}.
+				errorCallback(`Could not init uniform ${uniformName} for program ${this.name}.
 Check that uniform is present in shader code, unused uniforms may be removed by compiler.
 Also check that uniform type in shader code matches type ${type}.
 Error code: ${gl.getError()}.`);
