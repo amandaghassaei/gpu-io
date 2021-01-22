@@ -50,10 +50,7 @@ export declare class DataLayer {
     bindOutputBuffer(incrementBufferIndex: boolean): void;
     resize(dimensions: number | [number, number], data?: DataLayerArrayType): void;
     clear(): void;
-    getDimensions(): {
-        width: number;
-        height: number;
-    };
+    getDimensions(): [number, number];
     getLength(): number;
     getNumComponent(): 1 | 2 | 4 | 3;
     getType(): DataLayerType;

@@ -229,7 +229,7 @@ var GLCompute = /** @class */ (function () {
             outputLayer.bindOutputBuffer(false);
         }
         // Resize viewport.
-        var _c = outputLayer.getDimensions(), width = _c.width, height = _c.height;
+        var _c = outputLayer.getDimensions(), width = _c[0], height = _c[1];
         gl.viewport(0, 0, width, height);
     };
     ;
@@ -287,7 +287,7 @@ var GLCompute = /** @class */ (function () {
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         // @ts-ignore
-        var _b = outputLayer ? outputLayer.getDimensions() : this, width = _b.width, height = _b.height;
+        var _b = outputLayer ? outputLayer.getDimensions() : this, width = _b[0], height = _b[1];
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
@@ -334,7 +334,7 @@ var GLCompute = /** @class */ (function () {
         this.drawSetup(program, false, inputLayers, outputLayer);
         // Update uniforms and buffers.
         // @ts-ignore
-        var _b = outputLayer ? outputLayer.getDimensions() : this, width = _b.width, height = _b.height;
+        var _b = outputLayer ? outputLayer.getDimensions() : this, width = _b[0], height = _b[1];
         var onePx = [1 / width, 1 / height];
         program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
         program.setUniform('u_translation', onePx, 'FLOAT');
@@ -398,7 +398,7 @@ var GLCompute = /** @class */ (function () {
         program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
         program.setUniform('u_pointSize', pointSize, 'FLOAT');
         var positionLayerDimensions = positionLayer.getDimensions();
-        program.setUniform('u_positionDimensions', [positionLayerDimensions.width, positionLayerDimensions.height], 'FLOAT');
+        program.setUniform('u_positionDimensions', positionLayerDimensions, 'FLOAT');
         if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = new Float32Array(length);
@@ -441,10 +441,10 @@ var GLCompute = /** @class */ (function () {
         if (type !== 'float16' && type !== 'float32') {
             throw new Error("Unsupported type " + type + " for getValues().");
         }
-        var dimensions = dataLayer.getDimensions();
+        var _c = dataLayer.getDimensions(), width = _c[0], height = _c[1];
         var numComponents = dataLayer.getNumComponent();
-        var outputWidth = dimensions.width * numComponents;
-        var outputHeight = dimensions.height;
+        var outputWidth = width * numComponents;
+        var outputHeight = height;
         // Init output buffer if needed.
         if (!packToRGBA8OutputBuffer) {
             packToRGBA8OutputBuffer = new DataLayer_1.DataLayer('packToRGBA8Output', gl, {
@@ -456,12 +456,12 @@ var GLCompute = /** @class */ (function () {
         else {
             // Resize if needed.
             var outputDimensions = packToRGBA8OutputBuffer.getDimensions();
-            if (outputDimensions.width !== outputWidth || outputDimensions.height !== outputHeight) {
+            if (outputDimensions[0] !== outputWidth || outputDimensions[1] !== outputHeight) {
                 packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
             }
         }
         // Pack to bytes.
-        packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [dimensions.width, dimensions.height], 'FLOAT');
+        packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [width, height], 'FLOAT');
         packFloat32ToRGBA8Program.setUniform('u_numFloatComponents', numComponents, 'FLOAT');
         this.step(packFloat32ToRGBA8Program, [dataLayer], packToRGBA8OutputBuffer);
         // Read result.

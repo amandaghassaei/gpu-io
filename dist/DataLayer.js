@@ -646,10 +646,10 @@ var DataLayer = /** @class */ (function () {
         this.initBuffers();
     };
     DataLayer.prototype.getDimensions = function () {
-        return {
-            width: this.width,
-            height: this.height,
-        };
+        return [
+            this.width,
+            this.height,
+        ];
     };
     DataLayer.prototype.getLength = function () {
         if (!this.length) {

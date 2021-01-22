@@ -12,7 +12,8 @@ var INT_2D_UNIFORM = '2i';
 var INT_3D_UNIFORM = '3i';
 var INT_4D_UNIFORM = '3i';
 var GPUProgram = /** @class */ (function () {
-    function GPUProgram(name, gl, errorCallback, vertexShaderOrSource, fragmentShaderOrSource, uniforms) {
+    function GPUProgram(name, gl, errorCallback, vertexShaderOrSource, // We may want to pass in an array of shader string sources, if split across several files.
+    fragmentShaderOrSource, uniforms, defines) {
         var _this = this;
         this.uniforms = {};
         this.shaders = []; // Save ref to shaders so we can deallocate.
@@ -41,8 +42,18 @@ var GPUProgram = /** @class */ (function () {
         else {
             gl.attachShader(program, fragmentShaderOrSource);
         }
-        if (typeof (vertexShaderOrSource) === 'string') {
-            var vertexShader = utils_1.compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
+        if (typeof (vertexShaderOrSource) === 'string' || typeof (vertexShaderOrSource[0]) === 'string') {
+            var sourceString = typeof (vertexShaderOrSource) === 'string' ?
+                vertexShaderOrSource :
+                vertexShaderOrSource.join('\n');
+            if (defines) {
+                // First convert defines to a string.
+                var definesSource = Object.keys(defines).map(function (key) {
+                    return "#define " + key + " " + defines[key] + "\n";
+                });
+                sourceString = definesSource + sourceString;
+            }
+            var vertexShader = utils_1.compileShader(gl, errorCallback, sourceString, gl.VERTEX_SHADER, name);
             if (!vertexShader) {
                 errorCallback("Unable to compile vertex shader for program " + name + ".");
                 return;
@@ -51,6 +62,9 @@ var GPUProgram = /** @class */ (function () {
             gl.attachShader(program, vertexShader);
         }
         else {
+            if (defines) {
+                throw new Error("Unable to attach defines to program " + name + " because it is already compiled.");
+            }
             gl.attachShader(program, vertexShaderOrSource);
         }
         // Link the program.
