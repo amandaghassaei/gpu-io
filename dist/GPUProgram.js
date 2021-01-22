@@ -12,8 +12,8 @@ var INT_2D_UNIFORM = '2i';
 var INT_3D_UNIFORM = '3i';
 var INT_4D_UNIFORM = '3i';
 var GPUProgram = /** @class */ (function () {
-    function GPUProgram(name, gl, errorCallback, vertexShaderOrSource, // We may want to pass in an array of shader string sources, if split across several files.
-    fragmentShaderOrSource, uniforms, defines) {
+    function GPUProgram(name, gl, errorCallback, vertexShaderOrSource, fragmentShaderOrSource, // We may want to pass in an array of shader string sources, if split across several files.
+    uniforms, defines) {
         var _this = this;
         this.uniforms = {};
         this.shaders = []; // Save ref to shaders so we can deallocate.
@@ -30,8 +30,18 @@ var GPUProgram = /** @class */ (function () {
             return;
         }
         // Compile shaders.
-        if (typeof (fragmentShaderOrSource) === 'string') {
-            var fragmentShader = utils_1.compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER, name);
+        if (typeof (fragmentShaderOrSource) === 'string' || typeof (fragmentShaderOrSource[0]) === 'string') {
+            var sourceString = typeof (fragmentShaderOrSource) === 'string' ?
+                fragmentShaderOrSource :
+                fragmentShaderOrSource.join('\n');
+            if (defines) {
+                // First convert defines to a string.
+                var definesSource = Object.keys(defines).map(function (key) {
+                    return "#define " + key + " " + defines[key] + "\n";
+                });
+                sourceString = definesSource + sourceString;
+            }
+            var fragmentShader = utils_1.compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
             if (!fragmentShader) {
                 errorCallback("Unable to compile fragment shader for program " + name + ".");
                 return;
@@ -40,20 +50,13 @@ var GPUProgram = /** @class */ (function () {
             gl.attachShader(program, fragmentShader);
         }
         else {
+            if (defines) {
+                throw new Error("Unable to attach defines to program " + name + " because it is already compiled.");
+            }
             gl.attachShader(program, fragmentShaderOrSource);
         }
-        if (typeof (vertexShaderOrSource) === 'string' || typeof (vertexShaderOrSource[0]) === 'string') {
-            var sourceString = typeof (vertexShaderOrSource) === 'string' ?
-                vertexShaderOrSource :
-                vertexShaderOrSource.join('\n');
-            if (defines) {
-                // First convert defines to a string.
-                var definesSource = Object.keys(defines).map(function (key) {
-                    return "#define " + key + " " + defines[key] + "\n";
-                });
-                sourceString = definesSource + sourceString;
-            }
-            var vertexShader = utils_1.compileShader(gl, errorCallback, sourceString, gl.VERTEX_SHADER, name);
+        if (typeof (vertexShaderOrSource) === 'string') {
+            var vertexShader = utils_1.compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
             if (!vertexShader) {
                 errorCallback("Unable to compile vertex shader for program " + name + ".");
                 return;
@@ -62,9 +65,6 @@ var GPUProgram = /** @class */ (function () {
             gl.attachShader(program, vertexShader);
         }
         else {
-            if (defines) {
-                throw new Error("Unable to attach defines to program " + name + " because it is already compiled.");
-            }
             gl.attachShader(program, vertexShaderOrSource);
         }
         // Link the program.
@@ -131,7 +131,7 @@ var GPUProgram = /** @class */ (function () {
             // Init uniform if needed.
             var location_1 = gl.getUniformLocation(program, uniformName);
             if (!location_1) {
-                errorCallback("Could not init uniform " + uniformName + ".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
+                errorCallback("Could not init uniform " + uniformName + " for program " + this.name + ".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
                 return;
             }
             uniforms[uniformName] = {

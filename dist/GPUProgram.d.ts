@@ -24,8 +24,8 @@ export declare class GPUProgram {
     private readonly shaders;
     private readonly attributes;
     private readonly attributeNames;
-    constructor(name: string, gl: WebGLRenderingContext | WebGL2RenderingContext, errorCallback: (message: string) => void, vertexShaderOrSource: string | string[] | WebGLShader, // We may want to pass in an array of shader string sources, if split across several files.
-    fragmentShaderOrSource: string | WebGLShader, uniforms?: {
+    constructor(name: string, gl: WebGLRenderingContext | WebGL2RenderingContext, errorCallback: (message: string) => void, vertexShaderOrSource: string | WebGLShader, fragmentShaderOrSource: string | string[] | WebGLShader, // We may want to pass in an array of shader string sources, if split across several files.
+    uniforms?: {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
