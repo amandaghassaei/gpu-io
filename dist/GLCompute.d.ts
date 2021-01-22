@@ -23,7 +23,9 @@ export declare class GLCompute {
         name: string;
         value: UniformValueType;
         dataType: UniformDataType;
-    }[], vertexShaderOrSource?: string | WebGLShader): GPUProgram;
+    }[], defines?: {
+        [key: string]: string;
+    }, vertexShaderOrSource?: string | WebGLShader): GPUProgram;
     initDataLayer(name: string, options: {
         dimensions: number | [number, number];
         type: DataLayerType;

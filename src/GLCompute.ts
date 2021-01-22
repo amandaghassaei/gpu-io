@@ -149,6 +149,9 @@ export class GLCompute {
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
+		defines?: {
+			[key : string]: string,
+		},
 		vertexShaderOrSource?: string | WebGLShader,
 	) {
 		const { gl, errorCallback } = this;	
@@ -159,6 +162,7 @@ export class GLCompute {
 			vertexShaderOrSource ? vertexShaderOrSource : this.defaultVertexShader,
 			fragmentShaderOrSource,
 			uniforms,
+			defines,
 		);
 	};
 

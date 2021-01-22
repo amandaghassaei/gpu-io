@@ -103,9 +103,9 @@ var GLCompute = /** @class */ (function () {
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         return buffer;
     };
-    GLCompute.prototype.initProgram = function (name, fragmentShaderOrSource, uniforms, vertexShaderOrSource) {
+    GLCompute.prototype.initProgram = function (name, fragmentShaderOrSource, uniforms, defines, vertexShaderOrSource) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
-        return new GPUProgram_1.GPUProgram(name, gl, errorCallback, vertexShaderOrSource ? vertexShaderOrSource : this.defaultVertexShader, fragmentShaderOrSource, uniforms);
+        return new GPUProgram_1.GPUProgram(name, gl, errorCallback, vertexShaderOrSource ? vertexShaderOrSource : this.defaultVertexShader, fragmentShaderOrSource, uniforms, defines);
     };
     ;
     GLCompute.prototype.initDataLayer = function (name, options, writable, numBuffers) {
