@@ -51,13 +51,16 @@ export class GPUProgram {
 		name: string,
 		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		errorCallback: (message: string) => void,
-		vertexShaderOrSource: string | WebGLShader,
+		vertexShaderOrSource: string | string[] |  WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
 		fragmentShaderOrSource: string | WebGLShader,
 		uniforms?: {
 			name: string,
 			value: UniformValueType,
 			dataType: UniformDataType,
 		}[],
+		defines?: {// For now, we'll allow some variables to be passed in as #define to the preprocessor.
+			[key: string]: string, // We'll do these as strings to make it easier to control float vs int.
+		},
 	) {
 		// Save params.
 		this.name = name;
@@ -83,8 +86,18 @@ export class GPUProgram {
 		} else {
 			gl.attachShader(program, fragmentShaderOrSource);
 		}
-		if (typeof(vertexShaderOrSource) === 'string') {
-			const vertexShader = compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
+		if (typeof(vertexShaderOrSource) === 'string' || typeof((vertexShaderOrSource as string[])[0]) === 'string') {
+			let sourceString = typeof(vertexShaderOrSource) === 'string' ?
+				vertexShaderOrSource :
+				(vertexShaderOrSource as string[]).join('\n');
+			if (defines) {
+				// First convert defines to a string.
+				const definesSource = Object.keys(defines).map(key => {
+					return `#define ${key} ${defines[key]}\n`;
+				});
+				sourceString = definesSource + sourceString;
+			}
+			const vertexShader = compileShader(gl, errorCallback, sourceString, gl.VERTEX_SHADER, name);
 			if (!vertexShader) {
 				errorCallback(`Unable to compile vertex shader for program ${name}.`);
 				return;
@@ -92,6 +105,9 @@ export class GPUProgram {
 			this.shaders.push(vertexShader);
 			gl.attachShader(program, vertexShader);
 		} else {
+			if (defines) {
+				throw new Error(`Unable to attach defines to program ${name} because it is already compiled.`);
+			}
 			gl.attachShader(program, vertexShaderOrSource);
 		}
 

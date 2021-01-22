@@ -790,10 +790,10 @@ export class DataLayer {
 	}
 
 	getDimensions() {
-		return {
-			width: this.width,
-			height: this.height,
-		};
+		return [
+			this.width,
+			this.height,
+		] as [number, number];
 	}
 
 	getLength() {

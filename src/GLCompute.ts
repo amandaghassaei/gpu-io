@@ -19,6 +19,7 @@ const circlePositions = new Float32Array(unitCirclePoints);
 
 export class GLCompute {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
+	// These width and height are the current canvas at full res.
 	private width!: number;
 	private height!: number;
 
@@ -320,7 +321,7 @@ can render to nextState using currentState as an input.`);
 		}
 		
 		// Resize viewport.
-		const { width, height } = outputLayer.getDimensions();
+		const [ width, height ] = outputLayer.getDimensions();
 		gl.viewport(0, 0, width, height);
 	};
 
@@ -399,7 +400,7 @@ can render to nextState using currentState as an input.`);
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		// @ts-ignore
-		const { width, height } = outputLayer ? outputLayer.getDimensions() : this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : this;
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
 		program.setUniform('u_translation', onePx, 'FLOAT');
@@ -456,7 +457,7 @@ can render to nextState using currentState as an input.`);
 
 		// Update uniforms and buffers.
 		// @ts-ignore
-		const { width, height } = outputLayer ? outputLayer.getDimensions() : this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : this;
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
 		program.setUniform('u_translation', onePx, 'FLOAT');
@@ -547,7 +548,7 @@ can render to nextState using currentState as an input.`);
 		program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
 		program.setUniform('u_pointSize', pointSize, 'FLOAT');
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setUniform('u_positionDimensions', [positionLayerDimensions.width, positionLayerDimensions.height], 'FLOAT');
+		program.setUniform('u_positionDimensions', positionLayerDimensions, 'FLOAT');
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
@@ -600,10 +601,10 @@ can render to nextState using currentState as an input.`);
 		if (type !== 'float16' && type !== 'float32') {
 			throw new Error(`Unsupported type ${type} for getValues().`);
 		}
-		const dimensions = dataLayer.getDimensions();
+		const [width, height] = dataLayer.getDimensions();
 		const numComponents = dataLayer.getNumComponent();
-		const outputWidth = dimensions.width * numComponents;
-		const outputHeight = dimensions.height;
+		const outputWidth = width * numComponents;
+		const outputHeight = height;
 
 		// Init output buffer if needed.
 		if (!packToRGBA8OutputBuffer) {
@@ -615,13 +616,13 @@ can render to nextState using currentState as an input.`);
 		} else {
 			// Resize if needed.
 			const outputDimensions = packToRGBA8OutputBuffer.getDimensions();
-			if (outputDimensions.width !== outputWidth || outputDimensions.height !== outputHeight) {
+			if (outputDimensions[0] !== outputWidth || outputDimensions[1] !== outputHeight) {
 				packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
 			}
 		}
 
 		// Pack to bytes.
-		packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [dimensions.width, dimensions.height], 'FLOAT');
+		packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [width, height], 'FLOAT');
 		packFloat32ToRGBA8Program.setUniform('u_numFloatComponents', numComponents, 'FLOAT');
 		this.step(packFloat32ToRGBA8Program, [dataLayer], packToRGBA8OutputBuffer);
 
