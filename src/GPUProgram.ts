@@ -83,7 +83,7 @@ export class GPUProgram {
 				// First convert defines to a string.
 				const definesSource = Object.keys(defines).map(key => {
 					return `#define ${key} ${defines[key]}\n`;
-				});
+				}).join('\n');
 				sourceString = definesSource + sourceString;
 			}
 			const fragmentShader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);

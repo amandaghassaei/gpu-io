@@ -38,7 +38,7 @@ var GPUProgram = /** @class */ (function () {
                 // First convert defines to a string.
                 var definesSource = Object.keys(defines).map(function (key) {
                     return "#define " + key + " " + defines[key] + "\n";
-                });
+                }).join('\n');
                 sourceString = definesSource + sourceString;
             }
             var fragmentShader = utils_1.compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
