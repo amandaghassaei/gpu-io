@@ -51,8 +51,8 @@ export class GPUProgram {
 		name: string,
 		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		errorCallback: (message: string) => void,
-		vertexShaderOrSource: string | string[] |  WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
-		fragmentShaderOrSource: string | WebGLShader,
+		vertexShaderOrSource: string |  WebGLShader,
+		fragmentShaderOrSource: string | string[] | WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
 		uniforms?: {
 			name: string,
 			value: UniformValueType,
@@ -75,21 +75,10 @@ export class GPUProgram {
 		}
 
 		// Compile shaders.
-		if (typeof(fragmentShaderOrSource) === 'string') {
-			const fragmentShader = compileShader(gl, errorCallback, fragmentShaderOrSource, gl.FRAGMENT_SHADER, name);
-			if (!fragmentShader) {
-				errorCallback(`Unable to compile fragment shader for program ${name}.`);
-				return;
-			}
-			this.shaders.push(fragmentShader);
-			gl.attachShader(program, fragmentShader);
-		} else {
-			gl.attachShader(program, fragmentShaderOrSource);
-		}
-		if (typeof(vertexShaderOrSource) === 'string' || typeof((vertexShaderOrSource as string[])[0]) === 'string') {
-			let sourceString = typeof(vertexShaderOrSource) === 'string' ?
-				vertexShaderOrSource :
-				(vertexShaderOrSource as string[]).join('\n');
+		if (typeof(fragmentShaderOrSource) === 'string' || typeof((fragmentShaderOrSource as string[])[0]) === 'string') {
+			let sourceString = typeof(fragmentShaderOrSource) === 'string' ?
+				fragmentShaderOrSource :
+				(fragmentShaderOrSource as string[]).join('\n');
 			if (defines) {
 				// First convert defines to a string.
 				const definesSource = Object.keys(defines).map(key => {
@@ -97,7 +86,21 @@ export class GPUProgram {
 				});
 				sourceString = definesSource + sourceString;
 			}
-			const vertexShader = compileShader(gl, errorCallback, sourceString, gl.VERTEX_SHADER, name);
+			const fragmentShader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
+			if (!fragmentShader) {
+				errorCallback(`Unable to compile fragment shader for program ${name}.`);
+				return;
+			}
+			this.shaders.push(fragmentShader);
+			gl.attachShader(program, fragmentShader);
+		} else {
+			if (defines) {
+				throw new Error(`Unable to attach defines to program ${name} because it is already compiled.`);
+			}
+			gl.attachShader(program, fragmentShaderOrSource);
+		}
+		if (typeof(vertexShaderOrSource) === 'string') {
+			const vertexShader = compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
 			if (!vertexShader) {
 				errorCallback(`Unable to compile vertex shader for program ${name}.`);
 				return;
@@ -105,9 +108,6 @@ export class GPUProgram {
 			this.shaders.push(vertexShader);
 			gl.attachShader(program, vertexShader);
 		} else {
-			if (defines) {
-				throw new Error(`Unable to attach defines to program ${name} because it is already compiled.`);
-			}
 			gl.attachShader(program, vertexShaderOrSource);
 		}
 
