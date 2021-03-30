@@ -11,7 +11,7 @@ uniform vec2 u_positionDimensions;
 uniform vec2 u_scale;
 uniform float u_pointSize;
 
-varying vec2 vUV;
+varying vec2 v_UV;
 varying vec2 vParticleUV;
 
 /**
@@ -31,10 +31,10 @@ void main() {
 	// We have packed a 2D displacement with the position.
 	vec4 positionData = texture2D(u_positions, vParticleUV);
 	vec2 positionAbsolute = positionData.rg + positionData.ba;
-	vUV = positionAbsolute * u_scale;
+	v_UV = positionAbsolute * u_scale;
 
 	// Calculate position in [-1, 1] range.
-	vec2 position = vUV * 2.0 - 1.0;
+	vec2 position = v_UV * 2.0 - 1.0;
 
 	gl_PointSize = u_pointSize;
 	gl_Position = vec4(position, 0, 1);
