@@ -1,8 +1,8 @@
 import { GLCompute } from './GLCompute';
-import SingleColorFragShader from './kernels/SingleColorFragShader';
-import PointsVertexShader from './kernels/PointsVertexShader';
-import PointsVertexShaderWithDisplacement from './kernels/PointsVertexShaderWithDisplacement';
-import PassThroughFragmentShader from './kernels/PassThroughFragmentShader';
+const SingleColorFragShader = require('./kernels/SingleColorFragShader.glsl');
+const PointsVertexShader = require('./kernels/PointsVertexShader.glsl');
+const PointsVertexShaderWithDisplacement = require('./kernels/PointsVertexShaderWithDisplacement.glsl');
+const PassThroughFragmentShader = require('./kernels/PassThroughFragmentShader.glsl');
 
 export {
 	GLCompute,

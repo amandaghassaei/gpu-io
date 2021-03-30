@@ -1,9 +1,9 @@
-import defaultVertexShaderSource from './kernels/DefaultVertexShader';
-import passThroughFragmentShaderSource from './kernels/PassThroughFragmentShader';
-import packFloat32ToRGBA8ShaderSource from './kernels/packFloat32ToRGBA8FragmentShader';
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
+const defaultVertexShaderSource = require('./kernels/DefaultVertexShader.glsl');
+const passThroughFragmentShaderSource = require('./kernels/PassThroughFragmentShader.glsl');
+const packFloat32ToRGBA8ShaderSource = require('./kernels/packFloat32ToRGBA8FragmentShader.glsl');
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);

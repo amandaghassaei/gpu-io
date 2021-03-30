@@ -1,6 +1,5 @@
 // TODO: this is still off by a factor of 2 sometimes.
 
-export default `
 precision highp float;
 
 uniform vec2 u_floatTextureDim;
@@ -46,4 +45,4 @@ void main(){
 	else if (textureIndex == 1) gl_FragColor = encode_float(data[1]);
 	else if (textureIndex == 2) gl_FragColor = encode_float(data[2]);
 	else if (textureIndex == 3) gl_FragColor = encode_float(data[3]);
-}`
+}

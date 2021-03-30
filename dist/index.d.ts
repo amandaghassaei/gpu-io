@@ -1,6 +1,6 @@
 import { GLCompute } from './GLCompute';
-import SingleColorFragShader from './kernels/SingleColorFragShader';
-import PointsVertexShader from './kernels/PointsVertexShader';
-import PointsVertexShaderWithDisplacement from './kernels/PointsVertexShaderWithDisplacement';
-import PassThroughFragmentShader from './kernels/PassThroughFragmentShader';
+declare const SingleColorFragShader: any;
+declare const PointsVertexShader: any;
+declare const PointsVertexShaderWithDisplacement: any;
+declare const PassThroughFragmentShader: any;
 export { GLCompute, SingleColorFragShader, PointsVertexShader, PointsVertexShaderWithDisplacement, PassThroughFragmentShader, };

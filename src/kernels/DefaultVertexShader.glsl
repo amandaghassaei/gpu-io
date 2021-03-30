@@ -1,5 +1,4 @@
 // Vertex shader for fullscreen quad.
-export default `
 precision highp float;
 
 attribute vec2 aPosition;
@@ -23,4 +22,3 @@ void main() {
 	// Calculate vertex position.
 	gl_Position = vec4(position, 0, 1);
 }
-`;
