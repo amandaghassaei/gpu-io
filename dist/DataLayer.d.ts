@@ -52,7 +52,7 @@ export declare class DataLayer {
     clear(): void;
     getDimensions(): [number, number];
     getLength(): number;
-    getNumComponent(): 1 | 2 | 4 | 3;
+    getNumComponent(): import("./DataArray-Feedback").DataArrayNumComponents;
     getType(): DataLayerType;
     private destroyBuffers;
     destroy(): void;

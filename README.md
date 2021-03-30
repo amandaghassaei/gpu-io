@@ -50,7 +50,7 @@ I used a few codebases as reference when writing this, thanks to their authors f
 
 ## Development
 
-To build ts files from `src` to js in `dist` run:
+Compiled with [webpack](https://www.npmjs.com/package/webpack).  To build ts files from `src` to js in `dist` run:
 
 `npm run build`
 
