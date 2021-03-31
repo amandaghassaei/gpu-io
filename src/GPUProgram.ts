@@ -261,9 +261,7 @@ Error code: ${gl.getError()}.`);
 			// Init uniform if needed.
 			const location = gl.getAttribLocation(program, attributeName);
 			if (!location) {
-				errorCallback(
-`Could not init vertexAttribute ${attributeName}.
-Error code: ${gl.getError()}.`);
+				errorCallback(`Could not init vertexAttribute ${attributeName}. Error code: ${gl.getError()}.`);
 				return;
 			}
 			attributes[attributeName] = {

@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "noImplicitAny": true,
+    "module": "commonjs",
     "target": "es5",
     "allowJs": false,
     "lib": ["es2015", "dom"],
