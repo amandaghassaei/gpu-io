@@ -367,8 +367,8 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_scale', [1, 1], 'FLOAT');
-		program.setUniform('u_translation', [0, 0], 'FLOAT');
+		program.setUniform('u__scale', [1, 1], 'FLOAT');
+		program.setUniform('u__translation', [0, 0], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(program);
 
@@ -406,8 +406,8 @@ can render to nextState using currentState as an input.`);
 		// @ts-ignore
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : this;
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
-		program.setUniform('u_translation', onePx, 'FLOAT');
+		program.setUniform('u__scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
+		program.setUniform('u__translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 		this.setPositionAttribute(program);
 
@@ -463,8 +463,8 @@ can render to nextState using currentState as an input.`);
 		// @ts-ignore
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : this;
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
-		program.setUniform('u_translation', onePx, 'FLOAT');
+		program.setUniform('u__scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
+		program.setUniform('u__translation', onePx, 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(program);
 		
@@ -499,8 +499,8 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_scale', [radius / width, radius / height], 'FLOAT');
-		program.setUniform('u_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
+		program.setUniform('u__scale', [radius / width, radius / height], 'FLOAT');
+		program.setUniform('u__translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this.setPositionAttribute(program);
 		
@@ -512,6 +512,43 @@ can render to nextState using currentState as an input.`);
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
 		gl.disable(gl.BLEND);
 	}
+
+	// // Step program only for a thickened line segments (rounded end caps).
+	// stepSegment(
+	// 	program: GPUProgram,
+	// 	position1: [number, number], // position is in screen space coords.
+	// 	position2: [number, number], // position is in screen space coords.
+	// 	radius: number, // radius is in px.
+	// 	inputLayers: (DataLayer | WebGLTexture)[] = [],
+	// 	outputLayer?: DataLayer, // Undefined renders to screen.
+	// 	options?: {
+	// 		shouldBlendAlpha?: boolean,
+	// 	},
+	// ) {
+	// 	const { gl, errorState, circlePositionsBuffer, width, height } = this;
+
+	// 	// Ignore if we are in error state.
+	// 	if (errorState) {
+	// 		return;
+	// 	}
+
+	// 	// Do setup - this must come first.
+	// 	this.drawSetup(program, false, inputLayers, outputLayer);
+
+	// 	// Update uniforms and buffers.
+	// 	program.setUniform('u__scale', [radius / width, radius / height], 'FLOAT');
+	// 	program.setUniform('u__translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
+	// 	gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
+	// 	this.setPositionAttribute(program);
+		
+	// 	// Draw.
+	// 	if (options?.shouldBlendAlpha) {
+	// 		gl.enable(gl.BLEND);
+	// 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+	// 	}
+	// 	gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+	// 	gl.disable(gl.BLEND);
+	// }
 
 	drawPoints(
 		program: GPUProgram,
@@ -549,10 +586,10 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_scale', [1 / width, 1 / height], 'FLOAT');
-		program.setUniform('u_pointSize', pointSize, 'FLOAT');
+		program.setUniform('u__scale', [1 / width, 1 / height], 'FLOAT');
+		program.setUniform('u__pointSize', pointSize, 'FLOAT');
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setUniform('u_positionDimensions', positionLayerDimensions, 'FLOAT');
+		program.setUniform('u__positionDimensions', positionLayerDimensions, 'FLOAT');
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
