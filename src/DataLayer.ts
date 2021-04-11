@@ -24,7 +24,7 @@ export type DataLayerBuffer = {
 type ErrorCallback = (message: string) => void;
 
 export class DataLayer {
-	private readonly name: string;
+	readonly name: string;
 	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private readonly errorCallback: ErrorCallback;
 	private bufferIndex = 0;
@@ -33,16 +33,16 @@ export class DataLayer {
 	private length?: number; // This is only used for 1D data layers.
 	private width: number;
 	private height: number;
-	private readonly type: DataLayerType;
-	private readonly numComponents: DataLayerNumComponents;
+	readonly type: DataLayerType;
+	readonly numComponents: DataLayerNumComponents;
 	private readonly glInternalFormat: number;
 	private readonly glFormat: number;
 	private readonly glType: number;
-	private readonly glNumChannels: number;
+	readonly glNumChannels: number;
 	private readonly filter: number;
-	private readonly wrapS: number;
-	private readonly wrapT: number;
-	private readonly writable: boolean;
+	readonly wrapS: number;
+	readonly wrapT: number;
+	readonly writable: boolean;
 
 	constructor(
 		name: string,

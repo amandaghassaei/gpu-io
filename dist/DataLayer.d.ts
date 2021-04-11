@@ -9,7 +9,7 @@ export declare type DataLayerBuffer = {
 };
 declare type ErrorCallback = (message: string) => void;
 export declare class DataLayer {
-    private readonly name;
+    readonly name: string;
     private readonly gl;
     private readonly errorCallback;
     private bufferIndex;
@@ -18,16 +18,16 @@ export declare class DataLayer {
     private length?;
     private width;
     private height;
-    private readonly type;
-    private readonly numComponents;
+    readonly type: DataLayerType;
+    readonly numComponents: DataLayerNumComponents;
     private readonly glInternalFormat;
     private readonly glFormat;
     private readonly glType;
-    private readonly glNumChannels;
+    readonly glNumChannels: number;
     private readonly filter;
-    private readonly wrapS;
-    private readonly wrapT;
-    private readonly writable;
+    readonly wrapS: number;
+    readonly wrapT: number;
+    readonly writable: boolean;
     constructor(name: string, gl: WebGLRenderingContext | WebGL2RenderingContext, options: {
         dimensions: number | [number, number];
         type: DataLayerType;
