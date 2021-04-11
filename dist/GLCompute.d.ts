@@ -60,6 +60,13 @@ export declare class GLCompute {
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
+    stepSegment(program: GPUProgram, position1: [number, number], // position is in screen space coords.
+    position2: [number, number], // position is in screen space coords.
+    radius: number, // radius is in px.
+    inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
+    options?: {
+        shouldBlendAlpha?: boolean;
+    }): void;
     drawPoints(program: GPUProgram, inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
         pointSize?: number;
         numPoints?: number;

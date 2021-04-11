@@ -8,7 +8,7 @@ const packFloat32ToRGBA8ShaderSource = require('./kernels/packFloat32ToRGBA8Frag
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
 const unitCirclePoints = [0, 0];
-const NUM_SEGMENTS_CIRCLE = 20;
+const NUM_SEGMENTS_CIRCLE = 18;// Must be divisible by 6 to work with stepSegment().
 for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 	unitCirclePoints.push(
 		Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
@@ -332,7 +332,7 @@ can render to nextState using currentState as an input.`);
 	private setPositionAttribute(program: GPUProgram) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program.program!, 'aPosition');
+		const location = gl.getAttribLocation(program.program!, 'a__position');
 		gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
@@ -341,7 +341,7 @@ can render to nextState using currentState as an input.`);
 	private setIndexAttribute(program: GPUProgram) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program.program!, 'aIndex');
+		const location = gl.getAttribLocation(program.program!, 'a__index');
 		gl.vertexAttribPointer(location, 1, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
@@ -513,42 +513,50 @@ can render to nextState using currentState as an input.`);
 		gl.disable(gl.BLEND);
 	}
 
-	// // Step program only for a thickened line segments (rounded end caps).
-	// stepSegment(
-	// 	program: GPUProgram,
-	// 	position1: [number, number], // position is in screen space coords.
-	// 	position2: [number, number], // position is in screen space coords.
-	// 	radius: number, // radius is in px.
-	// 	inputLayers: (DataLayer | WebGLTexture)[] = [],
-	// 	outputLayer?: DataLayer, // Undefined renders to screen.
-	// 	options?: {
-	// 		shouldBlendAlpha?: boolean,
-	// 	},
-	// ) {
-	// 	const { gl, errorState, circlePositionsBuffer, width, height } = this;
+	// Step program only for a thickened line segments (rounded end caps).
+	stepSegment(
+		program: GPUProgram,
+		position1: [number, number], // position is in screen space coords.
+		position2: [number, number], // position is in screen space coords.
+		radius: number, // radius is in px.
+		inputLayers: (DataLayer | WebGLTexture)[] = [],
+		outputLayer?: DataLayer, // Undefined renders to screen.
+		options?: {
+			shouldBlendAlpha?: boolean,
+		},
+	) {
+		const { gl, errorState, circlePositionsBuffer, width, height } = this;
 
-	// 	// Ignore if we are in error state.
-	// 	if (errorState) {
-	// 		return;
-	// 	}
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
 
-	// 	// Do setup - this must come first.
-	// 	this.drawSetup(program, false, inputLayers, outputLayer);
+		// Do setup - this must come first.
+		this.drawSetup(program, false, inputLayers, outputLayer);
 
-	// 	// Update uniforms and buffers.
-	// 	program.setUniform('u__scale', [radius / width, radius / height], 'FLOAT');
-	// 	program.setUniform('u__translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
-	// 	gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-	// 	this.setPositionAttribute(program);
+		// Update uniforms and buffers.
+		program.setUniform('u__scale', [radius / width, radius / height], 'FLOAT');
+		const diffX = position1[0] - position2[0];
+		const diffY = position1[1] - position2[1];
+		const angle = Math.atan2(diffY, diffX);
+		program.setUniform('u__rotation', angle, 'FLOAT');
+		const length = Math.sqrt(diffX * diffX + diffY * diffY);
+		program.setUniform('u__length', length, 'FLOAT');
+		const positionX = (position1[0] + position2[0]) / 2;
+		const positionY = (position1[1] + position2[1]) / 2;
+		program.setUniform('u__translation', [2 * positionX / width - 1, 2 * positionY / height - 1], 'FLOAT');
+		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
+		this.setPositionAttribute(program);
 		
-	// 	// Draw.
-	// 	if (options?.shouldBlendAlpha) {
-	// 		gl.enable(gl.BLEND);
-	// 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-	// 	}
-	// 	gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
-	// 	gl.disable(gl.BLEND);
-	// }
+		// Draw.
+		if (options?.shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+		gl.disable(gl.BLEND);
+	}
 
 	drawPoints(
 		program: GPUProgram,
