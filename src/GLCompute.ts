@@ -537,7 +537,8 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [radius / width, radius / height], 'FLOAT');
+		program.setUniform('u_internal_radius', radius, 'FLOAT');
+		program.setUniform('u_internal_scale', [2 / width, 2 / height], 'FLOAT');
 		const diffX = position1[0] - position2[0];
 		const diffY = position1[1] - position2[1];
 		const angle = Math.atan2(diffY, diffX);
