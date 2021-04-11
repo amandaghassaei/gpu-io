@@ -20,15 +20,17 @@ void main() {
 	// Calculate UV coordinates of current rendered object.
 	v_UV_local = 0.5 * (a_internal_position + 1.0);
 
+	vec2 position = a_internal_position;
+
 	// Stretch center of shape to form a round-capped line segment.
-	if (a_internal_position.x < 0.0) {
-		a_internal_position.x -= u_internal_length / 2.0;
-	} else if (a_internal_position.x > 0.0) {
-		a_internal_position.x += u_internal_length / 2.0;
+	if (position.x < 0.0) {
+		position.x -= u_internal_length / 2.0;
+	} else if (position.x > 0.0) {
+		position.x += u_internal_length / 2.0;
 	}
 
 	// Apply transformations.
-	vec2 position = rotate2d(u_internal_rotation) * (u_internal_scale * a_internal_position) + u_internal_translation;
+	position = rotate2d(u_internal_rotation) * (u_internal_scale * position) + u_internal_translation;
 
 	// Calculate a global uv for the viewport.
 	v_UV = 0.5 * (position + 1.0);
