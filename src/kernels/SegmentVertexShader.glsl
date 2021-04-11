@@ -1,12 +1,12 @@
 // Vertex shader for fullscreen quad.
 precision highp float;
 
-attribute vec2 a__position;
+attribute vec2 a_internal_position;
 
-uniform vec2 u__scale;
-uniform float u__length;
-uniform float u__rotation;
-uniform vec2 u__translation;
+uniform vec2 u_internal_scale;
+uniform float u_internal_length;
+uniform float u_internal_rotation;
+uniform vec2 u_internal_translation;
 
 varying vec2 v_UV_local;
 varying vec2 v_UV;
@@ -18,17 +18,17 @@ mat2 rotate2d(float _angle){
 
 void main() {
 	// Calculate UV coordinates of current rendered object.
-	v_UV_local = 0.5 * (a__position + 1.0);
+	v_UV_local = 0.5 * (a_internal_position + 1.0);
 
 	// Stretch center of shape to form a round-capped line segment.
-	if (a__position.x < 0.0) {
-		a__position.x -= u__length / 2.0;
-	} else if (a__position.x > 0.0) {
-		a__position.x += u__length / 2.0;
+	if (a_internal_position.x < 0.0) {
+		a_internal_position.x -= u_internal_length / 2.0;
+	} else if (a_internal_position.x > 0.0) {
+		a_internal_position.x += u_internal_length / 2.0;
 	}
 
 	// Apply transformations.
-	vec2 position = rotate2d(u__rotation) * (u__scale * a__position) + u__translation;
+	vec2 position = rotate2d(u_internal_rotation) * (u_internal_scale * a_internal_position) + u_internal_translation;
 
 	// Calculate a global uv for the viewport.
 	v_UV = 0.5 * (position + 1.0);
