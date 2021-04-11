@@ -12,8 +12,10 @@ varying vec2 v_UV_local;
 varying vec2 v_UV;
 
 mat2 rotate2d(float _angle){
-    return mat2(cos(_angle),-sin(_angle),
-                sin(_angle),cos(_angle));
+	return mat2(
+		cos(_angle),-sin(_angle),
+		sin(_angle),cos(_angle),
+	);
 }
 
 void main() {
@@ -30,7 +32,7 @@ void main() {
 	}
 
 	// Apply transformations.
-	position = rotate2d(u_internal_rotation) * (u_internal_scale * position) + u_internal_translation;
+	position = (u_internal_scale * position) + u_internal_translation;
 
 	// Calculate a global uv for the viewport.
 	v_UV = 0.5 * (position + 1.0);
