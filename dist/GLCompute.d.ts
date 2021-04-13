@@ -1,11 +1,14 @@
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
+import { WebGLRenderer } from './types/Three';
+declare type errorCallback = (message: string) => void;
 export declare class GLCompute {
     private readonly gl;
     private width;
     private height;
     private errorState;
     private readonly errorCallback;
+    private renderer?;
     private readonly defaultVertexShader;
     private readonly quadPositionsBuffer;
     private readonly boundaryPositionsBuffer;
@@ -15,9 +18,12 @@ export declare class GLCompute {
     private readonly passThroughProgram;
     private packFloat32ToRGBA8Program?;
     private packToRGBA8OutputBuffer?;
+    static initWithThreeRenderer(renderer: WebGLRenderer, options?: {
+        antialias?: boolean;
+    }, errorCallback?: errorCallback): GLCompute;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, options?: {
         antialias?: boolean;
-    }, errorCallback?: (message: string) => void);
+    }, errorCallback?: errorCallback, renderer?: WebGLRenderer);
     private initVertexBuffer;
     initProgram(name: string, fragmentShaderOrSource: string | WebGLShader, uniforms?: {
         name: string;
@@ -76,5 +82,7 @@ export declare class GLCompute {
     getValues(dataLayer: DataLayer): Float32Array;
     readyToRead(): boolean;
     reset(): void;
+    resetThreeState(): void;
     destroy(): void;
 }
+export {};

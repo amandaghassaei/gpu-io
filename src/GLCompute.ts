@@ -1,5 +1,7 @@
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
+import { WebGLRenderer } from './types/Three';
+import { Vector4 } from './types/Vector4';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 const defaultVertexShaderSource = require('./kernels/DefaultVertexShader.glsl');
 const passThroughFragmentShaderSource = require('./kernels/PassThroughFragmentShader.glsl');
@@ -17,6 +19,8 @@ for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
 }
 const circlePositions = new Float32Array(unitCirclePoints);
 
+type errorCallback = (message: string) => void;
+
 export class GLCompute {
 	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	// These width and height are the current canvas at full res.
@@ -25,6 +29,9 @@ export class GLCompute {
 
 	private errorState = false;
 	private readonly errorCallback: (message: string) => void;
+
+	// Save threejs renderer if passed in.
+	private renderer?: WebGLRenderer;
 	
 	// Some precomputed values.
 	private readonly defaultVertexShader!: WebGLShader;
@@ -37,6 +44,21 @@ export class GLCompute {
 	private packFloat32ToRGBA8Program?: GPUProgram;
 	private packToRGBA8OutputBuffer?: DataLayer;
 
+	static initWithThreeRenderer(
+		renderer: WebGLRenderer,
+		options?: {
+			antialias?: boolean,
+		},
+		errorCallback?: errorCallback,
+	) {
+		return new GLCompute(
+			renderer.getContext(),
+			renderer.domElement,
+			options,
+			errorCallback,
+		);
+	}
+
 	constructor(
 		gl: WebGLRenderingContext | WebGL2RenderingContext | null,
 		canvasEl: HTMLCanvasElement,
@@ -45,7 +67,8 @@ export class GLCompute {
 		},
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
 		// e.g. throw up a modal telling user this will not work on their device.
-		errorCallback: (message: string) => void = (message: string) => { throw new Error(message) }, 
+		errorCallback: errorCallback = (message: string) => { throw new Error(message) },
+		renderer?: WebGLRenderer,
 	) {
 		// Save callback in case we run into an error.
 		const self = this;
@@ -74,6 +97,7 @@ export class GLCompute {
 			console.log('Using WebGL 1.0 context.');
 		}
 		this.gl = gl;
+		this.renderer = renderer;
 
 		// GL setup.
 		// Disable depth testing globally.
@@ -698,8 +722,20 @@ can render to nextState using currentState as an input.`);
 
     reset() {
 	};
+
+	resetThreeState() {
+		if (!this.renderer) {
+			throw new Error('GLCompute was not inited with a renderer.');
+		}
+		// Reset viewport.
+		const viewport = this.renderer.getViewport(new Vector4());
+		this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+		// Render to screen.
+		this.renderer.setRenderTarget(null);
+	}
 	
 	destroy() {
 		// TODO: Need to implement this.
+		delete this.renderer;
 	}
 }
