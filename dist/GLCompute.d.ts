@@ -18,9 +18,7 @@ export declare class GLCompute {
     private readonly passThroughProgram;
     private packFloat32ToRGBA8Program?;
     private packToRGBA8OutputBuffer?;
-    static initWithThreeRenderer(renderer: WebGLRenderer, options?: {
-        antialias?: boolean;
-    }, errorCallback?: errorCallback): GLCompute;
+    static initWithThreeRenderer(renderer: WebGLRenderer, errorCallback?: errorCallback): GLCompute;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, options?: {
         antialias?: boolean;
     }, errorCallback?: errorCallback, renderer?: WebGLRenderer);

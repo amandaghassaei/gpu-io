@@ -46,15 +46,12 @@ export class GLCompute {
 
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
-		options?: {
-			antialias?: boolean,
-		},
 		errorCallback?: errorCallback,
 	) {
 		return new GLCompute(
 			renderer.getContext(),
 			renderer.domElement,
-			options,
+			undefined,
 			errorCallback,
 		);
 	}
