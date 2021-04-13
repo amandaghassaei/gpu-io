@@ -51,9 +51,9 @@ export declare class DataLayer {
     resize(dimensions: number | [number, number], data?: DataLayerArrayType): void;
     clear(): void;
     getDimensions(): [number, number];
-    get textures(): WebGLTexture[];
+    getTextures(): WebGLTexture[];
     getLength(): number;
-    getNumComponent(): DataLayerNumComponents;
+    getNumComponents(): DataLayerNumComponents;
     getType(): DataLayerType;
     private destroyBuffers;
     destroy(): void;

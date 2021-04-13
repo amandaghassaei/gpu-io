@@ -679,7 +679,7 @@ can render to nextState using currentState as an input.`);
 			throw new Error(`Unsupported type ${type} for getValues().`);
 		}
 		const [width, height] = dataLayer.getDimensions();
-		const numComponents = dataLayer.getNumComponent();
+		const numComponents = dataLayer.getNumComponents();
 		const outputWidth = width * numComponents;
 		const outputHeight = height;
 

@@ -796,7 +796,7 @@ export class DataLayer {
 		] as [number, number];
 	}
 
-	get textures() {
+	getTextures() {
 		return this.buffers.map(buffer => buffer.texture);
 	}
 
@@ -807,7 +807,7 @@ export class DataLayer {
 		return this.length;
 	}
 
-	getNumComponent() {
+	getNumComponents() {
 		return this.numComponents;
 	}
 
