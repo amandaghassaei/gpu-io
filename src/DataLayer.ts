@@ -796,6 +796,10 @@ export class DataLayer {
 		] as [number, number];
 	}
 
+	get textures() {
+		return this.buffers.map(buffer => buffer.texture);
+	}
+
 	getLength() {
 		if (!this.length) {
 			throw new Error(`Cannot call getLength() on 2D DataLayer ${this.name}.`);
