@@ -53,6 +53,7 @@ export class GLCompute {
 			renderer.domElement,
 			undefined,
 			errorCallback,
+			renderer,
 		);
 	}
 
