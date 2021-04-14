@@ -429,8 +429,7 @@ can render to nextState using currentState as an input.`);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
-		// @ts-ignore
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_internal_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
 		program.setUniform('u_internal_translation', onePx, 'FLOAT');
@@ -486,8 +485,7 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		// @ts-ignore
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setUniform('u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
 		program.setUniform('u_internal_translation', onePx, 'FLOAT');
@@ -554,7 +552,8 @@ can render to nextState using currentState as an input.`);
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState, circlePositionsBuffer, width, height } = this;
+		const { gl, errorState, circlePositionsBuffer } = this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -598,7 +597,8 @@ can render to nextState using currentState as an input.`);
 			shouldBlendAlpha?: boolean,
 		}
 	) {
-		const { gl, errorState, width, height, pointIndexArray } = this;
+		const { gl, errorState, pointIndexArray } = this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
