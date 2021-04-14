@@ -32,7 +32,6 @@ export class GLCompute {
 
 	// Save threejs renderer if passed in.
 	private renderer?: WebGLRenderer;
-	private readonly lastThreeState = { textures: [] as any[] };
 	private readonly maxNumTextures!: number;
 	
 	// Some precomputed values.
@@ -723,39 +722,18 @@ can render to nextState using currentState as an input.`);
     reset() {
 	};
 
-	// saveCurrentThreeState() {
-	// 	const { gl, maxNumTextures, lastThreeState } = this;
-	// 	// Save all currently bound textures.
-	// 	const { textures } = lastThreeState;
-	// 	if (textures.length === 0) {
-	// 		for (let i = 0; i < maxNumTextures; i++) {
-	// 			textures.push(null);
-	// 		}
-	// 	}
-	// 	for (let i = 0; i < maxNumTextures; i++) {
-	// 		gl.activeTexture(gl.TEXTURE0 + i);
-	// 		textures[i] = gl.getParameter(gl.TEXTURE_BINDING_2D);
-	// 		// Unbind texture.
-	// 		gl.bindTexture(gl.TEXTURE_2D, null);
-	// 	}
-	// }
-
-	resetCurrentThreeState() {
+	resetThreeState() {
 		if (!this.renderer) {
 			throw new Error('GLCompute was not inited with a renderer.');
 		}
-		const { gl, maxNumTextures, lastThreeState } = this;
+		const { gl } = this;
 		// Reset viewport.
 		const viewport = this.renderer.getViewport(new Vector4());
 		gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		// Unbind framebuffer (render to screen).
 		this.renderer.setRenderTarget(null);
-		// // Rebind textures.
-		// for (let i = 0; i < maxNumTextures; i++) {
-		// 	gl.activeTexture(gl.TEXTURE0 + i);
-		// 	// Unbind texture.
-		// 	gl.bindTexture(gl.TEXTURE_2D, lastThreeState.textures[i]);
-		// }
+		// Reset texture bindings.
+		this.renderer.resetState();
 	}
 	
 	destroy() {

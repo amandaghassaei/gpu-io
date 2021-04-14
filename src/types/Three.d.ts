@@ -24,4 +24,8 @@ export type WebGLRenderer = {
      * @param activeMipmapLevel Specifies the active mipmap level.
      */
     setRenderTarget(renderTarget: any | null, activeCubeFace?: number, activeMipmapLevel?: number): void;
+    /**
+     * Can be used to reset the internal WebGL state.
+     */
+    resetState(): void;
 }
