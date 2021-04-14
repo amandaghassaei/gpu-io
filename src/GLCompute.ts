@@ -32,7 +32,7 @@ export class GLCompute {
 
 	// Save threejs renderer if passed in.
 	private renderer?: WebGLRenderer;
-	private lastThreeState = { textures: [] as any[] };
+	private readonly lastThreeState = { textures: [] as any[] };
 	private readonly maxNumTextures!: number;
 	
 	// Some precomputed values.
@@ -723,24 +723,24 @@ can render to nextState using currentState as an input.`);
     reset() {
 	};
 
-	saveCurrentThreeState() {
-		const { gl, maxNumTextures, lastThreeState } = this;
-		// Save all currently bound textures.
-		const { textures } = lastThreeState;
-		if (textures.length === 0) {
-			for (let i = 0; i < maxNumTextures; i++) {
-				textures.push(null);
-			}
-		}
-		for (let i = 0; i < maxNumTextures; i++) {
-			gl.activeTexture(gl.TEXTURE0 + i);
-			textures[i] = gl.getParameter(gl.TEXTURE_BINDING_2D);
-			// Unbind texture.
-			gl.bindTexture(gl.TEXTURE_2D, null);
-		}
-	}
+	// saveCurrentThreeState() {
+	// 	const { gl, maxNumTextures, lastThreeState } = this;
+	// 	// Save all currently bound textures.
+	// 	const { textures } = lastThreeState;
+	// 	if (textures.length === 0) {
+	// 		for (let i = 0; i < maxNumTextures; i++) {
+	// 			textures.push(null);
+	// 		}
+	// 	}
+	// 	for (let i = 0; i < maxNumTextures; i++) {
+	// 		gl.activeTexture(gl.TEXTURE0 + i);
+	// 		textures[i] = gl.getParameter(gl.TEXTURE_BINDING_2D);
+	// 		// Unbind texture.
+	// 		gl.bindTexture(gl.TEXTURE_2D, null);
+	// 	}
+	// }
 
-	resetThreeState() {
+	resetCurrentThreeState() {
 		if (!this.renderer) {
 			throw new Error('GLCompute was not inited with a renderer.');
 		}
@@ -750,12 +750,12 @@ can render to nextState using currentState as an input.`);
 		gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		// Unbind framebuffer (render to screen).
 		this.renderer.setRenderTarget(null);
-		// Rebind textures.
-		for (let i = 0; i < maxNumTextures; i++) {
-			gl.activeTexture(gl.TEXTURE0 + i);
-			// Unbind texture.
-			gl.bindTexture(gl.TEXTURE_2D, lastThreeState.textures[i]);
-		}
+		// // Rebind textures.
+		// for (let i = 0; i < maxNumTextures; i++) {
+		// 	gl.activeTexture(gl.TEXTURE0 + i);
+		// 	// Unbind texture.
+		// 	gl.bindTexture(gl.TEXTURE_2D, lastThreeState.textures[i]);
+		// }
 	}
 	
 	destroy() {
