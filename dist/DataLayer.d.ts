@@ -54,6 +54,7 @@ export declare class DataLayer {
     getTextures(): WebGLTexture[];
     getLength(): number;
     getNumComponents(): DataLayerNumComponents;
+    getGLFormat(): number;
     getType(): DataLayerType;
     private destroyBuffers;
     destroy(): void;

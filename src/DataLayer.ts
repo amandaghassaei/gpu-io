@@ -811,6 +811,10 @@ export class DataLayer {
 		return this.numComponents;
 	}
 
+	getGLFormat() {
+		return this.glFormat;
+	}
+
 	getType() {
 		return this.type;
 	}

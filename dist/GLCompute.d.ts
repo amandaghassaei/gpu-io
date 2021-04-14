@@ -78,7 +78,7 @@ export declare class GLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
-    getValues(dataLayer: DataLayer): Float32Array;
+    getValues(dataLayer: DataLayer): Float32Array | Uint8Array;
     readyToRead(): boolean;
     reset(): void;
     resetThreeState(): void;

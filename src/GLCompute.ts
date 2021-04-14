@@ -657,6 +657,19 @@ can render to nextState using currentState as an input.`);
 
 	getValues(dataLayer: DataLayer) {
 		const { gl, errorCallback, defaultVertexShader } = this;
+
+		if (dataLayer.getType() === 'uint8') {
+			if (this.readyToRead()) {
+				const [ width, height ] = dataLayer.getDimensions();
+				const numComponents = dataLayer.getNumComponents();
+				const pixels = new Uint8Array(width * height * numComponents);
+				gl.readPixels(0, 0, width, height, dataLayer.getGLFormat(), gl.UNSIGNED_BYTE, pixels);
+				return pixels;
+			} else {
+				throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
+			}
+		}
+
 		let { packFloat32ToRGBA8Program, packToRGBA8OutputBuffer } = this;
 
 		// Init program if needed.
