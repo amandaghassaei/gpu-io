@@ -5,7 +5,7 @@ const PointsVertexShaderWithDisplacement = require('./kernels/PointsVertexShader
 const SegmentVertexShader = require('./kernels/SegmentVertexShader.glsl');
 const PassThroughFragmentShader = require('./kernels/PassThroughFragmentShader.glsl');
 const CopyFragmentShader = require('./kernels/CopyFragShader.glsl');
-const ZeroFragShader = require('./kernels/ZeroFragShader.glsl');
+const ZeroFragmentShader = require('./kernels/ZeroFragShader.glsl');
 
 export {
 	GLCompute,
@@ -15,5 +15,5 @@ export {
 	SegmentVertexShader,
 	PassThroughFragmentShader,
 	CopyFragmentShader,
-	ZeroFragShader,
+	ZeroFragmentShader,
 };
