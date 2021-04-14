@@ -9,6 +9,8 @@ export declare class GLCompute {
     private errorState;
     private readonly errorCallback;
     private renderer?;
+    private lastThreeState;
+    private readonly maxNumTextures;
     private readonly defaultVertexShader;
     private readonly quadPositionsBuffer;
     private readonly boundaryPositionsBuffer;
@@ -80,6 +82,7 @@ export declare class GLCompute {
     getValues(dataLayer: DataLayer): Float32Array;
     readyToRead(): boolean;
     reset(): void;
+    saveCurrentThreeState(): void;
     resetThreeState(): void;
     destroy(): void;
 }
