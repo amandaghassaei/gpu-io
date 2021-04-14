@@ -514,7 +514,8 @@ can render to nextState using currentState as an input.`);
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState, circlePositionsBuffer, width, height } = this;
+		const { gl, errorState, circlePositionsBuffer } = this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
