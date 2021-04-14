@@ -4,4 +4,6 @@ declare const PointsVertexShader: any;
 declare const PointsVertexShaderWithDisplacement: any;
 declare const SegmentVertexShader: any;
 declare const PassThroughFragmentShader: any;
-export { GLCompute, SingleColorFragShader, PointsVertexShader, PointsVertexShaderWithDisplacement, SegmentVertexShader, PassThroughFragmentShader, };
+declare const CopyFragmentShader: any;
+declare const ZeroFragShader: any;
+export { GLCompute, SingleColorFragShader, PointsVertexShader, PointsVertexShaderWithDisplacement, SegmentVertexShader, PassThroughFragmentShader, CopyFragmentShader, ZeroFragShader, };
