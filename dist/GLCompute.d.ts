@@ -1,6 +1,6 @@
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
-import { WebGLRenderer } from './types/Three';
+import { WebGLRenderer, Texture } from 'three';
 declare type errorCallback = (message: string) => void;
 export declare class GLCompute {
     private readonly gl;
@@ -81,6 +81,7 @@ export declare class GLCompute {
     getValues(dataLayer: DataLayer): Float32Array | Uint8Array;
     readyToRead(): boolean;
     reset(): void;
+    attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;
     resetThreeState(): void;
     destroy(): void;
 }

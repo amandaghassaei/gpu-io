@@ -1,7 +1,7 @@
 import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
 import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
-import { WebGLRenderer } from './types/Three';
-import { Vector4 } from './types/Vector4';
+import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
+import * as utils from './utils/Vector4';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 const defaultVertexShaderSource = require('./kernels/DefaultVertexShader.glsl');
 const passThroughFragmentShaderSource = require('./kernels/PassThroughFragmentShader.glsl');
@@ -736,13 +736,28 @@ can render to nextState using currentState as an input.`);
     reset() {
 	};
 
+	attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture) {
+		if (!this.renderer) {
+			throw new Error('GLCompute was not inited with a renderer.');
+		}
+		// Link webgl texture to threejs object.
+		// This is not officially supported.
+		const textures = dataLayer.getTextures();
+		if (textures.length > 1) {
+			throw new Error('This dataLayer contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a DataLayer with one buffer.');
+		}
+		const offsetTextureProperties = this.renderer.properties.get(texture);
+		offsetTextureProperties.__webglTexture = textures[0];
+		offsetTextureProperties.__webglInit = true;
+	}
+
 	resetThreeState() {
 		if (!this.renderer) {
 			throw new Error('GLCompute was not inited with a renderer.');
 		}
 		const { gl } = this;
 		// Reset viewport.
-		const viewport = this.renderer.getViewport(new Vector4());
+		const viewport = this.renderer.getViewport(new utils.Vector4() as Vector4);
 		gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		// Unbind framebuffer (render to screen).
 		this.renderer.setRenderTarget(null);
