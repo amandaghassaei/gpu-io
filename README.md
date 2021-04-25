@@ -1,6 +1,6 @@
 # glcompute
 
-GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of spatially-distributed state (such as 2D physics simulations, differential equations, or cellular automata).  It also includes an interface for performing operations on large 1D arrays of data as well (via a fragment shader implementation).
+GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of spatially-distributed state (such as 2D physics simulations, differential equations, or cellular automata).  It also includes an interface for performing operations on large 1D arrays of data (via a fragment shader implementation).
 
 This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on most mobile or older browsers.
 
@@ -50,7 +50,7 @@ const dataLayer = glcompute.initDataLayer('offsetGrid', {
 }, true, 1);
 
 const texture = new Texture(
-	threeView.renderer.domElement,
+	renderer.domElement,
 	undefined,
 	ClampToEdgeWrapping,
 	ClampToEdgeWrapping,
