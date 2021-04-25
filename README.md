@@ -1,6 +1,6 @@
 # glcompute
 
-GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of spatially-distributed state (such as 2D physics simulations or cellular automata).  It *will* also grow to include performing operations on large 1D arrays of data as well (via transform feedback with a fallback to a fragment shader implementation).
+GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of spatially-distributed state (such as 2D physics simulations, differential equations, or cellular automata).  It also includes an interface for performing operations on large 1D arrays of data as well (via a fragment shader implementation).
 
 This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on most mobile or older browsers.
 
@@ -23,7 +23,7 @@ Because this repo is under active development, you may also want to include a sp
 
 ## Compatibility with threejs
 
-Currently, this library can run in a separate webgl context from threejs with no problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so:
+Currently, this library can run in a separate webgl context from threejs with no problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so, though I am still sorting out some lingering WebGL warnings:
 
 ```
 const renderer = new WebGLRenderer();
@@ -34,10 +34,45 @@ renderer.autoClear = false;
 const gl = renderer.getContext();
 const canvas = renderer.domElement;
 
-const glcompute = new GLCompute(gl, canvas);
+const glcompute = GLCompute.initWithThreeRenderer(renderer);
 ```
 
-I have noticed that there can be some issues due to threejs's caching system since it expects that nothing else is interacting with the context.  This is still being sorted out....  
+To use the output from a glcompute DataLayer to a Threejs Texture:
+
+```
+const dataLayer = glcompute.initDataLayer('offsetGrid', {
+	dimensions: [100, 100],
+	type: 'uint8',
+	numComponents: 1,
+	wrapS: 'CLAMP_TO_EDGE',
+	wrapT: 'CLAMP_TO_EDGE',
+	filter: 'NEAREST',
+}, true, 1);
+
+const texture = new Texture(
+	threeView.renderer.domElement,
+	undefined,
+	ClampToEdgeWrapping,
+	ClampToEdgeWrapping,
+	NearestFilter,
+	NearestFilter,
+	RGBFormat,
+	UnsignedByteType,
+);
+// Link webgl texture to threejs object.
+glcompute.attachDataLayerToThreeTexture(dataLayer, texture);
+
+const mesh = new Mesh(
+	new PlaneBufferGeometry(1, 1),
+	new MeshBasicMaterial({
+		map: offsetTextureThree,
+	}),
+);
+
+// Updates to dataLayer will propagate to mesh map without any additional needsUpdate flags.
+```
+
+More info about using glcompute to update mesh positions data is coming soon.
 
 ## References
 
