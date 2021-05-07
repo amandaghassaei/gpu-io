@@ -88,21 +88,21 @@ export class GPUProgram {
 			}
 			const fragmentShader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
 			if (!fragmentShader) {
-				errorCallback(`Unable to compile fragment shader for program ${name}.`);
+				errorCallback(`Unable to compile fragment shader for program "${name}".`);
 				return;
 			}
 			this.shaders.push(fragmentShader);
 			gl.attachShader(program, fragmentShader);
 		} else {
 			if (defines) {
-				throw new Error(`Unable to attach defines to program ${name} because it is already compiled.`);
+				throw new Error(`Unable to attach defines to program "${name}" because it is already compiled.`);
 			}
 			gl.attachShader(program, fragmentShaderOrSource);
 		}
 		if (typeof(vertexShaderOrSource) === 'string') {
 			const vertexShader = compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
 			if (!vertexShader) {
-				errorCallback(`Unable to compile vertex shader for program ${name}.`);
+				errorCallback(`Unable to compile vertex shader for program "${name}".`);
 				return;
 			}
 			this.shaders.push(vertexShader);
@@ -117,7 +117,7 @@ export class GPUProgram {
 		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
 		if (!success) {
 			// Something went wrong with the link.
-			errorCallback(`Program ${name} failed to link: ${gl.getProgramInfoLog(program)}`);
+			errorCallback(`Program "${name}" failed to link: ${gl.getProgramInfoLog(program)}`);
 			return;
 		}
 
@@ -187,7 +187,7 @@ export class GPUProgram {
 			// Init uniform if needed.
 			const location = gl.getUniformLocation(program, uniformName);
 			if (!location) {
-				errorCallback(`Could not init uniform ${uniformName} for program ${this.name}.
+				errorCallback(`Could not init uniform "${uniformName}" for program "${this.name}".
 Check that uniform is present in shader code, unused uniforms may be removed by compiler.
 Also check that uniform type in shader code matches type ${type}.
 Error code: ${gl.getError()}.`);
@@ -202,7 +202,7 @@ Error code: ${gl.getError()}.`);
 		const uniform = uniforms[uniformName];
 		// Check that types match previously set uniform.
 		if (uniform.type != type) {
-			throw new Error(`Uniform ${uniformName} cannot change from type ${uniform.type} to type ${type}.`);
+			throw new Error(`Uniform "${uniformName}" cannot change from type ${uniform.type} to type ${type}.`);
 		}
 		const { location } = uniform;
 
@@ -261,7 +261,7 @@ Error code: ${gl.getError()}.`);
 			// Init uniform if needed.
 			const location = gl.getAttribLocation(program, attributeName);
 			if (!location) {
-				errorCallback(`Could not init vertexAttribute ${attributeName}. Error code: ${gl.getError()}.`);
+				errorCallback(`Could not init vertexAttribute "${attributeName}". Error code: ${gl.getError()}.`);
 				return;
 			}
 			attributes[attributeName] = {
@@ -274,7 +274,7 @@ Error code: ${gl.getError()}.`);
 		const attribute = attributes[attributeName];
 		// Check that types match previously set uniform.
 		if (attribute.type != dataType) {
-			throw new Error(`Vertex attribute ${attributeName} cannot change from type ${attribute.type} to type ${dataType}.`);
+			throw new Error(`Vertex attribute "${attributeName}" cannot change from type ${attribute.type} to type ${dataType}.`);
 		}
 	}
 
@@ -282,11 +282,11 @@ Error code: ${gl.getError()}.`);
 		const { attributes, attributeNames, name } = this;
 		const attributeName = attributeNames[index];
 		if (!attributeName) {
-			throw new Error(`Invalid attribute index ${index} for program ${name}, current attributes: ${attributeNames.join(', ')}.`);
+			throw new Error(`Invalid attribute index ${index} for program "${name}", current attributes: ${attributeNames.join(', ')}.`);
 		}
 		const attribute = attributes[attributeName];
 		if (!attribute) {
-			throw new Error(`Invalid attribute ${attributeName} for program ${name}.`);
+			throw new Error(`Invalid attribute "${attributeName}" for program "${name}".`);
 		}
 		return attribute.location;
 	}

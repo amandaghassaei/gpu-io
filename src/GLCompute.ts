@@ -606,7 +606,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawPoints on ${program.name}: must pass a positionDataLayer as first element of inputLayers.`);
+			throw new Error(`Invalid inputLayers for drawPoints on program "${program.name}": must pass a positionDataLayer as first element of inputLayers.`);
 		}
 		const positionLayer = inputLayers[0] as DataLayer;
 

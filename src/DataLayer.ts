@@ -65,13 +65,13 @@ export class DataLayer {
 		this.gl = gl;
 		this.errorCallback = errorCallback;
 		if (numBuffers < 0 || numBuffers % 1 !== 0) {
-			throw new Error(`Invalid numBuffers: ${numBuffers} for DataLayer ${this.name}, must be positive integer.`);
+			throw new Error(`Invalid numBuffers: ${numBuffers} for DataLayer "${this.name}", must be positive integer.`);
 		}
 		this.numBuffers = numBuffers;
 		// Save options.
 		if (!isNaN(options.dimensions as number)) {
 			if (options.dimensions < 1) {
-				throw new Error(`Invalid length ${options.dimensions} for DataLayer ${name}.`);
+				throw new Error(`Invalid length ${options.dimensions} for DataLayer "${name}".`);
 			}
 			this.length = options.dimensions as number;
 			const [width, height] = this.calcWidthHeight(options.dimensions as number);
@@ -237,7 +237,7 @@ export class DataLayer {
 		// Check that data is correct length.
 		// First check for a user error.
 		if ((length && _data.length !== length * numComponents) || (!length && _data.length !== width * height * numComponents)) {
-			throw new Error(`Invalid data length ${_data.length} for DataLayer ${name} of size ${length ? length : `${width}x${height}`}x${numComponents}.`);
+			throw new Error(`Invalid data length ${_data.length} for DataLayer "${name}" of size ${length ? length : `${width}x${height}`}x${numComponents}.`);
 		}
 
 		// Check that data is correct type.
@@ -270,10 +270,10 @@ export class DataLayer {
 				invalidTypeFound = invalidTypeFound || _data.constructor !== Int32Array;
 				break;
 			default:
-				throw new Error(`Error initing ${name}.  Unsupported type ${type} for GLCompute.initDataLayer.`);
+				throw new Error(`Error initing DataLayer "${name}".  Unsupported type "${type}" for GLCompute.initDataLayer.`);
 		}
 		if (invalidTypeFound) {
-			throw new Error(`Invalid TypedArray of type ${(_data.constructor as any).name} supplied to DataLayer ${name} of type ${type}.`);
+			throw new Error(`Invalid TypedArray of type ${(_data.constructor as any).name} supplied to DataLayer "${name}" of type "${type}".`);
 		}
 
 		// Then check if array needs to be lengthened.
@@ -372,7 +372,7 @@ export class DataLayer {
 						glFormat = gl.RGBA;
 						break;
 					default:
-						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 				}
 			} else {
 				switch (glNumChannels) {
@@ -389,7 +389,7 @@ export class DataLayer {
 						glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
 						break;
 					default:
-						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 				}
 			}
 			switch (type) {
@@ -409,7 +409,7 @@ export class DataLayer {
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32F;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 					}
 					break;
 				case 'float16':
@@ -428,7 +428,7 @@ export class DataLayer {
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16F;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 					}
 					break;
 				case 'uint8':
@@ -447,7 +447,7 @@ export class DataLayer {
 							glInternalFormat = gl.RGBA;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 					}
 					break;
 				// TODO: how to support ints?
@@ -467,7 +467,7 @@ export class DataLayer {
 				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA8I;
 				// 			break;
 				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 				// 	}
 				// 	break;
 				// case 'int16':
@@ -486,7 +486,7 @@ export class DataLayer {
 				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA16I;
 				// 			break;
 				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 				// 	}
 				// case 'uint16':
 				// 	glType = gl.UNSIGNED_SHORT;
@@ -504,7 +504,7 @@ export class DataLayer {
 				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA16UI;
 				// 			break;
 				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 				// 	}
 				// 	break;
 				// case 'int32':
@@ -523,7 +523,7 @@ export class DataLayer {
 				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA32I;
 				// 			break;
 				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 				// 	}
 				// 	break;
 				// case 'uint32':
@@ -542,11 +542,11 @@ export class DataLayer {
 				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA32UI;
 				// 			break;
 				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer ${name}.`);
+				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 				// 	}
 				// 	break;
 				default:
-					throw new Error(`Unsupported type ${type} for DataLayer ${name}.`);
+					throw new Error(`Unsupported type ${type} for DataLayer "${name}".`);
 			}
 		} else {
 			switch (numComponents) {
@@ -564,7 +564,7 @@ export class DataLayer {
 					glNumChannels = 4;
 					break;
 				default:
-					throw new Error(`Unsupported numComponents ${numComponents} for DataLayer ${name}.`);
+					throw new Error(`Unsupported numComponents ${numComponents} for DataLayer "${name}".`);
 			}
 			// TODO: how to support signed ints, maybe cast as floats instead?
 			switch (type) {
@@ -595,7 +595,7 @@ export class DataLayer {
 				// 	glType = gl.INT;
 				// 	break;
 				default:
-					throw new Error(`Unsupported type ${type} for DataLayer ${name}.`);
+					throw new Error(`Unsupported type ${type} for DataLayer "${name}".`);
 			}
 		}
 
@@ -683,7 +683,7 @@ export class DataLayer {
 		for (let i = 0; i < numBuffers; i++) {
 			const texture = gl.createTexture();
 			if (!texture) {
-				errorCallback(`Could not init texture for DataLayer ${this.name}: ${gl.getError()}.`);
+				errorCallback(`Could not init texture for DataLayer "${this.name}": ${gl.getError()}.`);
 				return;
 			}
 			gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -705,7 +705,7 @@ export class DataLayer {
 				// Init a framebuffer for this texture so we can write to it.
 				const framebuffer = gl.createFramebuffer();
 				if (!framebuffer) {
-					errorCallback(`Could not init framebuffer for DataLayer ${this.name}: ${gl.getError()}.`);
+					errorCallback(`Could not init framebuffer for DataLayer "${this.name}": ${gl.getError()}.`);
 					return;
 				}
 				gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -714,7 +714,7 @@ export class DataLayer {
 
 				const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 				if(status != gl.FRAMEBUFFER_COMPLETE){
-					errorCallback(`Invalid status for framebuffer for DataLayer ${this.name}: ${status}.`);
+					errorCallback(`Invalid status for framebuffer for DataLayer "${this.name}": ${status}.`);
 				}
 
 				// Add framebuffer.
@@ -734,7 +734,7 @@ export class DataLayer {
 
 	getPreviousStateTexture(index = -1) {
 		if (this.numBuffers === 1) {
-			throw new Error(`Cannot call getPreviousStateTexture on DataLayer ${this.name} with only one buffer.`);
+			throw new Error(`Cannot call getPreviousStateTexture on DataLayer "${this.name}" with only one buffer.`);
 		}
 		const previousIndex = this.bufferIndex + index + this.numBuffers;
 		if (previousIndex < 0 || previousIndex >= this.numBuffers) {
@@ -753,7 +753,7 @@ export class DataLayer {
 		}
 		const { framebuffer } = this.buffers[this.bufferIndex];
 		if (!framebuffer) {
-			throw new Error(`DataLayer ${this.name} is not writable.`);
+			throw new Error(`DataLayer "${this.name}" is not writable.`);
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
@@ -764,7 +764,7 @@ export class DataLayer {
 	) {
 		if (!isNaN(dimensions as number)) {
 			if (!this.length) {
-				throw new Error(`Invalid dimensions ${dimensions} for 2D DataLayer ${this.name}, please specify a width and height as an array.`)
+				throw new Error(`Invalid dimensions ${dimensions} for 2D DataLayer "${this.name}", please specify a width and height as an array.`)
 			}
 			this.length = dimensions as number;
 			const [ width, height ] = this.calcWidthHeight(this.length);
@@ -772,7 +772,7 @@ export class DataLayer {
 			this.height = height;
 		} else {
 			if (this.length) {
-				throw new Error(`Invalid dimensions ${dimensions} for 1D DataLayer ${this.name}, please specify a length as a number.`)
+				throw new Error(`Invalid dimensions ${dimensions} for 1D DataLayer "${this.name}", please specify a length as a number.`)
 			}
 			this.width = (dimensions as [number, number])[0];
 			this.height = (dimensions as [number, number])[1];
@@ -802,7 +802,7 @@ export class DataLayer {
 
 	getLength() {
 		if (!this.length) {
-			throw new Error(`Cannot call getLength() on 2D DataLayer ${this.name}.`);
+			throw new Error(`Cannot call getLength() on 2D DataLayer "${this.name}".`);
 		}
 		return this.length;
 	}
