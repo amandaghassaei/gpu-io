@@ -450,7 +450,7 @@ export class DataLayer {
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 					}
 					break;
-				// TODO: how to support ints?
+				// TODO: need to test that ints are working
 				case 'int8':
 					glType = gl.BYTE;
 					switch (glNumChannels) {
