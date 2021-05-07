@@ -451,100 +451,100 @@ export class DataLayer {
 					}
 					break;
 				// TODO: how to support ints?
-				// case 'int8':
-				// 	glType = gl.BYTE;
-				// 	switch (glNumChannels) {
-				// 		case 1:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).R8I;
-				// 			break;
-				// 		case 2:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RG8I;
-				// 			break;
-				// 		case 3:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGB8I;
-				// 			break;
-				// 		case 4:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA8I;
-				// 			break;
-				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
-				// 	}
-				// 	break;
-				// case 'int16':
-				// 	glType = gl.SHORT;
-				// 	switch (glNumChannels) {
-				// 		case 1:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).R16I;
-				// 			break;
-				// 		case 2:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RG16I;
-				// 			break;
-				// 		case 3:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGB16I;
-				// 			break;
-				// 		case 4:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA16I;
-				// 			break;
-				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
-				// 	}
-				// case 'uint16':
-				// 	glType = gl.UNSIGNED_SHORT;
-				// 	switch (glNumChannels) {
-				// 		case 1:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).R16UI;
-				// 			break;
-				// 		case 2:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RG16UI;
-				// 			break;
-				// 		case 3:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGB16UI;
-				// 			break;
-				// 		case 4:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA16UI;
-				// 			break;
-				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
-				// 	}
-				// 	break;
-				// case 'int32':
-				// 	glType = gl.INT;
-				// 	switch (glNumChannels) {
-				// 		case 1:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).R32I;
-				// 			break;
-				// 		case 2:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RG32I;
-				// 			break;
-				// 		case 3:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGB32I;
-				// 			break;
-				// 		case 4:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA32I;
-				// 			break;
-				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
-				// 	}
-				// 	break;
-				// case 'uint32':
-				// 	glType = gl.UNSIGNED_INT;
-				// 	switch (glNumChannels) {
-				// 		case 1:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).R32UI;
-				// 			break;
-				// 		case 2:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RG32UI;
-				// 			break;
-				// 		case 3:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGB32UI;
-				// 			break;
-				// 		case 4:
-				// 			glInternalFormat = (gl as WebGL2RenderingContext).RGBA32UI;
-				// 			break;
-				// 		default:
-				// 			throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
-				// 	}
-				// 	break;
+				case 'int8':
+					glType = gl.BYTE;
+					switch (glNumChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R8I;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8I;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB8I;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8I;
+							break;
+						default:
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+					}
+					break;
+				case 'int16':
+					glType = gl.SHORT;
+					switch (glNumChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R16I;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG16I;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB16I;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16I;
+							break;
+						default:
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+					}
+				case 'uint16':
+					glType = gl.UNSIGNED_SHORT;
+					switch (glNumChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R16UI;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG16UI;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB16UI;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16UI;
+							break;
+						default:
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+					}
+					break;
+				case 'int32':
+					glType = gl.INT;
+					switch (glNumChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R32I;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG32I;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB32I;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32I;
+							break;
+						default:
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+					}
+					break;
+				case 'uint32':
+					glType = gl.UNSIGNED_INT;
+					switch (glNumChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R32UI;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG32UI;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB32UI;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32UI;
+							break;
+						default:
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+					}
+					break;
 				default:
 					throw new Error(`Unsupported type ${type} for DataLayer "${name}".`);
 			}
