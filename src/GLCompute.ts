@@ -4,7 +4,7 @@ import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the ty
 import * as utils from './utils/Vector4';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 const defaultVertexShaderSource = require('./kernels/DefaultVertexShader.glsl');
-const passThroughFragmentShaderSource = require('./kernels/PassThroughFragmentShader.glsl');
+const copyFragmentShaderSource = require('./kernels/CopyFragShader.glsl');
 const packFloat32ToRGBA8ShaderSource = require('./kernels/packFloat32ToRGBA8FragmentShader.glsl');
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
@@ -41,7 +41,7 @@ export class GLCompute {
 	private readonly circlePositionsBuffer!: WebGLBuffer;
 	private pointIndexArray?: Float32Array;
 	private pointIndexBuffer?: WebGLBuffer;
-	private readonly passThroughProgram!: GPUProgram;
+	private readonly copyProgram!: GPUProgram;
 	private packFloat32ToRGBA8Program?: GPUProgram;
 	private packToRGBA8OutputBuffer?: DataLayer;
 
@@ -122,9 +122,9 @@ export class GLCompute {
 		this.defaultVertexShader = defaultVertexShader;
 
 		// Init a program to pass values from one texture to another.
-		this.passThroughProgram = this.initProgram(
-			'passThrough',
-			passThroughFragmentShaderSource,
+		this.copyProgram = this.initProgram(
+			'copy',
+			copyFragmentShaderSource,
 			[
 				{
 					name: 'u_state',
@@ -316,7 +316,7 @@ export class GLCompute {
 		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
-		const { gl, passThroughProgram } = this;
+		const { gl, copyProgram } = this;
 
 		// Render to screen.
 		if (!outputLayer) {
@@ -341,7 +341,7 @@ can render to nextState using currentState as an input.`);
 				outputLayer.bindOutputBuffer(true);
 			} else {
 				// Pass input texture through to output.
-				this.step(passThroughProgram, [outputLayer], outputLayer);
+				this.step(copyProgram, [outputLayer], outputLayer);
 				// Render to output without incrementing buffer.
 				outputLayer.bindOutputBuffer(false);
 			}
@@ -658,74 +658,107 @@ can render to nextState using currentState as an input.`);
 	getValues(dataLayer: DataLayer) {
 		const { gl, errorCallback, defaultVertexShader } = this;
 
-		if (dataLayer.getType() === 'uint8') {
-			if (this.readyToRead()) {
-				const [ width, height ] = dataLayer.getDimensions();
-				const numComponents = dataLayer.getNumComponents();
-				const pixels = new Uint8Array(width * height * numComponents);
-				gl.readPixels(0, 0, width, height, dataLayer.getGLFormat(), gl.UNSIGNED_BYTE, pixels);
-				return pixels;
-			} else {
-				throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
-			}
-		}
-
-		let { packFloat32ToRGBA8Program, packToRGBA8OutputBuffer } = this;
-
-		// Init program if needed.
-		if (!packFloat32ToRGBA8Program) {
-			packFloat32ToRGBA8Program = new GPUProgram(
-				'packFloat32ToRGBA8',
-				gl,
-				errorCallback,
-				defaultVertexShader,
-				packFloat32ToRGBA8ShaderSource, [
-					{ 
-						name: 'u_floatTexture',
-						value: 0,
-						dataType: 'INT',
-					},
-				]);
-			this.packFloat32ToRGBA8Program = packFloat32ToRGBA8Program;
-		}
-		
 		const type = dataLayer.getType();
-		if (type !== 'float16' && type !== 'float32') {
-			throw new Error(`Unsupported type ${type} for getValues().`);
-		}
-		const [width, height] = dataLayer.getDimensions();
-		const numComponents = dataLayer.getNumComponents();
-		const outputWidth = width * numComponents;
-		const outputHeight = height;
+		switch (type) {
+			// Both float types are output as float32 arrays.
+			case 'float16':
+			case 'float32': {
+				let { packFloat32ToRGBA8Program, packToRGBA8OutputBuffer } = this;
 
-		// Init output buffer if needed.
-		if (!packToRGBA8OutputBuffer) {
-			packToRGBA8OutputBuffer = new DataLayer('packToRGBA8Output', gl, {
-				dimensions: [outputWidth, outputHeight],
-				type: 'uint8',
-				numComponents: 4,
-			}, errorCallback, true, 1);
-		} else {
-			// Resize if needed.
-			const outputDimensions = packToRGBA8OutputBuffer.getDimensions();
-			if (outputDimensions[0] !== outputWidth || outputDimensions[1] !== outputHeight) {
-				packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
+				// Init program if needed.
+				if (!packFloat32ToRGBA8Program) {
+					packFloat32ToRGBA8Program = new GPUProgram(
+						'packFloat32ToRGBA8',
+						gl,
+						errorCallback,
+						defaultVertexShader,
+						packFloat32ToRGBA8ShaderSource, [
+							{ 
+								name: 'u_floatTexture',
+								value: 0,
+								dataType: 'INT',
+							},
+						]);
+					this.packFloat32ToRGBA8Program = packFloat32ToRGBA8Program;
+				}
+
+				const [width, height] = dataLayer.getDimensions();
+				const numComponents = dataLayer.getNumComponents();
+				const outputWidth = width * numComponents;
+				const outputHeight = height;
+		
+				// Init output buffer if needed.
+				if (!packToRGBA8OutputBuffer) {
+					packToRGBA8OutputBuffer = new DataLayer('packToRGBA8Output', gl, {
+						dimensions: [outputWidth, outputHeight],
+						type: 'uint8',
+						numComponents: 4,
+					}, errorCallback, true, 1);
+				} else {
+					// Resize if needed.
+					const outputDimensions = packToRGBA8OutputBuffer.getDimensions();
+					if (outputDimensions[0] !== outputWidth || outputDimensions[1] !== outputHeight) {
+						packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
+					}
+				}
+		
+				// Pack to bytes.
+				packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [width, height], 'FLOAT');
+				packFloat32ToRGBA8Program.setUniform('u_numFloatComponents', numComponents, 'FLOAT');
+				this.step(packFloat32ToRGBA8Program, [dataLayer], packToRGBA8OutputBuffer);
+		
+				// Read result.
+				if (this.readyToRead()) {
+					const pixels = new Uint8Array(outputWidth * outputHeight * 4);
+					gl.readPixels(0, 0, outputWidth, outputHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+					return new Float32Array(pixels.buffer);
+				} else {
+					throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
+				}
+			}
+			case 'uint8': {
+				if (this.readyToRead()) {
+					const [ width, height ] = dataLayer.getDimensions();
+					const { glNumChannels } = dataLayer;
+					const pixels = new Uint8Array(width * height * glNumChannels);
+					gl.readPixels(0, 0, width, height, dataLayer.getGLFormat(), gl.UNSIGNED_BYTE, pixels);
+					const numComponents = dataLayer.getNumComponents();
+					if (numComponents === glNumChannels) return pixels;
+					// In some cases flNumChannels may not equal numComponents.
+					const pixelsPruned = new Uint8Array(width * height * numComponents);
+					for (let i = 0, length = width * height; i < length; i++) {
+						const index1 = i * glNumChannels;
+						const index2 = i * numComponents;
+						for (let j = 0; j < numComponents; j++) {
+							pixelsPruned[index2 + j] = pixels[index1 + j];
+						}
+					}
+					return pixelsPruned;
+				} else {
+					throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
+				}
+			}
+			case 'uint16': {
+				break;
+			}
+			case 'uint32': {
+				break;
+			}
+			case 'int8': {
+				break;
+			}
+			case 'int16': {
+				break;
+			}
+			case 'int32': {
+				break;
+			}
+			default: {
+				throw new Error(`Unsupported type ${type} for getValues().`);
 			}
 		}
 
-		// Pack to bytes.
-		packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [width, height], 'FLOAT');
-		packFloat32ToRGBA8Program.setUniform('u_numFloatComponents', numComponents, 'FLOAT');
-		this.step(packFloat32ToRGBA8Program, [dataLayer], packToRGBA8OutputBuffer);
-
-		// Read result.
-		if (this.readyToRead()) {
-			const pixels = new Uint8Array(outputWidth * outputHeight * 4);
-			gl.readPixels(0, 0, outputWidth, outputHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-			return new Float32Array(pixels.buffer);
-		} else {
-			throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
-		}
+		
 	}
 
 	readyToRead() {

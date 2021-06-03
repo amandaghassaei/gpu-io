@@ -1,0 +1,21 @@
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+canvas {
+	display: none;
+}
+.type-container {
+	padding: 10px;
+}
+
+.result {
+	padding: 5px;
+}
+.success {
+	background-color: lightgreen;
+}
+.error {
+	background-color: lightpink;
+}

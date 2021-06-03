@@ -16,7 +16,7 @@ export declare class GLCompute {
     private readonly circlePositionsBuffer;
     private pointIndexArray?;
     private pointIndexBuffer?;
-    private readonly passThroughProgram;
+    private readonly copyProgram;
     private packFloat32ToRGBA8Program?;
     private packToRGBA8OutputBuffer?;
     static initWithThreeRenderer(renderer: WebGLRenderer, errorCallback?: errorCallback): GLCompute;
@@ -78,7 +78,7 @@ export declare class GLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
-    getValues(dataLayer: DataLayer): Float32Array | Uint8Array;
+    getValues(dataLayer: DataLayer): Float32Array | Uint8Array | undefined;
     readyToRead(): boolean;
     reset(): void;
     attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;
