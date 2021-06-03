@@ -87,16 +87,16 @@ I used a few codebases as reference when writing this, thanks to their authors f
 
 Compiled with [webpack](https://www.npmjs.com/package/webpack).  To build ts files from `src` to js in `dist` run:
 
-`npm install`
-`npm run build`
+`npm install`  
+`npm run build`  
 
 ## Testing
 
 I've included a few html pages for testing various functions of this library in the browser.  To run these tests do:
 
-`npm install`
-`npm run build`
-`npm install http-server`
-`node node_modules/http-server/bin/http-server`
+`npm install`  
+`npm run build`  
+`npm install http-server`  
+`node node_modules/http-server/bin/http-server`  
 
 In a browser navigate to `http://127.0.0.1:8080/tests/` to view available tests.
