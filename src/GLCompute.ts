@@ -48,8 +48,6 @@ export class GLCompute {
 	readonly copyFloatProgram!: GPUProgram;
 	readonly copyIntProgram!: GPUProgram;
 	readonly copyUintProgram!: GPUProgram;
-	private packFloat32ToRGBA8Program?: GPUProgram;
-	private packToRGBA8OutputBuffer?: DataLayer;
 
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
@@ -759,47 +757,93 @@ can render to nextState using currentState as an input.`);
 
 		const { gl } = this;
 
+		// dataLayer.bindOutputBuffer(false);
+
 		const [ width, height ] = dataLayer.getDimensions();
-		const { glNumChannels, glType, glFormat, type } = dataLayer;
+		let { glNumChannels, glType, glFormat, type } = dataLayer;
 		let values;
 		switch (type) {
-			// Both float types are output as float32 arrays.
 			case 'float16':
-				values = new Uint16Array(width * height * glNumChannels);
+				// Firefox requires that RGBA/FLOAT is used for readPixels of float16 types.
+				glNumChannels = 4;
+				glFormat = gl.RGBA;
+				glType = gl.FLOAT;
+				values = new Float32Array(width * height * glNumChannels);
+				// // The following works in Chrome.
+				// values = new Uint16Array(width * height * glNumChannels);
 				break
 			case 'float32':
+				// Chrome and Firefox require that RGBA/FLOAT is used for readPixels of float32 types.
+				// https://github.com/KhronosGroup/WebGL/issues/2747
+				glNumChannels = 4;
+				glFormat = gl.RGBA;
 				values = new Float32Array(width * height * glNumChannels);
 				break;
-			case 'uint8': 
-				values = new Uint8Array(width * height * glNumChannels);
+			case 'uint8':
+				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
+				glNumChannels = 4;
+				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				glType = gl.UNSIGNED_INT;
+				values = new Uint32Array(width * height * glNumChannels);
+				// // The following works in Chrome.
+				// values = new Uint8Array(width * height * glNumChannels);
 				break;
-			case 'uint16': 
-				values = new Uint16Array(width * height * glNumChannels);
+			case 'uint16':
+				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
+				glNumChannels = 4;
+				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				glType = gl.UNSIGNED_INT;
+				values = new Uint32Array(width * height * glNumChannels);
+				// // The following works in Chrome.
+				// values = new Uint16Array(width * height * glNumChannels);
 				break;
 			case 'uint32':
+				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
+				glNumChannels = 4;
+				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
 				values = new Uint32Array(width * height * glNumChannels);
+				// // The following works in Chrome.
+				// values = new Uint32Array(width * height * glNumChannels);
 				break;
 			case 'int8':
-				values = new Int8Array(width * height * glNumChannels);
+				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
+				glNumChannels = 4;
+				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				glType = gl.INT;
+				values = new Int32Array(width * height * glNumChannels);
+				// // The following works in Chrome.
+				// values = new Int8Array(width * height * glNumChannels);
 				break;
 			case 'int16':
-				values = new Int16Array(width * height * glNumChannels);
+				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
+				glNumChannels = 4;
+				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				glType = gl.INT;
+				values = new Int32Array(width * height * glNumChannels);
+				// // The following works in Chrome.
+				// values = new Int16Array(width * height * glNumChannels);
 				break;
 			case 'int32':
+				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
+				glNumChannels = 4;
+				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
 				values = new Int32Array(width * height * glNumChannels);
+				// // The following works in Chrome.
+				// values = new Int32Array(width * height * glNumChannels);
 				break;
 			default:
 				throw new Error(`Unsupported type ${type} for getValues().`);
 		}
 
 		if (this.readyToRead()) {
+			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
 			gl.readPixels(0, 0, width, height, glFormat, glType, values);
 			const numComponents = dataLayer.getNumComponents();
 
-			if (type === 'float16') {
-				// Convert uint16 to float32.
+			// Convert uint16 to float32 if needed.
+			if (type === 'float16' && values.constructor === Uint16Array) {
 				const floatValues = new Float32Array(width * height * numComponents);
-				const view = new DataView(values.buffer);
+				const view = new DataView((values as Uint16Array).buffer);
 				// In some cases glNumChannels may be > numComponents.
 				for (let i = 0, length = width * height; i < length; i++) {
 					const index1 = i * glNumChannels;

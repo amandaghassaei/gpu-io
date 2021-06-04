@@ -19,8 +19,6 @@ export declare class GLCompute {
     readonly copyFloatProgram: GPUProgram;
     readonly copyIntProgram: GPUProgram;
     readonly copyUintProgram: GPUProgram;
-    private packFloat32ToRGBA8Program?;
-    private packToRGBA8OutputBuffer?;
     static initWithThreeRenderer(renderer: WebGLRenderer, errorCallback?: errorCallback): GLCompute;
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, options?: {
         antialias?: boolean;
@@ -81,7 +79,7 @@ export declare class GLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
-    getValues(dataLayer: DataLayer): DataLayerArrayType;
+    getValues(dataLayer: DataLayer): Float32Array | Uint32Array | Int32Array;
     readyToRead(): boolean;
     reset(): void;
     attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;

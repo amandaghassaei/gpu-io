@@ -130,9 +130,6 @@ requirejs([
 			}
 			if (numMismatches) {
 				console.log(input, output);
-				if (TYPE === 'uint8') {
-					console.log(input, output);
-				}
 				return {
 					passed: false,
 					error: `Input and output arrays have ${numMismatches} mismatched elements.`,
