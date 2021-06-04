@@ -3,7 +3,6 @@ const SingleColorFragShader = require('./kernels/SingleColorFragShader.glsl');
 const PointsVertexShader = require('./kernels/PointsVertexShader.glsl');
 const PointsVertexShaderWithDisplacement = require('./kernels/PointsVertexShaderWithDisplacement.glsl');
 const SegmentVertexShader = require('./kernels/SegmentVertexShader.glsl');
-const CopyFragmentShader = require('./kernels/CopyFragShader.glsl');
 const ZeroFragmentShader = require('./kernels/ZeroFragShader.glsl');
 
 export {
@@ -12,6 +11,5 @@ export {
 	PointsVertexShader,
 	PointsVertexShaderWithDisplacement,
 	SegmentVertexShader,
-	CopyFragmentShader,
 	ZeroFragmentShader,
 };

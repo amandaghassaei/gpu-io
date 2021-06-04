@@ -1,14 +1,12 @@
-#version 300 es
 precision highp float;
 
-in vec2 a_internal_position;
+attribute vec2 a_internal_position;
 
 uniform vec2 u_internal_scale;
 uniform vec2 u_internal_translation;
 
-out vec2 v_UV_local;
-out vec2 v_UV;
-out vec4 out_position;
+varying vec2 v_UV_local;
+varying vec2 v_UV;
 
 void main() {
 	// Calculate UV coordinates of current rendered object.
@@ -21,5 +19,5 @@ void main() {
 	v_UV = 0.5 * (position + 1.0);
 
 	// Calculate vertex position.
-	out_position = vec4(position, 0, 1);
+	gl_Position = vec4(position, 0, 1);
 }

@@ -1,7 +1,8 @@
+const { setFloat16, getFloat16 } = float16;
+
 requirejs([
 	'../../dist/index',
-], ({ GLCompute, CopyFragmentShader }) => {
-
+], ({ GLCompute }) => {
 	const canvas = document.getElementById('glcanvas');
 
 	// General code for testing array writes.
@@ -17,7 +18,19 @@ requirejs([
 			} = options;
 			let input;
 			switch (TYPE) {
-				case 'float16':
+				case 'float16': {
+					input = new Float32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
+					// Fill with float data.
+					const uint16Array = new Uint16Array(1);
+					const view = new DataView(uint16Array.buffer);
+					for (let i = 0; i < input.length; i++) {
+						const float32Value = (i - input.length / 2) * 0.1;
+						// We need to make sure we use a valid float16 value.
+						setFloat16(view, 0, float32Value, true);
+						input[i] = getFloat16(view, 0, true);
+					}
+					break;
+				}
 				case 'float32': {
 					input = new Float32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with float data.
@@ -52,21 +65,31 @@ requirejs([
 					}
 					break;
 				}
+				case 'int8': {
+					input = new Int8Array(DIM_X * DIM_Y * NUM_ELEMENTS);
+					// Fill with int8 data.
+					for (let i = 0; i < input.length; i++) {
+						input[i] = i % 256 - 128;
+					}
+					break;
+				}
 				case 'int16': {
 					input = new Int16Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int16 data.
-					const MAX = 2 ** 15;
+					const MAX = 2 ** 16;
+					const HALF = MAX / 2;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % MAX;
+						input[i] = i % MAX - HALF;
 					}
 					break;
 				}
 				case 'int32': {
 					input = new Int32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int32 data.
-					const MAX = 2 ** 31;
+					const MAX = 2 ** 32;
+					const HALF = MAX / 2;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % MAX;
+						input[i] = i % MAX - HALF;
 					}
 					break;
 				}
@@ -81,22 +104,13 @@ requirejs([
 					type: TYPE,
 					numComponents: NUM_ELEMENTS,
 					data: input,
+					filter: 'NEAREST',
 				},
 				true,
 				2,
 			);
 
-			const copyProgram = glcompute.initProgram(
-				'copy',
-				CopyFragmentShader,
-				[
-					{
-						name: 'u_state',
-						value: 0,
-						dataType: 'INT',
-					},
-				],
-			);
+			const copyProgram = glcompute.copyProgramForType(TYPE);
 
 			glcompute.step(copyProgram, [dataLayer], dataLayer);
 			const output = glcompute.getValues(dataLayer);
@@ -115,6 +129,7 @@ requirejs([
 				if (input[i] !== output[i]) numMismatches++;
 			}
 			if (numMismatches) {
+				console.log(input, output);
 				if (TYPE === 'uint8') {
 					console.log(input, output);
 				}

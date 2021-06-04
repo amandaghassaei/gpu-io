@@ -36,10 +36,10 @@ export class DataLayer {
 	readonly type: DataLayerType;
 	readonly numComponents: DataLayerNumComponents;
 	private readonly glInternalFormat: number;
-	private readonly glFormat: number;
-	private readonly glType: number;
+	readonly glFormat: number;
+	readonly glType: number;
 	readonly glNumChannels: number;
-	private readonly filter: number;
+	readonly filter: number;
 	readonly wrapS: number;
 	readonly wrapT: number;
 	readonly writable: boolean;
@@ -243,13 +243,13 @@ export class DataLayer {
 		// Check that data is correct type.
 		let invalidTypeFound = false;
 		switch (type) {
-			case 'float32':
-				invalidTypeFound = invalidTypeFound || _data.constructor !== Float32Array;
-				break;
 			case 'float16':
 				// Since there is no Float16Array, we must us Uint16Array to init texture.
 				// We will allow Float32Arrays to be passed in as well and do the conversion automatically.
 				invalidTypeFound = invalidTypeFound || (_data.constructor !== Float32Array && _data.constructor !== Uint16Array);
+				break;
+			case 'float32':
+				invalidTypeFound = invalidTypeFound || _data.constructor !== Float32Array;
 				break;
 			case 'uint8':
 				invalidTypeFound = invalidTypeFound || _data.constructor !== Uint8Array;
@@ -276,12 +276,16 @@ export class DataLayer {
 			throw new Error(`Invalid TypedArray of type ${(_data.constructor as any).name} supplied to DataLayer "${name}" of type "${type}".`);
 		}
 
+		
+		let data = _data;
+		const imageSize = width * height * glNumChannels;
 		// Then check if array needs to be lengthened.
 		// This could be because glNumChannels !== numComponents.
 		// Or because length !== width * height.
-		let data = _data;
-		const imageSize = width * height * glNumChannels;
-		if (data.length < imageSize) {
+		const incorrectSize = data.length < imageSize;
+		// We have to handle the case of Float16 specially by converting Float32Array to Uint16Array.
+		const handleFloat16 = type === 'float16' && _data.constructor === Float32Array;
+		if (incorrectSize || handleFloat16) {
 			switch (type) {
 				case 'float32':
 					data = new Float32Array(imageSize);
@@ -311,8 +315,6 @@ export class DataLayer {
 					throw new Error(`Error initing ${name}.  Unsupported type ${type} for GLCompute.initDataLayer.`);
 			}
 			// Fill new data array with old data.
-			// We have to handle the case of Float16 specially.
-			const handleFloat16 = type === 'float16' && _data.constructor === Float32Array;
 			const view = handleFloat16 ? new DataView(data.buffer) : null;
 			for (let i = 0, _len = _data.length / numComponents; i < _len; i++) {
 				for (let j = 0; j < numComponents; j++) {
@@ -354,10 +356,11 @@ export class DataLayer {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
 			// The sized internal format RGBxxx are not color-renderable for some reason.
 			// If numComponents == 3 for a writable texture, use RGBA instead.
+			// Page 5 of https://www.khronos.org/files/webgl20-reference-guide.pdf
 			if (numComponents === 3 && writable) {
 				glNumChannels = 4;
 			}
-			if (type === 'float32' || type === 'float16' || type === 'uint8') {
+			if (type === 'float32' || type === 'float16') {
 				switch (glNumChannels) {
 					case 1:
 						glFormat = (gl as WebGL2RenderingContext).RED;
@@ -393,25 +396,6 @@ export class DataLayer {
 				}
 			}
 			switch (type) {
-				case 'float32':
-					glType = (gl as WebGL2RenderingContext).FLOAT;
-					switch (glNumChannels) {
-						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R32F;
-							break;
-						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG32F;
-							break;
-						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB32F;
-							break;
-						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32F;
-							break;
-						default:
-							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
-					}
-					break;
 				case 'float16':
 					glType = (gl as WebGL2RenderingContext).HALF_FLOAT;
 					switch (glNumChannels) {
@@ -431,26 +415,44 @@ export class DataLayer {
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 					}
 					break;
-				case 'uint8':
-					glType = gl.UNSIGNED_BYTE;
+				case 'float32':
+					glType = (gl as WebGL2RenderingContext).FLOAT;
 					switch (glNumChannels) {
 						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8;
+							glInternalFormat = (gl as WebGL2RenderingContext).R32F;
 							break;
 						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8;
+							glInternalFormat = (gl as WebGL2RenderingContext).RG32F;
 							break;
 						case 3:
-							glInternalFormat = gl.RGB;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB32F;
 							break;
 						case 4:
-							glInternalFormat = gl.RGBA;
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32F;
 							break;
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 					}
 					break;
-				// TODO: need to test that ints are working
+				case 'uint8':
+					glType = gl.UNSIGNED_BYTE;
+					switch (glNumChannels) {
+						case 1:
+							glInternalFormat = (gl as WebGL2RenderingContext).R8UI;
+							break;
+						case 2:
+							glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
+							break;
+						case 3:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI;
+							break;
+						case 4:
+							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
+							break;
+						default:
+							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+					}
+					break;
 				case 'int8':
 					glType = gl.BYTE;
 					switch (glNumChannels) {
@@ -488,6 +490,7 @@ export class DataLayer {
 						default:
 							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
 					}
+					break;
 				case 'uint16':
 					glType = gl.UNSIGNED_SHORT;
 					switch (glNumChannels) {
@@ -601,7 +604,7 @@ export class DataLayer {
 
 		// Check for missing params.
 		if (glType === undefined || glFormat === undefined || glInternalFormat === undefined) {
-			throw new Error(`Invalid type: ${type} or numComponents ${numComponents}.`);
+			throw new Error(`Invalid type: ${type} for numComponents ${numComponents}.`);
 		}
 		if (glNumChannels === undefined || numComponents < 1 || numComponents > 4) {
 			throw new Error(`Invalid numChannels: ${numComponents}.`);
@@ -809,14 +812,6 @@ export class DataLayer {
 
 	getNumComponents() {
 		return this.numComponents;
-	}
-
-	getGLFormat() {
-		return this.glFormat;
-	}
-
-	getType() {
-		return this.type;
 	}
 
 	private destroyBuffers() {

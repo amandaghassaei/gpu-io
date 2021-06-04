@@ -21,10 +21,10 @@ export declare class DataLayer {
     readonly type: DataLayerType;
     readonly numComponents: DataLayerNumComponents;
     private readonly glInternalFormat;
-    private readonly glFormat;
-    private readonly glType;
+    readonly glFormat: number;
+    readonly glType: number;
     readonly glNumChannels: number;
-    private readonly filter;
+    readonly filter: number;
     readonly wrapS: number;
     readonly wrapT: number;
     readonly writable: boolean;
@@ -54,8 +54,6 @@ export declare class DataLayer {
     getTextures(): WebGLTexture[];
     getLength(): number;
     getNumComponents(): DataLayerNumComponents;
-    getGLFormat(): number;
-    getType(): DataLayerType;
     private destroyBuffers;
     destroy(): void;
 }
