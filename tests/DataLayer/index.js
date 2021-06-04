@@ -129,7 +129,6 @@ requirejs([
 				if (input[i] !== output[i]) numMismatches++;
 			}
 			if (numMismatches) {
-				console.log(input, output);
 				return {
 					passed: false,
 					error: `Input and output arrays have ${numMismatches} mismatched elements.`,
