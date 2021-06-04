@@ -728,6 +728,11 @@ can render to nextState using currentState as an input.`);
 				values = new Float32Array(width * height * glNumChannels);
 				break;
 			case 'uint8':
+				if (!isWebGL2(gl)) {
+					// Safari requires Uint8 array and UNSIGNED_BYTE type.
+					values = new Uint8Array(width * height * glNumChannels);
+					break;
+				}
 				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
 				glNumChannels = 4;
 				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;

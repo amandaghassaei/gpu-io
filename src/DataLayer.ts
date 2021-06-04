@@ -148,6 +148,7 @@ export class DataLayer {
             // It maybe non-power-of-2 and have incompatible texture filtering or is not
             // 'texture complete', or it is a float/half-float type with linear filtering and
             // without the relevant float/half-float linear extension enabled.
+			console.warn('Falling back to CLAMP_TO_EDGE wrapping.');
 			return 'CLAMP_TO_EDGE';
 		}
 		return wrap;
@@ -168,12 +169,14 @@ export class DataLayer {
 			const extension = getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true)
 				|| getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
+				console.warn('Falling back to NEAREST filter.');
 				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = 'NEAREST';
 			}
 		} if (type === 'float32') {
 			const extension = getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
+				console.warn('Falling back to NEAREST filter.');
 				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = 'NEAREST';
 			}
@@ -193,6 +196,7 @@ export class DataLayer {
 			if (type === 'float32') {
 				const extension = getExtension(gl, OES_TEXTURE_FLOAT, errorCallback, true);
 				if (!extension) {
+					console.warn('Falling back to HALF FLOAT type.');
 					type = 'float16';
 				}
 				// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
@@ -204,6 +208,7 @@ export class DataLayer {
 				if (writable) {
 					const valid = DataLayer.testFramebufferWrite(gl, type);
 					if (!valid) {
+						console.warn('Falling back to HALF FLOAT type.');
 						type = 'float16';
 					}
 				}
@@ -583,22 +588,27 @@ export class DataLayer {
 				// case 'int8':
 				// 	glType = gl.BYTE;
 				// 	break;
-				case 'uint16':
-					getExtension(gl, WEBGL_DEPTH_TEXTURE, errorCallback);
-					glType = gl.UNSIGNED_SHORT;
-					break;
+				// case 'uint16':
+				// 	getExtension(gl, WEBGL_DEPTH_TEXTURE, errorCallback);
+				// 	glFormat = gl.DEPTH_COMPONENT;
+				// 	glInternalFormat = gl.DEPTH_STENCIL;
+				// 	glType = gl.UNSIGNED_SHORT;
+				// 	break;
 				// case 'int16':
 				// 	glType = gl.SHORT;
 				// 	break;
-				case 'uint32':
-					getExtension(gl, WEBGL_DEPTH_TEXTURE, errorCallback);
-					glType = gl.UNSIGNED_INT;
-					break;
+				// case 'uint32':
+				// 	getExtension(gl, WEBGL_DEPTH_TEXTURE, errorCallback);
+				// 	glNumChannels = 1;
+				// 	glFormat = gl.DEPTH_COMPONENT;
+				// 	glInternalFormat = gl.DEPTH_STENCIL;
+				// 	glType = gl.UNSIGNED_INT;
+				// 	break;
 				// case 'int32':
 				// 	glType = gl.INT;
 				// 	break;
 				default:
-					throw new Error(`Unsupported type ${type} for DataLayer "${name}".`);
+					throw new Error(`Unsupported type ${type} in WebGL 1.0 for DataLayer "${name}".`);
 			}
 		}
 
@@ -606,7 +616,7 @@ export class DataLayer {
 		if (glType === undefined || glFormat === undefined || glInternalFormat === undefined) {
 			throw new Error(`Invalid type: ${type} for numComponents ${numComponents}.`);
 		}
-		if (glNumChannels === undefined || numComponents < 1 || numComponents > 4) {
+		if (glNumChannels === undefined || numComponents < 1 || numComponents > 4 || glNumChannels < numComponents) {
 			throw new Error(`Invalid numChannels: ${numComponents}.`);
 		}
 
