@@ -703,58 +703,6 @@ can render to nextState using currentState as an input.`);
 
 	getValues(dataLayer: DataLayer) {
 		// TODO: this is not compatible with webgl1.
-		// let { packFloat32ToRGBA8Program, packToRGBA8OutputBuffer } = this;
-		// // Init program if needed.
-		// if (!packFloat32ToRGBA8Program) {
-		// 	packFloat32ToRGBA8Program = new GPUProgram(
-		// 		'packFloat32ToRGBA8',
-		// 		gl,
-		// 		errorCallback,
-		// 		defaultVertexShader,
-		// 		packFloat32ToRGBA8ShaderSource, [
-		// 			{ 
-		// 				name: 'u_floatTexture',
-		// 				value: 0,
-		// 				dataType: 'INT',
-		// 			},
-		// 		]);
-		// 	this.packFloat32ToRGBA8Program = packFloat32ToRGBA8Program;
-		// }
-
-		// const [width, height] = dataLayer.getDimensions();
-		// const numComponents = dataLayer.getNumComponents();
-		// const outputWidth = width * numComponents;
-		// const outputHeight = height;
-
-		// // Init output buffer if needed.
-		// if (!packToRGBA8OutputBuffer) {
-		// 	packToRGBA8OutputBuffer = new DataLayer('packToRGBA8Output', gl, {
-		// 		dimensions: [outputWidth, outputHeight],
-		// 		type: 'uint8',
-		// 		numComponents: 4,
-		// 	}, errorCallback, true, 1);
-		// } else {
-		// 	// Resize if needed.
-		// 	const outputDimensions = packToRGBA8OutputBuffer.getDimensions();
-		// 	if (outputDimensions[0] !== outputWidth || outputDimensions[1] !== outputHeight) {
-		// 		packToRGBA8OutputBuffer.resize([outputWidth, outputHeight]);
-		// 	}
-		// }
-
-		// // Pack to bytes.
-		// packFloat32ToRGBA8Program.setUniform('u_floatTextureDim', [width, height], 'FLOAT');
-		// packFloat32ToRGBA8Program.setUniform('u_numFloatComponents', numComponents, 'FLOAT');
-		// this.step(packFloat32ToRGBA8Program, [dataLayer], packToRGBA8OutputBuffer);
-
-		// // Read result.
-		// if (this.readyToRead()) {
-		// 	const pixels = new Uint8Array(outputWidth * outputHeight * 4);
-		// 	gl.readPixels(0, 0, outputWidth, outputHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-		// 	return new Float32Array(pixels.buffer);
-		// } else {
-			// throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
-		// }
-
 		const { gl } = this;
 
 		// dataLayer.bindOutputBuffer(false);

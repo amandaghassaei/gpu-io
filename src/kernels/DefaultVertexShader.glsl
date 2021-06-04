@@ -8,7 +8,7 @@ uniform vec2 u_internal_translation;
 
 out vec2 v_UV_local;
 out vec2 v_UV;
-out vec4 out_position;
+out vec2 out_position;
 
 void main() {
 	// Calculate UV coordinates of current rendered object.
@@ -21,5 +21,5 @@ void main() {
 	v_UV = 0.5 * (position + 1.0);
 
 	// Calculate vertex position.
-	out_position = vec4(position, 0, 1);
+	out_position = position;
 }
