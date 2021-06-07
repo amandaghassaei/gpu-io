@@ -41,6 +41,7 @@ export declare class DataLayer {
     private static checkWrap;
     private static checkFilter;
     private static checkType;
+    private static shouldCastIntTypeAsFloat;
     private checkDataArray;
     private static getGLTextureParameters;
     private static testFramebufferWrite;

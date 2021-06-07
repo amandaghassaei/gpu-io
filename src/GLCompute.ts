@@ -1,15 +1,20 @@
-import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
-import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
+import { DataLayer } from './DataLayer';
+import {
+	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType,
+	FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
+	UniformDataType, UniformValueType,
+} from './Constants';
+import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
 import * as utils from './utils/Vector4';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
-const defaultVertexShaderSource = require('./kernels/DefaultVertexShader.glsl');
-const defaultVertexShaderSource_gl1 = require('./kernels1.0/DefaultVertexShader.glsl');
-const copyFloatFragmentShaderSource = require('./kernels/CopyFloatFragShader.glsl');
-const copyIntFragmentShaderSource = require('./kernels/CopyIntFragShader.glsl');
-const copyUintFragmentShaderSource = require('./kernels/CopyUintFragShader.glsl');
-const copyFragmentShaderSource_gl1 = require('./kernels1.0/CopyFragShader.glsl');
+const defaultVertexShaderSource = require('./kernels_2.0/DefaultVertexShader.glsl');
+const defaultVertexShaderSource_gl1 = require('./kernels_1.0/DefaultVertexShader.glsl');
+const copyFloatFragmentShaderSource = require('./kernels_2.0/CopyFloatFragShader.glsl');
+const copyIntFragmentShaderSource = require('./kernels_2.0/CopyIntFragShader.glsl');
+const copyUintFragmentShaderSource = require('./kernels_2.0/CopyUintFragShader.glsl');
+const copyFragmentShaderSource_gl1 = require('./kernels_1.0/CopyFragShader.glsl');
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
@@ -127,38 +132,41 @@ export class GLCompute {
 		this.defaultVertexShader = defaultVertexShader;
 
 		// Init programs to pass values from one texture to another.
-		this.copyFloatProgram = this.initProgram(
-			'copyFloat',
-			isWebGL2(gl) ? copyFloatFragmentShaderSource : copyFragmentShaderSource_gl1,
-			[
-				{
-					name: 'u_state',
-					value: 0,
-					dataType: 'INT',
-				},
-			],
+		this.copyFloatProgram = this.initProgram({
+			name: 'copyFloat',
+			fragmentShader: isWebGL2(gl) ? copyFloatFragmentShaderSource : copyFragmentShaderSource_gl1,
+			uniforms: [
+					{
+						name: 'u_state',
+						value: 0,
+						dataType: INT,
+					},
+				],
+			},
 		);
-		this.copyIntProgram = this.initProgram(
-			'copyInt',
-			isWebGL2(gl) ? copyIntFragmentShaderSource : copyFragmentShaderSource_gl1,
-			[
-				{
-					name: 'u_state',
-					value: 0,
-					dataType: 'INT',
-				},
-			],
+		this.copyIntProgram = this.initProgram({
+			name: 'copyInt',
+			fragmentShader: isWebGL2(gl) ? copyIntFragmentShaderSource : copyFragmentShaderSource_gl1,
+			uniforms: [
+					{
+						name: 'u_state',
+						value: 0,
+						dataType: INT,
+					},
+				],
+			},
 		);
-		this.copyUintProgram = this.initProgram(
-			'copyUint',
-			isWebGL2(gl) ? copyUintFragmentShaderSource : copyFragmentShaderSource_gl1,
-			[
-				{
-					name: 'u_state',
-					value: 0,
-					dataType: 'INT',
-				},
-			],
+		this.copyUintProgram = this.initProgram({
+			name: 'copyUint',
+			fragmentShader: isWebGL2(gl) ? copyUintFragmentShaderSource : copyFragmentShaderSource_gl1,
+			uniforms: [
+					{
+						name: 'u_state',
+						value: 0,
+						dataType: INT,
+					},
+				],
+			},
 		);
 
 		// Create vertex buffers.
@@ -192,33 +200,34 @@ export class GLCompute {
 	}
 
 	initProgram(
-		name: string,
-		fragmentShaderOrSource: string | WebGLShader,
-		uniforms?: {
+		params: {
 			name: string,
-			value: UniformValueType,
-			dataType: UniformDataType,
-		}[],
-		defines?: {
-			[key : string]: string,
+			fragmentShader: string | WebGLShader,
+			vertexShader?: string | WebGLShader,
+			uniforms?: {
+				name: string,
+				value: UniformValueType,
+				dataType: UniformDataType,
+			}[],
+			defines?: {
+				[key : string]: string,
+			},
 		},
-		vertexShaderOrSource?: string | WebGLShader,
 	) {
-		const { gl, errorCallback } = this;	
+		const { gl, errorCallback } = this;
 		return new GPUProgram(
-			name,
 			gl,
+			{
+				vertexShader: this.defaultVertexShader,
+				...params,
+			},
 			errorCallback,
-			vertexShaderOrSource ? vertexShaderOrSource : this.defaultVertexShader,
-			fragmentShaderOrSource,
-			uniforms,
-			defines,
 		);
 	};
 
 	initDataLayer(
-		name: string,
-		options:{
+		params: {
+			name: string,
 			dimensions: number | [number, number],
 			type: DataLayerType,
 			numComponents: DataLayerNumComponents,
@@ -226,12 +235,12 @@ export class GLCompute {
 			filter?: DataLayerFilterType,
 			wrapS?: DataLayerWrapType,
 			wrapT?: DataLayerWrapType,
+			writable?: boolean,
+			numBuffers?: number,
 		},
-		writable = false,
-		numBuffers = 1,
 	) {
 		const { gl, errorCallback } = this;
-		return new DataLayer(name, gl, options, errorCallback, writable, numBuffers);
+		return new DataLayer(gl, params, errorCallback);
 	};
 
 	initTexture(
@@ -340,16 +349,16 @@ export class GLCompute {
 
 	copyProgramForType(type: DataLayerType) {
 		switch (type) {
-			case 'float16':
-			case 'float32':
+			case HALF_FLOAT:
+			case FLOAT:
 				return this.copyFloatProgram;
-			case 'uint8':
-			case 'uint16':
-			case 'uint32':
+			case UNSIGNED_BYTE:
+			case UNSIGNED_SHORT:
+			case UNSIGNED_INT:
 				return this.copyUintProgram;
-			case 'int8':
-			case 'int16':
-			case 'int32':
+			case BYTE:
+			case SHORT:
+			case INT:
 				return this.copyIntProgram;
 			default:
 				throw new Error(`Invalid type: ${type}.`);
@@ -386,7 +395,7 @@ can render to nextState using currentState as an input.`);
 				outputLayer.bindOutputBuffer(true);
 			} else {
 				// Pass input texture through to output.
-				const copyProgram = this.copyProgramForType(outputLayer.type);
+				const copyProgram = this.copyProgramForType(outputLayer.internalType);
 				this.step(copyProgram, [outputLayer], outputLayer);
 				// Render to output without incrementing buffer.
 				outputLayer.bindOutputBuffer(false);
@@ -708,10 +717,10 @@ can render to nextState using currentState as an input.`);
 		// dataLayer.bindOutputBuffer(false);
 
 		const [ width, height ] = dataLayer.getDimensions();
-		let { glNumChannels, glType, glFormat, type } = dataLayer;
+		let { glNumChannels, glType, glFormat, internalType } = dataLayer;
 		let values;
-		switch (type) {
-			case 'float16':
+		switch (internalType) {
+			case HALF_FLOAT:
 				// Firefox requires that RGBA/FLOAT is used for readPixels of float16 types.
 				glNumChannels = 4;
 				glFormat = gl.RGBA;
@@ -720,14 +729,14 @@ can render to nextState using currentState as an input.`);
 				// // The following works in Chrome.
 				// values = new Uint16Array(width * height * glNumChannels);
 				break
-			case 'float32':
+			case FLOAT:
 				// Chrome and Firefox require that RGBA/FLOAT is used for readPixels of float32 types.
 				// https://github.com/KhronosGroup/WebGL/issues/2747
 				glNumChannels = 4;
 				glFormat = gl.RGBA;
 				values = new Float32Array(width * height * glNumChannels);
 				break;
-			case 'uint8':
+			case UNSIGNED_BYTE:
 				if (!isWebGL2(gl)) {
 					// Safari requires Uint8 array and UNSIGNED_BYTE type.
 					values = new Uint8Array(width * height * glNumChannels);
@@ -741,7 +750,7 @@ can render to nextState using currentState as an input.`);
 				// // The following works in Chrome.
 				// values = new Uint8Array(width * height * glNumChannels);
 				break;
-			case 'uint16':
+			case UNSIGNED_SHORT:
 				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
 				glNumChannels = 4;
 				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
@@ -750,7 +759,7 @@ can render to nextState using currentState as an input.`);
 				// // The following works in Chrome.
 				// values = new Uint16Array(width * height * glNumChannels);
 				break;
-			case 'uint32':
+			case UNSIGNED_INT:
 				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
 				glNumChannels = 4;
 				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
@@ -758,7 +767,7 @@ can render to nextState using currentState as an input.`);
 				// // The following works in Chrome.
 				// values = new Uint32Array(width * height * glNumChannels);
 				break;
-			case 'int8':
+			case BYTE:
 				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
 				glNumChannels = 4;
 				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
@@ -767,7 +776,7 @@ can render to nextState using currentState as an input.`);
 				// // The following works in Chrome.
 				// values = new Int8Array(width * height * glNumChannels);
 				break;
-			case 'int16':
+			case SHORT:
 				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
 				glNumChannels = 4;
 				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
@@ -776,7 +785,7 @@ can render to nextState using currentState as an input.`);
 				// // The following works in Chrome.
 				// values = new Int16Array(width * height * glNumChannels);
 				break;
-			case 'int32':
+			case INT:
 				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
 				glNumChannels = 4;
 				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
@@ -785,16 +794,16 @@ can render to nextState using currentState as an input.`);
 				// values = new Int32Array(width * height * glNumChannels);
 				break;
 			default:
-				throw new Error(`Unsupported type ${type} for getValues().`);
+				throw new Error(`Unsupported internalType ${internalType} for getValues().`);
 		}
 
 		if (this.readyToRead()) {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
 			gl.readPixels(0, 0, width, height, glFormat, glType, values);
-			const numComponents = dataLayer.getNumComponents();
+			const { numComponents } = dataLayer;
 
 			// Convert uint16 to float32 if needed.
-			if (type === 'float16' && values.constructor === Uint16Array) {
+			if (internalType === HALF_FLOAT && values.constructor === Uint16Array) {
 				const floatValues = new Float32Array(width * height * numComponents);
 				const view = new DataView((values as Uint16Array).buffer);
 				// In some cases glNumChannels may be > numComponents.
@@ -839,7 +848,7 @@ can render to nextState using currentState as an input.`);
 		// This is not officially supported.
 		const textures = dataLayer.getTextures();
 		if (textures.length > 1) {
-			throw new Error('This dataLayer contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a DataLayer with one buffer.');
+			throw new Error(`DataLayer "${dataLayer.name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a DataLayer with one buffer.`);
 		}
 		const offsetTextureProperties = this.renderer.properties.get(texture);
 		offsetTextureProperties.__webglTexture = textures[0];

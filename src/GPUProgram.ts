@@ -1,41 +1,15 @@
+import { isString } from './Checks';
+import {
+	FLOAT,
+	FLOAT_1D_UNIFORM, FLOAT_2D_UNIFORM, FLOAT_3D_UNIFORM, FLOAT_4D_UNIFORM,
+	INT,
+	INT_1D_UNIFORM, INT_2D_UNIFORM, INT_3D_UNIFORM, INT_4D_UNIFORM,
+	Uniform, UniformDataType, UniformValueType,
+	Attribute, AttributeDataType,
+} from './Constants';
 import { compileShader, isWebGL2 } from './utils';
 
-// Uniform types.
-const FLOAT_1D_UNIFORM = '1f';
-const FLOAT_2D_UNIFORM = '2f';
-const FLOAT_3D_UNIFORM = '3f';
-const FLOAT_4D_UNIFORM = '3f';
-const INT_1D_UNIFORM = '1i';
-const INT_2D_UNIFORM = '2i';
-const INT_3D_UNIFORM = '3i';
-const INT_4D_UNIFORM = '3i';
 
-export type UniformDataType = 'FLOAT' | 'INT';
-export type UniformValueType = 
-	number |
-	[number] |
-	[number, number] |
-	[number, number, number] |
-	[number, number, number, number];
-type UniformType = 
-	typeof FLOAT_1D_UNIFORM |
-	typeof FLOAT_2D_UNIFORM |
-	typeof FLOAT_3D_UNIFORM |
-	typeof FLOAT_4D_UNIFORM |
-	typeof INT_1D_UNIFORM |
-	typeof INT_2D_UNIFORM |
-	typeof INT_3D_UNIFORM |
-	typeof INT_4D_UNIFORM;
-type Uniform = { 
-	location: WebGLUniformLocation,
-	type: UniformType,
-};
-
-export type AttributeDataType = 'float32' | 'float16' | 'uint8' | 'int8' | 'uint16' | 'int16';
-type Attribute = { 
-	location: number,
-	type: AttributeDataType,
-};
 
 export class GPUProgram {
 	readonly name: string;
@@ -48,24 +22,28 @@ export class GPUProgram {
 	private readonly attributeNames: string[] = [];
 
 	constructor(
-		name: string,
 		gl: WebGLRenderingContext | WebGL2RenderingContext,
-		errorCallback: (message: string) => void,
-		vertexShaderOrSource: string |  WebGLShader,
-		fragmentShaderOrSource: string | string[] | WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
-		uniforms?: {
+		params: {
 			name: string,
-			value: UniformValueType,
-			dataType: UniformDataType,
-		}[],
-		defines?: {// For now, we'll allow some variables to be passed in as #define to the preprocessor.
-			[key: string]: string, // We'll do these as strings to make it easier to control float vs int.
+			fragmentShader: string | string[] | WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
+			vertexShader: string |  WebGLShader,
+			uniforms?: {
+				name: string,
+				value: UniformValueType,
+				dataType: UniformDataType,
+			}[],
+			defines?: {// We'll allow some variables to be passed in as #define to the preprocessor for the fragment shader.
+				[key: string]: string, // We'll do these as strings to make it easier to control float vs int.
+			},
 		},
+		errorCallback: (message: string) => void,
 	) {
-		// Save params.
-		this.name = name;
+		const { name, fragmentShader, vertexShader, uniforms, defines } = params;
+
+		// Save arguments.
 		this.gl = gl;
 		this.errorCallback = errorCallback;
+		this.name = name;
 
 		// Create a program.
 		const program = gl.createProgram();
@@ -75,40 +53,45 @@ export class GPUProgram {
 		}
 
 		// Compile shaders.
-		if (typeof(fragmentShaderOrSource) === 'string' || typeof((fragmentShaderOrSource as string[])[0]) === 'string') {
-			let sourceString = typeof(fragmentShaderOrSource) === 'string' ?
-				fragmentShaderOrSource :
-				(fragmentShaderOrSource as string[]).join('\n');
+		// TODO: check that attachShader worked.
+		if (typeof(fragmentShader) === 'string' || typeof((fragmentShader as string[])[0]) === 'string') {
+			let sourceString = typeof(fragmentShader) === 'string' ?
+				fragmentShader :
+				(fragmentShader as string[]).join('\n');
 			if (defines) {
 				// First convert defines to a string.
 				const definesSource = Object.keys(defines).map(key => {
+					// Check that define is passed in as a string.
+					if (!isString(key) || !isString(defines[key])) {
+						throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type ${typeof key} : ${typeof defines[key]}.`)
+					}
 					return `#define ${key} ${defines[key]}\n`;
 				}).join('\n');
 				sourceString = definesSource + sourceString;
 			}
-			const fragmentShader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
-			if (!fragmentShader) {
+			const shader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
+			if (!shader) {
 				errorCallback(`Unable to compile fragment shader for program "${name}".`);
 				return;
 			}
-			this.shaders.push(fragmentShader);
-			gl.attachShader(program, fragmentShader);
+			this.shaders.push(shader);
+			gl.attachShader(program, shader);
 		} else {
 			if (defines) {
-				throw new Error(`Unable to attach defines to program "${name}" because it is already compiled.`);
+				throw new Error(`Unable to attach defines to program "${name}" because fragment shader is already compiled.`);
 			}
-			gl.attachShader(program, fragmentShaderOrSource);
+			gl.attachShader(program, fragmentShader);
 		}
-		if (typeof(vertexShaderOrSource) === 'string') {
-			const vertexShader = compileShader(gl, errorCallback, vertexShaderOrSource, gl.VERTEX_SHADER, name);
-			if (!vertexShader) {
+		if (typeof(vertexShader) === 'string') {
+			const shader = compileShader(gl, errorCallback, vertexShader, gl.VERTEX_SHADER, name);
+			if (!shader) {
 				errorCallback(`Unable to compile vertex shader for program "${name}".`);
 				return;
 			}
-			this.shaders.push(vertexShader);
-			gl.attachShader(program, vertexShader);
+			this.shaders.push(shader);
+			gl.attachShader(program, shader);
 		} else {
-			gl.attachShader(program, vertexShaderOrSource);
+			gl.attachShader(program, vertexShader);
 		}
 
 		// Link the program.
@@ -134,7 +117,7 @@ export class GPUProgram {
 		value: number | number[],
 		dataType: UniformDataType,
 	) {
-		if (dataType === 'FLOAT') {
+		if (dataType === FLOAT) {
 			if (!isNaN(value as number) || (value as number[]).length === 1) {
 				return FLOAT_1D_UNIFORM;
 			}
@@ -148,7 +131,7 @@ export class GPUProgram {
 				return FLOAT_4D_UNIFORM;
 			}
 			throw new Error(`Invalid uniform value: ${value}`);
-		} else if (dataType === 'INT') {
+		} else if (dataType === INT) {
 			if (!isNaN(value as number) || (value as number[]).length === 1) {
 				return INT_1D_UNIFORM;
 			}
@@ -161,9 +144,9 @@ export class GPUProgram {
 			if ((value as number[]).length === 4) {
 				return INT_4D_UNIFORM;
 			}
-			throw new Error(`Invalid uniform value: ${value}`);
+			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected number or number[] of length 1-4.`);
 		} else {
-			throw new Error(`Invalid uniform data type: ${dataType}`);
+			throw new Error(`Invalid uniform data type: ${dataType} for program "${this.name}", expected ${FLOAT} or ${INT}.`);
 		}
 	}
 
@@ -175,7 +158,7 @@ export class GPUProgram {
 		const { gl, errorCallback, program, uniforms } = this;
 
 		if (!program) {
-			errorCallback(`Program not inited.`);
+			errorCallback(`GLProgram for GPUProgram "${this.name}" not inited.`);
 			return;
 		}
 
