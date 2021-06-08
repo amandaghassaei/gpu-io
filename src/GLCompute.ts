@@ -31,7 +31,7 @@ const circlePositions = new Float32Array(unitCirclePoints);
 type errorCallback = (message: string) => void;
 
 export class GLCompute {
-	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
+	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	// These width and height are the current canvas at full res.
 	private width!: number;
 	private height!: number;
@@ -59,18 +59,19 @@ export class GLCompute {
 		errorCallback?: errorCallback,
 	) {
 		return new GLCompute(
-			renderer.getContext(),
-			renderer.domElement,
-			undefined,
+			{
+				canvas: renderer.domElement,
+				context: renderer.getContext(),
+			},
 			errorCallback,
 			renderer,
 		);
 	}
 
 	constructor(
-		gl: WebGLRenderingContext | WebGL2RenderingContext | null,
-		canvasEl: HTMLCanvasElement,
-		options?: {
+		params: {
+			canvas: HTMLCanvasElement,
+			context?: WebGLRenderingContext | WebGL2RenderingContext | null,
 			antialias?: boolean,
 		},
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
@@ -85,17 +86,22 @@ export class GLCompute {
 				return;
 			}
 			self.errorState = true;
-			if (errorCallback) errorCallback(message);
+			errorCallback(message);
 		}
+
+		const { canvas } = params;
+		let gl = params.context;
 
 		// Init GL.
 		if (!gl) {
+			const options: any = {};
+			if (params.antialias !== undefined) options.antialias = params.antialias;
 			// Init a gl context if not passed in.
-			gl = canvasEl.getContext('webgl2', options)  as WebGL2RenderingContext | null
-				|| canvasEl.getContext('webgl', options)  as WebGLRenderingContext | null
-				|| canvasEl.getContext('experimental-webgl', options)  as WebGLRenderingContext | null;
+			gl = canvas.getContext('webgl2', options)  as WebGL2RenderingContext | null
+				|| canvas.getContext('webgl', options)  as WebGLRenderingContext | null
+				|| canvas.getContext('experimental-webgl', options)  as WebGLRenderingContext | null;
 			if (gl === null) {
-			this.errorCallback('Unable to initialize WebGL context.');
+				this.errorCallback('Unable to initialize WebGL context.');
 				return;
 			}
 		}
@@ -177,7 +183,7 @@ export class GLCompute {
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		// Canvas setup.
-		this.onResize(canvasEl);
+		this.onResize(canvas);
 
 		// Log number of textures available.
 		this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
@@ -214,11 +220,11 @@ export class GLCompute {
 			},
 		},
 	) {
-		const { gl, errorCallback } = this;
+		const { gl, errorCallback, defaultVertexShader } = this;
 		return new GPUProgram(
 			gl,
 			{
-				vertexShader: this.defaultVertexShader,
+				vertexShader: defaultVertexShader,
 				...params,
 			},
 			errorCallback,
@@ -249,7 +255,7 @@ export class GLCompute {
 		const { gl, errorCallback } = this;
 		const texture = gl.createTexture();
 		if (texture === null) {
-			throw new Error('Unable to init texture.');
+			throw new Error(`Unable to init glTexture.`);
 		}
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		// Because images have to be downloaded over the internet
@@ -264,16 +270,15 @@ export class GLCompute {
 		const border = 0;
 		const srcFormat = gl.RGBA;
 		const srcType = gl.UNSIGNED_BYTE;
-		const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+		const pixel = new Uint8Array([0, 0, 0, 255]);
 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-						width, height, border, srcFormat, srcType,
-						pixel);
+			width, height, border, srcFormat, srcType, pixel);
 
 		const image = new Image();
 		image.onload = () => {
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 			gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-						srcFormat, srcType, image);
+				srcFormat, srcType, image);
 
 			// WebGL1 has different requirements for power of 2 images
 			// vs non power of 2 images so check if the image is a
@@ -282,6 +287,7 @@ export class GLCompute {
 				// // Yes, it's a power of 2. Generate mips.
 				// gl.generateMipmap(gl.TEXTURE_2D);
 			} else {
+				// TODO: finish implementing this.
 				console.warn(`Texture ${url} dimensions [${image.width}, ${image.height}] are not power of 2.`);
 				// // No, it's not a power of 2. Turn off mips and set
 				// // wrapping to clamp to edge
@@ -301,14 +307,13 @@ export class GLCompute {
 		return texture;
 	}
 
-	onResize(canvasEl: HTMLCanvasElement) {
-		const { gl } = this;
-		const width = canvasEl.clientWidth;
-		const height = canvasEl.clientHeight;
+	onResize(canvas: HTMLCanvasElement) {
+		const width = canvas.clientWidth;
+		const height = canvas.clientHeight;
 		// Set correct canvas pixel size.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
-		canvasEl.width = width;
-		canvasEl.height = height;
+		canvas.width = width;
+		canvas.height = height;
 		// Save dimensions.
 		this.width = width;
 		this.height = height;
@@ -322,7 +327,7 @@ export class GLCompute {
 	) {
 		const { gl } = this;
 		// Check if we are in an error state.
-		if (!program.program) {
+		if (!program.glProgram) {
 			return;
 		}
 
@@ -338,7 +343,7 @@ export class GLCompute {
 		this.setOutputLayer(fullscreenRender, inputLayers, outputLayer);
 
 		// Set current program.
-		gl.useProgram(program.program);
+		gl.useProgram(program.glProgram);
 
 		// Set input textures.
 		for (let i = 0; i < inputTextures.length; i++) {
@@ -413,7 +418,7 @@ can render to nextState using currentState as an input.`);
 	private setPositionAttribute(program: GPUProgram) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program.program!, 'a_internal_position');
+		const location = gl.getAttribLocation(program.glProgram!, 'a_internal_position');
 		gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
@@ -422,7 +427,7 @@ can render to nextState using currentState as an input.`);
 	private setIndexAttribute(program: GPUProgram) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program.program!, 'a_internal_index');
+		const location = gl.getAttribLocation(program.glProgram!, 'a_internal_index');
 		gl.vertexAttribPointer(location, 1, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
@@ -711,9 +716,9 @@ can render to nextState using currentState as an input.`);
 	}
 
 	getValues(dataLayer: DataLayer) {
-		// TODO: this is not compatible with webgl1.
 		const { gl } = this;
 
+		// TODO: in case dataLayer was not the last output written to.
 		// dataLayer.bindOutputBuffer(false);
 
 		const [ width, height ] = dataLayer.getDimensions();
@@ -800,33 +805,64 @@ can render to nextState using currentState as an input.`);
 		if (this.readyToRead()) {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
 			gl.readPixels(0, 0, width, height, glFormat, glType, values);
-			const { numComponents } = dataLayer;
+			const { numComponents, type } = dataLayer;
+			const OUTPUT_LENGTH = width * height * numComponents;
 
 			// Convert uint16 to float32 if needed.
-			if (internalType === HALF_FLOAT && values.constructor === Uint16Array) {
-				const floatValues = new Float32Array(width * height * numComponents);
-				const view = new DataView((values as Uint16Array).buffer);
-				// In some cases glNumChannels may be > numComponents.
+			const handleFloat16Conversion = internalType === HALF_FLOAT && values.constructor === Uint16Array;
+			// @ts-ignore
+			const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
+
+			let output: DataLayerArrayType = values;
+			
+			// We may use a different internal type than the assigned type of the DataLayer.
+			if (internalType !== type) {
+				switch (type) {
+					case HALF_FLOAT:
+					case FLOAT:
+						output = new Float32Array();
+						break;
+					case UNSIGNED_BYTE:
+						output = new Uint8Array(OUTPUT_LENGTH);
+						break;
+					case BYTE:
+						output = new Int8Array(OUTPUT_LENGTH);
+						break;
+					case UNSIGNED_SHORT:
+						output = new Uint16Array(OUTPUT_LENGTH);
+						break;
+					case SHORT:
+						output = new Int16Array(OUTPUT_LENGTH);
+						break;
+					case UNSIGNED_INT:
+						output = new Uint32Array(OUTPUT_LENGTH);
+						break;
+					case INT:
+						output = new Int32Array(OUTPUT_LENGTH);
+						break;
+					default:
+						throw new Error(`Unsupported type ${type} for getValues().`);
+				}
+			}
+
+			// In some cases glNumChannels may be > numComponents.
+			if (handleFloat16Conversion || output !== values || numComponents !== glNumChannels) {
 				for (let i = 0, length = width * height; i < length; i++) {
 					const index1 = i * glNumChannels;
 					const index2 = i * numComponents;
 					for (let j = 0; j < numComponents; j++) {
-						floatValues[index2 + j] = getFloat16(view, 2 * (index1 + j), true);
+						if (handleFloat16Conversion) {
+							output[index2 + j] = getFloat16(view!, 2 * (index1 + j), true);
+						} else {
+							output[index2 + j] = values[index1 + j];
+						}
 					}
 				}
-				return floatValues;
 			}
-
-			if (numComponents === glNumChannels) return values;
-			// In some cases glNumChannels may be > numComponents.
-			for (let i = 0, length = width * height; i < length; i++) {
-				const index1 = i * glNumChannels;
-				const index2 = i * numComponents;
-				for (let j = 0; j < numComponents; j++) {
-					values[index2 + j] = values[index1 + j];
-				}
+			if (output.length !== OUTPUT_LENGTH) {
+				output = output.slice(0, OUTPUT_LENGTH);
 			}
-			return values.slice(0, width * height * numComponents);
+			return output;
 		} else {
 			throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
 		}

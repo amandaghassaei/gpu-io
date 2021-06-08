@@ -1,9 +1,10 @@
-import { DataLayer, DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './DataLayer';
-import { GPUProgram, UniformValueType, UniformDataType } from './GPUProgram';
+import { DataLayer } from './DataLayer';
+import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, UniformDataType, UniformValueType } from './Constants';
+import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 declare type errorCallback = (message: string) => void;
 export declare class GLCompute {
-    private readonly gl;
+    readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     private width;
     private height;
     private errorState;
@@ -20,18 +21,27 @@ export declare class GLCompute {
     readonly copyIntProgram: GPUProgram;
     readonly copyUintProgram: GPUProgram;
     static initWithThreeRenderer(renderer: WebGLRenderer, errorCallback?: errorCallback): GLCompute;
-    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext | null, canvasEl: HTMLCanvasElement, options?: {
+    constructor(params: {
+        canvas: HTMLCanvasElement;
+        context?: WebGLRenderingContext | WebGL2RenderingContext | null;
         antialias?: boolean;
     }, errorCallback?: errorCallback, renderer?: WebGLRenderer);
     private initVertexBuffer;
-    initProgram(name: string, fragmentShaderOrSource: string | WebGLShader, uniforms?: {
+    initProgram(params: {
         name: string;
-        value: UniformValueType;
-        dataType: UniformDataType;
-    }[], defines?: {
-        [key: string]: string;
-    }, vertexShaderOrSource?: string | WebGLShader): GPUProgram;
-    initDataLayer(name: string, options: {
+        fragmentShader: string | WebGLShader;
+        vertexShader?: string | WebGLShader;
+        uniforms?: {
+            name: string;
+            value: UniformValueType;
+            dataType: UniformDataType;
+        }[];
+        defines?: {
+            [key: string]: string;
+        };
+    }): GPUProgram;
+    initDataLayer(params: {
+        name: string;
         dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
@@ -39,9 +49,11 @@ export declare class GLCompute {
         filter?: DataLayerFilterType;
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
-    }, writable?: boolean, numBuffers?: number): DataLayer;
+        writable?: boolean;
+        numBuffers?: number;
+    }): DataLayer;
     initTexture(url: string): WebGLTexture;
-    onResize(canvasEl: HTMLCanvasElement): void;
+    onResize(canvas: HTMLCanvasElement): void;
     private drawSetup;
     copyProgramForType(type: DataLayerType): GPUProgram;
     private setOutputLayer;
@@ -79,7 +91,7 @@ export declare class GLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
-    getValues(dataLayer: DataLayer): Float32Array | Uint8Array | Uint32Array | Int32Array;
+    getValues(dataLayer: DataLayer): DataLayerArrayType;
     readyToRead(): boolean;
     reset(): void;
     attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;

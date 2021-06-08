@@ -38,7 +38,7 @@ export class DataLayer {
 	private height: number;
 
 	// DataLayer settings.
-	private readonly type: DataLayerType; // Input type passed in during setup.
+	readonly type: DataLayerType; // Input type passed in during setup.
 	readonly internalType: DataLayerType; // Type that corresponds to glType, may be different from type.
 	readonly numComponents: DataLayerNumComponents; // Number of RGBA channels to use for this DataLayer.
 	readonly filter: DataLayerFilterType; // Interpolation filter type of data.

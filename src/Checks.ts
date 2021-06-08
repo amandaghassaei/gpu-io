@@ -1,7 +1,7 @@
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
 	LINEAR, NEAREST,
-	REPEAT, CLAMP_TO_EDGE, MIRRORED_REPEAT,
+	REPEAT, CLAMP_TO_EDGE, MIRRORED_REPEAT, INT_1D_UNIFORM,
 } from './Constants';
 
 export function isValidDataType(type: string) {
@@ -32,11 +32,22 @@ export function isValidWrapType(type: string) {
 	);
 }
 
+export function isNumber(value: any) {
+	return !isNaN(value);
+}
+
+export function isInteger(value: any) {
+	return isNumber(value) && (value % 1 === 0);
+}
+
 export function isPositiveInteger(value: any) {
-	if (isNaN(value)) return false;
-	return (value > 0) && (value % 1 === 0);
+	return isInteger(value) &&  value > 0;
 }
 
 export function isString(value: any){
 	return typeof value === 'string';
- }
+}
+
+export function isArray(value: any) {
+	return Array.isArray(value);
+}

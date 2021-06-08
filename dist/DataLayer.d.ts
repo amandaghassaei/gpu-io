@@ -1,8 +1,4 @@
-export declare type DataLayerArrayType = Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
-export declare type DataLayerType = 'float32' | 'float16' | 'uint8' | 'int8' | 'uint16' | 'int16' | 'uint32' | 'int32';
-export declare type DataLayerNumComponents = 1 | 2 | 3 | 4;
-export declare type DataLayerFilterType = 'LINEAR' | 'NEAREST';
-export declare type DataLayerWrapType = 'REPEAT' | 'CLAMP_TO_EDGE' | 'MIRRORED_REPEAT';
+import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './Constants';
 export declare type DataLayerBuffer = {
     texture: WebGLTexture;
     framebuffer?: WebGLFramebuffer;
@@ -19,16 +15,19 @@ export declare class DataLayer {
     private width;
     private height;
     readonly type: DataLayerType;
+    readonly internalType: DataLayerType;
     readonly numComponents: DataLayerNumComponents;
-    private readonly glInternalFormat;
+    readonly filter: DataLayerFilterType;
+    readonly writable: boolean;
+    readonly glInternalFormat: number;
     readonly glFormat: number;
     readonly glType: number;
     readonly glNumChannels: number;
-    readonly filter: number;
-    readonly wrapS: number;
-    readonly wrapT: number;
-    readonly writable: boolean;
-    constructor(name: string, gl: WebGLRenderingContext | WebGL2RenderingContext, options: {
+    readonly glFilter: number;
+    readonly glWrapS: number;
+    readonly glWrapT: number;
+    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, params: {
+        name: string;
         dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
@@ -36,15 +35,17 @@ export declare class DataLayer {
         filter?: DataLayerFilterType;
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
-    }, errorCallback: ErrorCallback, writable: boolean, numBuffers: number);
-    private calcWidthHeight;
-    private static checkWrap;
-    private static checkFilter;
-    private static checkType;
+        writable?: boolean;
+        numBuffers?: number;
+    }, errorCallback: ErrorCallback);
+    private static calcSize;
+    private static getGLWrap;
+    private static getGLFilter;
+    private static getInternalType;
     private static shouldCastIntTypeAsFloat;
-    private checkDataArray;
     private static getGLTextureParameters;
     private static testFramebufferWrite;
+    private validateDataArray;
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
     getPreviousStateTexture(index?: number): WebGLTexture;
@@ -54,7 +55,6 @@ export declare class DataLayer {
     getDimensions(): [number, number];
     getTextures(): WebGLTexture[];
     getLength(): number;
-    getNumComponents(): DataLayerNumComponents;
     private destroyBuffers;
     destroy(): void;
 }

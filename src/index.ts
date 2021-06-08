@@ -1,4 +1,5 @@
 import { GLCompute } from './GLCompute';
+import { HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT } from './Constants';
 const SingleColorFragShader = require('./kernels_1.0/SingleColorFragShader.glsl');
 const PointsVertexShader = require('./kernels_1.0/PointsVertexShader.glsl');
 const PointsVertexShaderWithDisplacement = require('./kernels_1.0/PointsVertexShaderWithDisplacement.glsl');
@@ -7,9 +8,12 @@ const ZeroFragmentShader = require('./kernels_1.0/ZeroFragShader.glsl');
 
 export {
 	GLCompute,
-	SingleColorFragShader,
-	PointsVertexShader,
-	PointsVertexShaderWithDisplacement,
-	SegmentVertexShader,
-	ZeroFragmentShader,
+	HALF_FLOAT,
+	FLOAT,
+	UNSIGNED_BYTE,
+	BYTE,
+	UNSIGNED_SHORT,
+	SHORT,
+	UNSIGNED_INT,
+	INT,
 };

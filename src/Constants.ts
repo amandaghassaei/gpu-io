@@ -50,9 +50,3 @@ export type Uniform = {
 	location: WebGLUniformLocation,
 	type: UniformType,
 };
-
-export type AttributeDataType = 'float32' | 'float16' | 'uint8' | 'int8' | 'uint16' | 'int16';
-export type Attribute = { 
-	location: number,
-	type: AttributeDataType,
-};
