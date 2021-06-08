@@ -6,10 +6,12 @@ export declare class GPUProgram {
     readonly glProgram?: WebGLProgram;
     private readonly uniforms;
     private readonly shaders;
-    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, params: {
+    constructor(params: {
+        gl: WebGLRenderingContext | WebGL2RenderingContext;
         name: string;
         fragmentShader: string | string[] | WebGLShader;
         vertexShader: string | WebGLShader;
+        errorCallback: (message: string) => void;
         uniforms?: {
             name: string;
             value: UniformValueType;
@@ -18,7 +20,7 @@ export declare class GPUProgram {
         defines?: {
             [key: string]: string;
         };
-    }, errorCallback: (message: string) => void);
+    });
     private uniformTypeForValue;
     setUniform(uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
     destroy(): void;

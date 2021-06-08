@@ -19,11 +19,12 @@ export class GPUProgram {
 	private readonly shaders: WebGLShader[] = []; // Save ref to shaders so we can deallocate.
 
 	constructor(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			name: string,
 			fragmentShader: string | string[] | WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
 			vertexShader: string |  WebGLShader,
+			errorCallback: (message: string) => void,
 			uniforms?: {
 				name: string,
 				value: UniformValueType,
@@ -33,9 +34,9 @@ export class GPUProgram {
 				[key: string]: string, // We'll do these as strings to make it easier to control float vs int.
 			},
 		},
-		errorCallback: (message: string) => void,
+		
 	) {
-		const { name, fragmentShader, vertexShader, uniforms, defines } = params;
+		const { gl, errorCallback, name, fragmentShader, vertexShader, uniforms, defines } = params;
 
 		// Save arguments.
 		this.gl = gl;

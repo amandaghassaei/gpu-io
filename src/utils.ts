@@ -31,8 +31,10 @@ export function compileShader(
 }
 
 export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
-	// TODO: I'm sure there is a better way to check this.
-	return !!(gl as WebGL2RenderingContext).HALF_FLOAT;
+	// This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/renderers/webgl/WebGLCapabilities.js
+	// @ts-ignore
+	return (typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext) || (typeof WebGL2ComputeRenderingContext !== 'undefined' && gl instanceof WebGL2ComputeRenderingContext);
+	// return !!(gl as WebGL2RenderingContext).HALF_FLOAT;
 }
 
 export function isPowerOf2(value: number) {

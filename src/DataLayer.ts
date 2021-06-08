@@ -3,7 +3,7 @@ import { isPositiveInteger, isValidDataType, isValidFilterType } from './Checks'
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
 	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT, MIRRORED_REPEAT,
-	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType,
+	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, GLSLVersion, GLSL3, GLSL1,
  } from './Constants';
 import {
 	getExtension,
@@ -54,22 +54,23 @@ export class DataLayer {
 	readonly glWrapT: number;
 
 	constructor(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			name: string,
 			dimensions: number | [number, number],
 			type: DataLayerType,
 			numComponents: DataLayerNumComponents,
+			glslVersion: GLSLVersion,
 			data?: DataLayerArrayType,
 			filter?: DataLayerFilterType,
 			wrapS?: DataLayerWrapType,
 			wrapT?: DataLayerWrapType,
 			writable?: boolean,
 			numBuffers?: number,
+			errorCallback: ErrorCallback,
 		},
-		errorCallback: ErrorCallback,
 	) {
-		const { name, dimensions, type, numComponents, data } = params;
+		const { gl, errorCallback, name, dimensions, type, numComponents, data, glslVersion } = params;
 
 		// Save params.
 		this.name = name;
@@ -92,7 +93,14 @@ export class DataLayer {
 			throw new Error(`Invalid type ${type} for DataLayer "${name}", must be one of ${validTypes.join(', ')}.`);
 		}
 		this.type = type;
-		const internalType = DataLayer.getInternalType(gl, type, writable, errorCallback);
+		const internalType = DataLayer.getInternalType({
+			gl,
+			type,
+			glslVersion,
+			writable,
+			name,
+			errorCallback,
+		});
 		this.internalType = internalType;
 		const {
 			glFormat,
@@ -101,19 +109,22 @@ export class DataLayer {
 			glNumChannels,
 
 		// Set gl texture parameters.
-		} = DataLayer.getGLTextureParameters(gl, {
+		} = DataLayer.getGLTextureParameters({
+			gl,
 			name,
 			numComponents,
 			writable,
 			internalType,
-		}, errorCallback);
+			glslVersion,
+			errorCallback,
+		});
 		this.glInternalFormat = glInternalFormat;
 		this.glFormat = glFormat;
 		this.glType = glType;
 		this.glNumChannels = glNumChannels;
 
 		// Set dimensions, may be 1D or 2D.
-		const { length, width, height } = DataLayer.calcSize(dimensions);
+		const { length, width, height } = DataLayer.calcSize(dimensions, name);
 		this.length = length;
 		if (!isPositiveInteger(width)) {
 			throw new Error(`Invalid width ${width} for DataLayer "${name}".`);
@@ -131,13 +142,13 @@ export class DataLayer {
 			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${LINEAR} or ${NEAREST}.`);
 		}
 		this.filter = filter;
-		this.glFilter = DataLayer.getGLFilter(gl, filter, internalType, errorCallback);
+		this.glFilter = DataLayer.getGLFilter({ gl, filter, internalType, name, errorCallback });
 
 		// Get wrap types, default to clamp to edge.
 		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
-		this.glWrapS = DataLayer.getGLWrap(gl, wrapS, internalType);
+		this.glWrapS = DataLayer.getGLWrap({ gl, wrap: wrapS, internalType, name });
 		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
-		this.glWrapT = DataLayer.getGLWrap(gl, wrapT, internalType);
+		this.glWrapT = DataLayer.getGLWrap({ gl, wrap: wrapT, internalType, name });
 
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -149,8 +160,7 @@ export class DataLayer {
 		this.initBuffers(data);
 	}
 
-	private static calcSize(dimensions: number | [number, number]) {
-		const { name } = this;
+	private static calcSize(dimensions: number | [number, number], name: string) {
 		let length, width, height;
 		if (!isNaN(dimensions as number)) {
 			if (!isPositiveInteger(dimensions)) {
@@ -180,10 +190,14 @@ export class DataLayer {
 	}
 
 	private static getGLWrap(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
-		wrap: DataLayerWrapType,
-		internalType: DataLayerType,
+		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
+			wrap: DataLayerWrapType,
+			internalType: DataLayerType,
+			name: string,
+		},
 	) {
+		const { gl, wrap, internalType, name } = params;
 		// Webgl2.0 supports all combinations of types and filtering.
 		if (isWebGL2(gl)) {
 			return gl[wrap];
@@ -203,18 +217,23 @@ export class DataLayer {
             // It maybe non-power-of-2 and have incompatible texture filtering or is not
             // 'texture complete', or it is a float/half-float type with linear filtering and
             // without the relevant float/half-float linear extension enabled.
-			console.warn(`Falling back to CLAMP_TO_EDGE wrapping for DataLayer "${this.name}".`);
+			console.warn(`Falling back to CLAMP_TO_EDGE wrapping for DataLayer "${name}".`);
 			return gl[CLAMP_TO_EDGE];
 		}
 		return gl[wrap];
 	}
 
 	private static getGLFilter(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
-		filter: DataLayerFilterType,
-		internalType: DataLayerType,
-		errorCallback: ErrorCallback,
+		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
+			filter: DataLayerFilterType,
+			internalType: DataLayerType,
+			name: string,
+			errorCallback: ErrorCallback,
+		},
 	) {
+		const { gl, errorCallback, internalType, name } = params;
+		let { filter } = params;
 		if (filter === NEAREST) {
 			// NEAREST filtering is always supported.
 			return gl[filter];
@@ -225,14 +244,14 @@ export class DataLayer {
 			const extension = getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true)
 				|| getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
-				console.warn(`Falling back to NEAREST filter for DataLayer "${this.name}".`);
+				console.warn(`Falling back to NEAREST filter for DataLayer "${name}".`);
 				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = NEAREST;
 			}
 		} if (internalType === FLOAT) {
 			const extension = getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
-				console.warn(`Falling back to NEAREST filter for DataLayer "${this.name}".`);
+				console.warn(`Falling back to NEAREST filter for DataLayer "${name}".`);
 				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = NEAREST;
 			}
@@ -241,22 +260,29 @@ export class DataLayer {
 	}
 
 	private static getInternalType(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
-		type: DataLayerType,
-		writable: boolean,
-		errorCallback: ErrorCallback,
+		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
+			type: DataLayerType,
+			glslVersion: GLSLVersion,
+			writable: boolean,
+			name: string,
+			errorCallback: ErrorCallback,
+		},
 	) {
+		const { gl, errorCallback, writable, name, glslVersion } = params;
+		let { type } = params;
+		// Check if int types are supported.
+		if (DataLayer.shouldCastIntTypeAsFloat(params)) {
+			// TODO: HALF_FLOAT would be sufficient for some of these int types.
+			// console.warn(`Falling back ${type} type to FLOAT type for glsl1.x support for DataLayer "${name}".`);
+			type = FLOAT;
+		}
 		// Check if float32 supported.
 		if (!isWebGL2(gl)) {
-			if (DataLayer.shouldCastIntTypeAsFloat(gl, type)) {
-				// TODO: HALF_FLOAT would be sufficient for some of these int types.
-				console.warn(`Falling back ${type} type to FLOAT type for webgl1.0 support for DataLayer "${this.name}".`);
-				type = FLOAT;
-			}
 			if (type === FLOAT) {
 				const extension = getExtension(gl, OES_TEXTURE_FLOAT, errorCallback, true);
 				if (!extension) {
-					console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for DataLayer "${this.name}".`);
+					console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for DataLayer "${name}".`);
 					type = HALF_FLOAT;
 				}
 				// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
@@ -266,9 +292,9 @@ export class DataLayer {
 				// To check if this is supported, you have to call the WebGL
 				// checkFramebufferStatus() function.
 				if (writable) {
-					const valid = DataLayer.testFramebufferWrite(gl, type);
+					const valid = DataLayer.testFramebufferWrite({ gl, type, glslVersion });
 					if (!valid && type !== HALF_FLOAT) {
-						console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for DataLayer "${this.name}".`);
+						console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for DataLayer "${name}".`);
 						type = HALF_FLOAT;
 					}
 				}
@@ -278,7 +304,7 @@ export class DataLayer {
 				getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback);
 				// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 				if (writable) {
-					const valid = DataLayer.testFramebufferWrite(gl, type);
+					const valid = DataLayer.testFramebufferWrite({ gl, type, glslVersion });
 					if (!valid) {
 						errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 					}
@@ -287,18 +313,21 @@ export class DataLayer {
 		}
 		
 		// Load additional extensions if needed.
-		// TODO: is this needed for read only?
-		if (isWebGL2(gl) && (type === HALF_FLOAT || type === FLOAT)) {
+		if (writable && isWebGL2(gl) && (type === HALF_FLOAT || type === FLOAT)) {
 			getExtension(gl, EXT_COLOR_BUFFER_FLOAT, errorCallback);
 		}
 		return type;
 	}
 
 	private static shouldCastIntTypeAsFloat(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
-		type: DataLayerType,
+		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
+			type: DataLayerType,
+			glslVersion: GLSLVersion,
+		}
 	) {
-		if (isWebGL2(gl)) return false;
+		const { gl, type, glslVersion } = params;
+		if (glslVersion === GLSL3 && isWebGL2(gl)) return false;
 		// Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0.
 		// Use float instead.
 		// TODO: could use half float for some of these.
@@ -307,19 +336,20 @@ export class DataLayer {
 	}
 
 	private static getGLTextureParameters(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			name: string,
 			numComponents: DataLayerNumComponents,
 			internalType: DataLayerType,
 			writable: boolean,
-		},
-		errorCallback: ErrorCallback,
+			glslVersion: GLSLVersion,
+			errorCallback: ErrorCallback,
+		}
 	) {
 		// TODO: we may not want to support int and unsigned int textures
 		// because they require modifications to the shader code:
 		// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
-		const { name, numComponents, internalType, writable } = params;
+		const { gl, errorCallback, name, numComponents, internalType, writable, glslVersion } = params;
 		// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 		let glType: number | undefined,
 			glFormat: number | undefined,
@@ -349,6 +379,22 @@ export class DataLayer {
 						break;
 					case 4:
 						glFormat = gl.RGBA;
+						break;
+					default:
+						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+				}
+			} else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
+				switch (glNumChannels) {
+					// TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
+					case 1:
+					case 2:
+					case 3:
+						glFormat = gl.RGB;
+						glNumChannels = 3;
+						break;
+					case 4:
+						glFormat = gl.RGBA;
+						glNumChannels = 4;
 						break;
 					default:
 						throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
@@ -412,21 +458,25 @@ export class DataLayer {
 					break;
 				case UNSIGNED_BYTE:
 					glType = gl.UNSIGNED_BYTE;
-					switch (glNumChannels) {
-						case 1:
-							glInternalFormat = (gl as WebGL2RenderingContext).R8UI;
-							break;
-						case 2:
-							glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
-							break;
-						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI;
-							break;
-						case 4:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
-							break;
-						default:
-							throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+					if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
+						glInternalFormat = glFormat;
+					} else {
+						switch (glNumChannels) {
+							case 1:
+								glInternalFormat = (gl as WebGL2RenderingContext).R8UI;
+								break;
+							case 2:
+								glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
+								break;
+							case 3:
+								glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI;
+								break;
+							case 4:
+								glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
+								break;
+							default:
+								throw new Error(`Unsupported glNumChannels ${glNumChannels} for DataLayer "${name}".`);
+						}
 					}
 					break;
 				case BYTE:
@@ -550,12 +600,12 @@ export class DataLayer {
 					glType = gl.FLOAT;
 					break;
 				case HALF_FLOAT:
-					glType = getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback).HALF_FLOAT_OES as number;
+					glType = (gl as WebGL2RenderingContext).HALF_FLOAT || getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback).HALF_FLOAT_OES as number;
 					break;
 				case UNSIGNED_BYTE:
 					glType = gl.UNSIGNED_BYTE;
 					break;
-				// No other types are supported in webgl 1.0.
+				// No other types are supported in glsl1.x
 				default:
 					throw new Error(`Unsupported type ${internalType} in WebGL 1.0 for DataLayer "${name}".`);
 			}
@@ -582,9 +632,13 @@ export class DataLayer {
 	}
 
 	private static testFramebufferWrite(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
-		type: DataLayerType,
+		params: {
+			gl: WebGLRenderingContext | WebGL2RenderingContext,
+			type: DataLayerType,
+			glslVersion: GLSLVersion,
+		},
 	) {
+		const { gl, type, glslVersion } = params;
 		const texture = gl.createTexture();
 		if (!texture) {
 			return false;
@@ -604,12 +658,15 @@ export class DataLayer {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
-		const { glInternalFormat, glFormat, glType } = DataLayer.getGLTextureParameters(gl, {
+		const { glInternalFormat, glFormat, glType } = DataLayer.getGLTextureParameters({
+			gl,
 			name: 'testFramebufferWrite',
 			numComponents: 1,
 			writable: true,
 			internalType: type,
-		}, () => {});
+			glslVersion,
+			errorCallback: () => {},
+		});
 		gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, null);
 
 		// Init a framebuffer for this texture so we can write to it.
@@ -840,7 +897,7 @@ export class DataLayer {
 		dimensions: number | [number, number],
 		data?: DataLayerArrayType,
 	) {
-		const { length, width, height } = DataLayer.calcSize(dimensions);
+		const { length, width, height } = DataLayer.calcSize(dimensions, this.name);
 		this.length = length;
 		this.width = width;
 		this.height = height;

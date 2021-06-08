@@ -20,6 +20,10 @@ export type DataLayerNumComponents = 1 | 2 | 3 | 4;
 export type DataLayerFilterType = typeof LINEAR | typeof NEAREST;
 export type DataLayerWrapType = typeof REPEAT | typeof CLAMP_TO_EDGE | typeof MIRRORED_REPEAT;
 
+export const GLSL3 = '300 es';
+export const GLSL1 = '100';
+export type GLSLVersion = typeof GLSL1 | typeof GLSL3;
+
 // Uniform types.
 export const FLOAT_1D_UNIFORM = '1f';
 export const FLOAT_2D_UNIFORM = '2f';

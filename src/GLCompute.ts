@@ -2,19 +2,20 @@ import { DataLayer } from './DataLayer';
 import {
 	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType,
 	FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
-	UniformDataType, UniformValueType,
+	UniformDataType, UniformValueType, GLSLVersion, GLSL1, GLSL3,
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
 import * as utils from './utils/Vector4';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
-const defaultVertexShaderSource = require('./kernels_2.0/DefaultVertexShader.glsl');
-const defaultVertexShaderSource_gl1 = require('./kernels_1.0/DefaultVertexShader.glsl');
-const copyFloatFragmentShaderSource = require('./kernels_2.0/CopyFloatFragShader.glsl');
-const copyIntFragmentShaderSource = require('./kernels_2.0/CopyIntFragShader.glsl');
-const copyUintFragmentShaderSource = require('./kernels_2.0/CopyUintFragShader.glsl');
-const copyFragmentShaderSource_gl1 = require('./kernels_1.0/CopyFragShader.glsl');
+import { isString } from './Checks';
+const defaultVertexShaderSource_glsl3 = require('./glsl_3/DefaultVertexShader.glsl');
+const defaultVertexShaderSource_glsl1 = require('./glsl_1/DefaultVertexShader.glsl');
+const copyFloatFragmentShaderSource_glsl3 = require('./glsl_3/CopyFloatFragShader.glsl');
+const copyIntFragmentShaderSource_glsl3 = require('./glsl_3/CopyIntFragShader.glsl');
+const copyUintFragmentShaderSource_glsl3 = require('./glsl_3/CopyUintFragShader.glsl');
+const copyFragmentShaderSource_glsl1 = require('./glsl_1/CopyFragShader.glsl');
 
 const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
@@ -31,7 +32,8 @@ const circlePositions = new Float32Array(unitCirclePoints);
 type errorCallback = (message: string) => void;
 
 export class GLCompute {
-	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
+	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
+	readonly glslVersion!: GLSLVersion;
 	// These width and height are the current canvas at full res.
 	private width!: number;
 	private height!: number;
@@ -56,12 +58,17 @@ export class GLCompute {
 
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
+		params: {
+			antialias?: boolean,
+			glslVersion?: GLSLVersion,
+		},
 		errorCallback?: errorCallback,
 	) {
 		return new GLCompute(
 			{
 				canvas: renderer.domElement,
 				context: renderer.getContext(),
+				...params,
 			},
 			errorCallback,
 			renderer,
@@ -73,12 +80,20 @@ export class GLCompute {
 			canvas: HTMLCanvasElement,
 			context?: WebGLRenderingContext | WebGL2RenderingContext | null,
 			antialias?: boolean,
+			glslVersion?: GLSLVersion,
 		},
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
 		// e.g. throw up a modal telling user this will not work on their device.
 		errorCallback: errorCallback = (message: string) => { throw new Error(message) },
 		renderer?: WebGLRenderer,
 	) {
+		// Check params.
+		const validKeys = ['canvas', 'context', 'antialias', 'glslVersion'];
+		Object.keys(params).forEach(key => {
+			if (validKeys.indexOf(key) < 0) {
+				throw new Error(`Invalid key ${key} passed to GLcompute.constructor.  Valid keys are ${validKeys.join(', ')}.`);
+			}
+		});
 		// Save callback in case we run into an error.
 		const self = this;
 		this.errorCallback = (message: string) => {
@@ -113,6 +128,13 @@ export class GLCompute {
 		this.gl = gl;
 		this.renderer = renderer;
 
+		// Save glsl version, default to 1.x.
+		const glslVersion = params.glslVersion === undefined ? GLSL1 : params.glslVersion;
+		this.glslVersion = glslVersion;
+		if (!isWebGL2(gl) && glslVersion === GLSL3) {
+			console.warn('GLSL3.x is incompatible with WebGL1.0 contexts.');
+		}
+
 		// GL setup.
 		// Disable depth testing globally.
 		gl.disable(gl.DEPTH_TEST);
@@ -129,7 +151,7 @@ export class GLCompute {
 		// gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
 		// Init a default vertex shader that just passes through screen coords.
-		const vertexShaderSource = isWebGL2(gl) ? defaultVertexShaderSource : defaultVertexShaderSource_gl1;
+		const vertexShaderSource = glslVersion === GLSL3 ? defaultVertexShaderSource_glsl3 : defaultVertexShaderSource_glsl1;
 		const defaultVertexShader = compileShader(gl, this.errorCallback, vertexShaderSource, gl.VERTEX_SHADER);
 		if (!defaultVertexShader) {
 			this.errorCallback('Unable to initialize fullscreen quad vertex shader.');
@@ -140,7 +162,7 @@ export class GLCompute {
 		// Init programs to pass values from one texture to another.
 		this.copyFloatProgram = this.initProgram({
 			name: 'copyFloat',
-			fragmentShader: isWebGL2(gl) ? copyFloatFragmentShaderSource : copyFragmentShaderSource_gl1,
+			fragmentShader: glslVersion === GLSL3 ? copyFloatFragmentShaderSource_glsl3 : copyFragmentShaderSource_glsl1,
 			uniforms: [
 					{
 						name: 'u_state',
@@ -150,30 +172,35 @@ export class GLCompute {
 				],
 			},
 		);
-		this.copyIntProgram = this.initProgram({
-			name: 'copyInt',
-			fragmentShader: isWebGL2(gl) ? copyIntFragmentShaderSource : copyFragmentShaderSource_gl1,
-			uniforms: [
-					{
-						name: 'u_state',
-						value: 0,
-						dataType: INT,
-					},
-				],
-			},
-		);
-		this.copyUintProgram = this.initProgram({
-			name: 'copyUint',
-			fragmentShader: isWebGL2(gl) ? copyUintFragmentShaderSource : copyFragmentShaderSource_gl1,
-			uniforms: [
-					{
-						name: 'u_state',
-						value: 0,
-						dataType: INT,
-					},
-				],
-			},
-		);
+		if (glslVersion === GLSL3) {
+			this.copyIntProgram = this.initProgram({
+				name: 'copyInt',
+				fragmentShader: copyIntFragmentShaderSource_glsl3,
+				uniforms: [
+						{
+							name: 'u_state',
+							value: 0,
+							dataType: INT,
+						},
+					],
+				},
+			);
+			this.copyUintProgram = this.initProgram({
+				name: 'copyUint',
+				fragmentShader: copyUintFragmentShaderSource_glsl3,
+				uniforms: [
+						{
+							name: 'u_state',
+							value: 0,
+							dataType: INT,
+						},
+					],
+				},
+			);
+		} else {
+			this.copyIntProgram = this.copyFloatProgram;
+			this.copyUintProgram = this.copyFloatProgram;
+		}
 
 		// Create vertex buffers.
 		this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions)!;
@@ -220,14 +247,21 @@ export class GLCompute {
 			},
 		},
 	) {
+		// Check params.
+		const validKeys = ['name', 'fragmentShader', 'vertexShader', 'uniforms', 'defines'];
+		Object.keys(params).forEach(key => {
+			if (validKeys.indexOf(key) < 0) {
+				throw new Error(`Invalid key ${key} passed to GLcompute.initProgram.  Valid keys are ${validKeys.join(', ')}.`);
+			}
+		});
 		const { gl, errorCallback, defaultVertexShader } = this;
 		return new GPUProgram(
-			gl,
 			{
 				vertexShader: defaultVertexShader,
 				...params,
+				gl,
+				errorCallback,
 			},
-			errorCallback,
 		);
 	};
 
@@ -245,13 +279,28 @@ export class GLCompute {
 			numBuffers?: number,
 		},
 	) {
-		const { gl, errorCallback } = this;
-		return new DataLayer(gl, params, errorCallback);
+		// Check params.
+		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'data', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers'];
+		Object.keys(params).forEach(key => {
+			if (validKeys.indexOf(key) < 0) {
+				throw new Error(`Invalid key ${key} passed to GLcompute.initDataLayer.  Valid keys are ${validKeys.join(', ')}.`);
+			}
+		});
+		const { gl, errorCallback, glslVersion } = this;
+		return new DataLayer({
+			...params,
+			gl,
+			glslVersion,
+			errorCallback,
+		});
 	};
 
 	initTexture(
 		url: string,
 	) {
+		if (!isString(url)) {
+			throw new Error(`Expected GLCompute.initTexture to have argument of type string, got ${url} of type ${typeof url}.`)
+		}
 		const { gl, errorCallback } = this;
 		const texture = gl.createTexture();
 		if (texture === null) {
@@ -366,7 +415,7 @@ export class GLCompute {
 			case INT:
 				return this.copyIntProgram;
 			default:
-				throw new Error(`Invalid type: ${type}.`);
+				throw new Error(`Invalid type: ${type} passed to GLCompute.copyProgramForType.`);
 		}
 	}
 
@@ -716,7 +765,7 @@ can render to nextState using currentState as an input.`);
 	}
 
 	getValues(dataLayer: DataLayer) {
-		const { gl } = this;
+		const { gl, glslVersion } = this;
 
 		// TODO: in case dataLayer was not the last output written to.
 		// dataLayer.bindOutputBuffer(false);
@@ -742,8 +791,10 @@ can render to nextState using currentState as an input.`);
 				values = new Float32Array(width * height * glNumChannels);
 				break;
 			case UNSIGNED_BYTE:
-				if (!isWebGL2(gl)) {
-					// Safari requires Uint8 array and UNSIGNED_BYTE type.
+				if (glslVersion === GLSL1) {
+					// Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
+					glNumChannels = 4;
+					glFormat = gl.RGBA;
 					values = new Uint8Array(width * height * glNumChannels);
 					break;
 				}
@@ -868,12 +919,13 @@ can render to nextState using currentState as an input.`);
 		}
 	}
 
-	readyToRead() {
+	private readyToRead() {
 		const { gl } = this;
 		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
 	};
 
     reset() {
+		// TODO: implement this.
 	};
 
 	attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture) {

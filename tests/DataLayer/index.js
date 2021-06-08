@@ -2,13 +2,17 @@ const { setFloat16, getFloat16 } = float16;
 
 requirejs([
 	'../../dist/index',
-], ({ GLCompute }) => {
+], ({ GLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3 }) => {
 	const canvas = document.getElementById('glcanvas');
 
 	// General code for testing array writes.
 	function testArrayWrites(options) {
 		try {
-			const glcompute = new GLCompute(null, canvas, {antialias: true});
+			const glcompute = new GLCompute({
+				canvas,
+				antialias: true,
+				glslVersion: GLSL3,
+			});
 
 			const { 
 				TYPE,
@@ -18,7 +22,7 @@ requirejs([
 			} = options;
 			let input;
 			switch (TYPE) {
-				case 'float16': {
+				case HALF_FLOAT: {
 					input = new Float32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with float data.
 					const uint16Array = new Uint16Array(1);
@@ -31,7 +35,7 @@ requirejs([
 					}
 					break;
 				}
-				case 'float32': {
+				case FLOAT: {
 					input = new Float32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with float data.
 					for (let i = 0; i < input.length; i++) {
@@ -39,7 +43,7 @@ requirejs([
 					}
 					break;
 				}
-				case 'uint8': {
+				case UNSIGNED_BYTE: {
 					input = new Uint8Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with uint8 data.
 					for (let i = 0; i < input.length; i++) {
@@ -47,7 +51,7 @@ requirejs([
 					}
 					break;
 				}
-				case 'uint16': {
+				case UNSIGNED_SHORT: {
 					input = new Uint16Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with uint16 data.
 					const MAX = 2 ** 16;
@@ -56,7 +60,7 @@ requirejs([
 					}
 					break;
 				}
-				case 'uint32': {
+				case UNSIGNED_INT: {
 					input = new Uint32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with uint32 data.
 					const MAX = 2 ** 32;
@@ -65,7 +69,7 @@ requirejs([
 					}
 					break;
 				}
-				case 'int8': {
+				case BYTE: {
 					input = new Int8Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int8 data.
 					for (let i = 0; i < input.length; i++) {
@@ -73,7 +77,7 @@ requirejs([
 					}
 					break;
 				}
-				case 'int16': {
+				case SHORT: {
 					input = new Int16Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int16 data.
 					const MAX = 2 ** 16;
@@ -83,7 +87,7 @@ requirejs([
 					}
 					break;
 				}
-				case 'int32': {
+				case INT: {
 					input = new Int32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int32 data.
 					const MAX = 2 ** 32;
@@ -98,16 +102,16 @@ requirejs([
 			}
 
 			const dataLayer = glcompute.initDataLayer(
-				`test-${TYPE}`,
 				{
+					name: `test-${TYPE}`,
 					dimensions: [DIM_X, DIM_Y],
 					type: TYPE,
 					numComponents: NUM_ELEMENTS,
 					data: input,
 					filter: 'NEAREST',
+					writable: true,
+					numBuffers: 2,
 				},
-				true,
-				2,
 			);
 
 			const copyProgram = glcompute.copyProgramForType(TYPE);
@@ -151,14 +155,14 @@ requirejs([
 	const output = document.getElementById('output');
 
 	const types = [
-		'float16',
-		'float32',
-		'uint8',
-		'uint16',
-		'uint32',
-		'int8',
-		'int16',
-		'int32',
+		HALF_FLOAT,
+		FLOAT,
+		UNSIGNED_BYTE,
+		BYTE,
+		UNSIGNED_SHORT,
+		SHORT,
+		UNSIGNED_INT,
+		INT,
 	];
 	types.forEach((TYPE) => {
 		// Create place to show results.

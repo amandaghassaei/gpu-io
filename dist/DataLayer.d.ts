@@ -1,4 +1,4 @@
-import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './Constants';
+import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, GLSLVersion } from './Constants';
 export declare type DataLayerBuffer = {
     texture: WebGLTexture;
     framebuffer?: WebGLFramebuffer;
@@ -26,18 +26,21 @@ export declare class DataLayer {
     readonly glFilter: number;
     readonly glWrapS: number;
     readonly glWrapT: number;
-    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, params: {
+    constructor(params: {
+        gl: WebGLRenderingContext | WebGL2RenderingContext;
         name: string;
         dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
+        glslVersion: GLSLVersion;
         data?: DataLayerArrayType;
         filter?: DataLayerFilterType;
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
         writable?: boolean;
         numBuffers?: number;
-    }, errorCallback: ErrorCallback);
+        errorCallback: ErrorCallback;
+    });
     private static calcSize;
     private static getGLWrap;
     private static getGLFilter;

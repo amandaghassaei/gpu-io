@@ -1,10 +1,11 @@
 import { DataLayer } from './DataLayer';
-import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, UniformDataType, UniformValueType } from './Constants';
+import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, UniformDataType, UniformValueType, GLSLVersion } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 declare type errorCallback = (message: string) => void;
 export declare class GLCompute {
-    readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
+    private readonly gl;
+    readonly glslVersion: GLSLVersion;
     private width;
     private height;
     private errorState;
@@ -20,11 +21,15 @@ export declare class GLCompute {
     readonly copyFloatProgram: GPUProgram;
     readonly copyIntProgram: GPUProgram;
     readonly copyUintProgram: GPUProgram;
-    static initWithThreeRenderer(renderer: WebGLRenderer, errorCallback?: errorCallback): GLCompute;
+    static initWithThreeRenderer(renderer: WebGLRenderer, params: {
+        antialias?: boolean;
+        glslVersion?: GLSLVersion;
+    }, errorCallback?: errorCallback): GLCompute;
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
         antialias?: boolean;
+        glslVersion?: GLSLVersion;
     }, errorCallback?: errorCallback, renderer?: WebGLRenderer);
     private initVertexBuffer;
     initProgram(params: {
@@ -92,7 +97,7 @@ export declare class GLCompute {
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
     getValues(dataLayer: DataLayer): DataLayerArrayType;
-    readyToRead(): boolean;
+    private readyToRead;
     reset(): void;
     attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;
     resetThreeState(): void;
