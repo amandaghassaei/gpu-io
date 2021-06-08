@@ -59,7 +59,6 @@ export class GLCompute {
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
 		params: {
-			antialias?: boolean,
 			glslVersion?: GLSLVersion,
 		},
 		errorCallback?: errorCallback,

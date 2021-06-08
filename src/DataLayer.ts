@@ -328,7 +328,8 @@ export class DataLayer {
 	) {
 		const { gl, type, glslVersion } = params;
 		if (glslVersion === GLSL3 && isWebGL2(gl)) return false;
-		// Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0.
+		// Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
+		// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
 		// Use float instead.
 		// TODO: could use half float for some of these.
 		// TODO: warn that this is happening, what are the precision limits?
@@ -346,9 +347,6 @@ export class DataLayer {
 			errorCallback: ErrorCallback,
 		}
 	) {
-		// TODO: we may not want to support int and unsigned int textures
-		// because they require modifications to the shader code:
-		// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
 		const { gl, errorCallback, name, numComponents, internalType, writable, glslVersion } = params;
 		// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 		let glType: number | undefined,

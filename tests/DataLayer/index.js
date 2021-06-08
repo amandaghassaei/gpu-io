@@ -11,7 +11,7 @@ requirejs([
 			const glcompute = new GLCompute({
 				canvas,
 				antialias: true,
-				glslVersion: GLSL3,
+				// glslVersion: GLSL3,
 			});
 
 			const { 

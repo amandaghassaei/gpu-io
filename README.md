@@ -40,14 +40,17 @@ const glcompute = GLCompute.initWithThreeRenderer(renderer);
 To use the output from a glcompute DataLayer to a Threejs Texture:
 
 ```
-const dataLayer = glcompute.initDataLayer('offsetGrid', {
+const dataLayer = glcompute.initDataLayer({
+	name: 'dataLayer-1',
 	dimensions: [100, 100],
 	type: 'uint8',
 	numComponents: 1,
 	wrapS: 'CLAMP_TO_EDGE',
 	wrapT: 'CLAMP_TO_EDGE',
 	filter: 'NEAREST',
-}, true, 1);
+	writable: true,
+	numBuffers: 1,
+});
 
 const texture = new Texture(
 	renderer.domElement,

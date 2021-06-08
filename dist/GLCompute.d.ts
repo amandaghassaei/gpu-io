@@ -22,7 +22,6 @@ export declare class GLCompute {
     readonly copyIntProgram: GPUProgram;
     readonly copyUintProgram: GPUProgram;
     static initWithThreeRenderer(renderer: WebGLRenderer, params: {
-        antialias?: boolean;
         glslVersion?: GLSLVersion;
     }, errorCallback?: errorCallback): GLCompute;
     constructor(params: {
