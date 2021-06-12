@@ -18,6 +18,7 @@ Because this repo is under active development, you may also want to include a sp
 
 ## Examples
 
+Note: these are stale examples at this point, will be updated soon.  
 - [Conway's Game of Life shader](https://github.com/amandaghassaei/ConwayShader)
 - [Mass Spring shader](https://github.com/amandaghassaei/MassSpringShader)
 
@@ -97,7 +98,7 @@ npm run build
 
 ## Testing
 
-I've included a few html pages for testing various functions of this library in the browser.  An index of these tests can be found at [apps.amandaghassaei.com/glcompute/tests/](http://apps.amandaghassaei.com/glcompute/tests/).
+I've included a few html pages for testing various functions of this library in the browser.  An index of these tests is current hosted at [apps.amandaghassaei.com/glcompute/tests/](http://apps.amandaghassaei.com/glcompute/tests/).
 
 To run these tests locally:
 
