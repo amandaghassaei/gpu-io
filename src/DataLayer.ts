@@ -270,20 +270,33 @@ export class DataLayer {
 		},
 	) {
 		const { gl, errorCallback, writable, name, glslVersion } = params;
-		let { type } = params;
+		const { type } = params;
+		let internalType = type;
 		// Check if int types are supported.
-		if (DataLayer.shouldCastIntTypeAsFloat(params)) {
-			// TODO: HALF_FLOAT would be sufficient for some of these int types.
-			// console.warn(`Falling back ${type} type to FLOAT type for glsl1.x support for DataLayer "${name}".`);
-			type = FLOAT;
+		const intCast = DataLayer.shouldCastIntTypeAsFloat(params);
+		if (intCast) {
+			if (internalType === UNSIGNED_BYTE || internalType === BYTE) {
+				// Integers between 0 and 2048 can be exactly represented by half float (and also between −2048 and 0)
+				internalType = HALF_FLOAT;
+			} else {
+				// Integers between 0 and 16777216 can be exactly represented by float32 (also applies for negative integers between −16777216 and 0)
+				// This is sufficient for UNSIGNED_SHORT and SHORT types.
+				// Large UNSIGNED_INT and INT cannot be represented by FLOAT type.
+				if (internalType === INT || internalType === UNSIGNED_INT) {
+					
+				}
+				console.warn(`Falling back ${internalType} type to FLOAT type for glsl1.x support for DataLayer "${name}".
+Large integers with absolute value > 16,777,216 are not supported, on mobile, integers with absolute value > 2,048 may not be supported.`);
+				internalType = FLOAT;
+			}
 		}
 		// Check if float32 supported.
 		if (!isWebGL2(gl)) {
-			if (type === FLOAT) {
+			if (internalType === FLOAT) {
 				const extension = getExtension(gl, OES_TEXTURE_FLOAT, errorCallback, true);
 				if (!extension) {
 					console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for DataLayer "${name}".`);
-					type = HALF_FLOAT;
+					internalType = HALF_FLOAT;
 				}
 				// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
 				// Rendering to a floating-point texture may not be supported,
@@ -292,19 +305,19 @@ export class DataLayer {
 				// To check if this is supported, you have to call the WebGL
 				// checkFramebufferStatus() function.
 				if (writable) {
-					const valid = DataLayer.testFramebufferWrite({ gl, type, glslVersion });
-					if (!valid && type !== HALF_FLOAT) {
+					const valid = DataLayer.testFramebufferWrite({ gl, type: internalType, glslVersion });
+					if (!valid && internalType !== HALF_FLOAT) {
 						console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for DataLayer "${name}".`);
-						type = HALF_FLOAT;
+						internalType = HALF_FLOAT;
 					}
 				}
 			}
 			// Must support at least half float if using a float type.
-			if (type === HALF_FLOAT) {
+			if (internalType === HALF_FLOAT) {
 				getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback);
 				// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 				if (writable) {
-					const valid = DataLayer.testFramebufferWrite({ gl, type, glslVersion });
+					const valid = DataLayer.testFramebufferWrite({ gl, type: internalType, glslVersion });
 					if (!valid) {
 						errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 					}
@@ -313,10 +326,10 @@ export class DataLayer {
 		}
 		
 		// Load additional extensions if needed.
-		if (writable && isWebGL2(gl) && (type === HALF_FLOAT || type === FLOAT)) {
+		if (writable && isWebGL2(gl) && (internalType === HALF_FLOAT || internalType === FLOAT)) {
 			getExtension(gl, EXT_COLOR_BUFFER_FLOAT, errorCallback);
 		}
-		return type;
+		return internalType;
 	}
 
 	private static shouldCastIntTypeAsFloat(
@@ -385,7 +398,15 @@ export class DataLayer {
 				switch (glNumChannels) {
 					// TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
 					case 1:
+						if (!writable) {
+							glFormat = gl.ALPHA;
+							break;
+						}
 					case 2:
+						if (!writable) {
+							glFormat = gl.LUMINANCE_ALPHA;
+							break;
+						}
 					case 3:
 						glFormat = gl.RGB;
 						glNumChannels = 3;
@@ -579,7 +600,15 @@ export class DataLayer {
 			switch (numComponents) {
 				// TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
 				case 1:
+					if (!writable) {
+						glFormat = gl.ALPHA;
+						break;
+					}
 				case 2:
+					if (!writable) {
+						glFormat = gl.LUMINANCE_ALPHA;
+						break;
+					}
 				case 3:
 					glFormat = gl.RGB;
 					glInternalFormat = gl.RGB;

@@ -1,5 +1,9 @@
 const { setFloat16, getFloat16 } = float16;
 
+const SUCCESS = 'success';
+const ERROR = 'error';
+const WARNING = 'warning';
+
 requirejs([
 	'../../dist/index',
 ], ({ GLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3 }) => {
@@ -21,6 +25,7 @@ requirejs([
 				NUM_ELEMENTS,
 			} = options;
 			let input;
+			let NUM_EXTREMA = 0;
 			switch (TYPE) {
 				case HALF_FLOAT: {
 					input = new Float32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
@@ -33,6 +38,17 @@ requirejs([
 						setFloat16(view, 0, float32Value, true);
 						input[i] = getFloat16(view, 0, true);
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+					// Minimum positive value.
+					input[0] = 2 ** -24;
+					// Minimum negative value.
+					input[1] = -input[0];
+					// Maximum positive value.
+					input[2] = (2 - 2 ** -10) * 2 ** 15;
+					// Maximum negative value.
+					input[3] = -input[2];
 					break;
 				}
 				case FLOAT: {
@@ -41,60 +57,125 @@ requirejs([
 					for (let i = 0; i < input.length; i++) {
 						input[i] = (i - input.length / 2) * 0.1;
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+					// Minimum positive value.
+					input[0] = 2 ** -126;
+					// Minimum negative value.
+					input[1] = -input[0];
+					// Maximum positive value.
+					input[2] = (2 - 2 ** -23) * 2 ** 127;
+					// Maximum negative value.
+					input[3] = -input[2];
 					break;
 				}
 				case UNSIGNED_BYTE: {
 					input = new Uint8Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with uint8 data.
+					const MIN = 0;
+					const MAX = 2 ** 8 - 1;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % 256;
+						input[i] = i % (MAX + 1);
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// Minimum values.
+					input[0] = MIN;
+					input[1] = input[0] + 1;
+					// Maximum values.
+					input[2] = MAX;
+					input[3] = input[2] - 1;
 					break;
 				}
 				case UNSIGNED_SHORT: {
 					input = new Uint16Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with uint16 data.
-					const MAX = 2 ** 16;
+					const MIN = 0;
+					const MAX = 2 ** 16 - 1;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % MAX;
+						input[i] = i % (MAX + 1);
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// Minimum values.
+					input[0] = MIN;
+					input[1] = input[0] + 1;
+					// Maximum values.
+					input[2] = MAX;
+					input[3] = input[2] - 1;
 					break;
 				}
 				case UNSIGNED_INT: {
 					input = new Uint32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with uint32 data.
-					const MAX = 2 ** 32;
+					const MIN = 0;
+					const MAX = 2 ** 32 - 1;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % MAX;
+						input[i] = i % (MAX + 1);
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// Minimum values.
+					input[0] = MIN;
+					input[1] = input[0] + 1;
+					// Maximum values.
+					input[2] = MAX;
+					input[3] = input[2] - 1;
 					break;
 				}
 				case BYTE: {
 					input = new Int8Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int8 data.
+					const MIN = -(2 ** 7);
+					const MAX = 2 ** 7 - 1;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % 256 - 128;
+						input[i] = (i - Math.floor(input.length / 2))
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// Minimum values.
+					input[0] = MIN;
+					input[1] = input[0] + 1;
+					// Maximum values.
+					input[2] = MAX;
+					input[3] = input[2] - 1;
 					break;
 				}
 				case SHORT: {
 					input = new Int16Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int16 data.
-					const MAX = 2 ** 16;
-					const HALF = MAX / 2;
+					const MIN = -(2 ** 15);
+					const MAX = 2 ** 15 - 1;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % MAX - HALF;
+						input[i] = (i - Math.floor(input.length / 2));
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// Minimum values.
+					input[0] = MIN;
+					input[1] = input[0] + 1;
+					// Maximum values.
+					input[2] = MAX;
+					input[3] = input[2] - 1;
 					break;
 				}
 				case INT: {
 					input = new Int32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
 					// Fill with int32 data.
-					const MAX = 2 ** 32;
-					const HALF = MAX / 2;
+					const MIN = -(2 ** 31);
+					const MAX = 2 ** 31 - 1;
 					for (let i = 0; i < input.length; i++) {
-						input[i] = i % MAX - HALF;
+						input[i] = (i - Math.floor(input.length / 2));
 					}
+					// Test extrema values.
+					NUM_EXTREMA = 4;
+					// Minimum values.
+					input[0] = MIN;
+					input[1] = input[0] + 1;
+					// Maximum values.
+					input[2] = MAX;
+					input[3] = input[2] - 1;
 					break;
 				}
 				default:
@@ -118,32 +199,43 @@ requirejs([
 
 			glcompute.step(copyProgram, [dataLayer], dataLayer);
 			const output = glcompute.getValues(dataLayer);
-			
+
 			glcompute.destroy();
 
 			// Compare input and output.
 			if (input.length !== output.length) {
 				return {
-					passed: false,
+					status: ERROR,
 					error: 'Input and output arrays have unequal length.',
 				};
 			}
 			let numMismatches = 0;
+			let numExtremaMismatches = 0;
 			for (let i = 0; i < input.length; i++) {
-				if (input[i] !== output[i]) numMismatches++;
+				if (input[i] !== output[i]) {
+					if (i < NUM_EXTREMA) {
+						numExtremaMismatches++;
+					} else numMismatches++;
+				}
 			}
 			if (numMismatches) {
 				return {
-					passed: false,
+					status: ERROR,
 					error: `Input and output arrays have ${numMismatches} mismatched elements.`,
 				};
 			}
+			if (numExtremaMismatches) {
+				return {
+					status: WARNING,
+					error: `Large values not supported.`,
+				};
+			}
 			return {
-				passed: true,
+				status: SUCCESS,
 			};
 		} catch (error) {
 			return {
-				passed: false,
+				status: ERROR,
 				error: error.message,
 			};
 		}
@@ -184,8 +276,8 @@ requirejs([
 
 			// Display result on screen.
 			const resultDiv = document.createElement('div');
-			resultDiv.className = `result ${result.passed ? 'success' : 'error'}`;
-			resultDiv.innerHTML = result.passed ? 'Passed' : result.error;
+			resultDiv.className = `result ${result.status}`;
+			resultDiv.innerHTML = result.status === SUCCESS ? 'Passed' : result.error;
 			container.appendChild(resultDiv);
 		}
 	});

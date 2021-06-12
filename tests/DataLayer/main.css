@@ -16,6 +16,9 @@ canvas {
 .success {
 	background-color: lightgreen;
 }
+.warning {
+	background-color: lightyellow;
+}
 .error {
 	background-color: lightpink;
 }
