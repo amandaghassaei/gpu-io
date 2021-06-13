@@ -206,7 +206,7 @@ requirejs([
 			if (input.length !== output.length) {
 				return {
 					status: ERROR,
-					error: 'Input and output arrays have unequal length.',
+					error: `Input and output arrays have unequal length: ${input.length}, ${output.length}.`,
 				};
 			}
 			let numMismatches = 0;

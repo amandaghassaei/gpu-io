@@ -102,13 +102,12 @@ export class DataLayer {
 			errorCallback,
 		});
 		this.internalType = internalType;
+		// Set gl texture parameters.
 		const {
 			glFormat,
 			glInternalFormat,
 			glType,
 			glNumChannels,
-
-		// Set gl texture parameters.
 		} = DataLayer.getGLTextureParameters({
 			gl,
 			name,

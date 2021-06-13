@@ -774,11 +774,15 @@ can render to nextState using currentState as an input.`);
 		let values;
 		switch (internalType) {
 			case HALF_FLOAT:
-				// Firefox requires that RGBA/FLOAT is used for readPixels of float16 types.
-				glNumChannels = 4;
-				glFormat = gl.RGBA;
-				glType = gl.FLOAT;
-				values = new Float32Array(width * height * glNumChannels);
+				if (gl.FLOAT !== undefined) {
+					// Firefox requires that RGBA/FLOAT is used for readPixels of float16 types.
+					glNumChannels = 4;
+					glFormat = gl.RGBA;
+					glType = gl.FLOAT;
+					values = new Float32Array(width * height * glNumChannels);
+				} else {
+					values = new Uint16Array(width * height * glNumChannels);
+				}
 				// // The following works in Chrome.
 				// values = new Uint16Array(width * height * glNumChannels);
 				break
