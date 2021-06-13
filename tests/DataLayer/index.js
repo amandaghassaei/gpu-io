@@ -214,6 +214,7 @@ requirejs([
 			for (let i = 0; i < input.length; i++) {
 				if (input[i] !== output[i]) {
 					if (i < NUM_EXTREMA) {
+						console.log(`extrema mismatch: ${input[i]}, ${output[i]}`);
 						numExtremaMismatches++;
 					} else numMismatches++;
 				}

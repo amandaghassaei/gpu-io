@@ -913,6 +913,7 @@ can render to nextState using currentState as an input.`);
 					}
 				}
 			}
+
 			if (output.length !== OUTPUT_LENGTH) {
 				output = output.slice(0, OUTPUT_LENGTH);
 			}

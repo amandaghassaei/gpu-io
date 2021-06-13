@@ -285,7 +285,7 @@ export class DataLayer {
 					
 				}
 				console.warn(`Falling back ${internalType} type to FLOAT type for glsl1.x support for DataLayer "${name}".
-Large integers with absolute value > 16,777,216 are not supported, on mobile, integers with absolute value > 2,048 may not be supported.`);
+Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on mobile UNSIGNED_INT, INT, UNSIGNED_SHORT, and SHORT with absolute value > 2,048 may not be supported.`);
 				internalType = FLOAT;
 			}
 		}
@@ -717,7 +717,6 @@ Large integers with absolute value > 16,777,216 are not supported, on mobile, in
 	}
 
 	private validateDataArray(
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
 		_data?: DataLayerArrayType,
 	) {
 		if (!_data){
@@ -768,7 +767,7 @@ Large integers with absolute value > 16,777,216 are not supported, on mobile, in
 		// Then check if array needs to be lengthened.
 		// This could be because glNumChannels !== numComponents.
 		// Or because length !== width * height.
-		const incorrectSize = data.length < imageSize;
+		const incorrectSize = data.length !== imageSize;
 		// We have to handle the case of Float16 specially by converting data to Uint16Array.
 		const handleFloat16 = internalType === HALF_FLOAT;
 		// For webgl1.0 we may need to cast an int type to a FLOAT or HALF_FLOAT.
@@ -776,11 +775,11 @@ Large integers with absolute value > 16,777,216 are not supported, on mobile, in
 
 		if (shouldTypeCast || incorrectSize || handleFloat16) {
 			switch (internalType) {
-				case FLOAT:
-					data = new Float32Array(imageSize);
-					break;
 				case HALF_FLOAT:
 					data = new Uint16Array(imageSize);
+					break;
+				case FLOAT:
+					data = new Float32Array(imageSize);
 					break;
 				case UNSIGNED_BYTE:
 					data = new Uint8Array(imageSize);
@@ -807,10 +806,12 @@ Large integers with absolute value > 16,777,216 are not supported, on mobile, in
 			const view = handleFloat16 ? new DataView(data.buffer) : null;
 			for (let i = 0, _len = _data.length / numComponents; i < _len; i++) {
 				for (let j = 0; j < numComponents; j++) {
+					const value = _data[i * numComponents + j];
+					const index = i * glNumChannels + j;
 					if (handleFloat16) {
-						setFloat16(view!, 2 * (i * glNumChannels + j), _data[i * numComponents + j], true);
+						setFloat16(view!, 2 * index, value, true);
 					} else {
-						data[i * glNumChannels + j] = _data[i * numComponents + j];
+						data[index] = value;
 					}
 				}
 			}
@@ -838,7 +839,7 @@ Large integers with absolute value > 16,777,216 are not supported, on mobile, in
 			errorCallback,
 		} = this;
 
-		const data = this.validateDataArray(gl, _data);
+		const data = this.validateDataArray(_data);
 
 		// Init a texture for each buffer.
 		for (let i = 0; i < numBuffers; i++) {
