@@ -874,7 +874,7 @@ can render to nextState using currentState as an input.`);
 				switch (type) {
 					case HALF_FLOAT:
 					case FLOAT:
-						output = new Float32Array();
+						output = new Float32Array(OUTPUT_LENGTH);
 						break;
 					case UNSIGNED_BYTE:
 						output = new Uint8Array(OUTPUT_LENGTH);
