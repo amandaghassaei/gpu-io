@@ -6,12 +6,55 @@ body {
 canvas {
 	display: none;
 }
-.type-container {
-	padding: 10px;
+
+a, a:link, a:visited, a:hover, a:active {
+	text-decoration: none;
+	background-color: transparent;
+	color: black;
 }
 
-.result {
+.container {
+	border: solid 1px #444;
+	margin: 10px;
+}
+.label {
+	width: 20px;
+	position: relative;
+	margin: 0 5px;
+	height: 100px;
+}
+.label>div {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+}
+.rotate {
+	-moz-transform: translateX(-50%) translateY(-50%) rotate(-90deg);
+	-webkit-transform: translateX(-50%) translateY(-50%) rotate(-90deg);
+	transform:  translateX(-50%) translateY(-50%) rotate(-90deg);
+}
+.label, .container, .container>div {
+	display: inline-block;
+}
+.column-title {
+	text-align: right;
+}
+.column .entry {
+	text-align: center;
+}
+.entry {
 	padding: 5px;
+	height: 15px;
+	line-height: 15px;
+	border: solid 1px #444;
+	font-size: 14px;
+}
+.header {
+	padding-left:15px;
+	padding-right:15px;
+}
+.bold {
+	font-weight: 900;
 }
 .success {
 	background-color: lightgreen;

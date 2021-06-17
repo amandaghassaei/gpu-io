@@ -32,7 +32,7 @@ const circlePositions = new Float32Array(unitCirclePoints);
 type errorCallback = (message: string) => void;
 
 export class GLCompute {
-	private readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
+	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	readonly glslVersion!: GLSLVersion;
 	// These width and height are the current canvas at full res.
 	private width!: number;
@@ -214,6 +214,10 @@ export class GLCompute {
 		// Log number of textures available.
 		this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
 		console.log(`${this.maxNumTextures} textures max.`);
+	}
+
+	isWebGL2() {
+		return isWebGL2(this.gl);
 	}
 
 	private initVertexBuffer(

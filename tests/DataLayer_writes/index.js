@@ -6,24 +6,45 @@ const WARNING = 'warning';
 
 requirejs([
 	'../../dist/index',
-], ({ GLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3 }) => {
+	'../deps/micromodal.min',
+], (
+	{ GLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3, GLSL1, CLAMP_TO_EDGE, REPEAT, MIRROR_REPEAT, NEAREST, LINEAR },
+	MicroModal,
+) => {
 	const canvas = document.getElementById('glcanvas');
+	MicroModal.init();
 
 	// General code for testing array writes.
 	function testArrayWrites(options) {
+
+		const { 
+			TYPE,
+			DIM_X,
+			DIM_Y,
+			NUM_ELEMENTS,
+			GLSL_VERSION,
+			WRAP,
+			FILTER,
+		} = options;
+
+		const config = {
+			readwrite: true,
+			type: TYPE,
+			dimensions: `[${DIM_X}, ${DIM_Y}]`,
+			num_channels: NUM_ELEMENTS,
+			wrap: WRAP,
+			filter: FILTER,
+		};
+
 		try {
 			const glcompute = new GLCompute({
 				canvas,
 				antialias: true,
-				// glslVersion: GLSL3,
+				glslVersion: GLSL_VERSION,
 			});
+			config.webgl_version = glcompute.isWebGL2() ? 'WebGL 2' : 'WebGL 1';
+			config.glsl_version = GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3';
 
-			const { 
-				TYPE,
-				DIM_X,
-				DIM_Y,
-				NUM_ELEMENTS,
-			} = options;
 			let input;
 			let NUM_EXTREMA = 0;
 			let NUM_TYPE_EXTREMA = 0;
@@ -241,7 +262,9 @@ requirejs([
 					type: TYPE,
 					numComponents: NUM_ELEMENTS,
 					data: input,
-					filter: 'NEAREST',
+					filter: FILTER,
+					wrapS: WRAP,
+					wrapT: WRAP,
 					writable: true,
 					numBuffers: 2,
 				},
@@ -254,11 +277,25 @@ requirejs([
 
 			glcompute.destroy();
 
+			let status = SUCCESS;
+			const error = [];
+			if (dataLayer.type !== dataLayer.internalType) {
+				error.push(`Unsupported type ${dataLayer.type} for the current configuration, had to fall back to type ${dataLayer.internalType}.`);
+			}
+			if (glcompute.gl[WRAP] !== dataLayer.glWrapS || glcompute.gl[WRAP] !== dataLayer.glWrapT) {
+				const sWrap = dataLayer.glWrapS === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapS === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
+				const tWrap = dataLayer.glWrapT === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapT === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
+				error.push(`Unsupported wrap ${WRAP} for the current configuration, had to fall back to wrap [${sWrap}, ${tWrap}].`);
+			}
+
 			// Compare input and output.
 			if (input.length !== output.length) {
+				status = ERROR;
+				error.push(`Input and output arrays have unequal length: expected length ${input.length}, got length ${output.length}.`);
 				return {
-					status: ERROR,
-					error: `Input and output arrays have unequal length: expected length ${input.length}, got length ${output.length}.`,
+					status,
+					error,
+					config,
 				};
 			}
 			let numMismatches = 0;
@@ -268,7 +305,7 @@ requirejs([
 			let extremaMismatches = '';
 			for (let i = 0; i < input.length; i++) {
 				if (input[i] !== output[i]) {
-					if (i < NUM_EXTREMA) {
+					if (i >= NUM_EXTREMA - MAX_HALF_FLOAT_INT && i < NUM_EXTREMA) {
 						extremaMismatches += `expected ${input[i]}, got ${output[i]}<br/>`;
 					} else {
 						numMismatches++;
@@ -288,37 +325,105 @@ requirejs([
 				validRange = [minMatch, maxMatch];
 			}
 			if (numMismatches === input.length) {
+				status = ERROR;
+				error.push(`All elements of output array do not match input values.`);
 				return {
-					status: ERROR,
-					error: `All elements of output array do not match input values.`,
+					status,
+					error,
+					config,
 				};
 			}
 			if (numMismatches) {
+				status = WARNING;
+				error.push(`Input and output arrays have ${numMismatches} mismatched elements, valid values found in range [${validRange[0]}, ${validRange[1]}].`);
 				return {
-					status: WARNING,
-					error: `Input and output arrays have ${numMismatches} mismatched elements, valid values found in range [${validRange[0]}, ${validRange[1]}].`,
+					status,
+					error,
+					config,
 				};
 			}
 			if (extremaMismatches !== '') {
+				status = WARNING;
 				console.warn(extremaMismatches);
+				error.push(`Valid values found in range [${validRange[0]}, ${validRange[1]}], extrema not supported.`);
 				return {
-					status: WARNING,
-					error: `Valid values found in range [${validRange[0]}, ${validRange[1]}], extrema not supported.`,
+					status,
+					error,
+					config,
 				};
 			}
 			return {
-				status: SUCCESS,
+				status,
+				error,
+				config,
 			};
 		} catch (error) {
 			return {
 				status: ERROR,
-				error: error.message,
+				error: [error.message],
+				config,
 			};
 		}
 	}
 
-	const DIM_X = 1000;
-	const DIM_Y = 1000;
+	function showMoreInfo(e, result) {
+		e.preventDefault();
+		const modal = document.getElementById('modal-1-container');
+		modal.className = `${result.status} modal__container`;
+		document.getElementById('modal-1-title').innerHTML = result.status;
+		document.getElementById('modal-1-error').innerHTML = result.error.join('<br/><br/>');
+		document.getElementById('modal-1-config').innerHTML = Object.keys(result.config).map(key => `${key}: ${result.config[key]}`).join('<br/>');
+		MicroModal.show('modal-1');
+	}
+
+	function makeTitleColumn(titles, title) {
+		const container = document.createElement('div');
+		container.className = 'column-title';
+		const titleDiv = document.createElement('div');
+		titleDiv.className = 'entry';
+		titleDiv.innerHTML = title;
+		container.appendChild(titleDiv);
+		titles.forEach(title => {
+			const titleDiv = document.createElement('div');
+			titleDiv.className = 'entry bold';
+			titleDiv.innerHTML = title;
+			container.appendChild(titleDiv);
+		});
+		return container;
+	}
+
+	function makeColumn(results, title) {
+		const container = document.createElement('div');
+		container.className = 'column';
+		const titleDiv = document.createElement('div');
+		titleDiv.className = 'entry header';
+		titleDiv.innerHTML = title;
+		container.appendChild(titleDiv);
+		results.forEach(result => {
+			const element = document.createElement('div');
+			element.className = `entry result ${result.status}`;
+			if (result.status === SUCCESS) {
+				element.innerHTML = '&#10003;'
+				container.appendChild(element);
+			} else {
+				if (result.status === WARNING) {
+					element.innerHTML = '!'
+				} else if (result.states === ERROR) {
+					element.innerHTML = 'X'
+				}
+				const link = document.createElement('a');
+				link.href = '#';
+				link.onclick = (e) => showMoreInfo(e, result);
+				link.appendChild(element);
+				container.appendChild(link);
+			}
+			
+		});
+		return container;
+	}
+
+	const DIM_X = 100;
+	const DIM_Y = 100;
 
 	const output = document.getElementById('output');
 
@@ -334,27 +439,82 @@ requirejs([
 	];
 	types.forEach((TYPE) => {
 		// Create place to show results.
+		const div = document.createElement('div');
+		output.appendChild(div);
+		const label = document.createElement('div');
+		label.className = 'label bold';
+		const labelInner = document.createElement('div');
+		labelInner.className = 'rotate';
+		labelInner.innerHTML = TYPE;
+		label.appendChild(labelInner);
+		div.appendChild(label);
 		const container = document.createElement('div');
-		container.className = 'type-container';
-		output.appendChild(container);
-		const title = document.createElement('div');
-		title.innerHTML = TYPE;
-		container.appendChild(title);
+		container.className = 'container';
+		div.appendChild(container);
 
+		const rowTitles = ['R', 'RG', 'RGB', 'RGBA'];
+		container.appendChild(makeTitleColumn(rowTitles, 'channels'));
+
+		const defaultResults = [];
 		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
 			// Test array writes for type.
-			const result = testArrayWrites( {
+			defaultResults.push(testArrayWrites( {
 				TYPE,
 				DIM_X,
 				DIM_Y,
 				NUM_ELEMENTS,
-			});
-
-			// Display result on screen.
-			const resultDiv = document.createElement('div');
-			resultDiv.className = `result ${result.status}`;
-			resultDiv.innerHTML = result.status === SUCCESS ? 'Passed' : result.error;
-			container.appendChild(resultDiv);
+				GLSL_VERSION: GLSL1,
+				WRAP: CLAMP_TO_EDGE,
+				FILTER: NEAREST,
+			}));
 		}
+		container.appendChild(makeColumn(defaultResults, 'default'));
+
+		const linearResults = [];
+		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
+			// Test array writes for type.
+			linearResults.push(testArrayWrites({
+				TYPE,
+				DIM_X,
+				DIM_Y,
+				NUM_ELEMENTS,
+				GLSL_VERSION: GLSL1,
+				WRAP: CLAMP_TO_EDGE,
+				FILTER: LINEAR,
+			}));
+		}
+		container.appendChild(makeColumn(linearResults, 'LINEAR'));
+
+		const repeatResults = [];
+		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
+			// Test array writes for type.
+			repeatResults.push(testArrayWrites({
+				TYPE,
+				DIM_X,
+				DIM_Y,
+				NUM_ELEMENTS,
+				GLSL_VERSION: GLSL1,
+				WRAP: REPEAT,
+				FILTER: NEAREST,
+			}));
+		}
+		container.appendChild(makeColumn(repeatResults, 'REPEAT'));
+
+		const linearRepeatResults = [];
+		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
+			// Test array writes for type.
+			linearRepeatResults.push(testArrayWrites({
+				TYPE,
+				DIM_X,
+				DIM_Y,
+				NUM_ELEMENTS,
+				GLSL_VERSION: GLSL1,
+				WRAP: REPEAT,
+				FILTER: LINEAR,
+			}));
+		}
+		container.appendChild(makeColumn(linearRepeatResults, 'LINEAR / REPEAT'));
+
+		container.appendChild(document.createElement('br'));
 	});
 });

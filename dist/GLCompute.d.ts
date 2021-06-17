@@ -30,6 +30,7 @@ export declare class GLCompute {
         antialias?: boolean;
         glslVersion?: GLSLVersion;
     }, errorCallback?: errorCallback, renderer?: WebGLRenderer);
+    isWebGL2(): boolean;
     private initVertexBuffer;
     initProgram(params: {
         name: string;

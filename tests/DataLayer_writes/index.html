@@ -4,11 +4,27 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>glcompute - DataLayer writes</title>
-	<link rel="stylesheet" type="text/css" href="main.css">
+    <link rel="stylesheet" type="text/css" href="../deps/micromodal.css">
+	  <link rel="stylesheet" type="text/css" href="main.css">
   </head>
   <body>
 	<canvas id="glcanvas"></canvas>
   <div id="output"></div>
+  <div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div id="modal-1-container" class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
+        <header class="modal__header">
+          <h2 class="modal__title" id="modal-1-title">
+          </h2>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+        </header>
+        <main class="modal__content" id="modal-1-content">
+          <p id="modal-1-config"></p>
+          <p id="modal-1-error"></p>
+        </main>
+      </div>
+    </div>
+  </div>
   <script src="../deps/float16.js"></script>
 	<script src="../deps/require.js"></script>
 	<script src="index.js"></script>
