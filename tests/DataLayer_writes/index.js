@@ -280,12 +280,16 @@ requirejs([
 			let status = SUCCESS;
 			const error = [];
 			if (dataLayer.type !== dataLayer.internalType) {
-				error.push(`Unsupported type ${dataLayer.type} for the current configuration, had to fall back to type ${dataLayer.internalType}.`);
+				error.push(`Unsupported type ${dataLayer.type} for the current configuration, using type ${dataLayer.internalType}.`);
 			}
 			if (glcompute.gl[WRAP] !== dataLayer.glWrapS || glcompute.gl[WRAP] !== dataLayer.glWrapT) {
 				const sWrap = dataLayer.glWrapS === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapS === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
 				const tWrap = dataLayer.glWrapT === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapT === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
-				error.push(`Unsupported wrap ${WRAP} for the current configuration, had to fall back to wrap [${sWrap}, ${tWrap}].`);
+				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${sWrap}, ${tWrap}] with software polyfill.`);
+			}
+			if (glcompute.gl[FILTER] !== dataLayer.glFilter) {
+				const filter = dataLayer.glFilter === glcompute.gl[NEAREST] ? NEAREST : LINEAR;
+				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} with software polyfill.`);
 			}
 
 			// Compare input and output.
@@ -352,6 +356,7 @@ requirejs([
 					config,
 				};
 			}
+
 			return {
 				status,
 				error,
@@ -379,13 +384,15 @@ requirejs([
 	function makeTitleColumn(titles, title) {
 		const container = document.createElement('div');
 		container.className = 'column-title';
-		const titleDiv = document.createElement('div');
-		titleDiv.className = 'entry';
-		titleDiv.innerHTML = title;
-		container.appendChild(titleDiv);
+		if (title) {
+			const titleDiv = document.createElement('div');
+			titleDiv.className = 'entry';
+			titleDiv.innerHTML = title;
+			container.appendChild(titleDiv);
+		}
 		titles.forEach(title => {
 			const titleDiv = document.createElement('div');
-			titleDiv.className = 'entry bold';
+			titleDiv.className = 'entry';
 			titleDiv.innerHTML = title;
 			container.appendChild(titleDiv);
 		});
@@ -403,118 +410,138 @@ requirejs([
 			const element = document.createElement('div');
 			element.className = `entry result ${result.status}`;
 			if (result.status === SUCCESS) {
-				element.innerHTML = '&#10003;'
-				container.appendChild(element);
+				element.innerHTML = `&#10003;${result.error.length ? '*' : ''}`;
 			} else {
 				if (result.status === WARNING) {
 					element.innerHTML = '!'
-				} else if (result.states === ERROR) {
+				} else if (result.status === ERROR) {
 					element.innerHTML = 'X'
 				}
-				const link = document.createElement('a');
-				link.href = '#';
-				link.onclick = (e) => showMoreInfo(e, result);
-				link.appendChild(element);
-				container.appendChild(link);
 			}
-			
+			const link = document.createElement('a');
+			link.href = '#';
+			link.onclick = (e) => showMoreInfo(e, result);
+			link.appendChild(element);
+			container.appendChild(link);
 		});
 		return container;
 	}
 
-	const DIM_X = 100;
-	const DIM_Y = 100;
+	function makeTable(testFunction) {
+		const DIM_X = 100;
+		const DIM_Y = 100;
+	
+		const output = document.getElementById('output');
+	
+		const types = [
+			HALF_FLOAT,
+			FLOAT,
+			UNSIGNED_BYTE,
+			BYTE,
+			UNSIGNED_SHORT,
+			SHORT,
+			UNSIGNED_INT,
+			INT,
+		];
+		types.forEach((TYPE) => {
+			// Create place to show results.
+			const div = document.createElement('div');
+			output.appendChild(div);
+	
+			// Make vertical label displaying type.
+			const label = document.createElement('div');
+			label.className = 'label';
+			const labelInner = document.createElement('div');
+			labelInner.className = 'rotate bold';
+			labelInner.innerHTML = TYPE;
+			label.appendChild(labelInner);
+			div.appendChild(label);
+	
+			// Container for table.
+			const container = document.createElement('div');
+			container.className = 'container';
+			div.appendChild(container);
+	
+			const rowTitles = ['R', 'RG', 'RGB', 'RGBA'];
+			container.appendChild(makeTitleColumn(rowTitles));
+	
+			// Loop through each glsl version.
+			const glslversions = [GLSL1, GLSL3];
+			glslversions.forEach(GLSL_VERSION => {
+	
+				const outerTable = document.createElement('div');
+				outerTable.className="outerTable"
+				container.appendChild(outerTable);
+				const outerTableTitle = document.createElement('div');
+				outerTableTitle.className="outerTable-title entry"
+				outerTableTitle.innerHTML = `GLSL v${GLSL_VERSION === GLSL1 ? '1' : '3'}.x`;
+				outerTable.appendChild(outerTableTitle);
+	
+				// Loop through various settings.
+				const defaultResults = [];
+				for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
+					// Test array writes for type.
+					defaultResults.push(testFunction({
+						TYPE,
+						DIM_X,
+						DIM_Y,
+						NUM_ELEMENTS,
+						GLSL_VERSION,
+						WRAP: CLAMP_TO_EDGE,
+						FILTER: NEAREST,
+					}));
+				}
+				outerTable.appendChild(makeColumn(defaultResults, '<br/>default'));
+	
+				const linearResults = [];
+				for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
+					// Test array writes for type.
+					linearResults.push(testFunction({
+						TYPE,
+						DIM_X,
+						DIM_Y,
+						NUM_ELEMENTS,
+						GLSL_VERSION,
+						WRAP: CLAMP_TO_EDGE,
+						FILTER: LINEAR,
+					}));
+				}
+				outerTable.appendChild(makeColumn(linearResults, 'filter<br/>LINEAR'));
+	
+				const repeatResults = [];
+				for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
+					// Test array writes for type.
+					repeatResults.push(testFunction({
+						TYPE,
+						DIM_X,
+						DIM_Y,
+						NUM_ELEMENTS,
+						GLSL_VERSION,
+						WRAP: REPEAT,
+						FILTER: NEAREST,
+					}));
+				}
+				outerTable.appendChild(makeColumn(repeatResults, 'wrap<br/>REPEAT'));
+	
+				const linearRepeatResults = [];
+				for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
+					// Test array writes for type.
+					linearRepeatResults.push(testFunction({
+						TYPE,
+						DIM_X,
+						DIM_Y,
+						NUM_ELEMENTS,
+						GLSL_VERSION,
+						WRAP: REPEAT,
+						FILTER: LINEAR,
+					}));
+				}
+				outerTable.appendChild(makeColumn(linearRepeatResults, '<br/>LINEAR / REPEAT'));
+			});
+	
+			container.appendChild(document.createElement('br'));
+		});
+	}
 
-	const output = document.getElementById('output');
-
-	const types = [
-		HALF_FLOAT,
-		FLOAT,
-		UNSIGNED_BYTE,
-		BYTE,
-		UNSIGNED_SHORT,
-		SHORT,
-		UNSIGNED_INT,
-		INT,
-	];
-	types.forEach((TYPE) => {
-		// Create place to show results.
-		const div = document.createElement('div');
-		output.appendChild(div);
-		const label = document.createElement('div');
-		label.className = 'label bold';
-		const labelInner = document.createElement('div');
-		labelInner.className = 'rotate';
-		labelInner.innerHTML = TYPE;
-		label.appendChild(labelInner);
-		div.appendChild(label);
-		const container = document.createElement('div');
-		container.className = 'container';
-		div.appendChild(container);
-
-		const rowTitles = ['R', 'RG', 'RGB', 'RGBA'];
-		container.appendChild(makeTitleColumn(rowTitles, 'channels'));
-
-		const defaultResults = [];
-		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
-			// Test array writes for type.
-			defaultResults.push(testArrayWrites( {
-				TYPE,
-				DIM_X,
-				DIM_Y,
-				NUM_ELEMENTS,
-				GLSL_VERSION: GLSL1,
-				WRAP: CLAMP_TO_EDGE,
-				FILTER: NEAREST,
-			}));
-		}
-		container.appendChild(makeColumn(defaultResults, 'default'));
-
-		const linearResults = [];
-		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
-			// Test array writes for type.
-			linearResults.push(testArrayWrites({
-				TYPE,
-				DIM_X,
-				DIM_Y,
-				NUM_ELEMENTS,
-				GLSL_VERSION: GLSL1,
-				WRAP: CLAMP_TO_EDGE,
-				FILTER: LINEAR,
-			}));
-		}
-		container.appendChild(makeColumn(linearResults, 'LINEAR'));
-
-		const repeatResults = [];
-		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
-			// Test array writes for type.
-			repeatResults.push(testArrayWrites({
-				TYPE,
-				DIM_X,
-				DIM_Y,
-				NUM_ELEMENTS,
-				GLSL_VERSION: GLSL1,
-				WRAP: REPEAT,
-				FILTER: NEAREST,
-			}));
-		}
-		container.appendChild(makeColumn(repeatResults, 'REPEAT'));
-
-		const linearRepeatResults = [];
-		for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {
-			// Test array writes for type.
-			linearRepeatResults.push(testArrayWrites({
-				TYPE,
-				DIM_X,
-				DIM_Y,
-				NUM_ELEMENTS,
-				GLSL_VERSION: GLSL1,
-				WRAP: REPEAT,
-				FILTER: LINEAR,
-			}));
-		}
-		container.appendChild(makeColumn(linearRepeatResults, 'LINEAR / REPEAT'));
-
-		container.appendChild(document.createElement('br'));
-	});
+	makeTable(testArrayWrites);
 });
