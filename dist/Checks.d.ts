@@ -1,5 +1,8 @@
+export declare const validDataTypes: string[];
 export declare function isValidDataType(type: string): boolean;
+export declare const validFilterTypes: string[];
 export declare function isValidFilterType(type: string): boolean;
+export declare const validWrapTypes: string[];
 export declare function isValidWrapType(type: string): boolean;
 export declare function isNumber(value: any): boolean;
 export declare function isInteger(value: any): boolean;

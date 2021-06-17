@@ -122,7 +122,7 @@ requirejs([
 
 					const length = input.length - NUM_EXTREMA;
 					for (let i = 0; i < length; i++) {
-						input[i + NUM_EXTREMA] = i % (MAX_BYTE + 1);
+						input[i + NUM_EXTREMA] = i;
 					}
 					break;
 				}
@@ -145,7 +145,7 @@ requirejs([
 
 					const length = input.length - NUM_EXTREMA;
 					for (let i = 0; i < length; i++) {
-						input[i + NUM_EXTREMA] = i % (MAX_SHORT + 1);
+						input[i + NUM_EXTREMA] = i;
 					}
 					break;
 				}
@@ -172,7 +172,7 @@ requirejs([
 
 					const length = input.length - NUM_EXTREMA;
 					for (let i = 0; i < length; i++) {
-						input[i + NUM_EXTREMA] = i % (MAX_INT + 1);
+						input[i + NUM_EXTREMA] = i;
 					}
 					break;
 				}
@@ -279,14 +279,13 @@ requirejs([
 
 			let status = SUCCESS;
 			const error = [];
-			const typeMismatch = dataLayer.type !== dataLayer.internalType;
+			const log = [];
+			const typeMismatch =  TYPE !== dataLayer.internalType;
 			if (typeMismatch) {
-				error.push(`Unsupported type ${dataLayer.type} for the current configuration, using type ${dataLayer.internalType} internally.`);
+				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${dataLayer.internalType} internally.`);
 			}
-			if (glcompute.gl[WRAP] !== dataLayer.glWrapS || glcompute.gl[WRAP] !== dataLayer.glWrapT) {
-				const sWrap = dataLayer.glWrapS === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapS === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
-				const tWrap = dataLayer.glWrapT === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapT === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
-				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${sWrap}, ${tWrap}] internally with software polyfill.`);
+			if (WRAP !== dataLayer.internalWrapS || WRAP !== dataLayer.internalWrapT) {
+				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${dataLayer.internalWrapS}, ${dataLayer.internalWrapT}] internally with software polyfill.`);
 			}
 			if (glcompute.gl[FILTER] !== dataLayer.glFilter) {
 				const filter = dataLayer.glFilter === glcompute.gl[NEAREST] ? NEAREST : LINEAR;
@@ -299,6 +298,7 @@ requirejs([
 				error.push(`Input and output arrays have unequal length: expected length ${input.length}, got length ${output.length}.`);
 				return {
 					status,
+					log,
 					error,
 					config,
 				};
@@ -326,6 +326,7 @@ requirejs([
 				error.push(`All elements of output array do not match input values.`);
 				return {
 					status,
+					log,
 					error,
 					config,
 				};
@@ -333,6 +334,7 @@ requirejs([
 
 			const extremaSupported = typeExtremaSupported && floatExtremaSupported && halfFloatExtremaSupported;
 			if (
+				numMismatches || // Any (non-extrema) mismatches found.
 				!halfFloatExtremaSupported || // Half float extrema should always be supported.
 				(!floatExtremaSupported && dataLayer.internalType !== HALF_FLOAT) || // Float extrema should always be supported unless using half float type.
 				(!extremaSupported && !typeMismatch) // Extrema should be supported if using correct internal type.
@@ -341,11 +343,13 @@ requirejs([
 				error.push(`Input and output arrays contain mismatched elements.`);
 				return {
 					status,
+					log,
 					error,
 					config,
 				};
 			}
 			
+			// Check int support.
 			if (
 				typeMismatch &&
 				(TYPE === UNSIGNED_BYTE || TYPE === BYTE || TYPE === UNSIGNED_SHORT || TYPE === SHORT || TYPE === UNSIGNED_INT || TYPE === INT) &&
@@ -359,13 +363,11 @@ requirejs([
 				}
 				status = WARNING;
 				error.push(`Internal data type ${dataLayer.internalType} supports integers in range ${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")}.  Current type ${TYPE} contains integers in range ${input[0].toLocaleString("en-US")} to ${input[2].toLocaleString("en-US")}.`);
-			} else if (numMismatches || !extremaSupported) {
-				status = ERROR;
-				error.push(`Input and output arrays contain mismatched elements.`);
 			}
 
 			return {
 				status,
+				log,
 				error,
 				config,
 			};
@@ -383,7 +385,7 @@ requirejs([
 		const modal = document.getElementById('modal-1-container');
 		modal.className = `${result.status} modal__container`;
 		document.getElementById('modal-1-title').innerHTML = result.status;
-		document.getElementById('modal-1-error').innerHTML = result.error.join('<br/><br/>');
+		document.getElementById('modal-1-error').innerHTML = `${result.log.length ? result.log.join('<br/><br/>') + '<br/><br/>' : ''} ${result.error.join('<br/><br/>')}`;
 		document.getElementById('modal-1-config').innerHTML = Object.keys(result.config).map(key => `${key}: ${result.config[key]}`).join('<br/>');
 		MicroModal.show('modal-1');
 	}
@@ -435,8 +437,9 @@ requirejs([
 	}
 
 	function makeTable(testFunction) {
-		const DIM_X = 100;
-		const DIM_Y = 100;
+		// To make things simpler, keep DIM_X * DIMY < 256.
+		const DIM_X = 10;
+		const DIM_Y = 10;
 	
 		const output = document.getElementById('output');
 	

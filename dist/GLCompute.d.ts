@@ -4,7 +4,7 @@ import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 declare type errorCallback = (message: string) => void;
 export declare class GLCompute {
-    private readonly gl;
+    readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     readonly glslVersion: GLSLVersion;
     private width;
     private height;

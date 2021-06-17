@@ -1,5 +1,5 @@
 import { setFloat16 } from '@petamoriken/float16';
-import { isPositiveInteger, isValidDataType, isValidFilterType } from './Checks';
+import { isPositiveInteger, isValidDataType, isValidFilterType, isValidWrapType, validDataTypes, validFilterTypes, validWrapTypes } from './Checks';
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
 	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT, MIRRORED_REPEAT,
@@ -40,8 +40,13 @@ export class DataLayer {
 	// DataLayer settings.
 	readonly type: DataLayerType; // Input type passed in during setup.
 	readonly internalType: DataLayerType; // Type that corresponds to glType, may be different from type.
+	readonly wrapS: DataLayerWrapType; // Input wrap type passed in during setup.
+	readonly wrapT: DataLayerWrapType; // Input wrap type passed in during setup.
+	readonly internalWrapS: DataLayerWrapType; // Wrap type that corresponds to glWrapS, may be different from wrapS.
+	readonly internalWrapT: DataLayerWrapType; // Wrap type that corresponds to glWrapT, may be different from wrapT.
 	readonly numComponents: DataLayerNumComponents; // Number of RGBA channels to use for this DataLayer.
 	readonly filter: DataLayerFilterType; // Interpolation filter type of data.
+	readonly internalFilter: DataLayerFilterType; // Filter type that corresponds to glFilter, may be different from filter.
 	readonly writable: boolean;
 
 	// GL variables (these may be different from their corresponding non-gl parameters).
@@ -49,9 +54,9 @@ export class DataLayer {
 	readonly glFormat: number;
 	readonly glType: number;
 	readonly glNumChannels: number;
-	readonly glFilter: number;
 	readonly glWrapS: number;
 	readonly glWrapT: number;
+	readonly glFilter: number;
 
 	constructor(
 		params: {
@@ -89,8 +94,7 @@ export class DataLayer {
 
 		// Set data type.
 		if (!isValidDataType(type)) {
-			const validTypes = [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT];
-			throw new Error(`Invalid type ${type} for DataLayer "${name}", must be one of ${validTypes.join(', ')}.`);
+			throw new Error(`Invalid type ${type} for DataLayer "${name}", must be one of ${validDataTypes.join(', ')}.`);
 		}
 		this.type = type;
 		const internalType = DataLayer.getInternalType({
@@ -138,16 +142,27 @@ export class DataLayer {
 		// Else default to LINEAR (interpolation) filtering.
 		const filter = params.filter !== undefined ? params.filter : (length ? NEAREST : LINEAR);
 		if (!isValidFilterType(filter)) {
-			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${LINEAR} or ${NEAREST}.`);
+			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${validFilterTypes.join(', ')}.`);
 		}
 		this.filter = filter;
-		this.glFilter = DataLayer.getGLFilter({ gl, filter, internalType, name, errorCallback });
+		this.internalFilter = DataLayer.getInternalFilter({ gl, filter, internalType, name, errorCallback });
+		this.glFilter = gl[this.internalFilter];
 
 		// Get wrap types, default to clamp to edge.
 		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
-		this.glWrapS = DataLayer.getGLWrap({ gl, wrap: wrapS, internalType, name });
+		if (!isValidWrapType(wrapS)) {
+			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		}
+		this.wrapS = wrapS;
+		this.internalWrapS = DataLayer.getInternalWrap({ gl, wrap: wrapS, internalType, name });
+		this.glWrapS = gl[this.internalWrapS];
 		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
-		this.glWrapT = DataLayer.getGLWrap({ gl, wrap: wrapT, internalType, name });
+		if (!isValidWrapType(wrapT)) {
+			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		}
+		this.wrapT = wrapT;
+		this.internalWrapT = DataLayer.getInternalWrap({ gl, wrap: wrapT, internalType, name });
+		this.glWrapT = gl[this.internalWrapT];
 
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -188,7 +203,7 @@ export class DataLayer {
 		return { width, height, length };
 	}
 
-	private static getGLWrap(
+	private static getInternalWrap(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			wrap: DataLayerWrapType,
@@ -199,11 +214,11 @@ export class DataLayer {
 		const { gl, wrap, internalType, name } = params;
 		// Webgl2.0 supports all combinations of types and filtering.
 		if (isWebGL2(gl)) {
-			return gl[wrap];
+			return wrap;
 		}
 		// CLAMP_TO_EDGE is always supported.
 		if (wrap === CLAMP_TO_EDGE) {
-			return gl[wrap];
+			return wrap;
 		}
 		if (internalType === FLOAT || internalType === HALF_FLOAT) {
 			// TODO: we may want to handle this in the frag shader.
@@ -217,12 +232,12 @@ export class DataLayer {
             // 'texture complete', or it is a float/half-float type with linear filtering and
             // without the relevant float/half-float linear extension enabled.
 			console.warn(`Falling back to CLAMP_TO_EDGE wrapping for DataLayer "${name}".`);
-			return gl[CLAMP_TO_EDGE];
+			return CLAMP_TO_EDGE;
 		}
-		return gl[wrap];
+		return wrap;
 	}
 
-	private static getGLFilter(
+	private static getInternalFilter(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			filter: DataLayerFilterType,
@@ -235,7 +250,7 @@ export class DataLayer {
 		let { filter } = params;
 		if (filter === NEAREST) {
 			// NEAREST filtering is always supported.
-			return gl[filter];
+			return filter;
 		}
 
 		if (internalType === HALF_FLOAT) {
@@ -255,7 +270,7 @@ export class DataLayer {
 				filter = NEAREST;
 			}
 		}
-		return gl[filter];
+		return filter;
 	}
 
 	private static getInternalType(

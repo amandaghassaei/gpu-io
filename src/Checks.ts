@@ -4,32 +4,19 @@ import {
 	REPEAT, CLAMP_TO_EDGE, MIRRORED_REPEAT, INT_1D_UNIFORM,
 } from './Constants';
 
+export const validDataTypes = [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT];
 export function isValidDataType(type: string) {
-	return (
-		type === HALF_FLOAT ||
-		type === FLOAT ||
-		type === UNSIGNED_BYTE ||
-		type === BYTE ||
-		type === UNSIGNED_SHORT ||
-		type === SHORT ||
-		type === UNSIGNED_INT ||
-		type === INT
-	);
+	return validDataTypes.indexOf(type) > -1;
 }
 
+export const validFilterTypes = [LINEAR, NEAREST];
 export function isValidFilterType(type: string) {
-	return (
-		type === LINEAR ||
-		type === NEAREST
-	);
+	return validFilterTypes.indexOf(type) > -1;
 }
 
+export const validWrapTypes = [CLAMP_TO_EDGE, REPEAT, MIRRORED_REPEAT];
 export function isValidWrapType(type: string) {
-	return (
-		type === REPEAT ||
-		type === CLAMP_TO_EDGE ||
-		type === MIRRORED_REPEAT
-	);
+	return validWrapTypes.indexOf(type) > -1;
 }
 
 export function isNumber(value: any) {

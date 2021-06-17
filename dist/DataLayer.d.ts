@@ -16,16 +16,21 @@ export declare class DataLayer {
     private height;
     readonly type: DataLayerType;
     readonly internalType: DataLayerType;
+    readonly wrapS: DataLayerWrapType;
+    readonly wrapT: DataLayerWrapType;
+    readonly internalWrapS: DataLayerWrapType;
+    readonly internalWrapT: DataLayerWrapType;
     readonly numComponents: DataLayerNumComponents;
     readonly filter: DataLayerFilterType;
+    readonly internalFilter: DataLayerFilterType;
     readonly writable: boolean;
     readonly glInternalFormat: number;
     readonly glFormat: number;
     readonly glType: number;
     readonly glNumChannels: number;
-    readonly glFilter: number;
     readonly glWrapS: number;
     readonly glWrapT: number;
+    readonly glFilter: number;
     constructor(params: {
         gl: WebGLRenderingContext | WebGL2RenderingContext;
         name: string;
@@ -42,8 +47,8 @@ export declare class DataLayer {
         errorCallback: ErrorCallback;
     });
     private static calcSize;
-    private static getGLWrap;
-    private static getGLFilter;
+    private static getInternalWrap;
+    private static getInternalFilter;
     private static getInternalType;
     private static shouldCastIntTypeAsFloat;
     private static getGLTextureParameters;
