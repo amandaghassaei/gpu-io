@@ -279,17 +279,18 @@ requirejs([
 
 			let status = SUCCESS;
 			const error = [];
-			if (dataLayer.type !== dataLayer.internalType) {
-				error.push(`Unsupported type ${dataLayer.type} for the current configuration, using type ${dataLayer.internalType}.`);
+			const typeMismatch = dataLayer.type !== dataLayer.internalType;
+			if (typeMismatch) {
+				error.push(`Unsupported type ${dataLayer.type} for the current configuration, using type ${dataLayer.internalType} internally.`);
 			}
 			if (glcompute.gl[WRAP] !== dataLayer.glWrapS || glcompute.gl[WRAP] !== dataLayer.glWrapT) {
 				const sWrap = dataLayer.glWrapS === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapS === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
 				const tWrap = dataLayer.glWrapT === glcompute.gl[CLAMP_TO_EDGE] ? CLAMP_TO_EDGE : (dataLayer.glWrapT === glcompute.gl[REPEAT] ? REPEAT : MIRROR_REPEAT);
-				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${sWrap}, ${tWrap}] with software polyfill.`);
+				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${sWrap}, ${tWrap}] internally with software polyfill.`);
 			}
 			if (glcompute.gl[FILTER] !== dataLayer.glFilter) {
 				const filter = dataLayer.glFilter === glcompute.gl[NEAREST] ? NEAREST : LINEAR;
-				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} with software polyfill.`);
+				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally with software polyfill.`);
 			}
 
 			// Compare input and output.
@@ -303,31 +304,23 @@ requirejs([
 				};
 			}
 			let numMismatches = 0;
-			let minMatch = Infinity;
-			let maxMatch = -Infinity;
-			let validRange = [0, 0];
-			let extremaMismatches = '';
+			let typeExtremaSupported = true;
+			let floatExtremaSupported = true;
+			let halfFloatExtremaSupported = true;
 			for (let i = 0; i < input.length; i++) {
 				if (input[i] !== output[i]) {
-					if (i >= NUM_EXTREMA - MAX_HALF_FLOAT_INT && i < NUM_EXTREMA) {
-						extremaMismatches += `expected ${input[i]}, got ${output[i]}<br/>`;
+					if (i < NUM_TYPE_EXTREMA) {
+						typeExtremaSupported = false;
+					} else if (i < NUM_TYPE_EXTREMA + NUM_FLOAT_INT_EXTREMA) {
+						floatExtremaSupported = false;
+					} else if (i < NUM_TYPE_EXTREMA + NUM_FLOAT_INT_EXTREMA + NUM_HALF_FLOAT_INT_EXTREMA) {
+						halfFloatExtremaSupported = false;
 					} else {
 						numMismatches++;
-						// Reset range calculation.
-						if (maxMatch !== Infinity && maxMatch - minMatch > validRange[1] - validRange[0]) {
-							validRange = [minMatch, maxMatch];
-							minMatch = Infinity;
-							maxMatch = -Infinity;
-						}
 					}
-				} else if (i >= NUM_EXTREMA) {
-					minMatch = Math.min(output[i], minMatch);
-					maxMatch = Math.max(output[i], maxMatch);
 				}
 			}
-			if (maxMatch !== Infinity && maxMatch - minMatch > validRange[1] - validRange[0]) {
-				validRange = [minMatch, maxMatch];
-			}
+			
 			if (numMismatches === input.length) {
 				status = ERROR;
 				error.push(`All elements of output array do not match input values.`);
@@ -337,24 +330,38 @@ requirejs([
 					config,
 				};
 			}
-			if (numMismatches) {
-				status = WARNING;
-				error.push(`Input and output arrays have ${numMismatches} mismatched elements, valid values found in range [${validRange[0]}, ${validRange[1]}].`);
+
+			const extremaSupported = typeExtremaSupported && floatExtremaSupported && halfFloatExtremaSupported;
+			if (
+				!halfFloatExtremaSupported || // Half float extrema should always be supported.
+				(!floatExtremaSupported && dataLayer.internalType !== HALF_FLOAT) || // Float extrema should always be supported unless using half float type.
+				(!extremaSupported && !typeMismatch) // Extrema should be supported if using correct internal type.
+			) {
+				status = ERROR;
+				error.push(`Input and output arrays contain mismatched elements.`);
 				return {
 					status,
 					error,
 					config,
 				};
 			}
-			if (extremaMismatches !== '') {
+			
+			if (
+				typeMismatch &&
+				(TYPE === UNSIGNED_BYTE || TYPE === BYTE || TYPE === UNSIGNED_SHORT || TYPE === SHORT || TYPE === UNSIGNED_INT || TYPE === INT) &&
+				!typeExtremaSupported
+			) {
+				let min = MIN_HALF_FLOAT_INT;
+				let max = MAX_HALF_FLOAT_INT;
+				if (dataLayer.internalType === FLOAT) {
+					min = MIN_FLOAT_INT;
+					max = MAX_FLOAT_INT;
+				}
 				status = WARNING;
-				console.warn(extremaMismatches);
-				error.push(`Valid values found in range [${validRange[0]}, ${validRange[1]}], extrema not supported.`);
-				return {
-					status,
-					error,
-					config,
-				};
+				error.push(`Internal data type ${dataLayer.internalType} supports integers in range ${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")}.  Current type ${TYPE} contains integers in range ${input[0].toLocaleString("en-US")} to ${input[2].toLocaleString("en-US")}.`);
+			} else if (numMismatches || !extremaSupported) {
+				status = ERROR;
+				error.push(`Input and output arrays contain mismatched elements.`);
 			}
 
 			return {
@@ -474,7 +481,7 @@ requirejs([
 				container.appendChild(outerTable);
 				const outerTableTitle = document.createElement('div');
 				outerTableTitle.className="outerTable-title entry"
-				outerTableTitle.innerHTML = `GLSL v${GLSL_VERSION === GLSL1 ? '1' : '3'}.x`;
+				outerTableTitle.innerHTML = `GLSL v${GLSL_VERSION === GLSL1 ? '1' : '3'}`;
 				outerTable.appendChild(outerTableTitle);
 	
 				// Loop through various settings.
