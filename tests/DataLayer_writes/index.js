@@ -79,13 +79,17 @@ requirejs([
 					NUM_EXTREMA = 4;
 					// https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 					// Minimum positive value.
-					input[0] = 2 ** -24;
+					setFloat16(view, 0,  2 ** -24, true);
+					input[0] = getFloat16(view, 0, true);
 					// Minimum negative value.
-					input[1] = -input[0];
+					setFloat16(view, 0,  -(2 ** -24), true);
+					input[1] = getFloat16(view, 0, true);
 					// Maximum positive value.
-					input[2] = (2 - 2 ** -10) * 2 ** 15;
+					setFloat16(view, 0,  (2 - 2 ** -10) * 2 ** 15, true);
+					input[2] = getFloat16(view, 0, true);
 					// Maximum negative value.
-					input[3] = -input[2];
+					setFloat16(view, 0,  -(2 - 2 ** -10) * 2 ** 15, true);
+					input[3] = getFloat16(view, 0, true);
 					break;
 				}
 				case FLOAT: {
