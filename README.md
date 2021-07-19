@@ -1,4 +1,4 @@
-# glcompute
+# webgl-compute
 
 GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of spatially-distributed state (such as 2D physics simulations, differential equations, or cellular automata).  It also includes an interface for performing operations on large 1D arrays of data (via a fragment shader implementation).
 
@@ -10,11 +10,11 @@ This library supports rendering directly to the screen.  It also has some built-
  
  To install:
 
-`npm install github:amandaghassaei/glcompute`
+`npm install github:amandaghassaei/webgl-compute`
 
 Because this repo is under active development, you may also want to include a specific commit in your install:
 
-`npm install github:amandaghassaei/glcompute#d6c75dd`
+`npm install github:amandaghassaei/webgl-compute#d6c75dd`
 
 ## Examples
 
@@ -29,16 +29,16 @@ Currently, this library can run in a separate webgl context from threejs with no
 ```
 const renderer = new WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff on top
-// of things rendered to the screen from glcompute.
+// of things rendered to the screen from webgl-compute.
 renderer.autoClear = false;
 
 const gl = renderer.getContext();
 const canvas = renderer.domElement;
 
-const glcompute = GLCompute.initWithThreeRenderer(renderer);
+const glcompute = WegGLCompute.initWithThreeRenderer(renderer);
 ```
 
-To use the output from a glcompute DataLayer to a Threejs Texture:
+To use the output from a webgl-compute DataLayer to a Threejs Texture:
 
 ```
 const dataLayer = glcompute.initDataLayer({
@@ -76,7 +76,7 @@ const mesh = new Mesh(
 // Updates to dataLayer will propagate to mesh map without any additional needsUpdate flags.
 ```
 
-More info about using glcompute to update mesh positions data is coming soon.
+More info about using webgl-compute to update mesh positions data is coming soon.
 
 ## References
 
@@ -98,7 +98,7 @@ npm run build
 
 ## Testing
 
-I've included a few html pages for testing various functions of this library in the browser.  An index of these tests is current hosted at [apps.amandaghassaei.com/glcompute/tests/](http://apps.amandaghassaei.com/glcompute/tests/).
+I've included a few html pages for testing various functions of this library in the browser.  An index of these tests is current hosted at [apps.amandaghassaei.com/webgl-compute/tests/](http://apps.amandaghassaei.com/webgl-compute/tests/).
 
 To run these tests locally:
 

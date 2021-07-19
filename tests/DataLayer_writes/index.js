@@ -8,7 +8,7 @@ requirejs([
 	'../../dist/index',
 	'../deps/micromodal.min',
 ], (
-	{ GLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3, GLSL1, CLAMP_TO_EDGE, REPEAT, MIRROR_REPEAT, NEAREST, LINEAR },
+	{ WebGLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3, GLSL1, CLAMP_TO_EDGE, REPEAT, MIRROR_REPEAT, NEAREST, LINEAR },
 	MicroModal,
 ) => {
 	const canvas = document.getElementById('glcanvas');
@@ -37,7 +37,7 @@ requirejs([
 		};
 
 		try {
-			const glcompute = new GLCompute({
+			const glcompute = new WebGLCompute({
 				canvas,
 				antialias: true,
 				glslVersion: GLSL_VERSION,
@@ -285,11 +285,11 @@ requirejs([
 				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${dataLayer.internalType} internally.`);
 			}
 			if (WRAP !== dataLayer.internalWrapS || WRAP !== dataLayer.internalWrapT) {
-				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${dataLayer.internalWrapS}, ${dataLayer.internalWrapT}] internally with software polyfill.`);
+				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${dataLayer.internalWrapS}, ${dataLayer.internalWrapT}] internally.`);
 			}
 			if (glcompute.gl[FILTER] !== dataLayer.glFilter) {
 				const filter = dataLayer.glFilter === glcompute.gl[NEAREST] ? NEAREST : LINEAR;
-				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally with software polyfill.`);
+				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally.`);
 			}
 
 			// Compare input and output.
@@ -303,12 +303,14 @@ requirejs([
 					config,
 				};
 			}
-			let numMismatches = 0;
+			let numNonExtremaMismatches = 0;
 			let typeExtremaSupported = true;
 			let floatExtremaSupported = true;
 			let halfFloatExtremaSupported = true;
+			let allMismatches = [];
 			for (let i = 0; i < input.length; i++) {
 				if (input[i] !== output[i]) {
+					allMismatches.push([input[i], output[i]]);
 					if (i < NUM_TYPE_EXTREMA) {
 						typeExtremaSupported = false;
 					} else if (i < NUM_TYPE_EXTREMA + NUM_FLOAT_INT_EXTREMA) {
@@ -316,12 +318,12 @@ requirejs([
 					} else if (i < NUM_TYPE_EXTREMA + NUM_FLOAT_INT_EXTREMA + NUM_HALF_FLOAT_INT_EXTREMA) {
 						halfFloatExtremaSupported = false;
 					} else {
-						numMismatches++;
+						numNonExtremaMismatches++;
 					}
 				}
 			}
 			
-			if (numMismatches === input.length) {
+			if (allMismatches.length === input.length) {
 				status = ERROR;
 				error.push(`All elements of output array do not match input values.`);
 				return {
@@ -334,13 +336,13 @@ requirejs([
 
 			const extremaSupported = typeExtremaSupported && floatExtremaSupported && halfFloatExtremaSupported;
 			if (
-				numMismatches || // Any (non-extrema) mismatches found.
+				numNonExtremaMismatches || // Any (non-extrema) mismatches found.
 				!halfFloatExtremaSupported || // Half float extrema should always be supported.
 				(!floatExtremaSupported && dataLayer.internalType !== HALF_FLOAT) || // Float extrema should always be supported unless using half float type.
 				(!extremaSupported && !typeMismatch) // Extrema should be supported if using correct internal type.
 			) {
 				status = ERROR;
-				error.push(`Input and output arrays contain mismatched elements.`);
+				error.push(`Input and output arrays contain mismatched elements:/n${allMismatches.join('/n')}.`);
 				return {
 					status,
 					log,

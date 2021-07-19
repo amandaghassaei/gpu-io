@@ -771,7 +771,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				invalidTypeFound = invalidTypeFound || _data.constructor !== Int32Array;
 				break;
 			default:
-				throw new Error(`Error initing DataLayer "${name}".  Unsupported type "${type}" for GLCompute.initDataLayer.`);
+				throw new Error(`Error initing DataLayer "${name}".  Unsupported type "${type}" for WebGLCompute.initDataLayer.`);
 		}
 		if (invalidTypeFound) {
 			throw new Error(`Invalid TypedArray of type ${(_data.constructor as any).name} supplied to DataLayer "${name}" of type "${type}".`);
@@ -815,7 +815,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 					data = new Int32Array(imageSize);
 					break;
 			default:
-					throw new Error(`Error initing ${name}.  Unsupported internalType ${internalType} for GLCompute.initDataLayer.`);
+					throw new Error(`Error initing ${name}.  Unsupported internalType ${internalType} for WebGLCompute.initDataLayer.`);
 			}
 			// Fill new data array with old data.
 			const view = handleFloat16 ? new DataView(data.buffer) : null;

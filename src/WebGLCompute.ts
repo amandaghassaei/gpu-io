@@ -31,7 +31,7 @@ const circlePositions = new Float32Array(unitCirclePoints);
 
 type errorCallback = (message: string) => void;
 
-export class GLCompute {
+export class WebGLCompute {
 	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	readonly glslVersion!: GLSLVersion;
 	// These width and height are the current canvas at full res.
@@ -63,7 +63,7 @@ export class GLCompute {
 		},
 		errorCallback?: errorCallback,
 	) {
-		return new GLCompute(
+		return new WebGLCompute(
 			{
 				canvas: renderer.domElement,
 				context: renderer.getContext(),
@@ -90,7 +90,7 @@ export class GLCompute {
 		const validKeys = ['canvas', 'context', 'antialias', 'glslVersion'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to GLcompute.constructor.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.constructor.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		// Save callback in case we run into an error.
@@ -254,7 +254,7 @@ export class GLCompute {
 		const validKeys = ['name', 'fragmentShader', 'vertexShader', 'uniforms', 'defines'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to GLcompute.initProgram.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initProgram.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { gl, errorCallback, defaultVertexShader } = this;
@@ -286,7 +286,7 @@ export class GLCompute {
 		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'data', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to GLcompute.initDataLayer.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initDataLayer.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { gl, errorCallback, glslVersion } = this;
@@ -302,7 +302,7 @@ export class GLCompute {
 		url: string,
 	) {
 		if (!isString(url)) {
-			throw new Error(`Expected GLCompute.initTexture to have argument of type string, got ${url} of type ${typeof url}.`)
+			throw new Error(`Expected WebGLCompute.initTexture to have argument of type string, got ${url} of type ${typeof url}.`)
 		}
 		const { gl, errorCallback } = this;
 		const texture = gl.createTexture();
@@ -418,7 +418,7 @@ export class GLCompute {
 			case INT:
 				return this.copyIntProgram;
 			default:
-				throw new Error(`Invalid type: ${type} passed to GLCompute.copyProgramForType.`);
+				throw new Error(`Invalid type: ${type} passed to WebGLCompute.copyProgramForType.`);
 		}
 	}
 
@@ -938,7 +938,7 @@ can render to nextState using currentState as an input.`);
 
 	attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture) {
 		if (!this.renderer) {
-			throw new Error('GLCompute was not inited with a renderer.');
+			throw new Error('WebGLCompute was not inited with a renderer.');
 		}
 		// Link webgl texture to threejs object.
 		// This is not officially supported.
@@ -953,7 +953,7 @@ can render to nextState using currentState as an input.`);
 
 	resetThreeState() {
 		if (!this.renderer) {
-			throw new Error('GLCompute was not inited with a renderer.');
+			throw new Error('WebGLCompute was not inited with a renderer.');
 		}
 		const { gl } = this;
 		// Reset viewport.

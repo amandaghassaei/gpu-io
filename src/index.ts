@@ -1,4 +1,4 @@
-import { GLCompute } from './GLCompute';
+import { WebGLCompute } from './WebGLCompute';
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
 	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT, MIRRORED_REPEAT,
@@ -11,7 +11,7 @@ import {
 // const ZeroFragmentShader = require('./kernels_1.0/ZeroFragShader.glsl');
 
 export {
-	GLCompute,
+	WebGLCompute,
 	HALF_FLOAT,
 	FLOAT,
 	UNSIGNED_BYTE,
