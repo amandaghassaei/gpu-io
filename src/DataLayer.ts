@@ -220,18 +220,17 @@ export class DataLayer {
 		if (wrap === CLAMP_TO_EDGE) {
 			return wrap;
 		}
-		if (internalType === FLOAT || internalType === HALF_FLOAT) {
+		if (!isWebGL2(gl)) {
 			// TODO: we may want to handle this in the frag shader.
-			// REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 float textures in safari.
+			// REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 textures in safari.
 			// I've tested this and it seems that some power of 2 textures will work (512 x 512),
 			// but not others (1024x1024), so let's just change all WebGL 1.0 to CLAMP.
-			// TODO: test for this more thoroughly.
 			// Without this, we currently get an error at drawArrays():
-            // WebGL: drawArrays: texture bound to texture unit 0 is not renderable.
+            // "WebGL: drawArrays: texture bound to texture unit 0 is not renderable.
             // It maybe non-power-of-2 and have incompatible texture filtering or is not
             // 'texture complete', or it is a float/half-float type with linear filtering and
-            // without the relevant float/half-float linear extension enabled.
-			console.warn(`Falling back to CLAMP_TO_EDGE wrapping for DataLayer "${name}".`);
+            // without the relevant float/half-float linear extension enabled."
+			console.warn(`Falling back to CLAMP_TO_EDGE wrapping for DataLayer "${name}" for WebGL 1.`);
 			return CLAMP_TO_EDGE;
 		}
 		return wrap;
