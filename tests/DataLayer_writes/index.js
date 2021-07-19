@@ -342,7 +342,7 @@ requirejs([
 				(!extremaSupported && !typeMismatch) // Extrema should be supported if using correct internal type.
 			) {
 				status = ERROR;
-				error.push(`Input and output arrays contain mismatched elements:/n${allMismatches.join('/n')}.`);
+				error.push(`Input and output arrays contain mismatched elements:\n${allMismatches.join('\n')}.`);
 				return {
 					status,
 					log,
