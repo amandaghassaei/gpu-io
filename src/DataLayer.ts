@@ -92,6 +92,38 @@ export class DataLayer {
 		const writable = !!params.writable;
 		this.writable = writable;
 
+		// Set dimensions, may be 1D or 2D.
+		const { length, width, height } = DataLayer.calcSize(dimensions, name);
+		this.length = length;
+		if (!isPositiveInteger(width)) {
+			throw new Error(`Invalid width ${width} for DataLayer "${name}".`);
+		}
+		this.width = width;
+		if (!isPositiveInteger(height)) {
+			throw new Error(`Invalid length ${height} for DataLayer "${name}".`);
+		}
+		this.height = height;
+
+		// Set filtering - if we are processing a 1D array, default to NEAREST filtering.
+		// Else default to LINEAR (interpolation) filtering.
+		const filter = params.filter !== undefined ? params.filter : (length ? NEAREST : LINEAR);
+		if (!isValidFilterType(filter)) {
+			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${validFilterTypes.join(', ')}.`);
+		}
+		this.filter = filter;
+
+		// Get wrap types, default to clamp to edge.
+		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
+		if (!isValidWrapType(wrapS)) {
+			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		}
+		this.wrapS = wrapS;
+		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
+		if (!isValidWrapType(wrapT)) {
+			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		}
+		this.wrapT = wrapT;
+
 		// Set data type.
 		if (!isValidDataType(type)) {
 			throw new Error(`Invalid type ${type} for DataLayer "${name}", must be one of ${validDataTypes.join(', ')}.`);
@@ -102,6 +134,7 @@ export class DataLayer {
 			type,
 			glslVersion,
 			writable,
+			filter,
 			name,
 			errorCallback,
 		});
@@ -126,42 +159,12 @@ export class DataLayer {
 		this.glType = glType;
 		this.glNumChannels = glNumChannels;
 
-		// Set dimensions, may be 1D or 2D.
-		const { length, width, height } = DataLayer.calcSize(dimensions, name);
-		this.length = length;
-		if (!isPositiveInteger(width)) {
-			throw new Error(`Invalid width ${width} for DataLayer "${name}".`);
-		}
-		this.width = width;
-		if (!isPositiveInteger(height)) {
-			throw new Error(`Invalid length ${height} for DataLayer "${name}".`);
-		}
-		this.height = height;
-
-		// Set filtering - if we are processing a 1D array, default to NEAREST filtering.
-		// Else default to LINEAR (interpolation) filtering.
-		const filter = params.filter !== undefined ? params.filter : (length ? NEAREST : LINEAR);
-		if (!isValidFilterType(filter)) {
-			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${validFilterTypes.join(', ')}.`);
-		}
-		this.filter = filter;
+		// Set internal filtering/wrap types.
 		this.internalFilter = DataLayer.getInternalFilter({ gl, filter, internalType, name, errorCallback });
 		this.glFilter = gl[this.internalFilter];
-
-		// Get wrap types, default to clamp to edge.
-		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
-		if (!isValidWrapType(wrapS)) {
-			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
-		}
-		this.wrapS = wrapS;
-		this.internalWrapS = DataLayer.getInternalWrap({ gl, wrap: wrapS, internalType, name });
+		this.internalWrapS = DataLayer.getInternalWrap({ gl, wrap: wrapS, name });
 		this.glWrapS = gl[this.internalWrapS];
-		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
-		if (!isValidWrapType(wrapT)) {
-			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
-		}
-		this.wrapT = wrapT;
-		this.internalWrapT = DataLayer.getInternalWrap({ gl, wrap: wrapT, internalType, name });
+		this.internalWrapT = DataLayer.getInternalWrap({ gl, wrap: wrapT, name });
 		this.glWrapT = gl[this.internalWrapT];
 
 		// Num buffers is the number of states to store for this data.
@@ -207,11 +210,10 @@ export class DataLayer {
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			wrap: DataLayerWrapType,
-			internalType: DataLayerType,
 			name: string,
 		},
 	) {
-		const { gl, wrap, internalType, name } = params;
+		const { gl, wrap, name } = params;
 		// Webgl2.0 supports all combinations of types and filtering.
 		if (isWebGL2(gl)) {
 			return wrap;
@@ -278,6 +280,7 @@ export class DataLayer {
 			type: DataLayerType,
 			glslVersion: GLSLVersion,
 			writable: boolean,
+			filter: DataLayerFilterType,
 			name: string,
 			errorCallback: ErrorCallback,
 		},
@@ -349,16 +352,19 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			type: DataLayerType,
+			filter: DataLayerFilterType,
 			glslVersion: GLSLVersion,
 		}
 	) {
-		const { gl, type, glslVersion } = params;
+		const { gl, type, filter, glslVersion } = params;
 		if (glslVersion === GLSL3 && isWebGL2(gl)) return false;
+		// UNSIGNED_BYTE and LINEAR filtering is not supported, cast as float.
+		if (type === UNSIGNED_BYTE && filter === LINEAR) {
+			return true;
+		}
 		// Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
 		// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
-		// Use float instead.
-		// TODO: could use half float for some of these.
-		// TODO: warn that this is happening, what are the precision limits?
+		// Use HALF_FLOAT/FLOAT instead.
 		return type === BYTE || type === SHORT || type === INT || type === UNSIGNED_SHORT || type === UNSIGNED_INT;
 	}
 
@@ -409,7 +415,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				}
 			} else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
 				switch (glNumChannels) {
-					// TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
+					// For read only textures in WebGL 1.0, use gl.ALPHA and gl.LUMINANCE_ALPHA.
+					// Otherwise use RGB/RGBA.
 					case 1:
 						if (!writable) {
 							glFormat = gl.ALPHA;

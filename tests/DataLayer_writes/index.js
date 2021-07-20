@@ -647,8 +647,8 @@ void main() {
 
 	function makeTable(testFunction) {
 		// To make things simpler, keep DIM_X * DIMY < 256.
-		const DIM_X = 10;
-		const DIM_Y = 10;
+		const DIM_X = 16;
+		const DIM_Y = 16;
 	
 		const output = document.getElementById('output');
 	
