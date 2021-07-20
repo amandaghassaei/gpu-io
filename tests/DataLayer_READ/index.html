@@ -5,11 +5,19 @@
     <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0"/>
     <title>webgl-compute - DataLayer writes</title>
     <link rel="stylesheet" type="text/css" href="../deps/micromodal.css">
-	  <link rel="stylesheet" type="text/css" href="main.css">
+	  <link rel="stylesheet" type="text/css" href="../common/main.css">
   </head>
   <body>
 	<canvas id="glcanvas"></canvas>
-  <div id="output"></div>
+  <div id="output">
+    <div id="title">Testing DataLayer READ on <span id="version"></span></div>
+    <div id="info">
+      All tests are performed on a non-power of 2 textures.<br/>
+      In cases where INT types are not available, FLOAT types are used instead, but may be limited in the range of int values they can represent.<br/>
+      Click on the test to see more info.<br/>
+      "default" is NEAREST filtering with CLAMP_TO_EDGE wrapping.<br/>
+    </div>
+  </div>
   <div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
       <div id="modal-1-container" class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
@@ -27,6 +35,7 @@
   </div>
   <script src="../deps/float16.js"></script>
 	<script src="../deps/require.js"></script>
+  <script src="../common/utils.js"></script>
 	<script src="index.js"></script>
   </body>
 </html>

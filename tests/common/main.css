@@ -11,6 +11,19 @@ canvas {
 	min-width: 930px;
 }
 
+#title {
+	display: block;
+    margin: 10px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+#info {
+	display: block;
+	max-width: 900px;
+	margin: 10px;
+}
+
 a, a:link, a:visited, a:hover, a:active {
 	text-decoration: none;
 	background-color: transparent;
