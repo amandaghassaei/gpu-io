@@ -747,7 +747,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		let invalidTypeFound = false;
 		switch (type) {
 			case HALF_FLOAT:
-				// Since there is no Float16Array, we must us Float32Arrays to init texture.
+				// Since there is no Float16Array, we must use Float32Arrays to init texture.
+				// Continue to next case.
 			case FLOAT:
 				invalidTypeFound = invalidTypeFound || _data.constructor !== Float32Array;
 				break;

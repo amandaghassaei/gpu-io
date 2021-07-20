@@ -1,7 +1,7 @@
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
 	LINEAR, NEAREST,
-	REPEAT, CLAMP_TO_EDGE, MIRRORED_REPEAT, INT_1D_UNIFORM,
+	REPEAT, CLAMP_TO_EDGE,
 } from './Constants';
 
 export const validDataTypes = [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT];
@@ -14,7 +14,7 @@ export function isValidFilterType(type: string) {
 	return validFilterTypes.indexOf(type) > -1;
 }
 
-export const validWrapTypes = [CLAMP_TO_EDGE, REPEAT, MIRRORED_REPEAT];
+export const validWrapTypes = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
 export function isValidWrapType(type: string) {
 	return validWrapTypes.indexOf(type) > -1;
 }
