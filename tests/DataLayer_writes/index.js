@@ -14,14 +14,86 @@ requirejs([
 	const canvas = document.getElementById('glcanvas');
 	MicroModal.init();
 
-	function calculateExpectedValue(dimX, dimY, input, filter, wrap, offset) {
-		if (offset == 0) return input;
+	function offsetProgramForType(type, glslVersion) {
+		if (glslVersion === GLSL1) {
+			return `
+precision highp float;
+
+varying vec2 v_UV;
+
+uniform sampler2D u_state;
+uniform vec2 u_offset;
+
+void main() {
+	gl_FragColor = texture2D(u_state, v_UV + u_offset);
+}`;
+		}
+		switch (type) {
+			case HALF_FLOAT:
+			case FLOAT:
+				return `#version 300 es
+precision highp float;
+precision highp sampler2D;
+
+in vec2 v_UV;
+
+uniform sampler2D u_state;
+uniform vec2 u_offset;
+
+out vec4 out_fragColor;
+
+void main() {
+	out_fragColor = texture(u_state, v_UV + u_offset);
+}`;
+			case UNSIGNED_BYTE:
+			case UNSIGNED_SHORT:
+			case UNSIGNED_INT:
+				return `#version 300 es
+precision highp float;
+precision highp int;
+precision highp usampler2D;
+
+in vec2 v_UV;
+
+uniform usampler2D u_state;
+uniform vec2 u_offset;
+
+out uvec4 out_fragColor;
+
+void main() {
+	out_fragColor = texture(u_state, v_UV + u_offset);
+}`;
+			case BYTE:
+			case SHORT:
+			case INT:
+				return `#version 300 es
+precision highp float;
+precision highp int;
+precision highp isampler2D;
+
+in vec2 v_UV;
+
+uniform isampler2D u_state;
+uniform vec2 u_offset;
+
+out ivec4 out_fragColor;
+
+void main() {
+	out_fragColor = texture(u_state, v_UV + u_offset);
+}`;
+			default:
+				throw new Error(`Invalid type: ${type}.`);
+		}
+	}
+
+	function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wrap, offset) {
+		if (offset === 0) return input;
 
 		const expected = input.slice();
 
 		if (filter === NEAREST) offset = Math.round(offset);
 
-		function wrapIndex(x, y) {
+		function wrapIndex(x, y, el) {
 			if (wrap === REPEAT) {
 				x = (x + dimX) % dimX;
 				y = (y + dimY) % dimY;
@@ -31,19 +103,19 @@ requirejs([
 				if (x >= dimX) x = dimX - 1;
 				if (y >= dimY) y = dimY - 1;
 			}
-			return y * dimX + x;
+			return (y * dimX + x) * numElements + el;
 		}
 
-		function bilinearInterp(x, y) {
+		function bilinearInterp(x, y, el) {
 			// Bilinear interpolation.
 			const minX = Math.floor(x);
 			const minY = Math.floor(y);
 			const maxX = Math.ceil(x);
 			const maxY = Math.ceil(y);
-			const indexMinMin = wrapIndex(minX, minY);
-			const indexMinMax = wrapIndex(minX, maxY);
-			const indexMaxMin = wrapIndex(maxX, minY);
-			const indexMaxMax = wrapIndex(maxX, maxY);
+			const indexMinMin = wrapIndex(minX, minY, el);
+			const indexMinMax = wrapIndex(minX, maxY, el);
+			const indexMaxMin = wrapIndex(maxX, minY, el);
+			const indexMaxMax = wrapIndex(maxX, maxY, el);
 			const valMinMin = input[indexMinMin];
 			const valMinMax = input[indexMinMax];
 			const valMaxMin = input[indexMaxMin];
@@ -55,13 +127,24 @@ requirejs([
 			return t1 * valMax + (1 - t1) * valMin;
 		}
 
-		for (let _x = 0; _x < dimX; _x++) {
+		for (let el = 0; el < numElements; el++) {
 			for (let _y = 0; _y < dimY; _y++) {
-				const x = x + offset;
-				const y = y + offset;
-				expected[wrapIndex(_x, _y)] = bilinearInterp(x, y);
+				for (let _x = 0; _x < dimX; _x++) {
+					const x = _x + offset;
+					const y = _y + offset;
+					expected[wrapIndex(_x, _y, el)] = bilinearInterp(x, y, el);
+				}
 			}
 		}
+		if (type === HALF_FLOAT) {
+			const uint16Array = new Uint16Array(1);
+			const view = new DataView(uint16Array.buffer);
+			for (let i = 0; i < expected.length; i++) {
+				setFloat16(view, 0,  expected[i], true);
+				expected[i] = getFloat16(view, 0, true);
+			}
+		}
+		return expected;
 	}
 
 	// General code for testing array writes.
@@ -77,6 +160,10 @@ requirejs([
 			FILTER,
 			TEST_EXTREMA,
 		} = options;
+
+		let OFFSET = 0;
+		if (WRAP !== CLAMP_TO_EDGE) OFFSET = 1;
+		if (FILTER !== NEAREST) OFFSET = 0.75;
 
 		const config = {
 			readwrite: true,
@@ -345,9 +432,25 @@ requirejs([
 				},
 			);
 
-			const copyProgram = glcompute.copyProgramForType(TYPE);
+			const offsetProgram = glcompute.initProgram({
+				name: 'offset',
+				fragmentShader: offsetProgramForType(TYPE, GLSL_VERSION),
+				uniforms: [
+						{
+							name: 'u_state',
+							value: 0,
+							dataType: INT,
+						},
+						{
+							name: 'u_offset',
+							value: [OFFSET / DIM_X, OFFSET / DIM_Y],
+							dataType: FLOAT,
+						},
+					],
+				},
+			);
 
-			glcompute.step(copyProgram, [dataLayer], dataLayer);
+			glcompute.step(offsetProgram, [dataLayer], dataLayer);
 			const output = glcompute.getValues(dataLayer);
 
 			glcompute.destroy();
@@ -365,25 +468,6 @@ requirejs([
 			if (glcompute.gl[FILTER] !== dataLayer.glFilter) {
 				const filter = dataLayer.glFilter === glcompute.gl[NEAREST] ? NEAREST : LINEAR;
 				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally.`);
-			}
-
-			// Compare input and output.
-			if (input.length !== output.length) {
-				status = ERROR;
-				error.push(`Input and output arrays have unequal length: expected length ${input.length}, got length ${output.length}.`);
-				return {
-					status,
-					log,
-					error,
-					config,
-				};
-			}
-			
-			let allMismatches = [];
-			for (let i = 0; i < input.length; i++) {
-				if (input[i] !== output[i]) {
-					allMismatches.push(`${input[i]}, ${output[i]}`);
-				}
 			}
 
 			if (TEST_EXTREMA) {
@@ -438,9 +522,29 @@ requirejs([
 				};
 			}
 
-			if (allMismatches.length === input.length) {
+			// Compare expected values and output.
+			const expected = calculateExpectedValue(DIM_X, DIM_Y, NUM_ELEMENTS, input, TYPE, FILTER, WRAP, OFFSET);
+			if (expected.length !== output.length) {
 				status = ERROR;
-				error.push(`All elements of output array do not match input values.`);
+				error.push(`Invalid output array: expected length ${expected.length}, got length ${output.length}.`);
+				return {
+					status,
+					log,
+					error,
+					config,
+				};
+			}
+			
+			let allMismatches = [];
+			for (let i = 0; i < expected.length; i++) {
+				if (expected[i] !== output[i]) {
+					allMismatches.push(`expected: ${expected[i]}, got: ${output[i]}`);
+				}
+			}
+
+			if (allMismatches.length === expected.length) {
+				status = ERROR;
+				error.push(`All elements of output array do not match expected values:<br/>${allMismatches.join('<br/>')}.`);
 				return {
 					status,
 					log,
@@ -451,7 +555,7 @@ requirejs([
 
 			if (allMismatches.length) {
 				status = ERROR;
-				error.push(`Input and output arrays contain mismatched elements:\n${allMismatches.join('\n')}.`);
+				error.push(`Output array contains invalid elements:<br/>${allMismatches.join('<br/>')}.`);
 				return {
 					status,
 					log,

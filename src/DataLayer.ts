@@ -2,7 +2,7 @@ import { setFloat16 } from '@petamoriken/float16';
 import { isPositiveInteger, isValidDataType, isValidFilterType, isValidWrapType, validDataTypes, validFilterTypes, validWrapTypes } from './Checks';
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
-	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT, MIRRORED_REPEAT,
+	NEAREST, LINEAR, CLAMP_TO_EDGE,
 	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, GLSLVersion, GLSL3, GLSL1,
  } from './Constants';
 import {

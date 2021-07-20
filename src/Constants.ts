@@ -12,13 +12,13 @@ export const NEAREST = 'NEAREST';
 
 export const REPEAT = 'REPEAT';
 export const CLAMP_TO_EDGE = 'CLAMP_TO_EDGE';
-export const MIRRORED_REPEAT = 'MIRRORED_REPEAT';
+// export const MIRRORED_REPEAT = 'MIRRORED_REPEAT';
 
 export type DataLayerArrayType =  Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
 export type DataLayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
 export type DataLayerNumComponents = 1 | 2 | 3 | 4;
 export type DataLayerFilterType = typeof LINEAR | typeof NEAREST;
-export type DataLayerWrapType = typeof REPEAT | typeof CLAMP_TO_EDGE | typeof MIRRORED_REPEAT;
+export type DataLayerWrapType = typeof REPEAT | typeof CLAMP_TO_EDGE;// | typeof MIRRORED_REPEAT;
 
 export const GLSL3 = '300 es';
 export const GLSL1 = '100';

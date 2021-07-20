@@ -1,7 +1,7 @@
 import { WebGLCompute } from './WebGLCompute';
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
-	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT, MIRRORED_REPEAT,
+	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT,
 	GLSL1, GLSL3,
 } from './Constants';
 // const SingleColorFragShader = require('./kernels_1.0/SingleColorFragShader.glsl');
@@ -26,5 +26,4 @@ export {
 	LINEAR,
 	CLAMP_TO_EDGE,
 	REPEAT,
-	MIRRORED_REPEAT,
 };

@@ -505,8 +505,8 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [1, 1], 'FLOAT');
-		program.setUniform('u_internal_translation', [0, 0], 'FLOAT');
+		program.setUniform('u_internal_scale', [1, 1], FLOAT);
+		program.setUniform('u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(program);
 
@@ -543,8 +543,8 @@ can render to nextState using currentState as an input.`);
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_internal_scale', [1 - onePx[0], 1 - onePx[1]], 'FLOAT');
-		program.setUniform('u_internal_translation', onePx, 'FLOAT');
+		program.setUniform('u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
+		program.setUniform('u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 		this.setPositionAttribute(program);
 
@@ -599,8 +599,8 @@ can render to nextState using currentState as an input.`);
 		// Update uniforms and buffers.
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], 'FLOAT');
-		program.setUniform('u_internal_translation', onePx, 'FLOAT');
+		program.setUniform('u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
+		program.setUniform('u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(program);
 		
@@ -636,10 +636,10 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_radius', radius, 'FLOAT');
-		program.setUniform('u_internal_scale', [2 / width, 2 / height], 'FLOAT');
-		program.setUniform('u_internal_length', 0, 'FLOAT'); // In case we are using the segment vertex shader (TODO: fix this, we should only use the default vertex shader for step circle).
-		program.setUniform('u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], 'FLOAT');
+		program.setUniform('u_internal_radius', radius, FLOAT);
+		program.setUniform('u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program.setUniform('u_internal_length', 0, FLOAT); // In case we are using the segment vertex shader (TODO: fix this, we should only use the default vertex shader for step circle).
+		program.setUniform('u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this.setPositionAttribute(program);
 		
@@ -676,17 +676,17 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_radius', radius, 'FLOAT');
-		program.setUniform('u_internal_scale', [2 / width, 2 / height], 'FLOAT');
+		program.setUniform('u_internal_radius', radius, FLOAT);
+		program.setUniform('u_internal_scale', [2 / width, 2 / height], FLOAT);
 		const diffX = position1[0] - position2[0];
 		const diffY = position1[1] - position2[1];
 		const angle = Math.atan2(diffY, diffX);
-		program.setUniform('u_internal_rotation', angle, 'FLOAT');
+		program.setUniform('u_internal_rotation', angle, FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
-		program.setUniform('u_internal_length', length, 'FLOAT');
+		program.setUniform('u_internal_length', length, FLOAT);
 		const positionX = (position1[0] + position2[0]) / 2;
 		const positionY = (position1[1] + position2[1]) / 2;
-		program.setUniform('u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], 'FLOAT');
+		program.setUniform('u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this.setPositionAttribute(program);
 		
@@ -736,10 +736,10 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [1 / width, 1 / height], 'FLOAT');
-		program.setUniform('u_internal_pointSize', pointSize, 'FLOAT');
+		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
+		program.setUniform('u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setUniform('u_internal_positionDimensions', positionLayerDimensions, 'FLOAT');
+		program.setUniform('u_internal_positionDimensions', positionLayerDimensions, FLOAT);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
