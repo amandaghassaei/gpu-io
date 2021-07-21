@@ -636,9 +636,9 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_radius', radius, FLOAT);
+		// program.setUniform('u_internal_radius', radius, FLOAT);
 		program.setUniform('u_internal_scale', [2 / width, 2 / height], FLOAT);
-		program.setUniform('u_internal_length', 0, FLOAT); // In case we are using the segment vertex shader (TODO: fix this, we should only use the default vertex shader for step circle).
+		// program.setUniform('u_internal_length', 0, FLOAT); // In case we are using the segment vertex shader (TODO: fix this, we should only use the default vertex shader for step circle).
 		program.setUniform('u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this.setPositionAttribute(program);
