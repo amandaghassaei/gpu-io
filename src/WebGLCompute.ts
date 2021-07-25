@@ -322,7 +322,7 @@ export class WebGLCompute {
 		const border = 0;
 		const srcFormat = gl.RGBA;
 		const srcType = gl.UNSIGNED_BYTE;
-		const pixel = new Uint8Array([0, 0, 0, 255]);
+		const pixel = new Uint8Array([0, 0, 0, 0]);
 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
 			width, height, border, srcFormat, srcType, pixel);
 
