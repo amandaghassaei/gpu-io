@@ -2,14 +2,14 @@ import { DataLayer } from './DataLayer';
 import {
 	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType,
 	FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
-	UniformDataType, UniformValueType, GLSLVersion, GLSL1, GLSL3,
+	UniformDataType, UniformValueType, GLSLVersion, GLSL1, GLSL3, CLAMP_TO_EDGE, TextureFormatType, NEAREST, RGBA, TextureDataType,
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
 import * as utils from './utils/Vector4';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
-import { isString } from './Checks';
+import { isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType, validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
 const defaultVertexShaderSource_glsl3 = require('./glsl_3/DefaultVertexShader.glsl');
 const defaultVertexShaderSource_glsl1 = require('./glsl_1/DefaultVertexShader.glsl');
 const copyFloatFragmentShaderSource_glsl3 = require('./glsl_3/CopyFloatFragShader.glsl');
@@ -17,19 +17,9 @@ const copyIntFragmentShaderSource_glsl3 = require('./glsl_3/CopyIntFragShader.gl
 const copyUintFragmentShaderSource_glsl3 = require('./glsl_3/CopyUintFragShader.glsl');
 const copyFragmentShaderSource_glsl1 = require('./glsl_1/CopyFragShader.glsl');
 
-const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
-const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
-const unitCirclePoints = [0, 0];
 const NUM_SEGMENTS_CIRCLE = 18;// Must be divisible by 6 to work with stepSegment().
-for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
-	unitCirclePoints.push(
-		Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
-		Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
-	);
-}
-const circlePositions = new Float32Array(unitCirclePoints);
 
-type errorCallback = (message: string) => void;
+type ErrorCallback = (message: string) => void;
 
 export class WebGLCompute {
 	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
@@ -39,19 +29,25 @@ export class WebGLCompute {
 	private height!: number;
 
 	private errorState = false;
-	private readonly errorCallback: (message: string) => void;
+	private readonly errorCallback: ErrorCallback;
 
 	// Save threejs renderer if passed in.
 	private renderer?: WebGLRenderer;
 	private readonly maxNumTextures!: number;
 	
-	// Some precomputed values.
+	// Precomputed vertex shaders (inited as needed).
 	private readonly defaultVertexShader!: WebGLShader;
-	private readonly quadPositionsBuffer!: WebGLBuffer;
-	private readonly boundaryPositionsBuffer!: WebGLBuffer;
-	private readonly circlePositionsBuffer!: WebGLBuffer;
+	// Precomputed buffers (inited as needed).
+	private _quadPositionsBuffer?: WebGLBuffer;
+	private _boundaryPositionsBuffer?: WebGLBuffer;
+	private _circlePositionsBuffer?: WebGLBuffer;
+
 	private pointIndexArray?: Float32Array;
 	private pointIndexBuffer?: WebGLBuffer;
+	private vectorFieldIndexArray?: Float32Array;
+	private vectorFieldIndexBuffer?: WebGLBuffer;
+
+	// Programs for copying data (these are needed for rendering partial screen geometries).
 	readonly copyFloatProgram!: GPUProgram;
 	readonly copyIntProgram!: GPUProgram;
 	readonly copyUintProgram!: GPUProgram;
@@ -61,7 +57,7 @@ export class WebGLCompute {
 		params: {
 			glslVersion?: GLSLVersion,
 		},
-		errorCallback?: errorCallback,
+		errorCallback?: ErrorCallback,
 	) {
 		return new WebGLCompute(
 			{
@@ -83,7 +79,7 @@ export class WebGLCompute {
 		},
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
 		// e.g. throw up a modal telling user this will not work on their device.
-		errorCallback: errorCallback = (message: string) => { throw new Error(message) },
+		errorCallback: ErrorCallback = (message: string) => { throw new Error(message) },
 		renderer?: WebGLRenderer,
 	) {
 		// Check params.
@@ -201,10 +197,6 @@ export class WebGLCompute {
 			this.copyUintProgram = this.copyFloatProgram;
 		}
 
-		// Create vertex buffers.
-		this.quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions)!;
-		this.boundaryPositionsBuffer = this.initVertexBuffer(boundaryPositions)!;
-		this.circlePositionsBuffer = this.initVertexBuffer(circlePositions)!;
 		// Unbind active buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
@@ -218,6 +210,37 @@ export class WebGLCompute {
 
 	isWebGL2() {
 		return isWebGL2(this.gl);
+	}
+
+	private get quadPositionsBuffer() {
+		if (this._quadPositionsBuffer === undefined) {
+			const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
+			this._quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions)!;
+		}
+		return this._quadPositionsBuffer!;
+	}
+
+	private get boundaryPositionsBuffer() {
+		if (this._boundaryPositionsBuffer === undefined) {
+			const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
+			this._boundaryPositionsBuffer = this.initVertexBuffer(boundaryPositions)!;
+		}
+		return this._boundaryPositionsBuffer!;
+	}
+
+	private get circlePositionsBuffer() {
+		if (this._circlePositionsBuffer === undefined) {
+			const unitCirclePoints = [0, 0];
+			for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
+				unitCirclePoints.push(
+					Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
+					Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
+				);
+			}
+			const circlePositions = new Float32Array(unitCirclePoints);
+			this._circlePositionsBuffer = this.initVertexBuffer(circlePositions)!;
+		}
+		return this._circlePositionsBuffer!;
 	}
 
 	private initVertexBuffer(
@@ -299,11 +322,60 @@ export class WebGLCompute {
 	};
 
 	initTexture(
-		url: string,
+		params: {
+			name: string,
+			url: string,
+			filter?: DataLayerFilterType,
+			wrapS?: DataLayerWrapType,
+			wrapT?: DataLayerWrapType,
+			format?: TextureFormatType,
+			type?: TextureDataType,
+		},
+		callback: (texture: WebGLTexture) => void,
 	) {
+		// Check params.
+		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format'];
+		Object.keys(params).forEach(key => {
+			if (validKeys.indexOf(key) < 0) {
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initTexture.  Valid keys are ${validKeys.join(', ')}.`);
+			}
+		});
+		const { url, name } = params;
 		if (!isString(url)) {
-			throw new Error(`Expected WebGLCompute.initTexture to have argument of type string, got ${url} of type ${typeof url}.`)
+			throw new Error(`Expected WebGLCompute.initTexture params to have url of type string, got ${url} of type ${typeof url}.`)
 		}
+		if (!isString(name)) {
+			throw new Error(`Expected WebGLCompute.initTexture params to have name of type string, got ${name} of type ${typeof name}.`)
+		}
+
+		// Get filter type, default to nearest.
+		const filter = params.filter !== undefined ? params.filter : NEAREST;
+		if (!isValidFilterType(filter)) {
+			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${validFilterTypes.join(', ')}.`);
+		}
+
+		// Get wrap types, default to clamp to edge.
+		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
+		if (!isValidWrapType(wrapS)) {
+			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		}
+		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
+		if (!isValidWrapType(wrapT)) {
+			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		}
+
+		// Get image format type, default to rgba.
+		const format = params.format !== undefined ? params.format : RGBA;
+		if (!isValidTextureFormatType(format)) {
+			throw new Error(`Invalid format: ${format} for DataLayer "${name}", must be ${validTextureFormatTypes.join(', ')}.`);
+		}
+
+		// Get image data type, default to unsigned byte.
+		const type = params.type !== undefined ? params.type : UNSIGNED_BYTE;
+		if (!isValidTextureDataType(format)) {
+			throw new Error(`Invalid type: ${type} for DataLayer "${name}", must be ${validTextureDataTypes.join(', ')}.`);
+		}
+
 		const { gl, errorCallback } = this;
 		const texture = gl.createTexture();
 		if (texture === null) {
@@ -320,8 +392,8 @@ export class WebGLCompute {
 		const width = 1;
 		const height = 1;
 		const border = 0;
-		const srcFormat = gl.RGBA;
-		const srcType = gl.UNSIGNED_BYTE;
+		const srcFormat = gl[format];
+		const srcType = gl[type];
 		const pixel = new Uint8Array([0, 0, 0, 0]);
 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
 			width, height, border, srcFormat, srcType, pixel);
@@ -340,19 +412,22 @@ export class WebGLCompute {
 				// gl.generateMipmap(gl.TEXTURE_2D);
 			} else {
 				// TODO: finish implementing this.
-				console.warn(`Texture ${url} dimensions [${image.width}, ${image.height}] are not power of 2.`);
+				console.warn(`Texture ${name} dimensions [${image.width}, ${image.height}] are not power of 2.`);
 				// // No, it's not a power of 2. Turn off mips and set
 				// // wrapping to clamp to edge
 				// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 				// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-				// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 			}
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl[wrapS]);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl[wrapT]);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[filter]);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[filter]);
+
+			// Callback when texture has loaded.
+			if (callback) callback(texture);
 		};
 		image.onerror = (e) => {
-			errorCallback(`Error loading image ${url}: ${e}`);
+			errorCallback(`Error loading image ${name}: ${e}`);
 		}
 		image.src = url;
 
@@ -760,6 +835,71 @@ can render to nextState using currentState as an input.`);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
 		gl.drawArrays(gl.POINTS, 0, numPoints);
+		gl.disable(gl.BLEND);
+	}
+
+	drawVectorField(
+		program: GPUProgram,
+		inputLayers: (DataLayer | WebGLTexture)[],
+		outputLayer?: DataLayer,
+		options?: {
+			vectorScale?: number,
+			shouldBlendAlpha?: boolean,
+		}
+	) {
+		const { gl, errorState, vectorFieldIndexArray } = this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+
+		if (inputLayers.length < 1) {
+			throw new Error(`Invalid inputLayers for drawVectorField on program "${program.name}": must pass a vectorDataLayer as first element of inputLayers.`);
+		}
+		const vectorLayer = inputLayers[0] as DataLayer;
+
+		// Check that vectorLayer is valid.
+		const dimensions = vectorLayer.getDimensions();
+		if (dimensions[0] !== width || dimensions[1] !== height) {
+			throw new Error(`Invalid dimensions ${dimensions} for vectorDataLayer, expected [${width}, ${height}].`);
+		}
+
+		// Set default scale.
+		const vectorScale = options?.vectorScale || 1;
+
+		// Do setup - this must come first.
+		this.drawSetup(program, false, inputLayers, outputLayer);
+
+		// TODO: add options to reduce density of vectors.
+		// TODO: Allow rendering of vector field with different scaling than output layer.
+
+		// Update uniforms and buffers.
+		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
+		program.setUniform('u_internal_vectorScale', vectorScale, FLOAT);
+		program.setUniform('u_internal_positionDimensions', dimensions, FLOAT);
+		const length = 2 * width * height;
+		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
+			// Have to use float32 array bc int is not supported as a vertex attribute type.
+			const indices = new Float32Array(length);
+			for (let i = 0; i < length; i++) {
+				indices[i] = i;
+			}
+			this.vectorFieldIndexArray = indices;
+			this.vectorFieldIndexBuffer = this.initVertexBuffer(indices);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vectorFieldIndexBuffer!);
+		this.setIndexAttribute(program);
+
+		// Draw.
+		// Default to blend === true.
+		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
+		gl.drawArrays(gl.LINES, 0, length);
 		gl.disable(gl.BLEND);
 	}
 	

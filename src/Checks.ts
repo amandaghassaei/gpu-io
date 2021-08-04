@@ -1,7 +1,7 @@
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
 	LINEAR, NEAREST,
-	REPEAT, CLAMP_TO_EDGE,
+	REPEAT, CLAMP_TO_EDGE, RGB, RGBA,
 } from './Constants';
 
 export const validDataTypes = [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT];
@@ -17,6 +17,16 @@ export function isValidFilterType(type: string) {
 export const validWrapTypes = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
 export function isValidWrapType(type: string) {
 	return validWrapTypes.indexOf(type) > -1;
+}
+
+export const validTextureFormatTypes = [RGB, RGBA];
+export function isValidTextureFormatType(type: string) {
+	return validTextureFormatTypes.indexOf(type) > -1;
+}
+
+export const validTextureDataTypes = [UNSIGNED_BYTE];
+export function isValidTextureDataType(type: string) {
+	return validTextureDataTypes.indexOf(type) > -1;
 }
 
 export function isNumber(value: any) {
