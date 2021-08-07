@@ -15,6 +15,7 @@ varying vec2 v_UV;
 varying vec2 vParticleUV;
 
 void main() {
+	// Divide index by 2.
 	// Calculate a uv based on the point's index attribute.
 	vParticleUV = vec2(
 		modI(a_internal_index, u_internal_positionDimensions.x),

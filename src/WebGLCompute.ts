@@ -9,9 +9,9 @@ import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the ty
 import * as utils from './utils/Vector4';
 import { compileShader, isWebGL2, isPowerOf2 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
-import { isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType, validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
-const defaultVertexShaderSource_glsl3 = require('./glsl_3/DefaultVertexShader.glsl');
-const defaultVertexShaderSource_glsl1 = require('./glsl_1/DefaultVertexShader.glsl');
+import {
+	isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType,
+	validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
 const copyFloatFragmentShaderSource_glsl3 = require('./glsl_3/CopyFloatFragShader.glsl');
 const copyIntFragmentShaderSource_glsl3 = require('./glsl_3/CopyIntFragShader.glsl');
 const copyUintFragmentShaderSource_glsl3 = require('./glsl_3/CopyUintFragShader.glsl');
@@ -35,8 +35,6 @@ export class WebGLCompute {
 	private renderer?: WebGLRenderer;
 	private readonly maxNumTextures!: number;
 	
-	// Precomputed vertex shaders (inited as needed).
-	private readonly defaultVertexShader!: WebGLShader;
 	// Precomputed buffers (inited as needed).
 	private _quadPositionsBuffer?: WebGLBuffer;
 	private _boundaryPositionsBuffer?: WebGLBuffer;
@@ -144,15 +142,6 @@ export class WebGLCompute {
 		// // with alpha < 1.0 will be preserved losslessly when first drawn to a canvas via CanvasRenderingContext2D and then
 		// // uploaded to a WebGL texture when the UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter is set to false.
 		// gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-
-		// Init a default vertex shader that just passes through screen coords.
-		const vertexShaderSource = glslVersion === GLSL3 ? defaultVertexShaderSource_glsl3 : defaultVertexShaderSource_glsl1;
-		const defaultVertexShader = compileShader(gl, this.errorCallback, vertexShaderSource, gl.VERTEX_SHADER);
-		if (!defaultVertexShader) {
-			this.errorCallback('Unable to initialize fullscreen quad vertex shader.');
-			return;
-		}
-		this.defaultVertexShader = defaultVertexShader;
 
 		// Init programs to pass values from one texture to another.
 		this.copyFloatProgram = this.initProgram({
@@ -262,7 +251,6 @@ export class WebGLCompute {
 		params: {
 			name: string,
 			fragmentShader: string | WebGLShader,
-			vertexShader?: string | WebGLShader,
 			uniforms?: {
 				name: string,
 				value: UniformValueType,
@@ -274,19 +262,19 @@ export class WebGLCompute {
 		},
 	) {
 		// Check params.
-		const validKeys = ['name', 'fragmentShader', 'vertexShader', 'uniforms', 'defines'];
+		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
 				throw new Error(`Invalid key ${key} passed to WebGLCompute.initProgram.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
-		const { gl, errorCallback, defaultVertexShader } = this;
+		const { gl, errorCallback, glslVersion } = this;
 		return new GPUProgram(
 			{
-				vertexShader: defaultVertexShader,
 				...params,
 				gl,
 				errorCallback,
+				glslVersion,
 			},
 		);
 	};
@@ -447,14 +435,14 @@ export class WebGLCompute {
 	};
 
 	private drawSetup(
-		program: GPUProgram,
+		program: WebGLProgram,
 		fullscreenRender: boolean,
 		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer,
 	) {
 		const { gl } = this;
 		// Check if we are in an error state.
-		if (!program.glProgram) {
+		if (!program) {
 			return;
 		}
 
@@ -470,7 +458,7 @@ export class WebGLCompute {
 		this.setOutputLayer(fullscreenRender, inputLayers, outputLayer);
 
 		// Set current program.
-		gl.useProgram(program.glProgram);
+		gl.useProgram(program);
 
 		// Set input textures.
 		for (let i = 0; i < inputTextures.length; i++) {
@@ -542,19 +530,19 @@ can render to nextState using currentState as an input.`);
 		gl.viewport(0, 0, width, height);
 	};
 
-	private setPositionAttribute(program: GPUProgram) {
+	private setPositionAttribute(program: WebGLProgram) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program.glProgram!, 'a_internal_position');
+		const location = gl.getAttribLocation(program, 'a_internal_position');
 		gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
 	}
 
-	private setIndexAttribute(program: GPUProgram) {
+	private setIndexAttribute(program: WebGLProgram) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program.glProgram!, 'a_internal_index');
+		const location = gl.getAttribLocation(program, 'a_internal_index');
 		gl.vertexAttribPointer(location, 1, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
@@ -577,13 +565,13 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.drawSetup(program, true, inputLayers, outputLayer);
+		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_internal_scale', [1, 1], FLOAT);
 		program.setUniform('u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(program);
+		this.setPositionAttribute(program.defaultProgram!);
 
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -612,7 +600,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.drawSetup(program, false, inputLayers, outputLayer);
+		this.drawSetup(program.defaultProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
@@ -621,7 +609,7 @@ can render to nextState using currentState as an input.`);
 		program.setUniform('u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
 		program.setUniform('u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this.setPositionAttribute(program);
+		this.setPositionAttribute(program.defaultProgram!);
 
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -669,7 +657,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.drawSetup(program, false, inputLayers, outputLayer);
+		this.drawSetup(program.defaultProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
@@ -677,7 +665,7 @@ can render to nextState using currentState as an input.`);
 		program.setUniform('u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
 		program.setUniform('u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(program);
+		this.setPositionAttribute(program.defaultProgram!);
 		
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -708,22 +696,20 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.drawSetup(program, false, inputLayers, outputLayer);
+		this.drawSetup(program.defaultProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		// program.setUniform('u_internal_radius', radius, FLOAT);
 		program.setUniform('u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
-		// program.setUniform('u_internal_length', 0, FLOAT); // In case we are using the segment vertex shader (TODO: fix this, we should only use the default vertex shader for step circle).
 		program.setUniform('u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this.setPositionAttribute(program);
+		this.setPositionAttribute(program.defaultProgram!);
 		
 		// Draw.
 		if (options?.shouldBlendAlpha) {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);	
 		gl.disable(gl.BLEND);
 	}
 
@@ -748,7 +734,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		// Do setup - this must come first.
-		this.drawSetup(program, false, inputLayers, outputLayer);
+		this.drawSetup(program.segmentProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_internal_radius', radius, FLOAT);
@@ -763,7 +749,7 @@ can render to nextState using currentState as an input.`);
 		const positionY = (position1[1] + position2[1]) / 2;
 		program.setUniform('u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this.setPositionAttribute(program);
+		this.setPositionAttribute(program.segmentProgram!);
 		
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -808,7 +794,7 @@ can render to nextState using currentState as an input.`);
 		const pointSize = options?.pointSize || 1;
 
 		// Do setup - this must come first.
-		this.drawSetup(program, false, inputLayers, outputLayer);
+		this.drawSetup(program.pointsProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
@@ -825,7 +811,7 @@ can render to nextState using currentState as an input.`);
 			this.pointIndexBuffer = this.initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer!);
-		this.setIndexAttribute(program);
+		this.setIndexAttribute(program.pointsProgram!);
 
 		// Draw.
 		// Default to blend === true.
@@ -870,7 +856,7 @@ can render to nextState using currentState as an input.`);
 		const vectorScale = options?.vectorScale || 1;
 
 		// Do setup - this must come first.
-		this.drawSetup(program, false, inputLayers, outputLayer);
+		this.drawSetup(program.vectorFieldProgram!, false, inputLayers, outputLayer);
 
 		// TODO: add options to reduce density of vectors.
 		// TODO: Allow rendering of vector field with different scaling than output layer.
@@ -890,7 +876,7 @@ can render to nextState using currentState as an input.`);
 			this.vectorFieldIndexBuffer = this.initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vectorFieldIndexBuffer!);
-		this.setIndexAttribute(program);
+		this.setIndexAttribute(program.vectorFieldProgram!);
 
 		// Draw.
 		// Default to blend === true.

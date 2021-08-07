@@ -1,17 +1,25 @@
-import { UniformDataType, UniformValueType } from './Constants';
+import { GLSLVersion, UniformDataType, UniformValueType } from './Constants';
 export declare class GPUProgram {
     readonly name: string;
     private readonly gl;
     private readonly errorCallback;
-    readonly glProgram?: WebGLProgram;
+    private readonly glslVersion;
     private readonly uniforms;
-    private readonly shaders;
+    private readonly fragmentShader;
+    private _defaultProgram?;
+    private _segmentProgram?;
+    private _pointsProgram?;
+    private _vectorFieldProgram?;
+    private static defaultVertexShader?;
+    private static segmentVertexShader?;
+    private static pointsVertexShader?;
+    private static vectorFieldVertexShader?;
     constructor(params: {
         gl: WebGLRenderingContext | WebGL2RenderingContext;
         name: string;
         fragmentShader: string | string[] | WebGLShader;
-        vertexShader: string | WebGLShader;
         errorCallback: (message: string) => void;
+        glslVersion: GLSLVersion;
         uniforms?: {
             name: string;
             value: UniformValueType;
@@ -21,7 +29,14 @@ export declare class GPUProgram {
             [key: string]: string;
         };
     });
+    private initProgram;
+    get defaultProgram(): WebGLProgram | undefined;
+    get segmentProgram(): WebGLProgram | undefined;
+    get pointsProgram(): WebGLProgram | undefined;
+    get vectorFieldProgram(): WebGLProgram | undefined;
+    private get activePrograms();
     private uniformTypeForValue;
-    setUniform(uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
+    private setProgramUniform;
+    setUniform(uniformName: string, value: UniformValueType, dataType?: UniformDataType): void;
     destroy(): void;
 }

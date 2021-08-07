@@ -2,29 +2,52 @@ import { isArray, isInteger, isNumber, isString } from './Checks';
 import {
 	FLOAT,
 	FLOAT_1D_UNIFORM, FLOAT_2D_UNIFORM, FLOAT_3D_UNIFORM, FLOAT_4D_UNIFORM,
+	GLSL3,
+	GLSLVersion,
 	INT,
 	INT_1D_UNIFORM, INT_2D_UNIFORM, INT_3D_UNIFORM, INT_4D_UNIFORM,
-	Uniform, UniformDataType, UniformValueType,
+	Uniform, UniformDataType, UniformType, UniformValueType,
 } from './Constants';
 import { compileShader } from './utils';
+const defaultVertexShaderSource_glsl3 = require('./glsl_3/DefaultVertexShader.glsl');
+const defaultVertexShaderSource_glsl1 = require('./glsl_1/DefaultVertexShader.glsl');
+const segmentVertexShaderSource_glsl3 = require('./glsl_3/SegmentVertexShader.glsl');
+const segmentVertexShaderSource_glsl1 = require('./glsl_1/SegmentVertexShader.glsl');
+// const pointsVertexShaderSource_glsl3 = require('./glsl_3/PointsVertexShader.glsl');
+const pointsVertexShaderSource_glsl1 = require('./glsl_1/PointsVertexShader.glsl');
+// const vectorFieldVertexShaderSource_glsl3 = require('./glsl_3/VectorFieldVertexShader.glsl');
+const vectorFieldVertexShaderSource_glsl1 = require('./glsl_1/VectorFieldVertexShader.glsl');
 
-
+const DEFAULT_PROGRAM_NAME = 'DEFAULT';
+const SEGMENT_PROGRAM_NAME = 'SEGMENT';
+const POINTS_PROGRAM_NAME = 'POINTS';
+const VECTOR_FIELD_PROGRAM_NAME = 'VECTOR_FIELD';
 
 export class GPUProgram {
 	readonly name: string;
 	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
 	private readonly errorCallback: (message: string) => void;
-	readonly glProgram?: WebGLProgram;
+	private readonly glslVersion: GLSLVersion;
 	private readonly uniforms: { [ key: string]: Uniform } = {};
-	private readonly shaders: WebGLShader[] = []; // Save ref to shaders so we can deallocate.
+	private readonly fragmentShader!: WebGLShader;
+	// Store gl programs.
+	private _defaultProgram?: WebGLProgram;
+	private _segmentProgram?: WebGLProgram;
+	private _pointsProgram?: WebGLProgram;
+	private _vectorFieldProgram?: WebGLProgram;
+	// Store vertexShaders as class properties (for sharing).
+	private static defaultVertexShader?: WebGLShader;
+	private static segmentVertexShader?: WebGLShader;
+	private static pointsVertexShader?: WebGLShader;
+	private static vectorFieldVertexShader?: WebGLShader;
 
 	constructor(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			name: string,
 			fragmentShader: string | string[] | WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
-			vertexShader: string |  WebGLShader,
 			errorCallback: (message: string) => void,
+			glslVersion: GLSLVersion,
 			uniforms?: {
 				name: string,
 				value: UniformValueType,
@@ -36,22 +59,15 @@ export class GPUProgram {
 		},
 		
 	) {
-		const { gl, errorCallback, name, fragmentShader, vertexShader, uniforms, defines } = params;
+		const { gl, errorCallback, name, fragmentShader, glslVersion, uniforms, defines } = params;
 
 		// Save arguments.
 		this.gl = gl;
 		this.errorCallback = errorCallback;
 		this.name = name;
+		this.glslVersion = glslVersion;
 
-		// Create a program.
-		const glProgram = gl.createProgram();
-		if (!glProgram) {
-			errorCallback(`Unable to init gl program: ${name}.`);
-			return;
-		}
-
-		// Compile shaders.
-		// TODO: check that attachShader worked.
+		// Compile fragment shader.
 		if (typeof(fragmentShader) === 'string' || typeof((fragmentShader as string[])[0]) === 'string') {
 			let sourceString = typeof(fragmentShader) === 'string' ?
 				fragmentShader :
@@ -72,43 +88,149 @@ export class GPUProgram {
 				errorCallback(`Unable to compile fragment shader for program "${name}".`);
 				return;
 			}
-			this.shaders.push(shader);
-			gl.attachShader(glProgram, shader);
+			this.fragmentShader = shader;
 		} else {
 			if (defines) {
 				throw new Error(`Unable to attach defines to program "${name}" because fragment shader is already compiled.`);
 			}
-			gl.attachShader(glProgram, fragmentShader);
 		}
-		if (typeof(vertexShader) === 'string') {
-			const shader = compileShader(gl, errorCallback, vertexShader, gl.VERTEX_SHADER, name);
-			if (!shader) {
-				errorCallback(`Unable to compile vertex shader for program "${name}".`);
-				return;
-			}
-			this.shaders.push(shader);
-			gl.attachShader(glProgram, shader);
-		} else {
-			gl.attachShader(glProgram, vertexShader);
-		}
-
-		// Link the program.
-		gl.linkProgram(glProgram);
-		// Check if it linked.
-		const success = gl.getProgramParameter(glProgram, gl.LINK_STATUS);
-		if (!success) {
-			// Something went wrong with the link.
-			errorCallback(`Program "${name}" failed to link: ${gl.getProgramInfoLog(glProgram)}`);
-			return;
-		}
-
-		// Program has been successfully inited.
-		this.glProgram = glProgram;
 
 		uniforms?.forEach(uniform => {
 			const { name, value, dataType } = uniform;
 			this.setUniform(name, value, dataType);
 		});
+	}
+
+	private initProgram(vertexShader: WebGLShader, programName: string) {
+		const { gl, fragmentShader, errorCallback, uniforms } = this;
+		// Create a program.
+		const program = gl.createProgram();
+		if (!program) {
+			errorCallback(`Unable to init gl program: ${name}.`);
+			return;
+		}
+		// TODO: check that attachShader worked.
+		gl.attachShader(program, fragmentShader);
+		gl.attachShader(program, vertexShader);
+		// Link the program.
+		gl.linkProgram(program);
+		// Check if it linked.
+		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
+		if (!success) {
+			// Something went wrong with the link.
+			errorCallback(`Program "${name}" failed to link: ${gl.getProgramInfoLog(program)}`);
+			return;
+		}
+		// If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
+		const uniformNames = Object.keys(uniforms);
+		for (let i = 0; i < uniformNames.length; i++) {
+			const uniformName = uniformNames[i];
+			const uniform = uniforms[uniformName];
+			const { value, type } = uniform;
+			this.setProgramUniform(program, programName, uniformName, value, type);
+		}
+		return program;
+	}
+
+	get defaultProgram() {
+		if (this._defaultProgram) return this._defaultProgram;
+		if (GPUProgram.defaultVertexShader === undefined) {
+			const { gl, name, errorCallback, glslVersion } = this;
+			// Init a default vertex shader that just passes through screen coords.
+			const vertexShaderSource = glslVersion === GLSL3 ? defaultVertexShaderSource_glsl3 : defaultVertexShaderSource_glsl1;
+			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
+			if (!shader) {
+				errorCallback(`Unable to compile default vertex shader for program "${name}".`);
+				return;
+			}
+			GPUProgram.defaultVertexShader = shader;
+		}
+		const program = this.initProgram(GPUProgram.defaultVertexShader, DEFAULT_PROGRAM_NAME);
+		this._defaultProgram = program;
+		return this._defaultProgram;
+	}
+
+	get segmentProgram() {
+		if (this._segmentProgram) return this._segmentProgram;
+		if (GPUProgram.segmentVertexShader === undefined) {
+			const { gl, name, errorCallback, glslVersion } = this;
+			// Init a default vertex shader that just passes through screen coords.
+			const vertexShaderSource = glslVersion === GLSL3 ? segmentVertexShaderSource_glsl3 : segmentVertexShaderSource_glsl1;
+			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
+			if (!shader) {
+				errorCallback(`Unable to compile segment vertex shader for program "${name}".`);
+				return;
+			}
+			GPUProgram.segmentVertexShader = shader;
+		}
+		const program = this.initProgram(GPUProgram.segmentVertexShader, DEFAULT_PROGRAM_NAME);
+		this._segmentProgram = program;
+		return this._segmentProgram;
+	}
+
+	get pointsProgram() {
+		if (this._pointsProgram) return this._pointsProgram;
+		if (GPUProgram.pointsVertexShader === undefined) {
+			const { gl, name, errorCallback, glslVersion } = this;
+			// Init a default vertex shader that just passes through screen coords.
+			// @ts-ignore
+			const vertexShaderSource = glslVersion === GLSL3 ? pointsVertexShaderSource_glsl3 : pointsVertexShaderSource_glsl1;
+			if (vertexShaderSource === undefined) {
+				throw new Error('Need to write glsl3 version of pointsVertexShader.');
+			}
+			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
+			if (!shader) {
+				errorCallback(`Unable to compile segment vertex shader for program "${name}".`);
+				return;
+			}
+			GPUProgram.pointsVertexShader = shader;
+		}
+		const program = this.initProgram(GPUProgram.pointsVertexShader, DEFAULT_PROGRAM_NAME);
+		this._pointsProgram = program;
+		return this._pointsProgram;
+	}
+
+	get vectorFieldProgram() {
+		if (this._vectorFieldProgram) return this._vectorFieldProgram;
+		if (GPUProgram.vectorFieldVertexShader === undefined) {
+			const { gl, name, errorCallback, glslVersion } = this;
+			// Init a default vertex shader that just passes through screen coords.
+			// @ts-ignore
+			const vertexShaderSource = glslVersion === GLSL3 ? vectorFieldVertexShaderSource_glsl3 : vectorFieldVertexShaderSource_glsl1;
+			if (vertexShaderSource === undefined) {
+				throw new Error('Need to write glsl3 version of pointsVertexShader.');
+			}
+			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
+			if (!shader) {
+				errorCallback(`Unable to compile segment vertex shader for program "${name}".`);
+				return;
+			}
+			GPUProgram.vectorFieldVertexShader = shader;
+		}
+		const program = this.initProgram(GPUProgram.vectorFieldVertexShader, DEFAULT_PROGRAM_NAME);
+		this._vectorFieldProgram = program;
+		return this._vectorFieldProgram;
+	}
+
+	private get activePrograms() {
+		const programs = [];
+		if (this._defaultProgram) programs.push({
+			program: this._defaultProgram,
+			programName: DEFAULT_PROGRAM_NAME,
+		});
+		if (this._segmentProgram) programs.push({
+			program: this._segmentProgram,
+			programName: SEGMENT_PROGRAM_NAME,
+		});
+		if (this._pointsProgram) programs.push({
+			program: this._pointsProgram,
+			programName: POINTS_PROGRAM_NAME,
+		});
+		if (this._vectorFieldProgram) programs.push({
+			program: this._vectorFieldProgram,
+			programName: VECTOR_FIELD_PROGRAM_NAME,
+		});
+		return programs;
 	}
 
 	private uniformTypeForValue(
@@ -172,44 +294,31 @@ export class GPUProgram {
 		}
 	}
 
-	setUniform(
+	private setProgramUniform(
+		program: WebGLProgram,
+		programName: string,
 		uniformName: string,
 		value: UniformValueType,
-		dataType: UniformDataType,
+		type: UniformType,
 	) {
-		const { gl, errorCallback, glProgram, uniforms } = this;
-
-		if (!glProgram) {
-			errorCallback(`GLProgram for GPUProgram "${this.name}" not inited.`);
-			return;
-		}
-
+		const { gl, uniforms, errorCallback } = this;
 		// Set active program.
-		gl.useProgram(glProgram);
-	
-		const type = this.uniformTypeForValue(value, dataType);
-		if (!uniforms[uniformName]) {
-			// Init uniform if needed.
-			const location = gl.getUniformLocation(glProgram, uniformName);
-			if (!location) {
+		gl.useProgram(program);
+
+		let location = uniforms[uniformName].location[programName];
+		// Init a location for WebGLProgram if needed.
+		if (location === undefined) {
+			const _location = gl.getUniformLocation(program, uniformName);
+			if (!_location) {
 				errorCallback(`Could not init uniform "${uniformName}" for program "${this.name}".
-Check that uniform is present in shader code, unused uniforms may be removed by compiler.
-Also check that uniform type in shader code matches type ${type}.
-Error code: ${gl.getError()}.`);
+		Check that uniform is present in shader code, unused uniforms may be removed by compiler.
+		Also check that uniform type in shader code matches type ${type}.
+		Error code: ${gl.getError()}.`);
 				return;
 			}
-			uniforms[uniformName] = {
-				location,
-				type: type,
-			}
+			location = _location;
+			uniforms[uniformName].location[programName] = location;
 		}
-
-		const uniform = uniforms[uniformName];
-		// Check that types match previously set uniform.
-		if (uniform.type != type) {
-			throw new Error(`Uniform "${uniformName}" for GPUProgram "${this.name}" cannot change from type ${uniform.type} to type ${type}.`);
-		}
-		const { location } = uniform;
 
 		// Set uniform.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
@@ -241,18 +350,64 @@ Error code: ${gl.getError()}.`);
 			default:
 				throw new Error(`Unknown uniform type ${type} for GPUProgram "${this.name}".`);
 		}
+	}
+
+	setUniform(
+		uniformName: string,
+		value: UniformValueType,
+		dataType?: UniformDataType,
+	) {
+		const { gl, errorCallback, activePrograms, uniforms } = this;
+
+		if (activePrograms.length === 0) {
+			errorCallback(`No gl programs for "${this.name}" have been inited.`);
+			return;
+		}
+
+		let type = uniforms[uniformName] ? uniforms[uniformName].type : undefined;
+		if (dataType) {
+			const typeParam = this.uniformTypeForValue(value, dataType);
+			if (type === undefined) type = typeParam;
+			else {
+				console.warn(`Don't need to pass in dataType to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
+				// Check that types match previously set uniform.
+				if (type !== typeParam) {
+					throw new Error(`Uniform "${uniformName}" for GPUProgram "${this.name}" cannot change from type ${type} to type ${typeParam}.`);
+				}
+			}
+		}
+		if (type === undefined) {
+			throw new Error(`Unknown type for uniform "${uniformName}", please pass in dataType to GPUProgram.setUniform when initing a new uniform.`);
+		}
+
+		if (!uniforms[uniformName]) {
+			// Init uniform if needed.
+			uniforms[uniformName] = { type, location: {}, value };
+		}
+
+		for (let i = 0; i < activePrograms.length; i++) {
+			const { program, programName } = activePrograms[i];
+			this.setProgramUniform(program, programName, uniformName, value, type);
+		}
 	};
 
 	destroy() {
-		const { gl, glProgram, shaders } = this;
-		if (glProgram) gl.deleteProgram(glProgram);
-		// Unbind all data before deleting.
-		for (let i = 0; i < shaders.length; i++) {
-			// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
-			// This method has no effect if the shader has already been deleted
-			gl.deleteShader(shaders[i]);
-		}
-		shaders.length = 0;
+		const { gl, fragmentShader, activePrograms } = this;
+		// Unbind all gl data before deleting.
+		activePrograms.forEach(({ program }) => {
+			gl.deleteProgram(program);
+		});
+		// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
+		// This method has no effect if the shader has already been deleted
+		gl.deleteShader(fragmentShader);
+
+		delete this._defaultProgram;
+		delete this._segmentProgram;
+		delete this._pointsProgram;
+		delete this._vectorFieldProgram;
+		// @ts-ignore
+		delete this.fragmentShader;
+
 		// @ts-ignore
 		delete this.gl;
 		// @ts-ignore

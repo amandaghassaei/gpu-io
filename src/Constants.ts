@@ -57,7 +57,8 @@ export type UniformType =
 	typeof INT_3D_UNIFORM |
 	typeof INT_4D_UNIFORM;
 export type Uniform = { 
-	location: WebGLUniformLocation,
+	location: { [key: string]: WebGLUniformLocation },
 	type: UniformType,
+	value: UniformValueType,
 };
 

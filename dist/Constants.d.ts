@@ -10,11 +10,15 @@ export declare const LINEAR = "LINEAR";
 export declare const NEAREST = "NEAREST";
 export declare const REPEAT = "REPEAT";
 export declare const CLAMP_TO_EDGE = "CLAMP_TO_EDGE";
+export declare const RGB = "RGB";
+export declare const RGBA = "RGBA";
 export declare type DataLayerArrayType = Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
 export declare type DataLayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
 export declare type DataLayerNumComponents = 1 | 2 | 3 | 4;
 export declare type DataLayerFilterType = typeof LINEAR | typeof NEAREST;
 export declare type DataLayerWrapType = typeof REPEAT | typeof CLAMP_TO_EDGE;
+export declare type TextureFormatType = typeof RGB | typeof RGBA;
+export declare type TextureDataType = typeof UNSIGNED_BYTE;
 export declare const GLSL3 = "300 es";
 export declare const GLSL1 = "100";
 export declare type GLSLVersion = typeof GLSL1 | typeof GLSL3;
@@ -44,6 +48,9 @@ export declare type UniformValueType = number | [
 ];
 export declare type UniformType = typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof FLOAT_4D_UNIFORM | typeof INT_1D_UNIFORM | typeof INT_2D_UNIFORM | typeof INT_3D_UNIFORM | typeof INT_4D_UNIFORM;
 export declare type Uniform = {
-    location: WebGLUniformLocation;
+    location: {
+        [key: string]: WebGLUniformLocation;
+    };
     type: UniformType;
+    value: UniformValueType;
 };

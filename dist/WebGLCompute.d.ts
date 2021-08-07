@@ -1,8 +1,8 @@
 import { DataLayer } from './DataLayer';
-import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, UniformDataType, UniformValueType, GLSLVersion } from './Constants';
+import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, UniformDataType, UniformValueType, GLSLVersion, TextureFormatType, TextureDataType } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
-declare type errorCallback = (message: string) => void;
+declare type ErrorCallback = (message: string) => void;
 export declare class WebGLCompute {
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     readonly glslVersion: GLSLVersion;
@@ -12,30 +12,33 @@ export declare class WebGLCompute {
     private readonly errorCallback;
     private renderer?;
     private readonly maxNumTextures;
-    private readonly defaultVertexShader;
-    private readonly quadPositionsBuffer;
-    private readonly boundaryPositionsBuffer;
-    private readonly circlePositionsBuffer;
+    private _quadPositionsBuffer?;
+    private _boundaryPositionsBuffer?;
+    private _circlePositionsBuffer?;
     private pointIndexArray?;
     private pointIndexBuffer?;
+    private vectorFieldIndexArray?;
+    private vectorFieldIndexBuffer?;
     readonly copyFloatProgram: GPUProgram;
     readonly copyIntProgram: GPUProgram;
     readonly copyUintProgram: GPUProgram;
     static initWithThreeRenderer(renderer: WebGLRenderer, params: {
         glslVersion?: GLSLVersion;
-    }, errorCallback?: errorCallback): WebGLCompute;
+    }, errorCallback?: ErrorCallback): WebGLCompute;
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
         antialias?: boolean;
         glslVersion?: GLSLVersion;
-    }, errorCallback?: errorCallback, renderer?: WebGLRenderer);
+    }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
     isWebGL2(): boolean;
+    private get quadPositionsBuffer();
+    private get boundaryPositionsBuffer();
+    private get circlePositionsBuffer();
     private initVertexBuffer;
     initProgram(params: {
         name: string;
         fragmentShader: string | WebGLShader;
-        vertexShader?: string | WebGLShader;
         uniforms?: {
             name: string;
             value: UniformValueType;
@@ -57,7 +60,15 @@ export declare class WebGLCompute {
         writable?: boolean;
         numBuffers?: number;
     }): DataLayer;
-    initTexture(url: string): WebGLTexture;
+    initTexture(params: {
+        name: string;
+        url: string;
+        filter?: DataLayerFilterType;
+        wrapS?: DataLayerWrapType;
+        wrapT?: DataLayerWrapType;
+        format?: TextureFormatType;
+        type?: TextureDataType;
+    }, callback: (texture: WebGLTexture) => void): WebGLTexture;
     onResize(canvas: HTMLCanvasElement): void;
     private drawSetup;
     copyProgramForType(type: DataLayerType): GPUProgram;
@@ -93,6 +104,10 @@ export declare class WebGLCompute {
     drawPoints(program: GPUProgram, inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
         pointSize?: number;
         numPoints?: number;
+        shouldBlendAlpha?: boolean;
+    }): void;
+    drawVectorField(program: GPUProgram, inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
+        vectorScale?: number;
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
