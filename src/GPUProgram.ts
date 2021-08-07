@@ -357,19 +357,14 @@ export class GPUProgram {
 		value: UniformValueType,
 		dataType?: UniformDataType,
 	) {
-		const { gl, errorCallback, activePrograms, uniforms } = this;
-
-		if (activePrograms.length === 0) {
-			errorCallback(`No gl programs for "${this.name}" have been inited.`);
-			return;
-		}
+		const { activePrograms, uniforms } = this;
 
 		let type = uniforms[uniformName] ? uniforms[uniformName].type : undefined;
 		if (dataType) {
 			const typeParam = this.uniformTypeForValue(value, dataType);
 			if (type === undefined) type = typeParam;
 			else {
-				console.warn(`Don't need to pass in dataType to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
+				// console.warn(`Don't need to pass in dataType to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
 				// Check that types match previously set uniform.
 				if (type !== typeParam) {
 					throw new Error(`Uniform "${uniformName}" for GPUProgram "${this.name}" cannot change from type ${type} to type ${typeParam}.`);
@@ -385,6 +380,7 @@ export class GPUProgram {
 			uniforms[uniformName] = { type, location: {}, value };
 		}
 
+		// Update any active programs.
 		for (let i = 0; i < activePrograms.length; i++) {
 			const { program, programName } = activePrograms[i];
 			this.setProgramUniform(program, programName, uniformName, value, type);
