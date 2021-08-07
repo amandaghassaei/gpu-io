@@ -942,6 +942,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
 
+	setData(data: DataLayerArrayType) {
+		// TODO: Rather than destroying buffers, we could write to certain window.
+		this.destroyBuffers();
+		this.initBuffers(data);
+	}
+
 	resize(
 		dimensions: number | [number, number],
 		data?: DataLayerArrayType,

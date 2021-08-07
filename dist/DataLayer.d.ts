@@ -58,6 +58,7 @@ export declare class DataLayer {
     getCurrentStateTexture(): WebGLTexture;
     getPreviousStateTexture(index?: number): WebGLTexture;
     bindOutputBuffer(incrementBufferIndex: boolean): void;
+    setData(data: DataLayerArrayType): void;
     resize(dimensions: number | [number, number], data?: DataLayerArrayType): void;
     clear(): void;
     getDimensions(): [number, number];
