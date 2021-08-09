@@ -797,6 +797,7 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program.pointsProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
+		program.setUniform('u_internal_data', 0, INT);
 		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
 		program.setUniform('u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = positionLayer.getDimensions();
@@ -865,6 +866,7 @@ can render to nextState using currentState as an input.`);
 		// TODO: Allow rendering of vector field with different scaling than output layer.
 
 		// Update uniforms and buffers.
+		program.setUniform('u_internal_data', 0, INT);
 		program.setUniform('u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
 		program.setUniform('u_internal_dimensions', dimensions, FLOAT);
 		const length = 2 * width * height;
