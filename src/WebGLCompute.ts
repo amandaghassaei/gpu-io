@@ -800,7 +800,7 @@ can render to nextState using currentState as an input.`);
 		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
 		program.setUniform('u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setUniform('u_internal_positionDimensions', positionLayerDimensions, FLOAT);
+		program.setUniform('u_internal_dimensions', positionLayerDimensions, FLOAT);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
@@ -862,9 +862,8 @@ can render to nextState using currentState as an input.`);
 		// TODO: Allow rendering of vector field with different scaling than output layer.
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
-		program.setUniform('u_internal_vectorScale', vectorScale, FLOAT);
-		program.setUniform('u_internal_positionDimensions', dimensions, FLOAT);
+		program.setUniform('u_internal_scale', vectorScale, FLOAT);
+		program.setUniform('u_internal_dimensions', dimensions, FLOAT);
 		const length = 2 * width * height;
 		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.

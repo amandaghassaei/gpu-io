@@ -7,24 +7,24 @@ precision highp int;
 attribute float a_internal_index; // Index of point.
 
 uniform sampler2D u_internal_positions; // Texture lookup with position data.
-uniform vec2 u_internal_positionDimensions;
+uniform vec2 u_internal_dimensions;
 uniform vec2 u_internal_scale;
 uniform float u_internal_pointSize;
 
 varying vec2 v_UV;
-varying vec2 vParticleUV;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
-	vParticleUV = vec2(
-		modI(a_internal_index, u_internal_positionDimensions.x),
-		floor(floor(a_internal_index + 0.5) / u_internal_positionDimensions.x)
-	) / u_internal_positionDimensions;
+	vec2 particleUV = vec2(
+		modI(a_internal_index, u_internal_dimensions.x),
+		floor(floor(a_internal_index + 0.5) / u_internal_dimensions.x)
+	) / u_internal_dimensions;
 
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
 	// We have packed a 2D displacement with the position.
-	vec4 positionData = texture2D(u_internal_positions, vParticleUV);
+	vec4 positionData = texture2D(u_internal_positions, particleUV);
+	// position = first two components plus last two components (optional accumulation buffer).
 	vec2 positionAbsolute = positionData.rg + positionData.ba;
 	v_UV = positionAbsolute * u_internal_scale;
 

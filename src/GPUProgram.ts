@@ -13,9 +13,7 @@ const defaultVertexShaderSource_glsl3 = require('./glsl_3/DefaultVertexShader.gl
 const defaultVertexShaderSource_glsl1 = require('./glsl_1/DefaultVertexShader.glsl');
 const segmentVertexShaderSource_glsl3 = require('./glsl_3/SegmentVertexShader.glsl');
 const segmentVertexShaderSource_glsl1 = require('./glsl_1/SegmentVertexShader.glsl');
-// const pointsVertexShaderSource_glsl3 = require('./glsl_3/PointsVertexShader.glsl');
 const pointsVertexShaderSource_glsl1 = require('./glsl_1/PointsVertexShader.glsl');
-// const vectorFieldVertexShaderSource_glsl3 = require('./glsl_3/VectorFieldVertexShader.glsl');
 const vectorFieldVertexShaderSource_glsl1 = require('./glsl_1/VectorFieldVertexShader.glsl');
 
 const DEFAULT_PROGRAM_NAME = 'DEFAULT';
