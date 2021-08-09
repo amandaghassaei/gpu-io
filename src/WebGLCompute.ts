@@ -862,7 +862,7 @@ can render to nextState using currentState as an input.`);
 		// TODO: Allow rendering of vector field with different scaling than output layer.
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', vectorScale, FLOAT);
+		program.setUniform('u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
 		program.setUniform('u_internal_dimensions', dimensions, FLOAT);
 		const length = 2 * width * height;
 		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {

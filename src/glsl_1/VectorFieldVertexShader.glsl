@@ -26,7 +26,7 @@ void main() {
 	if (modI(a_internal_index, 2.0) > 0.0) {
 		// Lookup vectorData at current UV.
 		vec2 vectorData = texture2D(u_internal_data, v_UV).xy;
-		v_UV += vectorData * u_internal_scale / u_internal_dimensions;
+		v_UV += vectorData * u_internal_scale;
 	}
 
 	// Calculate position in [-1, 1] range.
