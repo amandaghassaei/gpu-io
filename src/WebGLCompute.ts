@@ -848,6 +848,9 @@ can render to nextState using currentState as an input.`);
 
 		// Check that vectorLayer is valid.
 		const dimensions = vectorLayer.getDimensions();
+		if (vectorLayer.numComponents !== 2) {
+			throw new Error(`WebGLCompute.drawVectorField() must be passed a vectorDataLayer with 2 components, got vectorDataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} componsnts.`)
+		}
 		if (dimensions[0] !== width || dimensions[1] !== height) {
 			throw new Error(`Invalid dimensions ${dimensions} for vectorDataLayer, expected [${width}, ${height}].`);
 		}
