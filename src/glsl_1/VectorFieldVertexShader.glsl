@@ -9,7 +9,6 @@ attribute float a_internal_index; // Index of point.
 uniform sampler2D u_internal_data; // Texture lookup with vector data.
 uniform vec2 u_internal_dimensions;
 uniform vec2 u_internal_scale;
-uniform float u_internal_pointSize;
 
 varying vec2 v_UV;
 
@@ -32,6 +31,5 @@ void main() {
 	// Calculate position in [-1, 1] range.
 	vec2 position = v_UV * 2.0 - 1.0;
 
-	gl_PointSize = u_internal_pointSize;
 	gl_Position = vec4(position, 0, 1);
 }
