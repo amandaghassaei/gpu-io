@@ -178,7 +178,7 @@ export class GPUProgram {
 			}
 			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
 			if (!shader) {
-				errorCallback(`Unable to compile segment vertex shader for program "${name}".`);
+				errorCallback(`Unable to compile points vertex shader for program "${name}".`);
 				return;
 			}
 			GPUProgram.pointsVertexShader = shader;
@@ -196,11 +196,11 @@ export class GPUProgram {
 			// @ts-ignore
 			const vertexShaderSource = glslVersion === GLSL3 ? vectorFieldVertexShaderSource_glsl3 : vectorFieldVertexShaderSource_glsl1;
 			if (vertexShaderSource === undefined) {
-				throw new Error('Need to write glsl3 version of pointsVertexShader.');
+				throw new Error('Need to write glsl3 version of vectorFieldVertexShader.');
 			}
 			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
 			if (!shader) {
-				errorCallback(`Unable to compile segment vertex shader for program "${name}".`);
+				errorCallback(`Unable to compile vector field vertex shader for program "${name}".`);
 				return;
 			}
 			GPUProgram.vectorFieldVertexShader = shader;
