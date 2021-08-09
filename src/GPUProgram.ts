@@ -161,7 +161,7 @@ export class GPUProgram {
 			}
 			GPUProgram.segmentVertexShader = shader;
 		}
-		const program = this.initProgram(GPUProgram.segmentVertexShader, DEFAULT_PROGRAM_NAME);
+		const program = this.initProgram(GPUProgram.segmentVertexShader, SEGMENT_PROGRAM_NAME);
 		this._segmentProgram = program;
 		return this._segmentProgram;
 	}
@@ -183,7 +183,7 @@ export class GPUProgram {
 			}
 			GPUProgram.pointsVertexShader = shader;
 		}
-		const program = this.initProgram(GPUProgram.pointsVertexShader, DEFAULT_PROGRAM_NAME);
+		const program = this.initProgram(GPUProgram.pointsVertexShader, POINTS_PROGRAM_NAME);
 		this._pointsProgram = program;
 		return this._pointsProgram;
 	}
@@ -205,7 +205,7 @@ export class GPUProgram {
 			}
 			GPUProgram.vectorFieldVertexShader = shader;
 		}
-		const program = this.initProgram(GPUProgram.vectorFieldVertexShader, DEFAULT_PROGRAM_NAME);
+		const program = this.initProgram(GPUProgram.vectorFieldVertexShader, VECTOR_FIELD_PROGRAM_NAME);
 		this._vectorFieldProgram = program;
 		return this._vectorFieldProgram;
 	}
