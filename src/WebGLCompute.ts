@@ -790,15 +790,14 @@ can render to nextState using currentState as an input.`);
 			throw new Error(`Invalid numPoint ${numPoints} for positionDataLayer of length ${length}.`);
 		}
 
-		// Set default pointSize.
-		const pointSize = options?.pointSize || 1;
-
 		// Do setup - this must come first.
 		this.drawSetup(program.pointsProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_internal_data', 0, INT);
 		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
+		// Set default pointSize.
+		const pointSize = options?.pointSize || 1;
 		program.setUniform('u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = positionLayer.getDimensions();
 		program.setUniform('u_internal_dimensions', positionLayerDimensions, FLOAT);
@@ -856,9 +855,6 @@ can render to nextState using currentState as an input.`);
 			throw new Error(`Invalid dimensions ${dimensions} for vectorDataLayer, expected [${width}, ${height}].`);
 		}
 
-		// Set default scale.
-		const vectorScale = options?.vectorScale || 1;
-
 		// Do setup - this must come first.
 		this.drawSetup(program.vectorFieldProgram!, false, inputLayers, outputLayer);
 
@@ -867,6 +863,8 @@ can render to nextState using currentState as an input.`);
 
 		// Update uniforms and buffers.
 		program.setUniform('u_internal_data', 0, INT);
+		// Set default scale.
+		const vectorScale = options?.vectorScale || 1;
 		program.setUniform('u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
 		program.setUniform('u_internal_dimensions', dimensions, FLOAT);
 		const length = 2 * width * height;
@@ -889,7 +887,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.POINTS, 0, length);
+		gl.drawArrays(gl.POINTS, 1000, 100);
 		gl.disable(gl.BLEND);
 	}
 	
