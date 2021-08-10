@@ -107,6 +107,7 @@ export declare class WebGLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     drawVectorField(program: GPUProgram, inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
+        vectorSpacing?: number;
         vectorScale?: number;
         shouldBlendAlpha?: boolean;
     }): void;

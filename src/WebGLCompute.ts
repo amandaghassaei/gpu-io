@@ -829,6 +829,7 @@ can render to nextState using currentState as an input.`);
 		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer,
 		options?: {
+			vectorSpacing?: number,
 			vectorScale?: number,
 			shouldBlendAlpha?: boolean,
 		}
@@ -847,27 +848,29 @@ can render to nextState using currentState as an input.`);
 		const vectorLayer = inputLayers[0] as DataLayer;
 
 		// Check that vectorLayer is valid.
-		const dimensions = vectorLayer.getDimensions();
 		if (vectorLayer.numComponents !== 2) {
 			throw new Error(`WebGLCompute.drawVectorField() must be passed a vectorDataLayer with 2 components, got vectorDataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} componsnts.`)
 		}
-		if (dimensions[0] !== width || dimensions[1] !== height) {
-			throw new Error(`Invalid dimensions ${dimensions} for vectorDataLayer, expected [${width}, ${height}].`);
+		// Check aspect ratio.
+		const dimensions = vectorLayer.getDimensions();
+		if (Math.abs(dimensions[0] / dimensions[1] - width / height) < 0.001) {
+			throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vectorDataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected [${width}, ${height}].`);
 		}
 
 		// Do setup - this must come first.
 		this.drawSetup(program.vectorFieldProgram!, false, inputLayers, outputLayer);
 
 		// TODO: add options to reduce density of vectors.
-		// TODO: Allow rendering of vector field with different scaling than output layer.
 
 		// Update uniforms and buffers.
 		program.setUniform('u_internal_data', 0, INT, false);
 		// Set default scale.
 		const vectorScale = options?.vectorScale || 1;
 		program.setUniform('u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT, false);
-		program.setUniform('u_internal_dimensions', dimensions, FLOAT, false);
-		const length = 2 * width * height;
+		const vectorSpacing = options?.vectorSpacing || 1;
+		const spacedDimensions = [Math.floor(width / vectorSpacing), Math.floor(height / vectorSpacing)] as [number, number];
+		program.setUniform('u_internal_dimensions', spacedDimensions, FLOAT, false);
+		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
 		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
