@@ -564,12 +564,14 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
+		const glProgram = program.defaultProgram!;
+
 		// Do setup - this must come first.
 		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [1, 1], FLOAT, false);
-		program.setUniform('u_internal_translation', [0, 0], FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(program.defaultProgram!);
 
@@ -599,17 +601,19 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
+		const glProgram = program.defaultProgram!;
+
 		// Do setup - this must come first.
-		this.drawSetup(program.defaultProgram!, false, inputLayers, outputLayer);
+		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT, false);
-		program.setUniform('u_internal_translation', onePx, FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this.setPositionAttribute(program.defaultProgram!);
+		this.setPositionAttribute(glProgram);
 
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -656,16 +660,18 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
+		const glProgram = program.defaultProgram!;
+
 		// Do setup - this must come first.
-		this.drawSetup(program.defaultProgram!, false, inputLayers, outputLayer);
+		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT, false);
-		program.setUniform('u_internal_translation', onePx, FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(program.defaultProgram!);
+		this.setPositionAttribute(glProgram);
 		
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -695,14 +701,16 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
+		const glProgram = program.defaultProgram!;
+
 		// Do setup - this must come first.
-		this.drawSetup(program.defaultProgram!, false, inputLayers, outputLayer);
+		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT, false);
-		program.setUniform('u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this.setPositionAttribute(program.defaultProgram!);
+		this.setPositionAttribute(glProgram);
 		
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -733,23 +741,25 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
+		const glProgram = program.segmentProgram!;
+
 		// Do setup - this must come first.
-		this.drawSetup(program.segmentProgram!, false, inputLayers, outputLayer);
+		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_radius', radius, FLOAT, false);
-		program.setUniform('u_internal_scale', [2 / width, 2 / height], FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_radius', radius, FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
 		const diffX = position1[0] - position2[0];
 		const diffY = position1[1] - position2[1];
 		const angle = Math.atan2(diffY, diffX);
-		program.setUniform('u_internal_rotation', angle, FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_rotation', angle, FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
-		program.setUniform('u_internal_length', length, FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_length', length, FLOAT);
 		const positionX = (position1[0] + position2[0]) / 2;
 		const positionY = (position1[1] + position2[1]) / 2;
-		program.setUniform('u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
-		this.setPositionAttribute(program.segmentProgram!);
+		this.setPositionAttribute(glProgram);
 		
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -784,23 +794,28 @@ can render to nextState using currentState as an input.`);
 		const positionLayer = inputLayers[0] as DataLayer;
 
 		// Check that numPoints is valid.
+		if (positionLayer.numComponents !== 2 && positionLayer.numComponents !== 4) {
+			throw new Error(`WebGLCompute.drawPoints() must be passed a positionDataLayer with either 2 or 4 components, got positionDataLayer "${positionLayer.name}" with ${positionLayer.numComponents} components.`)
+		}
 		const length = positionLayer.getLength();
 		const numPoints = options?.numPoints || length;
 		if (numPoints > length) {
 			throw new Error(`Invalid numPoint ${numPoints} for positionDataLayer of length ${length}.`);
 		}
 
+		const glProgram = program.pointsProgram!;
+
 		// Do setup - this must come first.
-		this.drawSetup(program.pointsProgram!, false, inputLayers, outputLayer);
+		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_data', 0, INT, false);
-		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_data', 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
 		// Set default pointSize.
 		const pointSize = options?.pointSize || 1;
-		program.setUniform('u_internal_pointSize', pointSize, FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setUniform('u_internal_dimensions', positionLayerDimensions, FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_dimensions', positionLayerDimensions, FLOAT);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
@@ -811,7 +826,7 @@ can render to nextState using currentState as an input.`);
 			this.pointIndexBuffer = this.initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer!);
-		this.setIndexAttribute(program.pointsProgram!);
+		this.setIndexAttribute(glProgram);
 
 		// Draw.
 		// Default to blend === true.
@@ -849,7 +864,7 @@ can render to nextState using currentState as an input.`);
 
 		// Check that vectorLayer is valid.
 		if (vectorLayer.numComponents !== 2) {
-			throw new Error(`WebGLCompute.drawVectorField() must be passed a vectorDataLayer with 2 components, got vectorDataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} componsnts.`)
+			throw new Error(`WebGLCompute.drawVectorField() must be passed a vectorDataLayer with 2 components, got vectorDataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} components.`)
 		}
 		// Check aspect ratio.
 		const dimensions = vectorLayer.getDimensions();
@@ -857,19 +872,21 @@ can render to nextState using currentState as an input.`);
 			throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vectorDataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected [${width}, ${height}].`);
 		}
 
+		const glProgram = program.vectorFieldProgram!;
+
 		// Do setup - this must come first.
-		this.drawSetup(program.vectorFieldProgram!, false, inputLayers, outputLayer);
+		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// TODO: add options to reduce density of vectors.
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_data', 0, INT, false);
+		program.setVertexUniform(glProgram, 'u_internal_data', 0, INT);
 		// Set default scale.
-		const vectorScale = options?.vectorScale || 1;
-		program.setUniform('u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT, false);
+		const vectorScale = options?.vectorScale || 10;
+		program.setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
 		const vectorSpacing = options?.vectorSpacing || 1;
 		const spacedDimensions = [Math.floor(width / vectorSpacing), Math.floor(height / vectorSpacing)] as [number, number];
-		program.setUniform('u_internal_dimensions', spacedDimensions, FLOAT, false);
+		program.setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, FLOAT);
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
 		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
@@ -881,7 +898,7 @@ can render to nextState using currentState as an input.`);
 			this.vectorFieldIndexBuffer = this.initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vectorFieldIndexBuffer!);
-		this.setIndexAttribute(program.vectorFieldProgram!);
+		this.setIndexAttribute(glProgram);
 
 		// Draw.
 		// Default to blend === true.

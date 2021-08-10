@@ -37,6 +37,7 @@ export declare class GPUProgram {
     private get activePrograms();
     private uniformTypeForValue;
     private setProgramUniform;
-    setUniform(uniformName: string, value: UniformValueType, dataType?: UniformDataType, saveUniform?: boolean): void;
+    setUniform(uniformName: string, value: UniformValueType, dataType?: UniformDataType): void;
+    setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
     destroy(): void;
 }

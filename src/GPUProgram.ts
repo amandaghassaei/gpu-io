@@ -357,7 +357,6 @@ export class GPUProgram {
 		uniformName: string,
 		value: UniformValueType,
 		dataType?: UniformDataType,
-		saveUniform = true,
 	) {
 		const { activePrograms, uniforms } = this;
 
@@ -377,7 +376,7 @@ export class GPUProgram {
 			throw new Error(`Unknown type for uniform "${uniformName}", please pass in dataType to GPUProgram.setUniform when initing a new uniform.`);
 		}
 
-		if (saveUniform && !uniforms[uniformName]) {
+		if (!uniforms[uniformName]) {
 			// Init uniform if needed.
 			uniforms[uniformName] = { type, location: {}, value };
 		}
@@ -388,6 +387,32 @@ export class GPUProgram {
 			this.setProgramUniform(program, programName, uniformName, value, type);
 		}
 	};
+
+	setVertexUniform(
+		program: WebGLProgram,
+		uniformName: string,
+		value: UniformValueType,
+		dataType: UniformDataType,
+	) {
+		const type = this.uniformTypeForValue(value, dataType);
+		if (program === undefined) {
+			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
+		}
+		let programName: string | undefined;
+		if (program === this._defaultProgram) {
+			programName = DEFAULT_PROGRAM_NAME;
+		} else if (program === this._segmentProgram) {
+			programName = SEGMENT_PROGRAM_NAME;
+		} else if (program === this._pointsProgram) {
+			programName = POINTS_PROGRAM_NAME;
+		} else if (program === this._vectorFieldProgram) {
+			programName = VECTOR_FIELD_PROGRAM_NAME;
+		}
+		if (programName === undefined) {
+			throw new Error('Could not find valid programName for WebGLProgram.');
+		}
+		this.setProgramUniform(program, programName, uniformName, value, type);
+	}
 
 	destroy() {
 		const { gl, fragmentShader, activePrograms } = this;
