@@ -979,7 +979,7 @@ can render to nextState using currentState as an input.`);
 			const color = options?.color || [1, 0, 0];
 			program.setUniform('u_color', color, FLOAT);
 		}
-		const glProgram = program.vectorFieldProgram!;
+		const glProgram = program.indexedLinesProgram!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
