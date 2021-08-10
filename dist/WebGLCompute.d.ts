@@ -77,44 +77,44 @@ export declare class WebGLCompute {
     private setOutputLayer;
     private setPositionAttribute;
     private setIndexAttribute;
-    step(program: GPUProgram, inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
+    step(program: GPUProgram, inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
-    stepBoundary(program: GPUProgram, inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
+    stepBoundary(program: GPUProgram, inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
         singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
     }): void;
-    stepNonBoundary(program: GPUProgram, inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
+    stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
     stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
-    inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
+    inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
     stepSegment(program: GPUProgram, position1: [number, number], // position is in screen space coords.
     position2: [number, number], // position is in screen space coords.
     radius: number, // radius is in px.
-    inputLayers?: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
+    inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
-    drawPoints(inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
+    drawPoints(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
         pointSize?: number;
         numPoints?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
-    }, program?: GPUProgram): void;
-    drawVectorField(inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
+    }, outputLayer?: DataLayer, program?: GPUProgram): void;
+    drawVectorField(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
         vectorSpacing?: number;
         vectorScale?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
-    }, program?: GPUProgram): void;
+    }, outputLayer?: DataLayer, program?: GPUProgram): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
     getValues(dataLayer: DataLayer): DataLayerArrayType;
     private readyToRead;

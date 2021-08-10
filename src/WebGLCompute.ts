@@ -561,7 +561,7 @@ can render to nextState using currentState as an input.`);
 	// Step for entire fullscreen quad.
 	step(
 		program: GPUProgram,
-		inputLayers: (DataLayer | WebGLTexture)[] = [],
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -577,6 +577,7 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -597,7 +598,7 @@ can render to nextState using currentState as an input.`);
 	// Step program only for a strip of px along the boundary.
 	stepBoundary(
 		program: GPUProgram,
-		inputLayers: (DataLayer | WebGLTexture)[] = [],
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -614,6 +615,7 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -657,7 +659,7 @@ can render to nextState using currentState as an input.`);
 	// Step program for all but a strip of px along the boundary.
 	stepNonBoundary(
 		program: GPUProgram,
-		inputLayers: (DataLayer | WebGLTexture)[] = [],
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -673,6 +675,7 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -697,7 +700,7 @@ can render to nextState using currentState as an input.`);
 		program: GPUProgram,
 		position: [number, number], // position is in screen space coords.
 		radius: number, // radius is in px.
-		inputLayers: (DataLayer | WebGLTexture)[] = [],
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -714,6 +717,7 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -737,7 +741,7 @@ can render to nextState using currentState as an input.`);
 		position1: [number, number], // position is in screen space coords.
 		position2: [number, number], // position is in screen space coords.
 		radius: number, // radius is in px.
-		inputLayers: (DataLayer | WebGLTexture)[] = [],
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
 			shouldBlendAlpha?: boolean,
@@ -754,6 +758,7 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.segmentProgram!;
 
 		// Do setup - this must come first.
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -781,14 +786,14 @@ can render to nextState using currentState as an input.`);
 	}
 
 	drawPoints(
-		inputLayers: (DataLayer | WebGLTexture)[],
-		outputLayer?: DataLayer,
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
 		options?: {
 			pointSize?: number,
 			numPoints?: number,
 			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
 		},
+		outputLayer?: DataLayer,
 		program?: GPUProgram,
 	) {
 		const { gl, errorState, pointIndexArray } = this;
@@ -798,6 +803,8 @@ can render to nextState using currentState as an input.`);
 		if (errorState) {
 			return;
 		}
+
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 
 		if (inputLayers.length < 1) {
 			throw new Error(`Invalid inputLayers for drawPoints: must pass a positionDataLayer as first element of inputLayers.`);
@@ -856,14 +863,14 @@ can render to nextState using currentState as an input.`);
 	}
 
 	drawVectorField(
-		inputLayers: (DataLayer | WebGLTexture)[],
-		outputLayer?: DataLayer,
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
 		options?: {
 			vectorSpacing?: number,
 			vectorScale?: number,
 			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
 		},
+		outputLayer?: DataLayer,
 		program?: GPUProgram,
 	) {
 		const { gl, errorState, vectorFieldIndexArray } = this;
@@ -873,6 +880,8 @@ can render to nextState using currentState as an input.`);
 		if (errorState) {
 			return;
 		}
+
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 
 		if (inputLayers.length < 1) {
 			throw new Error(`Invalid inputLayers for drawVectorField: must pass a vectorDataLayer as first element of inputLayers.`);
@@ -904,9 +913,9 @@ can render to nextState using currentState as an input.`);
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_data', 0, INT);
 		// Set default scale.
-		const vectorScale = options?.vectorScale || 10;
+		const vectorScale = options?.vectorScale || 1;
 		program.setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
-		const vectorSpacing = options?.vectorSpacing || 1;
+		const vectorSpacing = options?.vectorSpacing || 10;
 		const spacedDimensions = [Math.floor(width / vectorSpacing), Math.floor(height / vectorSpacing)] as [number, number];
 		program.setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, FLOAT);
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
