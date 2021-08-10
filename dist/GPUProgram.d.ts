@@ -37,6 +37,6 @@ export declare class GPUProgram {
     private get activePrograms();
     private uniformTypeForValue;
     private setProgramUniform;
-    setUniform(uniformName: string, value: UniformValueType, dataType?: UniformDataType): void;
+    setUniform(uniformName: string, value: UniformValueType, dataType?: UniformDataType, saveUniform?: boolean): void;
     destroy(): void;
 }

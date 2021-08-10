@@ -568,8 +568,8 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [1, 1], FLOAT);
-		program.setUniform('u_internal_translation', [0, 0], FLOAT);
+		program.setUniform('u_internal_scale', [1, 1], FLOAT, false);
+		program.setUniform('u_internal_translation', [0, 0], FLOAT, false);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(program.defaultProgram!);
 
@@ -606,8 +606,8 @@ can render to nextState using currentState as an input.`);
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
-		program.setUniform('u_internal_translation', onePx, FLOAT);
+		program.setUniform('u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT, false);
+		program.setUniform('u_internal_translation', onePx, FLOAT, false);
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 		this.setPositionAttribute(program.defaultProgram!);
 
@@ -662,8 +662,8 @@ can render to nextState using currentState as an input.`);
 		// Update uniforms and buffers.
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setUniform('u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
-		program.setUniform('u_internal_translation', onePx, FLOAT);
+		program.setUniform('u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT, false);
+		program.setUniform('u_internal_translation', onePx, FLOAT, false);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(program.defaultProgram!);
 		
@@ -699,8 +699,8 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program.defaultProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
-		program.setUniform('u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
+		program.setUniform('u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT, false);
+		program.setUniform('u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT, false);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this.setPositionAttribute(program.defaultProgram!);
 		
@@ -737,17 +737,17 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program.segmentProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_radius', radius, FLOAT);
-		program.setUniform('u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program.setUniform('u_internal_radius', radius, FLOAT, false);
+		program.setUniform('u_internal_scale', [2 / width, 2 / height], FLOAT, false);
 		const diffX = position1[0] - position2[0];
 		const diffY = position1[1] - position2[1];
 		const angle = Math.atan2(diffY, diffX);
-		program.setUniform('u_internal_rotation', angle, FLOAT);
+		program.setUniform('u_internal_rotation', angle, FLOAT, false);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
-		program.setUniform('u_internal_length', length, FLOAT);
+		program.setUniform('u_internal_length', length, FLOAT, false);
 		const positionX = (position1[0] + position2[0]) / 2;
 		const positionY = (position1[1] + position2[1]) / 2;
-		program.setUniform('u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT);
+		program.setUniform('u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT, false);
 		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
 		this.setPositionAttribute(program.segmentProgram!);
 		
@@ -794,13 +794,13 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program.pointsProgram!, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_data', 0, INT);
-		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT);
+		program.setUniform('u_internal_data', 0, INT, false);
+		program.setUniform('u_internal_scale', [1 / width, 1 / height], FLOAT, false);
 		// Set default pointSize.
 		const pointSize = options?.pointSize || 1;
-		program.setUniform('u_internal_pointSize', pointSize, FLOAT);
+		program.setUniform('u_internal_pointSize', pointSize, FLOAT, false);
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setUniform('u_internal_dimensions', positionLayerDimensions, FLOAT);
+		program.setUniform('u_internal_dimensions', positionLayerDimensions, FLOAT, false);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
@@ -862,11 +862,11 @@ can render to nextState using currentState as an input.`);
 		// TODO: Allow rendering of vector field with different scaling than output layer.
 
 		// Update uniforms and buffers.
-		program.setUniform('u_internal_data', 0, INT);
+		program.setUniform('u_internal_data', 0, INT, false);
 		// Set default scale.
 		const vectorScale = options?.vectorScale || 1;
-		program.setUniform('u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
-		program.setUniform('u_internal_dimensions', dimensions, FLOAT);
+		program.setUniform('u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT, false);
+		program.setUniform('u_internal_dimensions', dimensions, FLOAT, false);
 		const length = 2 * width * height;
 		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.

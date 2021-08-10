@@ -303,7 +303,7 @@ export class GPUProgram {
 		// Set active program.
 		gl.useProgram(program);
 
-		let location = uniforms[uniformName].location[programName];
+		let location = uniforms[uniformName]?.location[programName];
 		// Init a location for WebGLProgram if needed.
 		if (location === undefined) {
 			const _location = gl.getUniformLocation(program, uniformName);
@@ -315,7 +315,10 @@ export class GPUProgram {
 				return;
 			}
 			location = _location;
-			uniforms[uniformName].location[programName] = location;
+			// Save location for future use.
+			if (uniforms[uniformName]) {
+				uniforms[uniformName].location[programName] = location;
+			}
 		}
 
 		// Set uniform.
@@ -354,6 +357,7 @@ export class GPUProgram {
 		uniformName: string,
 		value: UniformValueType,
 		dataType?: UniformDataType,
+		saveUniform = true,
 	) {
 		const { activePrograms, uniforms } = this;
 
@@ -373,7 +377,7 @@ export class GPUProgram {
 			throw new Error(`Unknown type for uniform "${uniformName}", please pass in dataType to GPUProgram.setUniform when initing a new uniform.`);
 		}
 
-		if (!uniforms[uniformName]) {
+		if (saveUniform && !uniforms[uniformName]) {
 			// Init uniform if needed.
 			uniforms[uniformName] = { type, location: {}, value };
 		}
