@@ -9,12 +9,6 @@ import {
 	Uniform, UniformDataType, UniformType, UniformValueType,
 } from './Constants';
 import { compileShader } from './utils';
-const defaultVertexShaderSource_glsl3 = require('./glsl_3/DefaultVertexShader.glsl');
-const defaultVertexShaderSource_glsl1 = require('./glsl_1/DefaultVertexShader.glsl');
-const segmentVertexShaderSource_glsl3 = require('./glsl_3/SegmentVertexShader.glsl');
-const segmentVertexShaderSource_glsl1 = require('./glsl_1/SegmentVertexShader.glsl');
-const pointsVertexShaderSource_glsl1 = require('./glsl_1/PointsVertexShader.glsl');
-const vectorFieldVertexShaderSource_glsl1 = require('./glsl_1/VectorFieldVertexShader.glsl');
 
 const DEFAULT_PROGRAM_NAME = 'DEFAULT';
 const SEGMENT_PROGRAM_NAME = 'SEGMENT';
@@ -135,7 +129,7 @@ export class GPUProgram {
 		if (GPUProgram.defaultVertexShader === undefined) {
 			const { gl, name, errorCallback, glslVersion } = this;
 			// Init a default vertex shader that just passes through screen coords.
-			const vertexShaderSource = glslVersion === GLSL3 ? defaultVertexShaderSource_glsl3 : defaultVertexShaderSource_glsl1;
+			const vertexShaderSource = glslVersion === GLSL3 ? require('./glsl_3/DefaultVertexShader.glsl') : require('./glsl_1/DefaultVertexShader.glsl');
 			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
 			if (!shader) {
 				errorCallback(`Unable to compile default vertex shader for program "${name}".`);
@@ -153,7 +147,7 @@ export class GPUProgram {
 		if (GPUProgram.segmentVertexShader === undefined) {
 			const { gl, name, errorCallback, glslVersion } = this;
 			// Init a default vertex shader that just passes through screen coords.
-			const vertexShaderSource = glslVersion === GLSL3 ? segmentVertexShaderSource_glsl3 : segmentVertexShaderSource_glsl1;
+			const vertexShaderSource = glslVersion === GLSL3 ? require('./glsl_3/SegmentVertexShader.glsl') : require('./glsl_1/SegmentVertexShader.glsl');
 			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
 			if (!shader) {
 				errorCallback(`Unable to compile segment vertex shader for program "${name}".`);
@@ -172,7 +166,7 @@ export class GPUProgram {
 			const { gl, name, errorCallback, glslVersion } = this;
 			// Init a default vertex shader that just passes through screen coords.
 			// @ts-ignore
-			const vertexShaderSource = glslVersion === GLSL3 ? pointsVertexShaderSource_glsl3 : pointsVertexShaderSource_glsl1;
+			const vertexShaderSource = glslVersion === GLSL3 ? pointsVertexShaderSource_glsl3 : require('./glsl_1/PointsVertexShader.glsl');
 			if (vertexShaderSource === undefined) {
 				throw new Error('Need to write glsl3 version of pointsVertexShader.');
 			}
@@ -194,7 +188,7 @@ export class GPUProgram {
 			const { gl, name, errorCallback, glslVersion } = this;
 			// Init a default vertex shader that just passes through screen coords.
 			// @ts-ignore
-			const vertexShaderSource = glslVersion === GLSL3 ? vectorFieldVertexShaderSource_glsl3 : vectorFieldVertexShaderSource_glsl1;
+			const vertexShaderSource = glslVersion === GLSL3 ? vectorFieldVertexShaderSource_glsl3 : require('./glsl_1/VectorFieldVertexShader.glsl');
 			if (vertexShaderSource === undefined) {
 				throw new Error('Need to write glsl3 version of vectorFieldVertexShader.');
 			}

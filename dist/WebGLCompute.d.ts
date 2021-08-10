@@ -19,9 +19,10 @@ export declare class WebGLCompute {
     private pointIndexBuffer?;
     private vectorFieldIndexArray?;
     private vectorFieldIndexBuffer?;
-    readonly copyFloatProgram: GPUProgram;
-    readonly copyIntProgram: GPUProgram;
-    readonly copyUintProgram: GPUProgram;
+    private readonly copyFloatProgram;
+    private readonly copyIntProgram;
+    private readonly copyUintProgram;
+    private _singleColorProgram?;
     static initWithThreeRenderer(renderer: WebGLRenderer, params: {
         glslVersion?: GLSLVersion;
     }, errorCallback?: ErrorCallback): WebGLCompute;
@@ -31,6 +32,7 @@ export declare class WebGLCompute {
         antialias?: boolean;
         glslVersion?: GLSLVersion;
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
+    private get singleColorProgram();
     isWebGL2(): boolean;
     private get quadPositionsBuffer();
     private get boundaryPositionsBuffer();
@@ -101,16 +103,18 @@ export declare class WebGLCompute {
     options?: {
         shouldBlendAlpha?: boolean;
     }): void;
-    drawPoints(program: GPUProgram, inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
+    drawPoints(inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
         pointSize?: number;
         numPoints?: number;
+        color?: [number, number, number];
         shouldBlendAlpha?: boolean;
-    }): void;
-    drawVectorField(program: GPUProgram, inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
+    }, program?: GPUProgram): void;
+    drawVectorField(inputLayers: (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, options?: {
         vectorSpacing?: number;
         vectorScale?: number;
+        color?: [number, number, number];
         shouldBlendAlpha?: boolean;
-    }): void;
+    }, program?: GPUProgram): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
     getValues(dataLayer: DataLayer): DataLayerArrayType;
     private readyToRead;

@@ -7,15 +7,11 @@ import {
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
 import * as utils from './utils/Vector4';
-import { compileShader, isWebGL2, isPowerOf2 } from './utils';
+import { isWebGL2, isPowerOf2 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
 	isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType,
 	validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
-const copyFloatFragmentShaderSource_glsl3 = require('./glsl_3/CopyFloatFragShader.glsl');
-const copyIntFragmentShaderSource_glsl3 = require('./glsl_3/CopyIntFragShader.glsl');
-const copyUintFragmentShaderSource_glsl3 = require('./glsl_3/CopyUintFragShader.glsl');
-const copyFragmentShaderSource_glsl1 = require('./glsl_1/CopyFragShader.glsl');
 
 const NUM_SEGMENTS_CIRCLE = 18;// Must be divisible by 6 to work with stepSegment().
 
@@ -46,9 +42,12 @@ export class WebGLCompute {
 	private vectorFieldIndexBuffer?: WebGLBuffer;
 
 	// Programs for copying data (these are needed for rendering partial screen geometries).
-	readonly copyFloatProgram!: GPUProgram;
-	readonly copyIntProgram!: GPUProgram;
-	readonly copyUintProgram!: GPUProgram;
+	private readonly copyFloatProgram!: GPUProgram;
+	private readonly copyIntProgram!: GPUProgram;
+	private readonly copyUintProgram!: GPUProgram;
+
+	// Other util programs.
+	private _singleColorProgram?: GPUProgram;
 
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
@@ -146,7 +145,7 @@ export class WebGLCompute {
 		// Init programs to pass values from one texture to another.
 		this.copyFloatProgram = this.initProgram({
 			name: 'copyFloat',
-			fragmentShader: glslVersion === GLSL3 ? copyFloatFragmentShaderSource_glsl3 : copyFragmentShaderSource_glsl1,
+			fragmentShader: glslVersion === GLSL3 ? require('./glsl_3/CopyFloatFragShader.glsl') : require('./glsl_1/CopyFragShader.glsl'),
 			uniforms: [
 					{
 						name: 'u_state',
@@ -159,7 +158,7 @@ export class WebGLCompute {
 		if (glslVersion === GLSL3) {
 			this.copyIntProgram = this.initProgram({
 				name: 'copyInt',
-				fragmentShader: copyIntFragmentShaderSource_glsl3,
+				fragmentShader: require('./glsl_3/CopyIntFragShader.glsl'),
 				uniforms: [
 						{
 							name: 'u_state',
@@ -171,7 +170,7 @@ export class WebGLCompute {
 			);
 			this.copyUintProgram = this.initProgram({
 				name: 'copyUint',
-				fragmentShader: copyUintFragmentShaderSource_glsl3,
+				fragmentShader: require('./glsl_3/CopyUintFragShader.glsl'),
 				uniforms: [
 						{
 							name: 'u_state',
@@ -195,6 +194,17 @@ export class WebGLCompute {
 		// Log number of textures available.
 		this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
 		console.log(`${this.maxNumTextures} textures max.`);
+	}
+
+	private get singleColorProgram() {
+		if (this._singleColorProgram === undefined) {
+			const program = this.initProgram({
+				name: 'singleColor',
+				fragmentShader: this.glslVersion === GLSL3 ? require('./glsl_3/SingleColorFragShader.glsl') : require('./glsl_1/SingleColorFragShader.glsl'),
+			});
+			this._singleColorProgram = program;
+		}
+		return this._singleColorProgram;
 	}
 
 	isWebGL2() {
@@ -771,14 +781,15 @@ can render to nextState using currentState as an input.`);
 	}
 
 	drawPoints(
-		program: GPUProgram,
 		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer,
 		options?: {
 			pointSize?: number,
 			numPoints?: number,
+			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
-		}
+		},
+		program?: GPUProgram,
 	) {
 		const { gl, errorState, pointIndexArray } = this;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
@@ -789,7 +800,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawPoints on program "${program.name}": must pass a positionDataLayer as first element of inputLayers.`);
+			throw new Error(`Invalid inputLayers for drawPoints: must pass a positionDataLayer as first element of inputLayers.`);
 		}
 		const positionLayer = inputLayers[0] as DataLayer;
 
@@ -803,6 +814,11 @@ can render to nextState using currentState as an input.`);
 			throw new Error(`Invalid numPoint ${numPoints} for positionDataLayer of length ${length}.`);
 		}
 
+		if (program === undefined) {
+			program = this.singleColorProgram;
+			const color = options?.color || [1, 0, 0];
+			program.setUniform('u_color', color, FLOAT);
+		}
 		const glProgram = program.pointsProgram!;
 
 		// Do setup - this must come first.
@@ -840,14 +856,15 @@ can render to nextState using currentState as an input.`);
 	}
 
 	drawVectorField(
-		program: GPUProgram,
 		inputLayers: (DataLayer | WebGLTexture)[],
 		outputLayer?: DataLayer,
 		options?: {
 			vectorSpacing?: number,
 			vectorScale?: number,
+			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
-		}
+		},
+		program = this.singleColorProgram,
 	) {
 		const { gl, errorState, vectorFieldIndexArray } = this;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
@@ -872,6 +889,11 @@ can render to nextState using currentState as an input.`);
 			throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vectorDataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected [${width}, ${height}].`);
 		}
 
+		if (program === undefined) {
+			program = this.singleColorProgram;
+			const color = options?.color || [1, 0, 0];
+			program.setUniform('u_color', color, FLOAT);
+		}
 		const glProgram = program.vectorFieldProgram!;
 
 		// Do setup - this must come first.
