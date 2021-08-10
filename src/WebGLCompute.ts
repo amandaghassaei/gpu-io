@@ -887,7 +887,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.POINTS, 1000, 100);
+		gl.drawArrays(gl.POINTS, 1000, 6000);
 		gl.disable(gl.BLEND);
 	}
 	
