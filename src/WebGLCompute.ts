@@ -853,7 +853,7 @@ can render to nextState using currentState as an input.`);
 		}
 		// Check aspect ratio.
 		const dimensions = vectorLayer.getDimensions();
-		if (Math.abs(dimensions[0] / dimensions[1] - width / height) < 0.001) {
+		if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.001) {
 			throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vectorDataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected [${width}, ${height}].`);
 		}
 
