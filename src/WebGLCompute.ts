@@ -1019,8 +1019,8 @@ can render to nextState using currentState as an input.`);
 	getValues(dataLayer: DataLayer) {
 		const { gl, glslVersion } = this;
 
-		// TODO: in case dataLayer was not the last output written to.
-		// dataLayer.bindOutputBuffer(false);
+		// In case dataLayer was not the last output written to.
+		dataLayer.bindOutputBuffer(false);
 
 		const [ width, height ] = dataLayer.getDimensions();
 		let { glNumChannels, glType, glFormat, internalType } = dataLayer;
