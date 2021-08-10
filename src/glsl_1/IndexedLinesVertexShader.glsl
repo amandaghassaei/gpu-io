@@ -26,7 +26,7 @@ void main() {
 	vec4 positionData = texture2D(u_internal_positions, particleUV);
 	// position = first two components plus last two components (optional accumulation buffer).
 	vec2 positionAbsolute = positionData.rg;
-	if (u_internal_positionWithAccumulation == 1.0) positionAbsolute += positionData.ba;
+	if (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;
 	v_UV = positionAbsolute * u_internal_scale;
 
 	// Calculate position in [-1, 1] range.
