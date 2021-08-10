@@ -15,6 +15,13 @@ const SEGMENT_PROGRAM_NAME = 'SEGMENT';
 const POINTS_PROGRAM_NAME = 'POINTS';
 const VECTOR_FIELD_PROGRAM_NAME = 'VECTOR_FIELD';
 const INDEXED_LINES_PROGRAM_NAME = 'INDEXED_LINES';
+const glProgramNames = [
+	DEFAULT_PROGRAM_NAME,
+	SEGMENT_PROGRAM_NAME,
+	POINTS_PROGRAM_NAME,
+	VECTOR_FIELD_PROGRAM_NAME,
+	INDEXED_LINES_PROGRAM_NAME,
+];
 
 export class GPUProgram {
 	readonly name: string;
@@ -243,6 +250,10 @@ export class GPUProgram {
 			program: this._vectorFieldProgram,
 			programName: VECTOR_FIELD_PROGRAM_NAME,
 		});
+		if (this._indexedLinesProgram) programs.push({
+			program: this._indexedLinesProgram,
+			programName: INDEXED_LINES_PROGRAM_NAME,
+		});
 		return programs;
 	}
 
@@ -422,6 +433,8 @@ export class GPUProgram {
 			programName = POINTS_PROGRAM_NAME;
 		} else if (program === this._vectorFieldProgram) {
 			programName = VECTOR_FIELD_PROGRAM_NAME;
+		} else if (program === this._indexedLinesProgram) {
+			programName = INDEXED_LINES_PROGRAM_NAME;
 		}
 		if (programName === undefined) {
 			throw new Error('Could not find valid programName for WebGLProgram.');
@@ -443,6 +456,7 @@ export class GPUProgram {
 		delete this._segmentProgram;
 		delete this._pointsProgram;
 		delete this._vectorFieldProgram;
+		delete this._indexedLinesProgram;
 		// @ts-ignore
 		delete this.fragmentShader;
 
