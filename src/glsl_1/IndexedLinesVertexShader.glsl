@@ -9,7 +9,7 @@ attribute float a_internal_index; // Index of point.
 uniform sampler2D u_internal_positions; // Texture lookup with position data.
 uniform vec2 u_internal_dimensions;
 uniform vec2 u_internal_scale;
-uniform int u_internal_positionWithAccumulation;
+uniform bool u_internal_positionWithAccumulation;
 
 varying vec2 v_UV;
 
