@@ -864,7 +864,7 @@ can render to nextState using currentState as an input.`);
 			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
 		},
-		program = this.singleColorProgram,
+		program?: GPUProgram,
 	) {
 		const { gl, errorState, vectorFieldIndexArray } = this;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
@@ -875,7 +875,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawVectorField on program "${program.name}": must pass a vectorDataLayer as first element of inputLayers.`);
+			throw new Error(`Invalid inputLayers for drawVectorField: must pass a vectorDataLayer as first element of inputLayers.`);
 		}
 		const vectorLayer = inputLayers[0] as DataLayer;
 
