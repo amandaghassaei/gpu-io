@@ -14,6 +14,7 @@ const DEFAULT_PROGRAM_NAME = 'DEFAULT';
 const SEGMENT_PROGRAM_NAME = 'SEGMENT';
 const POINTS_PROGRAM_NAME = 'POINTS';
 const VECTOR_FIELD_PROGRAM_NAME = 'VECTOR_FIELD';
+const INDEXED_LINES_PROGRAM_NAME = 'INDEXED_LINES';
 
 export class GPUProgram {
 	readonly name: string;
@@ -27,11 +28,13 @@ export class GPUProgram {
 	private _segmentProgram?: WebGLProgram;
 	private _pointsProgram?: WebGLProgram;
 	private _vectorFieldProgram?: WebGLProgram;
+	private _indexedLinesProgram?: WebGLProgram;
 	// Store vertexShaders as class properties (for sharing).
 	private static defaultVertexShader?: WebGLShader;
 	private static segmentVertexShader?: WebGLShader;
 	private static pointsVertexShader?: WebGLShader;
 	private static vectorFieldVertexShader?: WebGLShader;
+	private static indexedLinesVertexShader?: WebGLShader;
 
 	constructor(
 		params: {
@@ -146,7 +149,6 @@ export class GPUProgram {
 		if (this._segmentProgram) return this._segmentProgram;
 		if (GPUProgram.segmentVertexShader === undefined) {
 			const { gl, name, errorCallback, glslVersion } = this;
-			// Init a default vertex shader that just passes through screen coords.
 			const vertexShaderSource = glslVersion === GLSL3 ? require('./glsl_3/SegmentVertexShader.glsl') : require('./glsl_1/SegmentVertexShader.glsl');
 			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
 			if (!shader) {
@@ -164,7 +166,6 @@ export class GPUProgram {
 		if (this._pointsProgram) return this._pointsProgram;
 		if (GPUProgram.pointsVertexShader === undefined) {
 			const { gl, name, errorCallback, glslVersion } = this;
-			// Init a default vertex shader that just passes through screen coords.
 			// @ts-ignore
 			const vertexShaderSource = glslVersion === GLSL3 ? pointsVertexShaderSource_glsl3 : require('./glsl_1/PointsVertexShader.glsl');
 			if (vertexShaderSource === undefined) {
@@ -186,7 +187,6 @@ export class GPUProgram {
 		if (this._vectorFieldProgram) return this._vectorFieldProgram;
 		if (GPUProgram.vectorFieldVertexShader === undefined) {
 			const { gl, name, errorCallback, glslVersion } = this;
-			// Init a default vertex shader that just passes through screen coords.
 			// @ts-ignore
 			const vertexShaderSource = glslVersion === GLSL3 ? vectorFieldVertexShaderSource_glsl3 : require('./glsl_1/VectorFieldVertexShader.glsl');
 			if (vertexShaderSource === undefined) {
@@ -202,6 +202,27 @@ export class GPUProgram {
 		const program = this.initProgram(GPUProgram.vectorFieldVertexShader, VECTOR_FIELD_PROGRAM_NAME);
 		this._vectorFieldProgram = program;
 		return this._vectorFieldProgram;
+	}
+
+	get indexedLinesProgram() {
+		if (this._indexedLinesProgram) return this._indexedLinesProgram;
+		if (GPUProgram.indexedLinesVertexShader === undefined) {
+			const { gl, name, errorCallback, glslVersion } = this;
+			// @ts-ignore
+			const vertexShaderSource = glslVersion === GLSL3 ? indexedLinesVertexShaderSource_glsl3 : require('./glsl_1/IndexedLinesVertexShader.glsl');
+			if (vertexShaderSource === undefined) {
+				throw new Error('Need to write glsl3 version of indexedLinesVertexShader.');
+			}
+			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
+			if (!shader) {
+				errorCallback(`Unable to compile vector field vertex shader for program "${name}".`);
+				return;
+			}
+			GPUProgram.indexedLinesVertexShader = shader;
+		}
+		const program = this.initProgram(GPUProgram.indexedLinesVertexShader, INDEXED_LINES_PROGRAM_NAME);
+		this._indexedLinesProgram = program;
+		return this._indexedLinesProgram;
 	}
 
 	private get activePrograms() {

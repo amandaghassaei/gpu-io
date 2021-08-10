@@ -10,10 +10,12 @@ export declare class GPUProgram {
     private _segmentProgram?;
     private _pointsProgram?;
     private _vectorFieldProgram?;
+    private _indexedLinesProgram?;
     private static defaultVertexShader?;
     private static segmentVertexShader?;
     private static pointsVertexShader?;
     private static vectorFieldVertexShader?;
+    private static indexedLinesVertexShader?;
     constructor(params: {
         gl: WebGLRenderingContext | WebGL2RenderingContext;
         name: string;
@@ -34,6 +36,7 @@ export declare class GPUProgram {
     get segmentProgram(): WebGLProgram | undefined;
     get pointsProgram(): WebGLProgram | undefined;
     get vectorFieldProgram(): WebGLProgram | undefined;
+    get indexedLinesProgram(): WebGLProgram | undefined;
     private get activePrograms();
     private uniformTypeForValue;
     private setProgramUniform;

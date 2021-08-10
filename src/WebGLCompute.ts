@@ -40,6 +40,7 @@ export class WebGLCompute {
 	private pointIndexBuffer?: WebGLBuffer;
 	private vectorFieldIndexArray?: Float32Array;
 	private vectorFieldIndexBuffer?: WebGLBuffer;
+	private indexedLinesIndexBuffer?: WebGLBuffer;
 
 	// Programs for copying data (these are needed for rendering partial screen geometries).
 	private readonly copyFloatProgram!: GPUProgram;
@@ -789,7 +790,7 @@ can render to nextState using currentState as an input.`);
 		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
 		options?: {
 			pointSize?: number,
-			numPoints?: number,
+			count?: number,
 			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
 		},
@@ -807,18 +808,18 @@ can render to nextState using currentState as an input.`);
 		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 
 		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawPoints: must pass a positionDataLayer as first element of inputLayers.`);
+			throw new Error(`Invalid inputLayers for drawPoints: must pass a position DataLayer as first element of inputLayers.`);
 		}
 		const positionLayer = inputLayers[0] as DataLayer;
 
 		// Check that numPoints is valid.
 		if (positionLayer.numComponents !== 2 && positionLayer.numComponents !== 4) {
-			throw new Error(`WebGLCompute.drawPoints() must be passed a positionDataLayer with either 2 or 4 components, got positionDataLayer "${positionLayer.name}" with ${positionLayer.numComponents} components.`)
+			throw new Error(`WebGLCompute.drawPoints() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positionLayer.name}" with ${positionLayer.numComponents} components.`)
 		}
 		const length = positionLayer.getLength();
-		const numPoints = options?.numPoints || length;
-		if (numPoints > length) {
-			throw new Error(`Invalid numPoint ${numPoints} for positionDataLayer of length ${length}.`);
+		const count = options?.count || length;
+		if (count > length) {
+			throw new Error(`Invalid count ${count} for position DataLayer of length ${length}.`);
 		}
 
 		if (program === undefined) {
@@ -832,14 +833,16 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_data', 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_positions', 0, INT);
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
+		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
+		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positionLayer.numComponents === 4 ? 1 : 0, INT);
 		// Set default pointSize.
 		const pointSize = options?.pointSize || 1;
 		program.setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = positionLayer.getDimensions();
 		program.setVertexUniform(glProgram, 'u_internal_dimensions', positionLayerDimensions, FLOAT);
-		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < numPoints)) {
+		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
 			for (let i = 0; i < length; i++) {
@@ -858,7 +861,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.POINTS, 0, numPoints);
+		gl.drawArrays(gl.POINTS, 0, count);
 		gl.disable(gl.BLEND);
 	}
 
@@ -884,18 +887,18 @@ can render to nextState using currentState as an input.`);
 		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 
 		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawVectorField: must pass a vectorDataLayer as first element of inputLayers.`);
+			throw new Error(`Invalid inputLayers for drawVectorField: must pass a vector DataLayer as first element of inputLayers.`);
 		}
 		const vectorLayer = inputLayers[0] as DataLayer;
 
 		// Check that vectorLayer is valid.
 		if (vectorLayer.numComponents !== 2) {
-			throw new Error(`WebGLCompute.drawVectorField() must be passed a vectorDataLayer with 2 components, got vectorDataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} components.`)
+			throw new Error(`WebGLCompute.drawVectorField() must be passed a vector DataLayer with 2 components, got vector DataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} components.`)
 		}
 		// Check aspect ratio.
 		const dimensions = vectorLayer.getDimensions();
 		if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.001) {
-			throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vectorDataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected [${width}, ${height}].`);
+			throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector DataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected [${width}, ${height}].`);
 		}
 
 		if (program === undefined) {
@@ -908,10 +911,8 @@ can render to nextState using currentState as an input.`);
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
-		// TODO: add options to reduce density of vectors.
-
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_data', 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_vectors', 0, INT);
 		// Set default scale.
 		const vectorScale = options?.vectorScale || 1;
 		program.setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
@@ -939,6 +940,75 @@ can render to nextState using currentState as an input.`);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
 		gl.drawArrays(gl.LINES, 0, length);
+		gl.disable(gl.BLEND);
+	}
+
+	drawIndexedLines(
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
+		indices: Float32Array,
+		options?: {
+			count?: number,
+			color?: [number, number, number],
+			shouldBlendAlpha?: boolean,
+		},
+		outputLayer?: DataLayer,
+		program?: GPUProgram,
+	) {
+		const { gl, errorState } = this;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
+
+		if (inputLayers.length < 1) {
+			throw new Error(`Invalid inputLayers for drawIndexedLines: must pass a position DataLayer as first element of inputLayers.`);
+		}
+		const positionLayer = inputLayers[0] as DataLayer;
+
+		// Check that positionLayer is valid.
+		if (positionLayer.numComponents !== 2 && positionLayer.numComponents !== 4) {
+			throw new Error(`WebGLCompute.drawIndexedLines() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positionLayer.name}" with ${positionLayer.numComponents} components.`)
+		}
+
+		if (program === undefined) {
+			program = this.singleColorProgram;
+			const color = options?.color || [1, 0, 0];
+			program.setUniform('u_color', color, FLOAT);
+		}
+		const glProgram = program.vectorFieldProgram!;
+
+		// Do setup - this must come first.
+		this.drawSetup(glProgram, false, inputLayers, outputLayer);
+
+		// Update uniforms and buffers.
+		program.setVertexUniform(glProgram, 'u_internal_positions', 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
+		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
+		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positionLayer.numComponents === 4 ? 1 : 0, INT);
+		const positionLayerDimensions = positionLayer.getDimensions();
+		program.setVertexUniform(glProgram, 'u_internal_dimensions', positionLayerDimensions, FLOAT);
+		if (this.indexedLinesIndexBuffer === undefined) {
+			this.indexedLinesIndexBuffer = this.initVertexBuffer(indices);
+		} else {
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.indexedLinesIndexBuffer!);
+			// Copy buffer data.
+			gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+		}
+		// gl.bindBuffer(gl.ARRAY_BUFFER, this.indexedLinesIndexBuffer!);
+		this.setIndexAttribute(glProgram);
+
+		// Draw.
+		// Default to blend === true.
+		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
+		gl.drawArrays(gl.LINES, 0, options?.count ? options.count : indices.length);
 		gl.disable(gl.BLEND);
 	}
 	

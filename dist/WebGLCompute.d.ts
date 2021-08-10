@@ -19,6 +19,7 @@ export declare class WebGLCompute {
     private pointIndexBuffer?;
     private vectorFieldIndexArray?;
     private vectorFieldIndexBuffer?;
+    private indexedLinesIndexBuffer?;
     private readonly copyFloatProgram;
     private readonly copyIntProgram;
     private readonly copyUintProgram;
@@ -105,13 +106,18 @@ export declare class WebGLCompute {
     }): void;
     drawPoints(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
         pointSize?: number;
-        numPoints?: number;
+        count?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }, outputLayer?: DataLayer, program?: GPUProgram): void;
     drawVectorField(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
         vectorSpacing?: number;
         vectorScale?: number;
+        color?: [number, number, number];
+        shouldBlendAlpha?: boolean;
+    }, outputLayer?: DataLayer, program?: GPUProgram): void;
+    drawIndexedLines(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], indices: Float32Array, options?: {
+        count?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }, outputLayer?: DataLayer, program?: GPUProgram): void;

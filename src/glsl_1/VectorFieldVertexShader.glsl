@@ -6,7 +6,7 @@ precision highp int;
 // Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl
 attribute float a_internal_index; // Index of point.
 
-uniform sampler2D u_internal_data; // Texture lookup with vector data.
+uniform sampler2D u_internal_vectors; // Texture lookup with vector data.
 uniform vec2 u_internal_dimensions;
 uniform vec2 u_internal_scale;
 
@@ -24,7 +24,7 @@ void main() {
 	// Add vector displacement if needed.
 	if (modI(a_internal_index, 2.0) > 0.0) {
 		// Lookup vectorData at current UV.
-		vec2 vectorData = texture2D(u_internal_data, v_UV).xy;
+		vec2 vectorData = texture2D(u_internal_vectors, v_UV).xy;
 		v_UV += vectorData * u_internal_scale;
 	}
 
