@@ -49,6 +49,7 @@ export class WebGLCompute {
 
 	// Other util programs.
 	private _singleColorProgram?: GPUProgram;
+	private _singleColorWithWrapCheckProgram?: GPUProgram;
 
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
@@ -206,6 +207,17 @@ export class WebGLCompute {
 			this._singleColorProgram = program;
 		}
 		return this._singleColorProgram;
+	}
+
+	private get singleColorWithWrapCheckProgram() {
+		if (this._singleColorWithWrapCheckProgram === undefined) {
+			const program = this.initProgram({
+				name: 'singleColorWithWrapCheck',
+				fragmentShader: this.glslVersion === GLSL3 ? require('./glsl_3/SingleColorWithWrapCheckFragShader.glsl') : require('./glsl_1/SingleColorWithWrapCheckFragShader.glsl'),
+			});
+			this._singleColorWithWrapCheckProgram = program;
+		}
+		return this._singleColorWithWrapCheckProgram;
 	}
 
 	isWebGL2() {
@@ -981,7 +993,7 @@ can render to nextState using currentState as an input.`);
 		}
 
 		if (program === undefined) {
-			program = this.singleColorProgram;
+			program = options?.wrapX || options?.wrapY ? this.singleColorWithWrapCheckProgram : this.singleColorProgram;
 			const color = options?.color || [1, 0, 0];
 			program.setUniform('u_color', color, FLOAT);
 		}

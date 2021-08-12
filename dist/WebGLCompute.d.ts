@@ -24,6 +24,7 @@ export declare class WebGLCompute {
     private readonly copyIntProgram;
     private readonly copyUintProgram;
     private _singleColorProgram?;
+    private _singleColorWithWrapCheckProgram?;
     static initWithThreeRenderer(renderer: WebGLRenderer, params: {
         glslVersion?: GLSLVersion;
     }, errorCallback?: ErrorCallback): WebGLCompute;
@@ -34,6 +35,7 @@ export declare class WebGLCompute {
         glslVersion?: GLSLVersion;
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
     private get singleColorProgram();
+    private get singleColorWithWrapCheckProgram();
     isWebGL2(): boolean;
     private get quadPositionsBuffer();
     private get boundaryPositionsBuffer();

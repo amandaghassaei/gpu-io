@@ -4,8 +4,6 @@ import {
 	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT,
 	GLSL1, GLSL3,
 } from './Constants';
-// const SingleColorFragShader = require('./kernels_1.0/SingleColorFragShader.glsl');
-// const ZeroFragmentShader = require('./kernels_1.0/ZeroFragShader.glsl');
 
 export {
 	WebGLCompute,
