@@ -23,11 +23,11 @@ void main() {
 	) / u_internal_positionsDimensions;
 
 	// Wrap if needed.
-	if (wrapX) {
+	if (u_internal_wrapX) {
 		if (particleUV.x < 0.0) particleUV.x += 1.0;
 		if (particleUV.x > 1.0) particleUV.x -= 1.0;
 	}
-	if (wrapY) {
+	if (u_internal_wrapY) {
 		if (particleUV.x < 0.0) particleUV.y += 1.0;
 		if (particleUV.x > 0.0) particleUV.y -= 1.0;
 	}
