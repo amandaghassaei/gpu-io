@@ -335,9 +335,9 @@ export class GPUProgram {
 			const _location = gl.getUniformLocation(program, uniformName);
 			if (!_location) {
 				errorCallback(`Could not init uniform "${uniformName}" for program "${this.name}".
-		Check that uniform is present in shader code, unused uniforms may be removed by compiler.
-		Also check that uniform type in shader code matches type ${type}.
-		Error code: ${gl.getError()}.`);
+Check that uniform is present in shader code, unused uniforms may be removed by compiler.
+Also check that uniform type in shader code matches type ${type}.
+Error code: ${gl.getError()}.`);
 				return;
 			}
 			location = _location;
@@ -386,7 +386,7 @@ export class GPUProgram {
 	) {
 		const { activePrograms, uniforms } = this;
 
-		let type = uniforms[uniformName] ? uniforms[uniformName].type : undefined;
+		let type = uniforms[uniformName]?.type;
 		if (dataType) {
 			const typeParam = this.uniformTypeForValue(value, dataType);
 			if (type === undefined) type = typeParam;
@@ -405,6 +405,9 @@ export class GPUProgram {
 		if (!uniforms[uniformName]) {
 			// Init uniform if needed.
 			uniforms[uniformName] = { type, location: {}, value };
+		} else {
+			// Update value.
+			uniforms[uniformName].value = value;
 		}
 
 		// Update any active programs.
