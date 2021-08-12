@@ -6,7 +6,7 @@ varying vec2 v_lineWrapping;
 
 void main() {
 	// check if this line has wrapped.
-	if (v_lineWrapping.x != 0.0 || v_lineWrapping.x != 1.0 || v_lineWrapping.y != 0.0 || v_lineWrapping.y != 1.0) {
+	if ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {
 		// Render nothing.
 		discard;
 		return;
