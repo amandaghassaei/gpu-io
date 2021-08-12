@@ -23,16 +23,6 @@ void main() {
 		floor(floor(a_internal_index + 0.5) / u_internal_positionsDimensions.x)
 	) / u_internal_positionsDimensions;
 
-	// Wrap if needed.
-	if (u_internal_wrapX) {
-		if (particleUV.x < 0.0) particleUV.x += 1.0;
-		if (particleUV.x > 1.0) particleUV.x -= 1.0;
-	}
-	if (u_internal_wrapY) {
-		if (particleUV.x < 0.0) particleUV.y += 1.0;
-		if (particleUV.x > 0.0) particleUV.y -= 1.0;
-	}
-
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
 	// We have packed a 2D displacement with the position.
@@ -41,6 +31,16 @@ void main() {
 	vec2 positionAbsolute = positionData.rg;
 	if (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;
 	v_UV = positionAbsolute * u_internal_scale;
+
+	// Wrap if needed.
+	if (u_internal_wrapX) {
+		if (v_UV.x < 0.0) v_UV.x += 1.0;
+		if (v_UV.x > 1.0) v_UV.x -= 1.0;
+	}
+	if (u_internal_wrapY) {
+		if (v_UV.y < 0.0) v_UV.y += 1.0;
+		if (v_UV.y > 1.0) v_UV.y -= 1.0;
+	}
 
 	// Calculate position in [-1, 1] range.
 	vec2 position = v_UV * 2.0 - 1.0;
