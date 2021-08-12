@@ -108,6 +108,8 @@ export declare class WebGLCompute {
         pointSize?: number;
         count?: number;
         color?: [number, number, number];
+        wrapX?: boolean;
+        wrapY?: boolean;
         shouldBlendAlpha?: boolean;
     }, outputLayer?: DataLayer, program?: GPUProgram): void;
     drawVectorField(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
@@ -119,6 +121,8 @@ export declare class WebGLCompute {
     drawIndexedLines(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], indices: Float32Array, options?: {
         count?: number;
         color?: [number, number, number];
+        wrapX?: boolean;
+        wrapY?: boolean;
         shouldBlendAlpha?: boolean;
     }, outputLayer?: DataLayer, program?: GPUProgram): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;

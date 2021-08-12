@@ -792,6 +792,8 @@ can render to nextState using currentState as an input.`);
 			pointSize?: number,
 			count?: number,
 			color?: [number, number, number],
+			wrapX?: boolean,
+			wrapY?: boolean,
 			shouldBlendAlpha?: boolean,
 		},
 		outputLayer?: DataLayer,
@@ -841,7 +843,9 @@ can render to nextState using currentState as an input.`);
 		const pointSize = options?.pointSize || 1;
 		program.setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setVertexUniform(glProgram, 'u_internal_dimensions', positionLayerDimensions, FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapX', options?.wrapX ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapY', options?.wrapY ? 1 : 0, INT);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
@@ -949,6 +953,8 @@ can render to nextState using currentState as an input.`);
 		options?: {
 			count?: number,
 			color?: [number, number, number],
+			wrapX?: boolean,
+			wrapY?: boolean,
 			shouldBlendAlpha?: boolean,
 		},
 		outputLayer?: DataLayer,
@@ -990,7 +996,9 @@ can render to nextState using currentState as an input.`);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
 		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positionLayer.numComponents === 4 ? 1 : 0, INT);
 		const positionLayerDimensions = positionLayer.getDimensions();
-		program.setVertexUniform(glProgram, 'u_internal_dimensions', positionLayerDimensions, FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapX', options?.wrapX ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapY', options?.wrapY ? 1 : 0, INT);
 		if (this.indexedLinesIndexBuffer === undefined) {
 			this.indexedLinesIndexBuffer = this.initVertexBuffer(indices);
 		} else {
