@@ -14,7 +14,7 @@ uniform bool u_internal_wrapX;
 uniform bool u_internal_wrapY;
 
 varying vec2 v_UV;
-varying vec2 v_wrapping; // Use this to test if line is only half wrapped and should not be rendered.
+varying vec2 v_line_wrapping; // Use this to test if line is only half wrapped and should not be rendered.
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
@@ -33,23 +33,23 @@ void main() {
 	v_UV = positionAbsolute * u_internal_scale;
 
 	// Wrap if needed.
-	v_wrapping = vec4(0.0);
+	v_line_wrapping = vec2(0.0);
 	if (u_internal_wrapX) {
 		if (v_UV.x < 0.0) {
 			v_UV.x += 1.0;
-			v_wrapping.x = 1.0;
+			v_line_wrapping.x = 1.0;
 		} else if (v_UV.x > 1.0) {
 			v_UV.x -= 1.0;
-			v_wrapping.x = 1.0;
+			v_line_wrapping.x = 1.0;
 		}
 	}
 	if (u_internal_wrapY) {
 		if (v_UV.y < 0.0) {
 			v_UV.y += 1.0;
-			v_wrapping.y = 1.0;
+			v_line_wrapping.y = 1.0;
 		} else if (v_UV.y > 1.0) {
 			v_UV.y -= 1.0;
-			v_wrapping.y = 1.0;
+			v_line_wrapping.y = 1.0;
 		}
 	}
 
