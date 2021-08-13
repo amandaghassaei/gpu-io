@@ -912,10 +912,10 @@ can render to nextState using currentState as an input.`);
 			throw new Error(`WebGLCompute.drawVectorField() must be passed a vector DataLayer with 2 components, got vector DataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} components.`)
 		}
 		// Check aspect ratio.
-		const dimensions = vectorLayer.getDimensions();
-		if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.001) {
-			throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector DataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected [${width}, ${height}].`);
-		}
+		// const dimensions = vectorLayer.getDimensions();
+		// if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.01) {
+		// 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector DataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
+		// }
 
 		if (program === undefined) {
 			program = this.singleColorProgram;
