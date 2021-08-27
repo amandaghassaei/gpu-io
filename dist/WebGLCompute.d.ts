@@ -14,7 +14,7 @@ export declare class WebGLCompute {
     private readonly maxNumTextures;
     private _quadPositionsBuffer?;
     private _boundaryPositionsBuffer?;
-    private _circlePositionsBuffer?;
+    private _circlePositionsBuffer;
     private pointIndexArray?;
     private pointIndexBuffer?;
     private vectorFieldIndexArray?;
@@ -39,7 +39,7 @@ export declare class WebGLCompute {
     isWebGL2(): boolean;
     private get quadPositionsBuffer();
     private get boundaryPositionsBuffer();
-    private get circlePositionsBuffer();
+    private getCirclePositionsBuffer;
     private initVertexBuffer;
     initProgram(params: {
         name: string;
@@ -97,6 +97,7 @@ export declare class WebGLCompute {
     radius: number, // radius is in px.
     inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
+        numSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
     stepSegment(program: GPUProgram, position1: [number, number], // position is in screen space coords.
@@ -104,6 +105,7 @@ export declare class WebGLCompute {
     radius: number, // radius is in px.
     inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
+        numSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
     drawPoints(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
@@ -120,7 +122,7 @@ export declare class WebGLCompute {
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }, outputLayer?: DataLayer, program?: GPUProgram): void;
-    drawIndexedLines(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], indices: Float32Array, options?: {
+    drawIndexedLines(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array, options?: {
         count?: number;
         color?: [number, number, number];
         wrapX?: boolean;

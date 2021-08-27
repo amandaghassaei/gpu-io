@@ -13,7 +13,7 @@ import {
 	isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType,
 	validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
 
-const NUM_SEGMENTS_CIRCLE = 18;// Must be divisible by 6 to work with stepSegment().
+const DEFAULT_NUM_SEGMENTS_CIRCLE = 18;// Must be divisible by 6 to work with stepSegment().
 
 type ErrorCallback = (message: string) => void;
 
@@ -34,7 +34,8 @@ export class WebGLCompute {
 	// Precomputed buffers (inited as needed).
 	private _quadPositionsBuffer?: WebGLBuffer;
 	private _boundaryPositionsBuffer?: WebGLBuffer;
-	private _circlePositionsBuffer?: WebGLBuffer;
+	// Store multiple circle positions buffers for various num segments, use numSegments as key.
+	private _circlePositionsBuffer: { [key: number]: WebGLBuffer } = {};
 
 	private pointIndexArray?: Float32Array;
 	private pointIndexBuffer?: WebGLBuffer;
@@ -240,19 +241,20 @@ export class WebGLCompute {
 		return this._boundaryPositionsBuffer!;
 	}
 
-	private get circlePositionsBuffer() {
-		if (this._circlePositionsBuffer === undefined) {
+	private getCirclePositionsBuffer(numSegments: number) {
+		if (this._circlePositionsBuffer[numSegments] == undefined) {
 			const unitCirclePoints = [0, 0];
-			for (let i = 0; i <= NUM_SEGMENTS_CIRCLE; i++) {
+			for (let i = 0; i <= numSegments; i++) {
 				unitCirclePoints.push(
-					Math.cos(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
-					Math.sin(2 * Math.PI * i / NUM_SEGMENTS_CIRCLE),
+					Math.cos(2 * Math.PI * i / numSegments),
+					Math.sin(2 * Math.PI * i / numSegments),
 				);
 			}
 			const circlePositions = new Float32Array(unitCirclePoints);
-			this._circlePositionsBuffer = this.initVertexBuffer(circlePositions)!;
+			const buffer = this.initVertexBuffer(circlePositions)!;
+			this._circlePositionsBuffer[numSegments] = buffer;
 		}
-		return this._circlePositionsBuffer!;
+		return this._circlePositionsBuffer[numSegments];
 	}
 
 	private initVertexBuffer(
@@ -716,10 +718,11 @@ can render to nextState using currentState as an input.`);
 		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
+			numSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState, circlePositionsBuffer } = this;
+		const { gl, errorState } = this;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
@@ -736,7 +739,11 @@ can render to nextState using currentState as an input.`);
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
+		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_NUM_SEGMENTS_CIRCLE;
+		if (numSegments < 3) {
+			throw new Error(`numSegments for WebGLCompute.stepCircle must be greater than 2, got ${numSegments}.`);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
 		this.setPositionAttribute(glProgram);
 		
 		// Draw.
@@ -744,7 +751,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);	
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);	
 		gl.disable(gl.BLEND);
 	}
 
@@ -757,10 +764,11 @@ can render to nextState using currentState as an input.`);
 		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
+			numSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState, circlePositionsBuffer } = this;
+		const { gl, errorState } = this;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
@@ -786,7 +794,11 @@ can render to nextState using currentState as an input.`);
 		const positionX = (position1[0] + position2[0]) / 2;
 		const positionY = (position1[1] + position2[1]) / 2;
 		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, circlePositionsBuffer);
+		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_NUM_SEGMENTS_CIRCLE;
+		if (numSegments < 6 || numSegments % 6 !== 0) {
+			throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
 		this.setPositionAttribute(glProgram);
 		
 		// Draw.
@@ -794,7 +806,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, NUM_SEGMENTS_CIRCLE + 2);
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
 		gl.disable(gl.BLEND);
 	}
 
@@ -961,7 +973,7 @@ can render to nextState using currentState as an input.`);
 
 	drawIndexedLines(
 		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
-		indices: Float32Array,
+		indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
 		options?: {
 			count?: number,
 			color?: [number, number, number],
@@ -1002,6 +1014,8 @@ can render to nextState using currentState as an input.`);
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
+		const count = options?.count ? options.count : indices.length;
+
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_positions', 0, INT);
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
@@ -1012,7 +1026,19 @@ can render to nextState using currentState as an input.`);
 		program.setVertexUniform(glProgram, 'u_internal_wrapX', options?.wrapX ? 1 : 0, INT);
 		program.setVertexUniform(glProgram, 'u_internal_wrapY', options?.wrapY ? 1 : 0, INT);
 		if (this.indexedLinesIndexBuffer === undefined) {
-			this.indexedLinesIndexBuffer = this.initVertexBuffer(indices);
+			// Have to use float32 array bc int is not supported as a vertex attribute type.
+			let floatArray: Float32Array;
+			if (indices.constructor !== Float32Array) {
+				// Have to use float32 array bc int is not supported as a vertex attribute type.
+				floatArray = new Float32Array(indices.length);
+				for (let i = 0; i < count; i++) {
+					floatArray[i] = indices[i];
+				}
+				console.warn(`Converting indices array of type ${indices.constructor} to Float32Array in WebGLCompute.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required.`);
+			} else {
+				floatArray = indices as Float32Array;
+			}
+			this.indexedLinesIndexBuffer = this.initVertexBuffer(floatArray);
 		} else {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.indexedLinesIndexBuffer!);
 			// Copy buffer data.
@@ -1028,7 +1054,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.LINES, 0, options?.count ? options.count : indices.length);
+		gl.drawArrays(gl.LINES, 0, count);
 		gl.disable(gl.BLEND);
 	}
 	
