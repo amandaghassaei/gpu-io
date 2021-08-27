@@ -13,7 +13,7 @@ import {
 	isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType,
 	validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
 
-const DEFAULT_NUM_SEGMENTS_CIRCLE = 18;// Must be divisible by 6 to work with stepSegment().
+const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;// Must be divisible by 6 to work with stepSegment().
 
 type ErrorCallback = (message: string) => void;
 
@@ -739,7 +739,7 @@ can render to nextState using currentState as an input.`);
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
-		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_NUM_SEGMENTS_CIRCLE;
+		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 3) {
 			throw new Error(`numSegments for WebGLCompute.stepCircle must be greater than 2, got ${numSegments}.`);
 		}
@@ -794,7 +794,7 @@ can render to nextState using currentState as an input.`);
 		const positionX = (position1[0] + position2[0]) / 2;
 		const positionY = (position1[1] + position2[1]) / 2;
 		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT);
-		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_NUM_SEGMENTS_CIRCLE;
+		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 6 || numSegments % 6 !== 0) {
 			throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
 		}
