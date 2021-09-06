@@ -385,7 +385,7 @@ export class WebGLCompute {
 
 		// Get image data type, default to unsigned byte.
 		const type = params.type !== undefined ? params.type : UNSIGNED_BYTE;
-		if (!isValidTextureDataType(format)) {
+		if (!isValidTextureDataType(type)) {
 			throw new Error(`Invalid type: ${type} for DataLayer "${name}", must be ${validTextureDataTypes.join(', ')}.`);
 		}
 
