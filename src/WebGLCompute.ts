@@ -344,7 +344,7 @@ export class WebGLCompute {
 			format?: TextureFormatType,
 			type?: TextureDataType,
 		},
-		callback: (texture: WebGLTexture) => void,
+		callback?: (texture: WebGLTexture) => void,
 	) {
 		// Check params.
 		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format'];
