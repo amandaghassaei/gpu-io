@@ -343,11 +343,11 @@ export class WebGLCompute {
 			wrapT?: DataLayerWrapType,
 			format?: TextureFormatType,
 			type?: TextureDataType,
+			onLoad?: (texture: WebGLTexture) => void,
 		},
-		callback?: (texture: WebGLTexture) => void,
 	) {
 		// Check params.
-		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format'];
+		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
 				throw new Error(`Invalid key ${key} passed to WebGLCompute.initTexture.  Valid keys are ${validKeys.join(', ')}.`);
@@ -437,7 +437,7 @@ export class WebGLCompute {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[filter]);
 
 			// Callback when texture has loaded.
-			if (callback) callback(texture);
+			if (params.onLoad) params.onLoad(texture);
 		};
 		image.onerror = (e) => {
 			errorCallback(`Error loading image ${name}: ${e}`);

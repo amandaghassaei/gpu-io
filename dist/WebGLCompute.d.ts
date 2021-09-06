@@ -73,7 +73,8 @@ export declare class WebGLCompute {
         wrapT?: DataLayerWrapType;
         format?: TextureFormatType;
         type?: TextureDataType;
-    }, callback?: (texture: WebGLTexture) => void): WebGLTexture;
+        onLoad?: (texture: WebGLTexture) => void;
+    }): WebGLTexture;
     onResize(canvas: HTMLCanvasElement): void;
     private drawSetup;
     copyProgramForType(type: DataLayerType): GPUProgram;
