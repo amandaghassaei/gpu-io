@@ -8,7 +8,7 @@ export declare class DataLayer {
     readonly name: string;
     private readonly gl;
     private readonly errorCallback;
-    private bufferIndex;
+    private _bufferIndex;
     readonly numBuffers: number;
     readonly buffers: DataLayerBuffer[];
     private length?;
@@ -53,6 +53,7 @@ export declare class DataLayer {
     private static shouldCastIntTypeAsFloat;
     private static getGLTextureParameters;
     private static testFramebufferWrite;
+    get bufferIndex(): number;
     private validateDataArray;
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;

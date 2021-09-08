@@ -28,7 +28,7 @@ export class DataLayer {
 	private readonly errorCallback: ErrorCallback;
 
 	// Each DataLayer may contain a number of buffers to store different instances of the state.
-	private bufferIndex = 0;
+	private _bufferIndex = 0;
 	readonly numBuffers;
 	readonly buffers: DataLayerBuffer[] = [];
 
@@ -737,6 +737,10 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		return validStatus;
 	}
 
+	get bufferIndex() {
+		return this._bufferIndex;
+	}
+
 	private validateDataArray(
 		_data?: DataLayerArrayType,
 	) {
@@ -913,14 +917,14 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	getCurrentStateTexture() {
-		return this.buffers[this.bufferIndex].texture;
+		return this.buffers[this._bufferIndex].texture;
 	}
 
 	getPreviousStateTexture(index = -1) {
 		if (this.numBuffers === 1) {
 			throw new Error(`Cannot call getPreviousStateTexture on DataLayer "${this.name}" with only one buffer.`);
 		}
-		const previousIndex = this.bufferIndex + index + this.numBuffers;
+		const previousIndex = this._bufferIndex + index + this.numBuffers;
 		if (previousIndex < 0 || previousIndex >= this.numBuffers) {
 			throw new Error(`Invalid index ${index} passed to getPreviousStateTexture on DataLayer ${this.name} with ${this.numBuffers} buffers.`);
 		}
@@ -933,9 +937,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		const { gl } = this;
 		if (incrementBufferIndex) {
 			// Increment bufferIndex.
-			this.bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+			this._bufferIndex = (this._bufferIndex + 1) % this.numBuffers;
 		}
-		const { framebuffer } = this.buffers[this.bufferIndex];
+		const { framebuffer } = this.buffers[this._bufferIndex];
 		if (!framebuffer) {
 			throw new Error(`DataLayer "${this.name}" is not writable.`);
 		}
