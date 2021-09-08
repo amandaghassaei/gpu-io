@@ -10,7 +10,7 @@ export declare class DataLayer {
     private readonly errorCallback;
     private bufferIndex;
     readonly numBuffers: number;
-    private readonly buffers;
+    readonly buffers: DataLayerBuffer[];
     private length?;
     private width;
     private height;

@@ -30,7 +30,7 @@ export class DataLayer {
 	// Each DataLayer may contain a number of buffers to store different instances of the state.
 	private bufferIndex = 0;
 	readonly numBuffers;
-	private readonly buffers: DataLayerBuffer[] = [];
+	readonly buffers: DataLayerBuffer[] = [];
 
 	// Texture sizes.
 	private length?: number; // This is only used for 1D data layers.

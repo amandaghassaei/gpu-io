@@ -290,7 +290,7 @@ export class WebGLCompute {
 		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initProgram.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initProgram with name ${params.name}.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { gl, errorCallback, glslVersion } = this;
@@ -322,7 +322,7 @@ export class WebGLCompute {
 		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'data', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initDataLayer.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initDataLayer with name ${params.name}.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { gl, errorCallback, glslVersion } = this;
@@ -350,7 +350,7 @@ export class WebGLCompute {
 		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initTexture.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initTexture with name ${params.name}.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { url, name } = params;
@@ -1229,6 +1229,7 @@ can render to nextState using currentState as an input.`);
 
     reset() {
 		// TODO: implement this.
+		throw new Error('WebGLCompute.reset() not implemented.');
 	};
 
 	attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture) {
