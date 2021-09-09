@@ -10,7 +10,7 @@ export declare class DataLayer {
     private readonly errorCallback;
     private _bufferIndex;
     readonly numBuffers: number;
-    readonly buffers: DataLayerBuffer[];
+    private readonly buffers;
     private length?;
     private width;
     private height;
@@ -24,6 +24,7 @@ export declare class DataLayer {
     readonly filter: DataLayerFilterType;
     readonly internalFilter: DataLayerFilterType;
     readonly writable: boolean;
+    private textureOverrides?;
     readonly glInternalFormat: number;
     readonly glFormat: number;
     readonly glType: number;
@@ -54,16 +55,17 @@ export declare class DataLayer {
     private static getGLTextureParameters;
     private static testFramebufferWrite;
     get bufferIndex(): number;
+    saveCurrentStateToDataLayer(layer: DataLayer): void;
+    _setCurrentStateTexture(texture: WebGLTexture): void;
     private validateDataArray;
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
     getPreviousStateTexture(index?: number): WebGLTexture;
-    bindOutputBuffer(incrementBufferIndex: boolean): void;
+    _bindOutputBuffer(incrementBufferIndex: boolean): void;
     setData(data: DataLayerArrayType): void;
     resize(dimensions: number | [number, number], data?: DataLayerArrayType): void;
     clear(): void;
     getDimensions(): [number, number];
-    getTextures(): WebGLTexture[];
     getLength(): number;
     private destroyBuffers;
     destroy(): void;

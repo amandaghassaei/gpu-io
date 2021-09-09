@@ -537,17 +537,17 @@ can render to nextState using currentState as an input.`);
 			if (fullscreenRender) {
 				// Render and increment buffer so we are rendering to a different target
 				// than the input texture.
-				outputLayer.bindOutputBuffer(true);
+				outputLayer._bindOutputBuffer(true);
 			} else {
 				// Pass input texture through to output.
 				const copyProgram = this.copyProgramForType(outputLayer.internalType);
 				this.step(copyProgram, [outputLayer], outputLayer);
 				// Render to output without incrementing buffer.
-				outputLayer.bindOutputBuffer(false);
+				outputLayer._bindOutputBuffer(false);
 			}
 		} else {
 			// Render to current buffer.
-			outputLayer.bindOutputBuffer(false);
+			outputLayer._bindOutputBuffer(false);
 		}
 		
 		// Resize viewport.
@@ -1066,7 +1066,7 @@ can render to nextState using currentState as an input.`);
 		const { gl, glslVersion } = this;
 
 		// In case dataLayer was not the last output written to.
-		dataLayer.bindOutputBuffer(false);
+		dataLayer._bindOutputBuffer(false);
 
 		const [ width, height ] = dataLayer.getDimensions();
 		let { glNumChannels, glType, glFormat, internalType } = dataLayer;
@@ -1238,12 +1238,11 @@ can render to nextState using currentState as an input.`);
 		}
 		// Link webgl texture to threejs object.
 		// This is not officially supported.
-		const textures = dataLayer.getTextures();
-		if (textures.length > 1) {
+		if (dataLayer.numBuffers > 1) {
 			throw new Error(`DataLayer "${dataLayer.name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a DataLayer with one buffer.`);
 		}
 		const offsetTextureProperties = this.renderer.properties.get(texture);
-		offsetTextureProperties.__webglTexture = textures[0];
+		offsetTextureProperties.__webglTexture = dataLayer.getCurrentStateTexture();
 		offsetTextureProperties.__webglInit = true;
 	}
 

@@ -30,7 +30,7 @@ export class DataLayer {
 	// Each DataLayer may contain a number of buffers to store different instances of the state.
 	private _bufferIndex = 0;
 	readonly numBuffers;
-	readonly buffers: DataLayerBuffer[] = [];
+	private readonly buffers: DataLayerBuffer[] = [];
 
 	// Texture sizes.
 	private length?: number; // This is only used for 1D data layers.
@@ -48,6 +48,9 @@ export class DataLayer {
 	readonly filter: DataLayerFilterType; // Interpolation filter type of data.
 	readonly internalFilter: DataLayerFilterType; // Filter type that corresponds to glFilter, may be different from filter.
 	readonly writable: boolean;
+
+	// Optimizations so that "copying" can happen without draw calls.
+	private textureOverrides?: (WebGLTexture | undefined)[];
 
 	// GL variables (these may be different from their corresponding non-gl parameters).
 	readonly glInternalFormat: number;
@@ -741,6 +744,62 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		return this._bufferIndex;
 	}
 
+	saveCurrentStateToDataLayer(layer: DataLayer) {
+		// A method for saving a copy of the current state without a draw call.
+		// Draw calls are expensive, this optimization helps.
+		if (this.numBuffers < 2) {
+			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer ${this.name} with less than 2 buffers.`);
+		}
+		if (!this.writable) {
+			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on read-only DataLayer ${this.name}.`);
+		}
+		if (layer.writable) {
+			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer ${this.name} using writable DataLayer ${layer.name}.`)
+		}
+		// Check that texture params are the same.
+		if (layer.glWrapS !== this.glWrapS || layer.glWrapT !== this.glWrapT ||
+			layer.wrapS !== this.wrapS || layer.wrapT !== this.wrapT ||
+			layer.width !== this.width || layer.height !== this.height ||
+			layer.glFilter !== this.glFilter || layer.filter !== this.filter ||
+			layer.glNumChannels !== this.glNumChannels || layer.numComponents !== this.numComponents ||
+			layer.glType !== this.glType || layer.type !== this.type ||
+			layer.glFormat !== this.glFormat || layer.glInternalFormat !== this.glInternalFormat) {
+				throw new Error(`Incompatible texture params between DataLayers ${layer.name} and ${this.name}.`);
+		}
+
+		// If we have not already inited overrides array, do so now.
+		if (!this.textureOverrides) {
+			this.textureOverrides = [];
+			for (let i = 0; i < this.numBuffers; i++) {
+				this.textureOverrides.push(undefined);
+			}
+		}
+
+		// Check if we already have an override in place.
+		if (this.textureOverrides[this._bufferIndex]) {
+			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer ${this.name}, this DataLayer has not written new state since last call to DataLayer.saveCurrentStateToDataLayer.`);
+		}
+		const currentState = this.getCurrentStateTexture();
+		this.textureOverrides[this._bufferIndex] = currentState;
+		// Swap textures.
+		this.buffers[this._bufferIndex].texture = layer.getCurrentStateTexture();
+		layer._setCurrentStateTexture(currentState);
+
+		// Bind swapped texture to framebuffer.
+		const { gl } = this;
+		const { framebuffer, texture } = this.buffers[this._bufferIndex];
+		if (!framebuffer) throw new Error(`No framebuffer for writable DataLayer ${this.name}.`);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+		// Unbind.
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	}
+
+	_setCurrentStateTexture(texture: WebGLTexture) {
+		this.buffers[this._bufferIndex].texture = texture;
+	}
+
 	private validateDataArray(
 		_data?: DataLayerArrayType,
 	) {
@@ -917,6 +976,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	getCurrentStateTexture() {
+		if (this.textureOverrides && this.textureOverrides[this._bufferIndex]) return this.textureOverrides[this._bufferIndex]!;
 		return this.buffers[this._bufferIndex].texture;
 	}
 
@@ -928,10 +988,11 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		if (previousIndex < 0 || previousIndex >= this.numBuffers) {
 			throw new Error(`Invalid index ${index} passed to getPreviousStateTexture on DataLayer ${this.name} with ${this.numBuffers} buffers.`);
 		}
+		if (this.textureOverrides && this.textureOverrides[previousIndex]) return this.textureOverrides[previousIndex]!;
 		return this.buffers[previousIndex].texture;
 	}
 
-	bindOutputBuffer(
+	_bindOutputBuffer(
 		incrementBufferIndex: boolean,
 	) {
 		const { gl } = this;
@@ -944,6 +1005,11 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			throw new Error(`DataLayer "${this.name}" is not writable.`);
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+
+		// We are going to do a data write, if we have overrides enabled, we can remove them.
+		if (this.textureOverrides) {
+			this.textureOverrides[this._bufferIndex] = undefined;
+		}
 	}
 
 	setData(data: DataLayerArrayType) {
@@ -978,10 +1044,6 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		] as [number, number];
 	}
 
-	getTextures() {
-		return this.buffers.map(buffer => buffer.texture);
-	}
-
 	getLength() {
 		if (!this.length) {
 			throw new Error(`Cannot call getLength() on 2D DataLayer "${this.name}".`);
@@ -1002,6 +1064,10 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			delete buffer.framebuffer;
 		});
 		buffers.length = 0;
+
+		// These are technically owned by another DataLayer,
+		// so we are not responsible for deleting them from gl context.
+		delete this.textureOverrides;
 	}
 
 	destroy() {
