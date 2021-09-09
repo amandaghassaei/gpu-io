@@ -1,24 +1,6 @@
 import { WebGLCompute } from './WebGLCompute';
-import {
-	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
-	NEAREST, LINEAR, CLAMP_TO_EDGE, REPEAT,
-	GLSL1, GLSL3,
-} from './Constants';
+export * from './Constants';
 
 export {
 	WebGLCompute,
-	HALF_FLOAT,
-	FLOAT,
-	UNSIGNED_BYTE,
-	BYTE,
-	UNSIGNED_SHORT,
-	SHORT,
-	UNSIGNED_INT,
-	INT,
-	GLSL1,
-	GLSL3,
-	NEAREST,
-	LINEAR,
-	CLAMP_TO_EDGE,
-	REPEAT,
 };
