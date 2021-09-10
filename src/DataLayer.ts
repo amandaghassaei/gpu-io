@@ -797,6 +797,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	_setCurrentStateTexture(texture: WebGLTexture) {
+		if (this.writable) {
+			throw new Error(`Can't call DataLayer._setCurrentStateTexture on writable texture ${this.name}.`);
+		}
 		this.buffers[this._bufferIndex].texture = texture;
 	}
 
@@ -992,7 +995,11 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		return this.buffers[previousIndex].texture;
 	}
 
-	_bindOutputBuffer(
+	_usingTextureOverrideForCurrentBuffer() {
+		return this.textureOverrides && this.textureOverrides[this.bufferIndex];
+	}
+
+	_bindOutputBufferForWrite(
 		incrementBufferIndex: boolean,
 	) {
 		const { gl } = this;
@@ -1000,16 +1007,21 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			// Increment bufferIndex.
 			this._bufferIndex = (this._bufferIndex + 1) % this.numBuffers;
 		}
-		const { framebuffer } = this.buffers[this._bufferIndex];
-		if (!framebuffer) {
-			throw new Error(`DataLayer "${this.name}" is not writable.`);
-		}
-		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+		this._bindOutputBuffer();
 
 		// We are going to do a data write, if we have overrides enabled, we can remove them.
 		if (this.textureOverrides) {
 			this.textureOverrides[this._bufferIndex] = undefined;
 		}
+	}
+
+	_bindOutputBuffer() {
+		const { gl } = this;
+		const { framebuffer } = this.buffers[this._bufferIndex];
+		if (!framebuffer) {
+			throw new Error(`DataLayer "${this.name}" is not writable.`);
+		}
+		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
 
 	setData(data: DataLayerArrayType) {

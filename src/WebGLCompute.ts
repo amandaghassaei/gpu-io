@@ -537,17 +537,27 @@ can render to nextState using currentState as an input.`);
 			if (fullscreenRender) {
 				// Render and increment buffer so we are rendering to a different target
 				// than the input texture.
-				outputLayer._bindOutputBuffer(true);
+				outputLayer._bindOutputBufferForWrite(true);
 			} else {
 				// Pass input texture through to output.
 				const copyProgram = this.copyProgramForType(outputLayer.internalType);
 				this.step(copyProgram, [outputLayer], outputLayer);
 				// Render to output without incrementing buffer.
-				outputLayer._bindOutputBuffer(false);
+				outputLayer._bindOutputBufferForWrite(false);
 			}
 		} else {
-			// Render to current buffer.
-			outputLayer._bindOutputBuffer(false);
+			if (fullscreenRender) {
+				// Render to current buffer.
+				outputLayer._bindOutputBufferForWrite(false);
+			} else {
+				// If we are doing a sneaky thing with a swapped texture and are
+				// only rendering part of the screen, we may need to add a copy operation.
+				if (outputLayer._usingTextureOverrideForCurrentBuffer()) {
+					const copyProgram = this.copyProgramForType(outputLayer.internalType);
+					this.step(copyProgram, [outputLayer], outputLayer);
+				}
+				outputLayer._bindOutputBufferForWrite(false);
+			}
 		}
 		
 		// Resize viewport.
@@ -1066,7 +1076,7 @@ can render to nextState using currentState as an input.`);
 		const { gl, glslVersion } = this;
 
 		// In case dataLayer was not the last output written to.
-		dataLayer._bindOutputBuffer(false);
+		dataLayer._bindOutputBuffer();
 
 		const [ width, height ] = dataLayer.getDimensions();
 		let { glNumChannels, glType, glFormat, internalType } = dataLayer;

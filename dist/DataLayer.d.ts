@@ -61,7 +61,9 @@ export declare class DataLayer {
     private initBuffers;
     getCurrentStateTexture(): WebGLTexture;
     getPreviousStateTexture(index?: number): WebGLTexture;
-    _bindOutputBuffer(incrementBufferIndex: boolean): void;
+    _usingTextureOverrideForCurrentBuffer(): WebGLTexture | undefined;
+    _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
+    _bindOutputBuffer(): void;
     setData(data: DataLayerArrayType): void;
     resize(dimensions: number | [number, number], data?: DataLayerArrayType): void;
     clear(): void;
