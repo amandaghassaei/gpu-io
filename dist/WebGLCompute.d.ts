@@ -78,6 +78,7 @@ export declare class WebGLCompute {
     onResize(canvas: HTMLCanvasElement): void;
     private drawSetup;
     copyProgramForType(type: DataLayerType): GPUProgram;
+    private passThroughLayerDataFromInputToOutput;
     private setOutputLayer;
     private setPositionAttribute;
     private setIndexAttribute;

@@ -510,6 +510,12 @@ export class WebGLCompute {
 		}
 	}
 
+	private passThroughLayerDataFromInputToOutput(state: DataLayer) {
+		// TODO: figure out the fastest way to copy a texture.
+		const copyProgram = this.copyProgramForType(state.internalType);
+		this.step(copyProgram, [state], state);
+	}
+
 	private setOutputLayer(
 		fullscreenRender: boolean,
 		inputLayers: (DataLayer | WebGLTexture)[],
@@ -540,8 +546,7 @@ can render to nextState using currentState as an input.`);
 				outputLayer._bindOutputBufferForWrite(true);
 			} else {
 				// Pass input texture through to output.
-				const copyProgram = this.copyProgramForType(outputLayer.internalType);
-				this.step(copyProgram, [outputLayer], outputLayer);
+				this.passThroughLayerDataFromInputToOutput(outputLayer);
 				// Render to output without incrementing buffer.
 				outputLayer._bindOutputBufferForWrite(false);
 			}
@@ -553,8 +558,7 @@ can render to nextState using currentState as an input.`);
 				// If we are doing a sneaky thing with a swapped texture and are
 				// only rendering part of the screen, we may need to add a copy operation.
 				if (outputLayer._usingTextureOverrideForCurrentBuffer()) {
-					const copyProgram = this.copyProgramForType(outputLayer.internalType);
-					this.step(copyProgram, [outputLayer], outputLayer);
+					this.passThroughLayerDataFromInputToOutput(outputLayer);
 				}
 				outputLayer._bindOutputBufferForWrite(false);
 			}
