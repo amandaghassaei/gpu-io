@@ -1247,7 +1247,10 @@ can render to nextState using currentState as an input.`);
 		const [width, height] = dataLayer.getDimensions();
 
 		const canvas = document.createElement('canvas');
-		canvas.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(values), width, height), 0, 0);
+		canvas.style.width = `${width}px`;
+		canvas.style.height = `${height}px`;
+		const context = canvas.getContext('2d')!;
+		context.putImageData(new ImageData(new Uint8ClampedArray(values), width, height), 0, 0);
 
 		canvas!.toBlob((blob) => {
 			if (!blob) {
