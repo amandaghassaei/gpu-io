@@ -1,3 +1,4 @@
+import { saveAs } from 'file-saver';
 import { DataLayer } from './DataLayer';
 import {
 	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType,
@@ -1240,6 +1241,22 @@ can render to nextState using currentState as an input.`);
 		const { gl } = this;
 		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
 	};
+
+	savePNG(dataLayer: DataLayer, filename = dataLayer.name) {
+		const values = this.getValues(dataLayer);
+		const [width, height] = dataLayer.getDimensions();
+
+		const canvas = document.createElement('canvas');
+		canvas.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(values), width, height), 0, 0);
+
+		canvas!.toBlob((blob) => {
+			if (!blob) {
+				console.warn('Problem saving PNG, unable to init blob.');
+				return;
+			}
+			saveAs(blob, `${filename}.png`);
+		}, 'image/png');
+	}
 
     reset() {
 		// TODO: implement this.

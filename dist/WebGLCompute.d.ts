@@ -134,6 +134,7 @@ export declare class WebGLCompute {
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
     getValues(dataLayer: DataLayer): DataLayerArrayType;
     private readyToRead;
+    savePNG(dataLayer: DataLayer, filename?: string): void;
     reset(): void;
     attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;
     resetThreeState(): void;

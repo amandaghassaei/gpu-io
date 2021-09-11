@@ -15,6 +15,7 @@
   "author": "Amanda Ghassaei",
   "license": "MIT",
   "devDependencies": {
+    "@types/file-saver": "^2.0.3",
     "@types/three": "^0.127.1",
     "ts-loader": "^8.1.0",
     "typescript": "^4.0.5",
@@ -23,6 +24,7 @@
     "webpack-glsl-loader": "^1.0.1"
   },
   "dependencies": {
-    "@petamoriken/float16": "^2.0.0"
+    "@petamoriken/float16": "^2.0.0",
+    "file-saver": "^2.0.5"
   }
 }
