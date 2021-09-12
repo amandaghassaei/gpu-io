@@ -1250,8 +1250,8 @@ can render to nextState using currentState as an input.`);
 		canvas.width = width;
     	canvas.height = height;
 		const context = canvas.getContext('2d')!;
-		const imageData = context.createImageData(width, height);
-		const buffer = new Uint8ClampedArray(width * height * 4);
+		const imageData = context.getImageData(0, 0, width, height);
+		const buffer = imageData.data;
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				const index = y * width + x;
@@ -1263,7 +1263,6 @@ can render to nextState using currentState as an input.`);
 				}
 			}
 		}
-		imageData.data.set(buffer);
 		context.putImageData(imageData, 0, 0);
 
 		canvas!.toBlob((blob) => {
