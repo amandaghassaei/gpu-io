@@ -1252,11 +1252,12 @@ can render to nextState using currentState as an input.`);
 		const context = canvas.getContext('2d')!;
 		const imageData = context.getImageData(0, 0, width, height);
 		const buffer = imageData.data;
+		const isFloat = dataLayer.type === FLOAT || dataLayer.type === HALF_FLOAT;
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				const index = y * width + x;
 				for (let i = 0; i < dataLayer.numComponents; i++) {
-					buffer[4 * index + i] = values[dataLayer.numComponents * index + i];
+					buffer[4 * index + i] = values[dataLayer.numComponents * index + i] * (isFloat ? 255 : 1);
 				}
 				if (dataLayer.numComponents < 4) {
 					buffer[4 * index + 3] = 255;
