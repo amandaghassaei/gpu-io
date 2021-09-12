@@ -1256,7 +1256,6 @@ can render to nextState using currentState as an input.`);
 			for (let x = 0; x < width; x++) {
 				const index = y * width + x;
 				for (let i = 0; i < dataLayer.numComponents; i++) {
-					console.log(values[dataLayer.numComponents * index + i]);
 					buffer[4 * index + i] = values[dataLayer.numComponents * index + i];
 				}
 				if (dataLayer.numComponents < 4) {
@@ -1264,7 +1263,7 @@ can render to nextState using currentState as an input.`);
 				}
 			}
 		}
-		console.log(buffer);
+		console.log(values, dataLayer.numComponents);
 		context.putImageData(imageData, 0, 0);
 
 		canvas!.toBlob((blob) => {
