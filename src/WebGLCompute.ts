@@ -1250,7 +1250,21 @@ can render to nextState using currentState as an input.`);
 		canvas.width = width;
     	canvas.height = height;
 		const context = canvas.getContext('2d')!;
-		context.putImageData(new ImageData(new Uint8ClampedArray(values), width, height), 0, 0);
+		const imageData = context.createImageData(width, height);
+		const buffer = new Uint8ClampedArray(width * height * 4);
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const index = y * width + x;
+				for (let i = 0; i < dataLayer.numComponents; i++) {
+					buffer[4 * index + i] = values[dataLayer.numComponents * index + i];
+				}
+				if (dataLayer.numComponents < 4) {
+					buffer[4 * index + 3] = 255;
+				}
+			}
+		}
+		imageData.data.set(buffer);
+		context.putImageData(imageData, 0, 0);
 
 		canvas!.toBlob((blob) => {
 			if (!blob) {
