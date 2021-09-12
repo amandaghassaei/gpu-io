@@ -1263,6 +1263,7 @@ can render to nextState using currentState as an input.`);
 				}
 			}
 		}
+		console.log(buffer);
 		context.putImageData(imageData, 0, 0);
 
 		canvas!.toBlob((blob) => {
