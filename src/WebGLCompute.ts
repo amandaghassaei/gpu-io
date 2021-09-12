@@ -1252,19 +1252,22 @@ can render to nextState using currentState as an input.`);
 		const context = canvas.getContext('2d')!;
 		const imageData = context.getImageData(0, 0, width, height);
 		const buffer = imageData.data;
+		// TODO: this isn't working for UNSIGNED_BYTE types?
 		const isFloat = dataLayer.type === FLOAT || dataLayer.type === HALF_FLOAT;
+		// Have to flip the y axis since PNGs are written top to bottom.
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				const index = y * width + x;
+				const indexFlipped = (height - 1 - y) * width + x;
 				for (let i = 0; i < dataLayer.numComponents; i++) {
-					buffer[4 * index + i] = values[dataLayer.numComponents * index + i] * (isFloat ? 255 : 1);
+					buffer[4 * indexFlipped + i] = values[dataLayer.numComponents * index + i] * (isFloat ? 255 : 1);
 				}
 				if (dataLayer.numComponents < 4) {
-					buffer[4 * index + 3] = 255;
+					buffer[4 * indexFlipped + 3] = 255;
 				}
 			}
 		}
-		console.log(values, dataLayer.numComponents, buffer);
+		// console.log(values, buffer);
 		context.putImageData(imageData, 0, 0);
 
 		canvas!.toBlob((blob) => {
