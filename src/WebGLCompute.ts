@@ -1,4 +1,6 @@
 import { saveAs } from 'file-saver';
+// @ts-ignore
+import { changeDpiBlob } from 'changedpi';
 import { DataLayer } from './DataLayer';
 import {
 	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType,
@@ -1242,7 +1244,7 @@ can render to nextState using currentState as an input.`);
 		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
 	};
 
-	savePNG(dataLayer: DataLayer, filename = dataLayer.name) {
+	savePNG(dataLayer: DataLayer, filename = dataLayer.name, dpi?: number) {
 		const values = this.getValues(dataLayer);
 		const [width, height] = dataLayer.getDimensions();
 
@@ -1275,7 +1277,14 @@ can render to nextState using currentState as an input.`);
 				console.warn('Problem saving PNG, unable to init blob.');
 				return;
 			}
-			saveAs(blob, `${filename}.png`);
+			if (dpi) {
+				changeDpiBlob(blob, dpi).then((blob: Blob) =>{
+					saveAs(blob, `${filename}.png`);
+				});
+			} else {
+				saveAs(blob, `${filename}.png`);
+			}
+			
 		}, 'image/png');
 	}
 
