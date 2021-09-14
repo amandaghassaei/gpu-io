@@ -772,16 +772,17 @@ can render to nextState using currentState as an input.`);
 		gl.disable(gl.BLEND);
 	}
 
-	// Step program only for a thickened line segments (rounded end caps).
+	// Step program only for a thickened line segments (rounded end caps by default).
 	stepSegment(
 		program: GPUProgram,
 		position1: [number, number], // position is in screen space coords.
 		position2: [number, number], // position is in screen space coords.
-		radius: number, // radius is in px.
+		thickness: number, // thickness is in px.
 		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
-			numSegments?: number,
+			noEndCaps?: boolean, // True by default.
+			numCapSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
@@ -800,7 +801,7 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_radius', radius, FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
 		const diffX = position1[0] - position2[0];
 		const diffY = position1[1] - position2[1];
@@ -811,11 +812,18 @@ can render to nextState using currentState as an input.`);
 		const positionX = (position1[0] + position2[0]) / 2;
 		const positionY = (position1[1] + position2[1]) / 2;
 		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * positionX / width - 1, 2 * positionY / height - 1], FLOAT);
-		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
-		if (numSegments < 6 || numSegments % 6 !== 0) {
-			throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
+		
+		const numSegments = options?.numCapSegments ? options?.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
+		if (options?.noEndCaps) {
+			// Use a rectangle in case of no caps.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
+		} else {
+			if (numSegments < 6 || numSegments % 6 !== 0) {
+				throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
+			}
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
 		}
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
+
 		this.setPositionAttribute(glProgram);
 		
 		// Draw.
@@ -823,7 +831,11 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
+		if (options?.noEndCaps) {
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		} else {
+			gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
+		}
 		gl.disable(gl.BLEND);
 	}
 

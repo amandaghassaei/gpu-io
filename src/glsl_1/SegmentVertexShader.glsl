@@ -3,7 +3,7 @@ precision highp float;
 
 attribute vec2 a_internal_position;
 
-uniform float u_internal_radius;
+uniform float u_internal_halfThickness;
 uniform vec2 u_internal_scale;
 uniform float u_internal_length;
 uniform float u_internal_rotation;
@@ -22,14 +22,16 @@ void main() {
 
 	vec2 position = a_internal_position;
 
-	// Apply radius.
-	position *= u_internal_radius;
+	// Apply thickness / radius.
+	position *= u_internal_halfThickness;
 
 	// Stretch center of shape to form a round-capped line segment.
 	if (position.x < 0.0) {
 		position.x -= u_internal_length / 2.0;
+		v_UV_local.x = 0.0; // Set entire cap UV.x to 0.
 	} else if (position.x > 0.0) {
 		position.x += u_internal_length / 2.0;
+		v_UV_local.x = 1.0; // Set entire cap UV.x to 1.
 	}
 
 	// Apply transformations.

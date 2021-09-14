@@ -104,10 +104,11 @@ export declare class WebGLCompute {
     }): void;
     stepSegment(program: GPUProgram, position1: [number, number], // position is in screen space coords.
     position2: [number, number], // position is in screen space coords.
-    radius: number, // radius is in px.
+    thickness: number, // thickness is in px.
     inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
-        numSegments?: number;
+        noEndCaps?: boolean;
+        numCapSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
     drawPoints(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
