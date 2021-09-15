@@ -815,7 +815,7 @@ can render to nextState using currentState as an input.`);
 		const numSegments = options?.numCapSegments ? options?.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (options?.noEndCaps) {
 			// Have to subtract a small offset from length.
-			program.setVertexUniform(glProgram, 'u_internal_length', length - 2, FLOAT);
+			program.setVertexUniform(glProgram, 'u_internal_length', length - 2 * thickness, FLOAT);
 			// Use a rectangle in case of no caps.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
 		} else {
@@ -823,7 +823,7 @@ can render to nextState using currentState as an input.`);
 				throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
 			}
 			// Have to subtract a small offset from length.
-			program.setVertexUniform(glProgram, 'u_internal_length', length - 2 * Math.sin(Math.PI / numSegments), FLOAT);
+			program.setVertexUniform(glProgram, 'u_internal_length', length - 2 * thickness * Math.sin(Math.PI / numSegments), FLOAT);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
 		}
 
