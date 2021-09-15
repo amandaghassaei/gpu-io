@@ -809,19 +809,19 @@ can render to nextState using currentState as an input.`);
 		program.setVertexUniform(glProgram, 'u_internal_rotation', angle, FLOAT);
 		const centerX = (position1[0] + position2[0]) / 2;
 		const centerY = (position1[1] + position2[1]) / 2;
+		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / width - 1, 2 * centerY / height - 1], FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
 		
 		const numSegments = options?.numCapSegments ? options?.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (options?.noEndCaps) {
-			program.setVertexUniform(glProgram, 'u_internal_length', length, FLOAT);
-			program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / width - 1, 2 * centerY / height - 1], FLOAT);
+			// Have to subtract a small offset from length.
+			program.setVertexUniform(glProgram, 'u_internal_length', length - 2, FLOAT);
 			// Use a rectangle in case of no caps.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
 		} else {
 			if (numSegments < 6 || numSegments % 6 !== 0) {
 				throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
 			}
-			program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / width - 1, 2 * centerY / height - 1], FLOAT);
 			// Have to subtract a small offset from length.
 			program.setVertexUniform(glProgram, 'u_internal_length', length - 2 * Math.sin(Math.PI / numSegments), FLOAT);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
