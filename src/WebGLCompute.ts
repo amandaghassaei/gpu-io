@@ -903,10 +903,10 @@ can render to nextState using currentState as an input.`);
 				n2[1] = - s2[0] / length2;
 
 				// Offset from v3
-				positions[2 * ((index + 2) % (numPositions - 2))] = v3[0] + n2[0] * halfThickness;
-				positions[2 * ((index + 2) % (numPositions - 2)) + 1] = v3[1] + n2[1] * halfThickness;
-				positions[2 * ((index + 2) % (numPositions - 2)) + 2] = v3[0] - n2[0] * halfThickness;
-				positions[2 * ((index + 2) % (numPositions - 2)) + 3] = v3[1] - n2[1] * halfThickness;
+				positions[2 * (index + 2)] = v3[0] + n2[0] * halfThickness;
+				positions[2 * (index + 2) + 1] = v3[1] + n2[1] * halfThickness;
+				positions[2 * (index + 2) + 2] = v3[0] - n2[0] * halfThickness;
+				positions[2 * (index + 2) + 3] = v3[1] - n2[1] * halfThickness;
 
 				// Check the angle between adjacent segments.
 				const cross = s1[0] * s2[1] - s1[1] * s2[0];
