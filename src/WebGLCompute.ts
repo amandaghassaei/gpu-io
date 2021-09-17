@@ -878,20 +878,12 @@ can render to nextState using currentState as an input.`);
 
 			let index = i * 4 + 2;
 
-			if (i === 0) {
-				if (!closeLoop) {
-					// Add starting points to positions array.
-					positions[0] = v1[0] + n1[0] * halfThickness;
-					positions[1] = v1[1] + n1[1] * halfThickness;
-					positions[2] = v1[0] - n1[0] * halfThickness;
-					positions[3] = v1[1] - n1[1] * halfThickness;
-				} else {
-					// Duplicate starting points to end of positions array.
-					positions[vertices.length * 4] = v1[0] + n1[0] * halfThickness;
-					positions[vertices.length * 4 + 1] = v1[1] + n1[1] * halfThickness;
-					positions[vertices.length * 4 + 2] = v1[0] - n1[0] * halfThickness;
-					positions[vertices.length * 4 + 3] = v1[1] - n1[1] * halfThickness;
-				}
+			if (!closeLoop && i === 0) {
+				// Add starting points to positions array.
+				positions[0] = v1[0] + n1[0] * halfThickness;
+				positions[1] = v1[1] + n1[1] * halfThickness;
+				positions[2] = v1[0] - n1[0] * halfThickness;
+				positions[3] = v1[1] - n1[1] * halfThickness;
 			}
 
 			// Offset from v2.
@@ -934,6 +926,13 @@ can render to nextState using currentState as an input.`);
 				// 	positions[2 * ((index + 2) % numPositions) + 3] = v3[1] - n3[1] * halfThickness;
 				// }
 			}
+		}
+		if (closeLoop) {
+			// Duplicate starting points to end of positions array.
+			positions[vertices.length * 4] = positions[0];
+			positions[vertices.length * 4 + 1] = positions[1];
+			positions[vertices.length * 4 + 2] = positions[2];
+			positions[vertices.length * 4 + 3] = positions[3];
 		}
 
 		const { gl, width, height } = this;
