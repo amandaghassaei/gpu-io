@@ -905,10 +905,10 @@ can render to nextState using currentState as an input.`);
 				n2[1] = - s2[0] / length2;
 
 				// Offset from v3
-				positions[2 * (index + 2) % numPositions] = v3[0] + n2[0] * halfThickness;
-				positions[2 * (index + 2) % numPositions + 1] = v3[1] + n2[1] * halfThickness;
-				positions[2 * (index + 2) % numPositions + 2] = v3[0] - n2[0] * halfThickness;
-				positions[2 * (index + 2) % numPositions + 3] = v3[1] - n2[1] * halfThickness;
+				positions[2 * ((index + 2) % numPositions)] = v3[0] + n2[0] * halfThickness;
+				positions[2 * ((index + 2) % numPositions) + 1] = v3[1] + n2[1] * halfThickness;
+				positions[2 * ((index + 2) % numPositions) + 2] = v3[0] - n2[0] * halfThickness;
+				positions[2 * ((index + 2) % numPositions) + 3] = v3[1] - n2[1] * halfThickness;
 
 				// Check the angle between adjacent segments.
 				const cross = s1[0] * s2[1] - s1[1] * s2[0];
@@ -919,13 +919,13 @@ can render to nextState using currentState as an input.`);
 				// if (cross < 0) {
 				// 	positions[2 * index] = v2[0] + n3[0] * halfThickness;
 				// 	positions[2 * index + 1] = v2[1] + n3[1] * halfThickness;
-				// 	positions[2 * (index + 2) % numPositions] = v3[0] + n3[0] * halfThickness;
-				// 	positions[2 * (index + 2) % numPositions + 1] = v3[1] + n3[1] * halfThickness;
+				// 	positions[2 * ((index + 2) % numPositions)] = v3[0] + n3[0] * halfThickness;
+				// 	positions[2 * ((index + 2) % numPositions) + 1] = v3[1] + n3[1] * halfThickness;
 				// } else {
 				// 	positions[2 * index + 2] = v2[0] - n3[0] * halfThickness;
 				// 	positions[2 * index + 3] = v2[1] - n3[1] * halfThickness;
-				// 	positions[2 * (index + 2) % numPositions + 2] = v3[0] - n3[0] * halfThickness;
-				// 	positions[2 * (index + 2) % numPositions + 3] = v3[1] - n3[1] * halfThickness;
+				// 	positions[2 * ((index + 2) % numPositions) + 2] = v3[0] - n3[0] * halfThickness;
+				// 	positions[2 * ((index + 2) % numPositions) + 3] = v3[1] - n3[1] * halfThickness;
 				// }
 			}
 		}
