@@ -941,13 +941,11 @@ can render to nextState using currentState as an input.`);
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, positions);
-		this.setPositionAttribute(glProgram);
-
 		// Init positions buffer.
-		console.log(positions);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
 		this.setPositionAttribute(glProgram);
+
+		console.log(positions);
 
 		// Draw.
 		if (options?.shouldBlendAlpha) {
