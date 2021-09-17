@@ -929,10 +929,10 @@ can render to nextState using currentState as an input.`);
 		}
 		if (closeLoop) {
 			// Duplicate starting points to end of positions array.
-			positions[vertices.length * 4] = positions[0];
-			positions[vertices.length * 4 + 1] = positions[1];
-			positions[vertices.length * 4 + 2] = positions[2];
-			positions[vertices.length * 4 + 3] = positions[3];
+			positions[vertices.length * 8] = positions[0];
+			positions[vertices.length * 8 + 1] = positions[1];
+			positions[vertices.length * 8 + 2] = positions[2];
+			positions[vertices.length * 8 + 3] = positions[3];
 		}
 
 		const { gl, width, height } = this;
