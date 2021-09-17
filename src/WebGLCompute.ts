@@ -933,8 +933,9 @@ can render to nextState using currentState as an input.`);
 		const { gl } = this;
 
 		// Init positions buffer.
+		console.log(positions);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
-		this.setPositionAttribute(program.defaultProgram!);
+		this.setPositionAttribute(program.pointsProgram!);
 
 		// Draw.
 		if (options?.shouldBlendAlpha) {
