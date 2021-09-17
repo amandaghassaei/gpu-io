@@ -913,18 +913,18 @@ can render to nextState using currentState as an input.`);
 				if (Math.abs(cross) < 1e-6) continue;
 				n3[0] = (n1[0] + n2[0]) / 2;
 				n3[1] = (n1[1] + n2[1]) / 2;
-				// // Make adjustments to positions.
-				// if (cross < 0) {
-				// 	positions[2 * index] = v2[0] + n3[0] * halfThickness;
-				// 	positions[2 * index + 1] = v2[1] + n3[1] * halfThickness;
-				// 	positions[2 * ((index + 2) % numPositions)] = v3[0] + n3[0] * halfThickness;
-				// 	positions[2 * ((index + 2) % numPositions) + 1] = v3[1] + n3[1] * halfThickness;
-				// } else {
-				// 	positions[2 * index + 2] = v2[0] - n3[0] * halfThickness;
-				// 	positions[2 * index + 3] = v2[1] - n3[1] * halfThickness;
-				// 	positions[2 * ((index + 2) % numPositions) + 2] = v3[0] - n3[0] * halfThickness;
-				// 	positions[2 * ((index + 2) % numPositions) + 3] = v3[1] - n3[1] * halfThickness;
-				// }
+				// Make adjustments to positions.
+				if (cross < 0) {
+					positions[2 * index] = v2[0] + n3[0] * halfThickness;
+					positions[2 * index + 1] = v2[1] + n3[1] * halfThickness;
+					positions[2 * ((index + 2) % (4 * vertices.length))] = v3[0] + n3[0] * halfThickness;
+					positions[2 * ((index + 2) % (4 * vertices.length)) + 1] = v3[1] + n3[1] * halfThickness;
+				} else {
+					positions[2 * index + 2] = v2[0] - n3[0] * halfThickness;
+					positions[2 * index + 3] = v2[1] - n3[1] * halfThickness;
+					positions[2 * ((index + 2) % (4 * vertices.length)) + 2] = v3[0] - n3[0] * halfThickness;
+					positions[2 * ((index + 2) % (4 * vertices.length)) + 3] = v3[1] - n3[1] * halfThickness;
+				}
 			}
 		}
 		if (closeLoop) {
