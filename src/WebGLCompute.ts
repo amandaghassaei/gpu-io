@@ -856,7 +856,7 @@ can render to nextState using currentState as an input.`);
 		const closeLoop = !!options?.closeLoop;
 		const halfThickness = thickness / 2;
 		// Offset vertices.
-		const numPositions = closeLoop ? vertices.length * 4 : (vertices.length - 2) * 4 + 4;
+		const numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
 		const positions = new Float32Array(2 * numPositions);
 
 		// tmp arrays.
@@ -878,13 +878,19 @@ can render to nextState using currentState as an input.`);
 
 			let index = i * 4 + 2;
 
-			if (!closeLoop) {
-				if (i === 0) {
+			if (i === 0) {
+				if (!closeLoop) {
 					// Add starting points to positions array.
 					positions[0] = v1[0] + n1[0] * halfThickness;
 					positions[1] = v1[1] + n1[1] * halfThickness;
 					positions[2] = v1[0] - n1[0] * halfThickness;
 					positions[3] = v1[1] - n1[1] * halfThickness;
+				} else {
+					// Duplicate starting points to end of positions array.
+					positions[2 * vertices.length * 4] = v1[0] + n1[0] * halfThickness;
+					positions[2 * vertices.length * 4 + 1] = v1[1] + n1[1] * halfThickness;
+					positions[2 * vertices.length * 4 + 2] = v1[0] - n1[0] * halfThickness;
+					positions[2 * vertices.length * 4 + 3] = v1[1] - n1[1] * halfThickness;
 				}
 			}
 
@@ -915,7 +921,7 @@ can render to nextState using currentState as an input.`);
 				if (Math.abs(cross) < 1e-6) continue;
 				n3[0] = (n1[0] + n2[0]) / 2;
 				n3[1] = (n1[1] + n2[1]) / 2;
-				// Make adjustments to positions.
+				// // Make adjustments to positions.
 				// if (cross < 0) {
 				// 	positions[2 * index] = v2[0] + n3[0] * halfThickness;
 				// 	positions[2 * index + 1] = v2[1] + n3[1] * halfThickness;
