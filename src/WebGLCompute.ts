@@ -616,7 +616,7 @@ can render to nextState using currentState as an input.`);
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(program.defaultProgram!);
+		this.setPositionAttribute(glProgram);
 
 		// Draw.
 		if (options?.shouldBlendAlpha) {
@@ -930,19 +930,31 @@ can render to nextState using currentState as an input.`);
 			}
 		}
 
-		const { gl } = this;
+		const { gl, width, height } = this;
+
+		const glProgram = program.defaultProgram!;
+
+		// Do setup - this must come first.
+		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
+		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
+
+		// Update uniforms and buffers.
+		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
+		gl.bindBuffer(gl.ARRAY_BUFFER, positions);
+		this.setPositionAttribute(glProgram);
 
 		// Init positions buffer.
 		console.log(positions);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
-		this.setPositionAttribute(program.pointsProgram!);
+		this.setPositionAttribute(glProgram);
 
 		// Draw.
 		if (options?.shouldBlendAlpha) {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.LINES, 0, numPositions);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
 		gl.disable(gl.BLEND);
 	}
 
