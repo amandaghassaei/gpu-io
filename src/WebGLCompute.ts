@@ -772,7 +772,7 @@ can render to nextState using currentState as an input.`);
 		gl.disable(gl.BLEND);
 	}
 
-	// Step program only for a thickened line segments (rounded end caps by default).
+	// Step program only for a thickened line segment (rounded end caps available).
 	stepSegment(
 		program: GPUProgram,
 		position1: [number, number], // position is in screen space coords.
@@ -781,7 +781,7 @@ can render to nextState using currentState as an input.`);
 		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
 		outputLayer?: DataLayer, // Undefined renders to screen.
 		options?: {
-			noEndCaps?: boolean, // True by default.
+			endCaps?: boolean,
 			numCapSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
@@ -813,18 +813,18 @@ can render to nextState using currentState as an input.`);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
 		
 		const numSegments = options?.numCapSegments ? options?.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
-		if (options?.noEndCaps) {
-			// Have to subtract a small offset from length.
-			program.setVertexUniform(glProgram, 'u_internal_length', length - thickness, FLOAT);
-			// Use a rectangle in case of no caps.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
-		} else {
+		if (options?.endCaps) {
 			if (numSegments < 6 || numSegments % 6 !== 0) {
 				throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
 			}
 			// Have to subtract a small offset from length.
 			program.setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
+		} else {
+			// Have to subtract a small offset from length.
+			program.setVertexUniform(glProgram, 'u_internal_length', length - thickness, FLOAT);
+			// Use a rectangle in case of no caps.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
 		}
 
 		this.setPositionAttribute(glProgram);
@@ -834,11 +834,114 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		if (options?.noEndCaps) {
-			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		} else {
+		if (options?.endCaps) {
 			gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
+		} else {
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		}
+		gl.disable(gl.BLEND);
+	}
+
+	stepPolyline(
+		program: GPUProgram,
+		vertices: [number, number][],
+		thickness: number, // Thickness is in px.
+		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
+		outputLayer?: DataLayer, // Undefined renders to screen.
+		options?: {
+			closeLoop: boolean,
+			shouldBlendAlpha?: boolean,
+		},
+	) {
+		const closeLoop = !!options?.closeLoop;
+		const halfThickness = thickness / 2;
+		// Offset vertices.
+		const numPositions = closeLoop ? vertices.length * 4 : (vertices.length - 2) * 4 + 4;
+		const positions = new Float32Array(2 * numPositions);
+
+		// tmp arrays.
+		const s1 = [0, 0];
+		const s2 = [0, 0];
+		const n1 = [0, 0];
+		const n2 = [0, 0];
+		const n3 = [0, 0];
+		for (let i = 0; i < vertices.length; i++) {
+			if (!closeLoop && i === vertices.length - 1) continue;
+			// Vertices on this segment.
+			const v1 = vertices[i];
+			const v2 = vertices[(i + 1) % vertices.length];
+			s1[0] = v2[0] - v1[0];
+			s1[1] = v2[1] - v1[1];
+			const length1 = Math.sqrt(s1[0] * s1[0] + s1[1] * s1[1]);
+			n1[0] = s1[1] / length1;
+			n1[1] = - s1[0] / length1;
+
+			let index = i * 4 + 2;
+
+			if (!closeLoop) {
+				if (i === 0) {
+					// Add starting points to positions array.
+					positions[0] = v1[0] + n1[0] * halfThickness;
+					positions[1] = v1[1] + n1[1] * halfThickness;
+					positions[2] = v1[0] - n1[0] * halfThickness;
+					positions[3] = v1[1] - n1[1] * halfThickness;
+				}
+			}
+
+			// Offset from v2.
+			positions[2 * index] = v2[0] + n1[0] * halfThickness;
+			positions[2 * index + 1] = v2[1] + n1[1] * halfThickness;
+			positions[2 * index + 2] = v2[0] - n1[0] * halfThickness;
+			positions[2 * index + 3] = v2[1] - n1[1] * halfThickness;
+
+			if ((i < vertices.length - 2) || closeLoop) {
+				// Vertices on next segment.
+				const v3 = vertices[(i + 1) % vertices.length];
+				const v4 = vertices[(i + 2) % vertices.length];
+				s2[0] = v4[0] - v3[0];
+				s2[1] = v4[1] - v3[1];
+				const length2 = Math.sqrt(s2[0] * s2[0] + s2[1] * s2[1]);
+				n2[0] = s2[1] / length2;
+				n2[1] = - s2[0] / length2;
+
+				// Offset from v3
+				positions[2 * (index + 2) % numPositions] = v3[0] + n2[0] * halfThickness;
+				positions[2 * (index + 2) % numPositions + 1] = v3[1] + n2[1] * halfThickness;
+				positions[2 * (index + 2) % numPositions + 2] = v3[0] - n2[0] * halfThickness;
+				positions[2 * (index + 2) % numPositions + 3] = v3[1] - n2[1] * halfThickness;
+
+				// Check the angle between adjacent segments.
+				const cross = s1[0] * s2[1] - s1[1] * s2[0];
+				if (Math.abs(cross) < 1e-6) continue;
+				n3[0] = (n1[0] + n2[0]) / 2;
+				n3[1] = (n1[1] + n2[1]) / 2;
+				// Make adjustments to positions.
+				// if (cross < 0) {
+				// 	positions[2 * index] = v2[0] + n3[0] * halfThickness;
+				// 	positions[2 * index + 1] = v2[1] + n3[1] * halfThickness;
+				// 	positions[2 * (index + 2) % numPositions] = v3[0] + n3[0] * halfThickness;
+				// 	positions[2 * (index + 2) % numPositions + 1] = v3[1] + n3[1] * halfThickness;
+				// } else {
+				// 	positions[2 * index + 2] = v2[0] - n3[0] * halfThickness;
+				// 	positions[2 * index + 3] = v2[1] - n3[1] * halfThickness;
+				// 	positions[2 * (index + 2) % numPositions + 2] = v3[0] - n3[0] * halfThickness;
+				// 	positions[2 * (index + 2) % numPositions + 3] = v3[1] - n3[1] * halfThickness;
+				// }
+			}
+		}
+
+		const { gl } = this;
+
+		// Init positions buffer.
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
+		this.setPositionAttribute(program.defaultProgram!);
+
+		// Draw.
+		if (options?.shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
+		gl.drawArrays(gl.LINES, 0, numPositions);
 		gl.disable(gl.BLEND);
 	}
 
@@ -1076,7 +1179,6 @@ can render to nextState using currentState as an input.`);
 			// Copy buffer data.
 			gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 		}
-		// gl.bindBuffer(gl.ARRAY_BUFFER, this.indexedLinesIndexBuffer!);
 		this.setIndexAttribute(glProgram);
 
 		// Draw.

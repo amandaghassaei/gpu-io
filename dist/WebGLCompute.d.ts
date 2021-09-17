@@ -107,8 +107,14 @@ export declare class WebGLCompute {
     thickness: number, // thickness is in px.
     inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
     options?: {
-        noEndCaps?: boolean;
+        endCaps?: boolean;
         numCapSegments?: number;
+        shouldBlendAlpha?: boolean;
+    }): void;
+    stepPolyline(program: GPUProgram, vertices: [number, number][], thickness: number, // Thickness is in px.
+    inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
+    options?: {
+        closeLoop: boolean;
         shouldBlendAlpha?: boolean;
     }): void;
     drawPoints(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
