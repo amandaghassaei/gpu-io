@@ -916,7 +916,6 @@ can render to nextState using currentState as an input.`);
 				const length3 = Math.sqrt(n3[0] * n3[0] + n3[1] * n3[1]);
 				n3[0] /= length3;
 				n3[1] /= length3;
-				console.log(n3[0] * n3[0] + n3[1] * n3[1]);
 				// Make adjustments to positions.
 				const angle = Math.acos(n1[0] * n2[0] + n1[1] * n2[1]);
 				const offset = halfThickness / Math.cos(angle / 2);
@@ -961,7 +960,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.LINES, 0, numPositions);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
 		gl.disable(gl.BLEND);
 	}
 
