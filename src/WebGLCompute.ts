@@ -911,8 +911,11 @@ can render to nextState using currentState as an input.`);
 				// Check the angle between adjacent segments.
 				const cross = n1[0] * n2[1] - n1[1] * n2[0];
 				if (Math.abs(cross) < 1e-6) continue;
-				n3[0] = (n1[0] + n2[0]) / 2;
-				n3[1] = (n1[1] + n2[1]) / 2;
+				n3[0] = n1[0] + n2[0];
+				n3[1] = n1[1] + n2[1];
+				const length3 = n1[0] * n2[0] + n1[1] * n2[1];
+				n3[0] /= length3;
+				n3[1] /= length3;
 				// Make adjustments to positions.
 				const angle = Math.acos(n1[0] * n2[0] + n1[1] * n2[1]);
 				const offset = halfThickness / Math.cos(angle / 2);
