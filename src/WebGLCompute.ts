@@ -949,7 +949,7 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
