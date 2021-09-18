@@ -876,7 +876,7 @@ can render to nextState using currentState as an input.`);
 			n1[0] = s1[1] / length1;
 			n1[1] = - s1[0] / length1;
 
-			let index = i * 4 + 2;
+			const index = i * 4 + 2;
 
 			if (!closeLoop && i === 0) {
 				// Add starting points to positions array.
@@ -911,15 +911,11 @@ can render to nextState using currentState as an input.`);
 				// Check the angle between adjacent segments.
 				const cross = n1[0] * n2[1] - n1[1] * n2[0];
 				if (Math.abs(cross) < 1e-6) continue;
-				n3[0] = n1[0] + n2[0];
-				n3[1] = n1[1] + n2[1];
-				const length3 = n3[0] * n3[0] + n3[1] * n3[1];
-				n3[0] /= length3;
-				n3[1] /= length3;
+				n3[0] = (n1[0] + n2[0]) / 2;
+				n3[1] = (n1[1] + n2[1]) / 2;
 				// Make adjustments to positions.
 				const angle = Math.acos(n1[0] * n2[0] + n1[1] * n2[1]);
 				const offset = halfThickness / Math.cos(angle / 2);
-				console.log(halfThickness, offset);
 				if (cross < 0) {
 					positions[2 * index] = v2[0] + n3[0] * offset;
 					positions[2 * index + 1] = v2[1] + n3[1] * offset;
@@ -963,7 +959,7 @@ can render to nextState using currentState as an input.`);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
+		gl.drawArrays(gl.LINES, 0, numPositions);
 		gl.disable(gl.BLEND);
 	}
 
