@@ -915,6 +915,7 @@ can render to nextState using currentState as an input.`);
 				n3[1] = (n1[1] + n2[1]) / 2;
 				// Make adjustments to positions.
 				const angle = Math.acos(n1[0] * n2[0] + n1[1] * n2[1]);
+				console.log(angle);
 				const offset = halfThickness / Math.cos(angle / 2);
 				if (cross < 0) {
 					positions[2 * index] = v2[0] + n3[0] * offset;
