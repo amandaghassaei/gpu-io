@@ -76,13 +76,16 @@ export class GPUProgram {
 				(fragmentShader as string[]).join('\n');
 			if (defines) {
 				// First convert defines to a string.
-				const definesSource = Object.keys(defines).map(key => {
+				let definesSource = '';
+				const keys = Object.keys(defines);
+				for (let i = 0; i < keys.length; i++) {
+					const key = keys[i];
 					// Check that define is passed in as a string.
 					if (!isString(key) || !isString(defines[key])) {
 						throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type ${typeof key} : ${typeof defines[key]}.`)
 					}
-					return `#define ${key} ${defines[key]}\n`;
-				}).join('\n');
+					definesSource += `#define ${key} ${defines[key]}\n`;
+				}
 				sourceString = definesSource + sourceString;
 			}
 			const shader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
@@ -97,10 +100,12 @@ export class GPUProgram {
 			}
 		}
 
-		uniforms?.forEach(uniform => {
-			const { name, value, dataType } = uniform;
-			this.setUniform(name, value, dataType);
-		});
+		if (uniforms) {
+			for (let i = 0; i < uniforms?.length; i++) {
+				const { name, value, dataType } = uniforms[i];
+				this.setUniform(name, value, dataType);
+			}
+		}
 	}
 
 	private initProgram(vertexShader: WebGLShader, programName: string) {
@@ -264,11 +269,11 @@ export class GPUProgram {
 		if (dataType === FLOAT) {
 			// Check that we are dealing with a number.
 			if (isArray(value)) {
-				(value as number[]).forEach(element => {
-					if (!isNumber(element)) {
+				for (let i = 0; i < (value as number[]).length; i++) {
+					if (!isNumber((value as number[])[i])) {
 						throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected float or float[] of length 1-4.`);
 					}
-				});
+				}
 			} else {
 				if (!isNumber(value)) {
 					throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected float or float[] of length 1-4.`);
@@ -290,11 +295,11 @@ export class GPUProgram {
 		} else if (dataType === INT) {
 			// Check that we are dealing with an int.
 			if (isArray(value)) {
-				(value as number[]).forEach(element => {
-					if (!isInteger(element)) {
+				for (let i = 0; i < (value as number[]).length; i++) {
+					if (!isInteger((value as number[])[i])) {
 						throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);
 					}
-				});
+				}
 			} else {
 				if (!isInteger(value)) {
 					throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);

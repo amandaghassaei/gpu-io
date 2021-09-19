@@ -78,66 +78,98 @@ export declare class WebGLCompute {
     onResize(canvas: HTMLCanvasElement): void;
     private drawSetup;
     copyProgramForType(type: DataLayerType): GPUProgram;
+    private setBlendMode;
+    private addLayerToInputs;
     private passThroughLayerDataFromInputToOutput;
     private setOutputLayer;
     private setPositionAttribute;
     private setIndexAttribute;
-    step(program: GPUProgram, inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
-    options?: {
+    private setUVAttribute;
+    private setVertexAttribute;
+    step(params: {
+        program: GPUProgram;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
         shouldBlendAlpha?: boolean;
     }): void;
-    stepBoundary(program: GPUProgram, inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
-    options?: {
-        shouldBlendAlpha?: boolean;
+    stepBoundary(params: {
+        program: GPUProgram;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
         singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
-    }): void;
-    stepNonBoundary(program: GPUProgram, inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
-    options?: {
         shouldBlendAlpha?: boolean;
     }): void;
-    stepCircle(program: GPUProgram, position: [number, number], // position is in screen space coords.
-    radius: number, // radius is in px.
-    inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
-    options?: {
+    stepNonBoundary(params: {
+        program: GPUProgram;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
+        shouldBlendAlpha?: boolean;
+    }): void;
+    stepCircle(params: {
+        program: GPUProgram;
+        position: [number, number];
+        radius: number;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
         numSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
-    stepSegment(program: GPUProgram, position1: [number, number], // position is in screen space coords.
-    position2: [number, number], // position is in screen space coords.
-    thickness: number, // thickness is in px.
-    inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
-    options?: {
+    stepSegment(params: {
+        program: GPUProgram;
+        position1: [number, number];
+        position2: [number, number];
+        thickness: number;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
         endCaps?: boolean;
         numCapSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
-    stepPolyline(program: GPUProgram, vertices: [number, number][], thickness: number, // Thickness is in px.
-    inputLayers?: DataLayer | (DataLayer | WebGLTexture)[], outputLayer?: DataLayer, // Undefined renders to screen.
-    options?: {
-        closeLoop: boolean;
+    stepPolyline(params: {
+        program: GPUProgram;
+        positions: [number, number][];
+        thickness: number;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
+        closeLoop?: boolean;
+        includeUVs?: boolean;
+        includeNormals?: boolean;
         shouldBlendAlpha?: boolean;
     }): void;
-    drawPoints(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
+    stepPoints(params: {
+        positions: DataLayer;
+        program?: GPUProgram;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
         pointSize?: number;
         count?: number;
         color?: [number, number, number];
         wrapX?: boolean;
         wrapY?: boolean;
         shouldBlendAlpha?: boolean;
-    }, outputLayer?: DataLayer, program?: GPUProgram): void;
-    drawVectorField(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], options?: {
+    }): void;
+    drawVectorField(params: {
+        field: DataLayer;
+        program?: GPUProgram;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
         vectorSpacing?: number;
         vectorScale?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
-    }, outputLayer?: DataLayer, program?: GPUProgram): void;
-    drawIndexedLines(inputLayers: DataLayer | (DataLayer | WebGLTexture)[], indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array, options?: {
+    }): void;
+    drawLines(params: {
+        positions: DataLayer;
+        indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array;
+        program?: GPUProgram;
+        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        outputLayer?: DataLayer;
         count?: number;
         color?: [number, number, number];
         wrapX?: boolean;
         wrapY?: boolean;
         shouldBlendAlpha?: boolean;
-    }, outputLayer?: DataLayer, program?: GPUProgram): void;
+    }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
     getValues(dataLayer: DataLayer): DataLayerArrayType;
     private readyToRead;

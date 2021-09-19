@@ -13,6 +13,7 @@ import * as utils from './utils/Vector4';
 import { isWebGL2, isPowerOf2 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
+	isArray,
 	isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType,
 	validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
 
@@ -465,7 +466,7 @@ export class WebGLCompute {
 	private drawSetup(
 		program: WebGLProgram,
 		fullscreenRender: boolean,
-		inputLayers: (DataLayer | WebGLTexture)[],
+		inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 		outputLayer?: DataLayer,
 	) {
 		const { gl } = this;
@@ -478,8 +479,20 @@ export class WebGLCompute {
 
 		// Get a shallow copy of current textures.
 		// This line must come before this.setOutput() as it depends on current internal state.
-		// @ts-ignore
-		const inputTextures = inputLayers.map(layer => layer.getCurrentStateTexture ? (layer as DataLayer).getCurrentStateTexture() : layer);
+		const inputTextures: WebGLTexture[] = [];
+		if (inputLayers) {
+			if (inputLayers.constructor === WebGLTexture) {
+				inputTextures.push(inputLayers as WebGLTexture);
+			} else if (inputLayers.constructor === DataLayer) {
+				inputTextures.push((inputLayers as DataLayer).getCurrentStateTexture());
+			} else {
+				for (let i = 0; i < (inputLayers as (DataLayer | WebGLTexture)[]).length; i++) {
+					const layer = (inputLayers as (DataLayer | WebGLTexture)[])[i];
+					// @ts-ignore
+					inputTextures.push((layer as DataLayer).getCurrentStateTexture ? (layer as DataLayer).getCurrentStateTexture() : layer as WebGLTexture)
+				}
+			}
+		}
 
 		// Set output framebuffer.
 		// This may modify WebGL internal state.
@@ -513,15 +526,51 @@ export class WebGLCompute {
 		}
 	}
 
+	private setBlendMode(shouldBlendAlpha?: boolean) {
+		const { gl } = this;
+		if (shouldBlendAlpha) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		}
+	}
+
+	private addLayerToInputs(
+		layer: DataLayer,
+		inputLayers?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+	) {
+		// Add layer to end of inputLayers if needed.
+		let _inputLayers = inputLayers;
+		if (isArray(_inputLayers)) {
+			const index = (_inputLayers as (DataLayer | WebGLTexture)[]).indexOf(layer);
+			if (index < 0) {
+				(_inputLayers as (DataLayer | WebGLTexture)[]).push(layer);
+			} 
+		} else {
+			if (_inputLayers !== layer) {
+				const previous = _inputLayers;
+				_inputLayers = [];
+				if (previous) (_inputLayers as (DataLayer | WebGLTexture)[]).push(previous);
+				(_inputLayers as (DataLayer | WebGLTexture)[]).push(layer);
+			} else {
+				_inputLayers = [_inputLayers];
+			}
+		}
+		return _inputLayers as (DataLayer | WebGLTexture)[];
+	}
+
 	private passThroughLayerDataFromInputToOutput(state: DataLayer) {
 		// TODO: figure out the fastest way to copy a texture.
 		const copyProgram = this.copyProgramForType(state.internalType);
-		this.step(copyProgram, [state], state);
+		this.step({
+			program: copyProgram,
+			inputLayers: state,
+			outputLayer: state,
+		});
 	}
 
 	private setOutputLayer(
 		fullscreenRender: boolean,
-		inputLayers: (DataLayer | WebGLTexture)[],
+		inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 		outputLayer?: DataLayer, // Undefined renders to screen.
 	) {
 		const { gl } = this;
@@ -536,7 +585,7 @@ export class WebGLCompute {
 		}
 
 		// Check if output is same as one of input layers.
-		if (inputLayers.indexOf(outputLayer) > -1) {
+		if (inputLayers && ((inputLayers === outputLayer) || (inputLayers as (DataLayer | WebGLTexture)[]).indexOf(outputLayer) > -1)) {
 			if (outputLayer.numBuffers === 1) {
 				throw new Error(`
 Cannot use same buffer for input and output of a program.
@@ -573,33 +622,38 @@ can render to nextState using currentState as an input.`);
 	};
 
 	private setPositionAttribute(program: WebGLProgram) {
-		const { gl } = this;
-		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program, 'a_internal_position');
-		gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
-		// Enable the attribute.
-		gl.enableVertexAttribArray(location);
+		this.setVertexAttribute(program, 'a_internal_position', 2);
 	}
 
 	private setIndexAttribute(program: WebGLProgram) {
+		this.setVertexAttribute(program, 'a_internal_index', 1);
+	}
+
+	private setUVAttribute(program: WebGLProgram) {
+		this.setVertexAttribute(program, 'a_internal_uv', 2);
+	}
+
+	private setVertexAttribute(program: WebGLProgram, name: string, size: number) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
-		const location = gl.getAttribLocation(program, 'a_internal_index');
-		gl.vertexAttribPointer(location, 1, gl.FLOAT, false, 0, 0);
+		const location = gl.getAttribLocation(program, name);
+		// TODO: only float is supported for vertex attributes.
+		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
 	}
 
 	// Step for entire fullscreen quad.
 	step(
-		program: GPUProgram,
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
-		outputLayer?: DataLayer, // Undefined renders to screen.
-		options?: {
+		params: {
+			program: GPUProgram,
+			inputLayers?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer, // Undefined renders to screen.
 			shouldBlendAlpha?: boolean,
 		},
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
+		const { program, inputLayers, outputLayer } = params;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -609,7 +663,6 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -619,25 +672,23 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(glProgram);
 
 		// Draw.
-		if (options?.shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
+		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.disable(gl.BLEND);
 	}
 
 	// Step program only for a strip of px along the boundary.
 	stepBoundary(
-		program: GPUProgram,
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
-		outputLayer?: DataLayer, // Undefined renders to screen.
-		options?: {
-			shouldBlendAlpha?: boolean,
+		params: {
+			program: GPUProgram,
+			inputLayers?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer, // Undefined renders to screen.
 			singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
+			shouldBlendAlpha?: boolean,
 		},
 	) {
 		const { gl, errorState, boundaryPositionsBuffer} = this;
+		const { program, inputLayers, outputLayer } = params;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -647,7 +698,6 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -660,12 +710,9 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(glProgram);
 
 		// Draw.
-		if (options?.shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
-		if (options?.singleEdge) {
-			switch(options?.singleEdge) {
+		this.setBlendMode(params.shouldBlendAlpha);
+		if (params.singleEdge) {
+			switch(params.singleEdge) {
 				case 'LEFT':
 					gl.drawArrays(gl.LINES, 3, 2);
 					break;
@@ -679,25 +726,25 @@ can render to nextState using currentState as an input.`);
 					gl.drawArrays(gl.LINES, 0, 2);
 					break;
 				default:
-					throw new Error(`Unknown boundary edge type: ${options?.singleEdge}.`);
+					throw new Error(`Unknown boundary edge type: ${params.singleEdge}.`);
 			}
 		} else {
 			gl.drawArrays(gl.LINE_LOOP, 0, 4);
 		}
-		
 		gl.disable(gl.BLEND);
 	}
 
 	// Step program for all but a strip of px along the boundary.
 	stepNonBoundary(
-		program: GPUProgram,
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
-		outputLayer?: DataLayer, // Undefined renders to screen.
-		options?: {
+		params: {
+			program: GPUProgram,
+			inputLayers?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer, // Undefined renders to screen.
 			shouldBlendAlpha?: boolean,
 		},
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
+		const { program, inputLayers, outputLayer } = params;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -707,7 +754,6 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -719,27 +765,25 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(glProgram);
 		
 		// Draw.
-		if (options?.shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
+		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.disable(gl.BLEND);
 	}
 
 	// Step program only for a circular spot.
 	stepCircle(
-		program: GPUProgram,
-		position: [number, number], // position is in screen space coords.
-		radius: number, // radius is in px.
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
-		outputLayer?: DataLayer, // Undefined renders to screen.
-		options?: {
+		params: {
+			program: GPUProgram,
+			position: [number, number], // position is in screen space coords.
+			radius: number, // radius is in px.
+			inputLayers?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer, // Undefined renders to screen.
 			numSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
 		const { gl, errorState } = this;
+		const { program, position, radius, inputLayers, outputLayer } = params;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
@@ -750,13 +794,12 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
-		const numSegments = options?.numSegments ? options?.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
+		const numSegments = params.numSegments ? params.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 3) {
 			throw new Error(`numSegments for WebGLCompute.stepCircle must be greater than 2, got ${numSegments}.`);
 		}
@@ -764,29 +807,27 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(glProgram);
 		
 		// Draw.
-		if (options?.shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
+		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);	
 		gl.disable(gl.BLEND);
 	}
 
 	// Step program only for a thickened line segment (rounded end caps available).
 	stepSegment(
-		program: GPUProgram,
-		position1: [number, number], // position is in screen space coords.
-		position2: [number, number], // position is in screen space coords.
-		thickness: number, // thickness is in px.
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
-		outputLayer?: DataLayer, // Undefined renders to screen.
-		options?: {
+		params: {
+			program: GPUProgram,
+			position1: [number, number], // Position is in screen space coords.
+			position2: [number, number], // Position is in screen space coords.
+			thickness: number, // Thickness is in px.
+			inputLayers?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer, // Undefined renders to screen.
 			endCaps?: boolean,
 			numCapSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
 		const { gl, errorState } = this;
+		const { program, position1, position2, thickness, inputLayers, outputLayer } = params;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
@@ -797,7 +838,6 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.segmentProgram!;
 
 		// Do setup - this must come first.
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
@@ -812,8 +852,8 @@ can render to nextState using currentState as an input.`);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / width - 1, 2 * centerY / height - 1], FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
 		
-		const numSegments = options?.numCapSegments ? options?.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
-		if (options?.endCaps) {
+		const numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
+		if (params.endCaps) {
 			if (numSegments < 6 || numSegments % 6 !== 0) {
 				throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
 			}
@@ -830,11 +870,8 @@ can render to nextState using currentState as an input.`);
 		this.setPositionAttribute(glProgram);
 		
 		// Draw.
-		if (options?.shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
-		if (options?.endCaps) {
+		this.setBlendMode(params.shouldBlendAlpha);
+		if (params.endCaps) {
 			gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
 		} else {
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -843,21 +880,27 @@ can render to nextState using currentState as an input.`);
 	}
 
 	stepPolyline(
-		program: GPUProgram,
-		vertices: [number, number][],
-		thickness: number, // Thickness is in px.
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[] = [],
-		outputLayer?: DataLayer, // Undefined renders to screen.
-		options?: {
-			closeLoop: boolean,
+		params: {
+			program: GPUProgram,
+			positions: [number, number][],
+			thickness: number, // Thickness of line is in px.
+			inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer, // Undefined renders to screen.
+			closeLoop?: boolean,
+			includeUVs?: boolean,
+			includeNormals?: boolean,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const closeLoop = !!options?.closeLoop;
-		const halfThickness = thickness / 2;
+		const { program, inputLayers, outputLayer } = params;
+		const vertices = params.positions;
+		const closeLoop = !!params.closeLoop;
+		const halfThickness = params.thickness / 2;
 		// Offset vertices.
 		const numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
 		const positions = new Float32Array(2 * numPositions);
+		const uvs = params.includeUVs ? new Float32Array(2 * numPositions) : undefined;
+		const normals = params.includeNormals ? new Float32Array(2 * numPositions) : undefined;
 
 		// tmp arrays.
 		const s1 = [0, 0];
@@ -884,13 +927,39 @@ can render to nextState using currentState as an input.`);
 				positions[1] = v1[1] + n1[1] * halfThickness;
 				positions[2] = v1[0] - n1[0] * halfThickness;
 				positions[3] = v1[1] - n1[1] * halfThickness;
+				if (uvs) {
+					uvs[0] = 0;
+					uvs[1] = 1;
+					uvs[2] = 0;
+					uvs[3] = 0;
+				}
+				if (normals) {
+					normals[0] = n1[0];
+					normals[1] = n1[1];
+					normals[2] = n1[0];
+					normals[3] = n1[1];
+				}
 			}
+
+			const u = (i + 1) / (vertices.length - 1);
 
 			// Offset from v2.
 			positions[2 * index] = v2[0] + n1[0] * halfThickness;
 			positions[2 * index + 1] = v2[1] + n1[1] * halfThickness;
 			positions[2 * index + 2] = v2[0] - n1[0] * halfThickness;
 			positions[2 * index + 3] = v2[1] - n1[1] * halfThickness;
+			if (uvs) {
+				uvs[2 * index] = u;
+				uvs[2 * index + 1] = 1;
+				uvs[2 * index + 2] = u;
+				uvs[2 * index + 3] = 0;
+			}
+			if (normals) {
+				normals[2 * index] = n1[0];
+				normals[2 * index + 1] = n1[1];
+				normals[2 * index + 2] = n1[0];
+				normals[2 * index + 3] = n1[1];
+			}
 
 			if ((i < vertices.length - 2) || closeLoop) {
 				// Vertices on next segment.
@@ -907,6 +976,18 @@ can render to nextState using currentState as an input.`);
 				positions[2 * ((index + 2) % (4 * vertices.length)) + 1] = v3[1] + n2[1] * halfThickness;
 				positions[2 * ((index + 2) % (4 * vertices.length)) + 2] = v3[0] - n2[0] * halfThickness;
 				positions[2 * ((index + 2) % (4 * vertices.length)) + 3] = v3[1] - n2[1] * halfThickness;
+				if (uvs) {
+					uvs[2 * index] = u;
+					uvs[2 * index + 1] = 1;
+					uvs[2 * index + 2] = u;
+					uvs[2 * index + 3] = 0;
+				}
+				if (normals) {
+					normals[2 * ((index + 2) % (4 * vertices.length))] = n2[0];
+					normals[2 * ((index + 2) % (4 * vertices.length)) + 1] = n2[1];
+					normals[2 * ((index + 2) % (4 * vertices.length)) + 2] = n2[0];
+					normals[2 * ((index + 2) % (4 * vertices.length)) + 3] = n2[1];
+				}
 
 				// Check the angle between adjacent segments.
 				const cross = n1[0] * n2[1] - n1[1] * n2[0];
@@ -938,6 +1019,18 @@ can render to nextState using currentState as an input.`);
 			positions[vertices.length * 8 + 1] = positions[1];
 			positions[vertices.length * 8 + 2] = positions[2];
 			positions[vertices.length * 8 + 3] = positions[3];
+			if (uvs) {
+				uvs[vertices.length * 8] = uvs[0];
+				uvs[vertices.length * 8 + 1] = uvs[1];
+				uvs[vertices.length * 8 + 2] = uvs[2];
+				uvs[vertices.length * 8 + 3] = uvs[3];
+			}
+			if (normals) {
+				normals[vertices.length * 8] = normals[0];
+				normals[vertices.length * 8 + 1] = normals[1];
+				normals[vertices.length * 8 + 2] = normals[2];
+				normals[vertices.length * 8 + 3] = normals[3];
+			}
 		}
 
 		const { gl, width, height } = this;
@@ -945,8 +1038,7 @@ can render to nextState using currentState as an input.`);
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
-		this.drawSetup(program.defaultProgram!, true, inputLayers, outputLayer);
+		this.drawSetup(glProgram, true, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
@@ -954,19 +1046,29 @@ can render to nextState using currentState as an input.`);
 		// Init positions buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
 		this.setPositionAttribute(glProgram);
+		if (uvs) {
+			// Init uv buffer.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs)!);
+			this.setUVAttribute(glProgram);
+		}
+		if (normals) {
+			// Init normals buffer.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals)!);
+			this.setVertexAttribute(glProgram, 'a_internal_normal', 2);
+		}
 
 		// Draw.
-		if (options?.shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
+		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
 		gl.disable(gl.BLEND);
 	}
 
-	drawPoints(
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
-		options?: {
+	stepPoints(
+		params: {
+			positions: DataLayer,
+			program?: GPUProgram,
+			inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer,
 			pointSize?: number,
 			count?: number,
 			color?: [number, number, number],
@@ -974,10 +1076,9 @@ can render to nextState using currentState as an input.`);
 			wrapY?: boolean,
 			shouldBlendAlpha?: boolean,
 		},
-		outputLayer?: DataLayer,
-		program?: GPUProgram,
 	) {
 		const { gl, errorState, pointIndexArray } = this;
+		const { positions, outputLayer } = params;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
@@ -985,45 +1086,42 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
-
-		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawPoints: must pass a position DataLayer as first element of inputLayers.`);
-		}
-		const positionLayer = inputLayers[0] as DataLayer;
-
 		// Check that numPoints is valid.
-		if (positionLayer.numComponents !== 2 && positionLayer.numComponents !== 4) {
-			throw new Error(`WebGLCompute.drawPoints() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positionLayer.name}" with ${positionLayer.numComponents} components.`)
+		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
+			throw new Error(`WebGLCompute.drawPoints() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positions.name}" with ${positions.numComponents} components.`)
 		}
-		const length = positionLayer.getLength();
-		const count = options?.count || length;
+		const length = positions.getLength();
+		const count = params.count || length;
 		if (count > length) {
 			throw new Error(`Invalid count ${count} for position DataLayer of length ${length}.`);
 		}
 
+		let program = params.program;
 		if (program === undefined) {
 			program = this.singleColorProgram;
-			const color = options?.color || [1, 0, 0];
+			const color = params.color || [1, 0, 0]; // Default of red.
 			program.setUniform('u_color', color, FLOAT);
 		}
 		const glProgram = program.pointsProgram!;
+
+		// Add positions to end of inputLayers if needed.
+		const inputLayers = this.addLayerToInputs(positions, params.inputLayers);
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_positions', 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_positions', inputLayers.indexOf(positions), INT);
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positionLayer.numComponents === 4 ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
 		// Set default pointSize.
-		const pointSize = options?.pointSize || 1;
+		const pointSize = params.pointSize || 1;
 		program.setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
-		const positionLayerDimensions = positionLayer.getDimensions();
+		const positionLayerDimensions = positions.getDimensions();
 		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapX', options?.wrapX ? 1 : 0, INT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapY', options?.wrapY ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = new Float32Array(length);
@@ -1037,28 +1135,25 @@ can render to nextState using currentState as an input.`);
 		this.setIndexAttribute(glProgram);
 
 		// Draw.
-		// Default to blend === true.
-		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
-		if (shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
+		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.POINTS, 0, count);
 		gl.disable(gl.BLEND);
 	}
 
 	drawVectorField(
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
-		options?: {
+		params: {
+			field: DataLayer,
+			program?: GPUProgram,
+			inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer,
 			vectorSpacing?: number,
 			vectorScale?: number,
 			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
 		},
-		outputLayer?: DataLayer,
-		program?: GPUProgram,
 	) {
 		const { gl, errorState, vectorFieldIndexArray } = this;
+		const { field, outputLayer } = params;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
@@ -1066,16 +1161,9 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
-
-		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawVectorField: must pass a vector DataLayer as first element of inputLayers.`);
-		}
-		const vectorLayer = inputLayers[0] as DataLayer;
-
-		// Check that vectorLayer is valid.
-		if (vectorLayer.numComponents !== 2) {
-			throw new Error(`WebGLCompute.drawVectorField() must be passed a vector DataLayer with 2 components, got vector DataLayer "${vectorLayer.name}" with ${vectorLayer.numComponents} components.`)
+		// Check that field is valid.
+		if (field.numComponents !== 2) {
+			throw new Error(`WebGLCompute.drawVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${field.name}" with ${field.numComponents} components.`)
 		}
 		// Check aspect ratio.
 		// const dimensions = vectorLayer.getDimensions();
@@ -1083,22 +1171,26 @@ can render to nextState using currentState as an input.`);
 		// 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector DataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
 		// }
 
+		let program = params.program;
 		if (program === undefined) {
 			program = this.singleColorProgram;
-			const color = options?.color || [1, 0, 0];
+			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_color', color, FLOAT);
 		}
 		const glProgram = program.vectorFieldProgram!;
+
+		// Add field to end of inputLayers if needed.
+		const inputLayers = this.addLayerToInputs(field, params.inputLayers);
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_vectors', 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_vectors', inputLayers.indexOf(field), INT);
 		// Set default scale.
-		const vectorScale = options?.vectorScale || 1;
+		const vectorScale = params.vectorScale || 1;
 		program.setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
-		const vectorSpacing = options?.vectorSpacing || 10;
+		const vectorSpacing = params.vectorSpacing || 10;
 		const spacedDimensions = [Math.floor(width / vectorSpacing), Math.floor(height / vectorSpacing)] as [number, number];
 		program.setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, FLOAT);
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
@@ -1115,30 +1207,28 @@ can render to nextState using currentState as an input.`);
 		this.setIndexAttribute(glProgram);
 
 		// Draw.
-		// Default to blend === true.
-		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
-		if (shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
+		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.LINES, 0, length);
 		gl.disable(gl.BLEND);
 	}
 
-	drawIndexedLines(
-		inputLayers: DataLayer | (DataLayer | WebGLTexture)[],
-		indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
-		options?: {
+	drawLines(
+		params: {
+			positions: DataLayer,
+			// TODO: add option for no indices.
+			indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
+			program?: GPUProgram,
+			inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			outputLayer?: DataLayer,
 			count?: number,
 			color?: [number, number, number],
 			wrapX?: boolean,
 			wrapY?: boolean,
 			shouldBlendAlpha?: boolean,
 		},
-		outputLayer?: DataLayer,
-		program?: GPUProgram,
 	) {
 		const { gl, errorState } = this;
+		const { positions, indices, outputLayer } = params;
 		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
@@ -1146,39 +1236,36 @@ can render to nextState using currentState as an input.`);
 			return;
 		}
 
-		inputLayers = inputLayers.constructor === DataLayer ? [inputLayers] : inputLayers as (DataLayer | WebGLTexture)[];
-
-		if (inputLayers.length < 1) {
-			throw new Error(`Invalid inputLayers for drawIndexedLines: must pass a position DataLayer as first element of inputLayers.`);
-		}
-		const positionLayer = inputLayers[0] as DataLayer;
-
-		// Check that positionLayer is valid.
-		if (positionLayer.numComponents !== 2 && positionLayer.numComponents !== 4) {
-			throw new Error(`WebGLCompute.drawIndexedLines() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positionLayer.name}" with ${positionLayer.numComponents} components.`)
+		// Check that positions is valid.
+		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
+			throw new Error(`WebGLCompute.drawIndexedLines() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positions.name}" with ${positions.numComponents} components.`)
 		}
 
+		let program = params.program;
 		if (program === undefined) {
-			program = options?.wrapX || options?.wrapY ? this.singleColorWithWrapCheckProgram : this.singleColorProgram;
-			const color = options?.color || [1, 0, 0];
+			program = params.wrapX || params.wrapY ? this.singleColorWithWrapCheckProgram : this.singleColorProgram;
+			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_color', color, FLOAT);
 		}
 		const glProgram = program.indexedLinesProgram!;
 
+		// Add positionLayer to end of inputLayers if needed.
+		const inputLayers = this.addLayerToInputs(positions, params.inputLayers);
+
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
-		const count = options?.count ? options.count : indices.length;
+		const count = params.count ? params.count : indices.length;
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_positions', 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_positions', inputLayers.indexOf(positions), INT);
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positionLayer.numComponents === 4 ? 1 : 0, INT);
-		const positionLayerDimensions = positionLayer.getDimensions();
+		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
+		const positionLayerDimensions = positions.getDimensions();
 		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapX', options?.wrapX ? 1 : 0, INT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapY', options?.wrapY ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
 		if (this.indexedLinesIndexBuffer === undefined) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			let floatArray: Float32Array;
@@ -1201,12 +1288,7 @@ can render to nextState using currentState as an input.`);
 		this.setIndexAttribute(glProgram);
 
 		// Draw.
-		// Default to blend === true.
-		const shouldBlendAlpha = options?.shouldBlendAlpha === false ? false : true;
-		if (shouldBlendAlpha) {
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		}
+		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.LINES, 0, count);
 		gl.disable(gl.BLEND);
 	}
