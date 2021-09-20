@@ -1044,7 +1044,7 @@ export class WebGLCompute {
 		const glProgram = program.polylineProgram!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, true, input, output);
+		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
