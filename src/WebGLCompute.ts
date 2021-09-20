@@ -985,10 +985,10 @@ export class WebGLCompute {
 				positions[2 * ((index + 2) % (4 * vertices.length)) + 2] = v3[0] - n2[0] * halfThickness;
 				positions[2 * ((index + 2) % (4 * vertices.length)) + 3] = v3[1] - n2[1] * halfThickness;
 				if (uvs) {
-					uvs[2 * index] = u;
-					uvs[2 * index + 1] = 1;
-					uvs[2 * index + 2] = u;
-					uvs[2 * index + 3] = 0;
+					uvs[2 * ((index + 2) % (4 * vertices.length))] = u;
+					uvs[2 * ((index + 2) % (4 * vertices.length)) + 1] = 1;
+					uvs[2 * ((index + 2) % (4 * vertices.length)) + 2] = u;
+					uvs[2 * ((index + 2) % (4 * vertices.length)) + 3] = 0;
 				}
 				if (normals) {
 					normals[2 * ((index + 2) % (4 * vertices.length))] = n2[0];
