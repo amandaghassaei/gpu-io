@@ -883,8 +883,8 @@ export class WebGLCompute {
 			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer, // Undefined renders to screen.
 			closeLoop?: boolean,
-			includeUVs?: boolean,
-			includeNormals?: boolean,
+			// includeUVs?: boolean,
+			// includeNormals?: boolean,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
@@ -902,8 +902,10 @@ export class WebGLCompute {
 		// Offset vertices.
 		const numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
 		const positions = new Float32Array(2 * numPositions);
-		const uvs = params.includeUVs ? new Float32Array(2 * numPositions) : undefined;
-		const normals = params.includeNormals ? new Float32Array(2 * numPositions) : undefined;
+		// const uvs = params.includeUVs ? new Float32Array(2 * numPositions) : undefined;
+		// const normals = params.includeNormals ? new Float32Array(2 * numPositions) : undefined;
+		const uvs = new Float32Array(2 * numPositions);
+		const normals = new Float32Array(2 * numPositions);
 
 		// tmp arrays.
 		const s1 = [0, 0];

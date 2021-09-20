@@ -132,8 +132,6 @@ export declare class WebGLCompute {
         input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
         output?: DataLayer;
         closeLoop?: boolean;
-        includeUVs?: boolean;
-        includeNormals?: boolean;
         shouldBlendAlpha?: boolean;
     }): void;
     stepPoints(params: {
