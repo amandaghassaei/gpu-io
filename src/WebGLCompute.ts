@@ -585,7 +585,7 @@ export class WebGLCompute {
 		}
 
 		// Check if output is same as one of input layers.
-		if (input && ((input === output) || (input as (DataLayer | WebGLTexture)[]).indexOf(output) > -1)) {
+		if (input && ((input === output) || (isArray(input) && (input as (DataLayer | WebGLTexture)[]).indexOf(output)) > -1)) {
 			if (output.numBuffers === 1) {
 				throw new Error(`
 Cannot use same buffer for input and output of a program.
