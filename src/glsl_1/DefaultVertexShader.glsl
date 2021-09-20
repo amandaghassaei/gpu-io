@@ -9,7 +9,7 @@ varying vec2 v_UV_local;
 varying vec2 v_UV;
 
 void main() {
-	Calculate UV coordinates of current rendered object.
+	// Calculate UV coordinates of current rendered object.
 	v_UV_local = 0.5 * (a_internal_position + 1.0);
 
 	// Apply transformations.
