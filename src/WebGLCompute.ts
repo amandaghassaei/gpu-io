@@ -634,6 +634,7 @@ export class WebGLCompute {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
 		const location = gl.getAttribLocation(program, name);
+		console.log(location, name);
 		// TODO: only float is supported for vertex attributes.
 		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
