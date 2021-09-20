@@ -1033,7 +1033,7 @@ can render to nextState using currentState as an input.`);
 			}
 		}
 
-		const glProgram = program.defaultProgram!;
+		const glProgram = program.polylineProgram!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, true, inputLayers, outputLayer);

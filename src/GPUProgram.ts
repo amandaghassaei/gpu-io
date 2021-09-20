@@ -15,12 +15,14 @@ const SEGMENT_PROGRAM_NAME = 'SEGMENT';
 const POINTS_PROGRAM_NAME = 'POINTS';
 const VECTOR_FIELD_PROGRAM_NAME = 'VECTOR_FIELD';
 const INDEXED_LINES_PROGRAM_NAME = 'INDEXED_LINES';
+const POLYLINE_PROGRAM_NAME = 'POLYLINE';
 const glProgramNames = [
 	DEFAULT_PROGRAM_NAME,
 	SEGMENT_PROGRAM_NAME,
 	POINTS_PROGRAM_NAME,
 	VECTOR_FIELD_PROGRAM_NAME,
 	INDEXED_LINES_PROGRAM_NAME,
+	POLYLINE_PROGRAM_NAME,
 ];
 
 export class GPUProgram {
@@ -36,12 +38,14 @@ export class GPUProgram {
 	private _pointsProgram?: WebGLProgram;
 	private _vectorFieldProgram?: WebGLProgram;
 	private _indexedLinesProgram?: WebGLProgram;
+	private _polylineProgram?: WebGLProgram;
 	// Store vertexShaders as class properties (for sharing).
 	private static defaultVertexShader?: WebGLShader;
 	private static segmentVertexShader?: WebGLShader;
 	private static pointsVertexShader?: WebGLShader;
 	private static vectorFieldVertexShader?: WebGLShader;
 	private static indexedLinesVertexShader?: WebGLShader;
+	private static polylineVertexShader?: WebGLShader;
 
 	constructor(
 		params: {
@@ -237,6 +241,27 @@ export class GPUProgram {
 		return this._indexedLinesProgram;
 	}
 
+	get polylineProgram() {
+		if (this._polylineProgram) return this._polylineProgram;
+		if (GPUProgram.polylineVertexShader === undefined) {
+			const { gl, name, errorCallback, glslVersion } = this;
+			// @ts-ignore
+			const vertexShaderSource = glslVersion === GLSL3 ? polylineVertexShaderSource_glsl3 : require('./glsl_1/PolylineVertexShader.glsl');
+			if (vertexShaderSource === undefined) {
+				throw new Error('Need to write glsl3 version of polylineVertexShader.');
+			}
+			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
+			if (!shader) {
+				errorCallback(`Unable to compile vector field vertex shader for program "${name}".`);
+				return;
+			}
+			GPUProgram.polylineVertexShader = shader;
+		}
+		const program = this.initProgram(GPUProgram.polylineVertexShader, POLYLINE_PROGRAM_NAME);
+		this._polylineProgram = program;
+		return this._polylineProgram;
+	}
+
 	private get activePrograms() {
 		const programs = [];
 		if (this._defaultProgram) programs.push({
@@ -258,6 +283,10 @@ export class GPUProgram {
 		if (this._indexedLinesProgram) programs.push({
 			program: this._indexedLinesProgram,
 			programName: INDEXED_LINES_PROGRAM_NAME,
+		});
+		if (this._polylineProgram) programs.push({
+			program: this._polylineProgram,
+			programName: POLYLINE_PROGRAM_NAME,
 		});
 		return programs;
 	}
@@ -433,19 +462,27 @@ Error code: ${gl.getError()}.`);
 			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
 		}
 		let programName: string | undefined;
-		if (program === this._defaultProgram) {
-			programName = DEFAULT_PROGRAM_NAME;
-		} else if (program === this._segmentProgram) {
-			programName = SEGMENT_PROGRAM_NAME;
-		} else if (program === this._pointsProgram) {
-			programName = POINTS_PROGRAM_NAME;
-		} else if (program === this._vectorFieldProgram) {
-			programName = VECTOR_FIELD_PROGRAM_NAME;
-		} else if (program === this._indexedLinesProgram) {
-			programName = INDEXED_LINES_PROGRAM_NAME;
-		}
-		if (programName === undefined) {
-			throw new Error('Could not find valid programName for WebGLProgram.');
+		switch(program) {
+			case this._defaultProgram:
+				programName = DEFAULT_PROGRAM_NAME;
+				break;
+			case this._segmentProgram:
+				programName = SEGMENT_PROGRAM_NAME;
+				break;
+			case this._pointsProgram:
+				programName = POINTS_PROGRAM_NAME;
+				break;
+			case this._vectorFieldProgram:
+				programName = VECTOR_FIELD_PROGRAM_NAME;
+				break;
+			case this._indexedLinesProgram:
+				programName = INDEXED_LINES_PROGRAM_NAME;
+				break;
+			case this._polylineProgram:
+				programName = POLYLINE_PROGRAM_NAME;
+				break;
+			default:
+				throw new Error(`Could not find valid vertex programName for WebGLProgram "${this.name}".`);
 		}
 		this.setProgramUniform(program, programName, uniformName, value, type);
 	}
@@ -465,6 +502,7 @@ Error code: ${gl.getError()}.`);
 		delete this._pointsProgram;
 		delete this._vectorFieldProgram;
 		delete this._indexedLinesProgram;
+		delete this._polylineProgram;
 		// @ts-ignore
 		delete this.fragmentShader;
 

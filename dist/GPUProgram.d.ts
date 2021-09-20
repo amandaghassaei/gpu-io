@@ -11,11 +11,13 @@ export declare class GPUProgram {
     private _pointsProgram?;
     private _vectorFieldProgram?;
     private _indexedLinesProgram?;
+    private _polylineProgram?;
     private static defaultVertexShader?;
     private static segmentVertexShader?;
     private static pointsVertexShader?;
     private static vectorFieldVertexShader?;
     private static indexedLinesVertexShader?;
+    private static polylineVertexShader?;
     constructor(params: {
         gl: WebGLRenderingContext | WebGL2RenderingContext;
         name: string;
@@ -37,6 +39,7 @@ export declare class GPUProgram {
     get pointsProgram(): WebGLProgram | undefined;
     get vectorFieldProgram(): WebGLProgram | undefined;
     get indexedLinesProgram(): WebGLProgram | undefined;
+    get polylineProgram(): WebGLProgram | undefined;
     private get activePrograms();
     private uniformTypeForValue;
     private setProgramUniform;
