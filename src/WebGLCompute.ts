@@ -689,6 +689,7 @@ can render to nextState using currentState as an input.`);
 	) {
 		const { gl, errorState, boundaryPositionsBuffer} = this;
 		const { program, inputLayers, outputLayer } = params;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -702,7 +703,6 @@ can render to nextState using currentState as an input.`);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
@@ -745,6 +745,7 @@ can render to nextState using currentState as an input.`);
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
 		const { program, inputLayers, outputLayer } = params;
+		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -757,7 +758,6 @@ can render to nextState using currentState as an input.`);
 		this.drawSetup(glProgram, false, inputLayers, outputLayer);
 
 		// Update uniforms and buffers.
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
@@ -774,17 +774,16 @@ can render to nextState using currentState as an input.`);
 	stepCircle(
 		params: {
 			program: GPUProgram,
-			position: [number, number], // position is in screen space coords.
-			radius: number, // radius is in px.
+			position: [number, number], // Position is in screen space coords.
+			radius: number, // Radius is in screen space units.
 			inputLayers?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			outputLayer?: DataLayer, // Undefined renders to screen.
 			numSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState } = this;
+		const { gl, errorState, width, height } = this;
 		const { program, position, radius, inputLayers, outputLayer } = params;
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -849,7 +848,7 @@ can render to nextState using currentState as an input.`);
 		program.setVertexUniform(glProgram, 'u_internal_rotation', angle, FLOAT);
 		const centerX = (position1[0] + position2[0]) / 2;
 		const centerY = (position1[1] + position2[1]) / 2;
-		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / width - 1, 2 * centerY / height - 1], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this.width - 1, 2 * centerY / this.height - 1], FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
 		
 		const numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
@@ -896,6 +895,7 @@ can render to nextState using currentState as an input.`);
 		const vertices = params.positions;
 		const closeLoop = !!params.closeLoop;
 		const halfThickness = params.thickness / 2;
+		const { gl, width, height } = this;
 		// Offset vertices.
 		const numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
 		const positions = new Float32Array(2 * numPositions);
@@ -1033,8 +1033,6 @@ can render to nextState using currentState as an input.`);
 			}
 		}
 
-		const { gl, width, height } = this;
-
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
@@ -1065,7 +1063,7 @@ can render to nextState using currentState as an input.`);
 
 	stepPoints(
 		params: {
-			positions: DataLayer,
+			positions: DataLayer, // Positions in canvas px.
 			program?: GPUProgram,
 			inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			outputLayer?: DataLayer,
@@ -1077,9 +1075,8 @@ can render to nextState using currentState as an input.`);
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState, pointIndexArray } = this;
+		const { gl, errorState, pointIndexArray, width, height } = this;
 		const { positions, outputLayer } = params;
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -1152,9 +1149,8 @@ can render to nextState using currentState as an input.`);
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState, vectorFieldIndexArray } = this;
+		const { gl, errorState, vectorFieldIndexArray, width, height } = this;
 		const { field, outputLayer } = params;
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -1227,9 +1223,8 @@ can render to nextState using currentState as an input.`);
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, errorState } = this;
+		const { gl, errorState, width, height } = this;
 		const { positions, indices, outputLayer } = params;
-		const [ width, height ] = outputLayer ? outputLayer.getDimensions() : [ this.width, this.height ];
 
 		// Ignore if we are in error state.
 		if (errorState) {
