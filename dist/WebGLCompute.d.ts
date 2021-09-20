@@ -88,29 +88,29 @@ export declare class WebGLCompute {
     private setVertexAttribute;
     step(params: {
         program: GPUProgram;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         shouldBlendAlpha?: boolean;
     }): void;
     stepBoundary(params: {
         program: GPUProgram;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
         shouldBlendAlpha?: boolean;
     }): void;
     stepNonBoundary(params: {
         program: GPUProgram;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         shouldBlendAlpha?: boolean;
     }): void;
     stepCircle(params: {
         program: GPUProgram;
         position: [number, number];
         radius: number;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         numSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
@@ -119,8 +119,8 @@ export declare class WebGLCompute {
         position1: [number, number];
         position2: [number, number];
         thickness: number;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         endCaps?: boolean;
         numCapSegments?: number;
         shouldBlendAlpha?: boolean;
@@ -129,8 +129,8 @@ export declare class WebGLCompute {
         program: GPUProgram;
         positions: [number, number][];
         thickness: number;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         closeLoop?: boolean;
         includeUVs?: boolean;
         includeNormals?: boolean;
@@ -139,8 +139,8 @@ export declare class WebGLCompute {
     stepPoints(params: {
         positions: DataLayer;
         program?: GPUProgram;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         pointSize?: number;
         count?: number;
         color?: [number, number, number];
@@ -151,8 +151,8 @@ export declare class WebGLCompute {
     drawVectorField(params: {
         field: DataLayer;
         program?: GPUProgram;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         vectorSpacing?: number;
         vectorScale?: number;
         color?: [number, number, number];
@@ -162,8 +162,8 @@ export declare class WebGLCompute {
         positions: DataLayer;
         indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array;
         program?: GPUProgram;
-        inputLayers?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        outputLayer?: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
         count?: number;
         color?: [number, number, number];
         wrapX?: boolean;
