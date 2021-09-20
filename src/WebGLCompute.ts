@@ -1069,6 +1069,57 @@ export class WebGLCompute {
 		gl.disable(gl.BLEND);
 	}
 
+	stepStrip(
+		params: {
+			program: GPUProgram,
+			positions: Float32Array,
+			normals: Float32Array,
+			uvs: Float32Array,
+			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			output?: DataLayer, // Undefined renders to screen.
+			count?: number,
+			shouldBlendAlpha?: boolean,
+		},
+	) {
+
+		const { program, input, output, positions, uvs, normals } = params;
+		const { gl, width, height, errorState } = this;
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+
+		const glProgram = program.polylineProgram!;
+
+		// Do setup - this must come first.
+		this.drawSetup(glProgram, false, input, output);
+
+		// Update uniforms and buffers.
+		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		// Init positions buffer.
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
+		this.setPositionAttribute(glProgram, program.name);
+		if (uvs) {
+			// Init uv buffer.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs)!);
+			this.setUVAttribute(glProgram, program.name);
+		}
+		if (normals) {
+			// Init normals buffer.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals)!);
+			this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+		}
+
+		const count = params.count ? params.count : positions.length / 2;
+
+		// Draw.
+		this.setBlendMode(params.shouldBlendAlpha);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
+		gl.disable(gl.BLEND);
+	}
+
 	stepPoints(
 		params: {
 			positions: DataLayer, // Positions in canvas px.

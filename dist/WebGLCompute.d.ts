@@ -134,6 +134,16 @@ export declare class WebGLCompute {
         closeLoop?: boolean;
         shouldBlendAlpha?: boolean;
     }): void;
+    stepStrip(params: {
+        program: GPUProgram;
+        positions: Float32Array;
+        normals: Float32Array;
+        uvs: Float32Array;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
+        count?: number;
+        shouldBlendAlpha?: boolean;
+    }): void;
     stepPoints(params: {
         positions: DataLayer;
         program?: GPUProgram;
