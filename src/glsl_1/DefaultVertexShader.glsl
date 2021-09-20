@@ -1,20 +1,16 @@
 precision highp float;
 
 attribute vec2 a_internal_position;
-attribute vec2 a_internal_uv;
-attribute vec2 a_internal_normal;
 
 uniform vec2 u_internal_scale;
 uniform vec2 u_internal_translation;
 
 varying vec2 v_UV_local;
 varying vec2 v_UV;
-varying vec2 v_normal;
 
 void main() {
-	// varyings.
-	v_UV_local = a_internal_uv;
-	v_normal = a_internal_normal;
+	Calculate UV coordinates of current rendered object.
+	v_UV_local = 0.5 * (a_internal_position + 1.0);
 
 	// Apply transformations.
 	vec2 position = u_internal_scale * a_internal_position + u_internal_translation;

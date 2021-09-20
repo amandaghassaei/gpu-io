@@ -618,23 +618,25 @@ export class WebGLCompute {
 		gl.viewport(0, 0, width, height);
 	};
 
-	private setPositionAttribute(program: WebGLProgram) {
-		this.setVertexAttribute(program, 'a_internal_position', 2);
+	private setPositionAttribute(program: WebGLProgram, programName: string) {
+		this.setVertexAttribute(program, 'a_internal_position', 2, programName);
 	}
 
-	private setIndexAttribute(program: WebGLProgram) {
-		this.setVertexAttribute(program, 'a_internal_index', 1);
+	private setIndexAttribute(program: WebGLProgram, programName: string) {
+		this.setVertexAttribute(program, 'a_internal_index', 1, programName);
 	}
 
-	private setUVAttribute(program: WebGLProgram) {
-		this.setVertexAttribute(program, 'a_internal_uv', 2);
+	private setUVAttribute(program: WebGLProgram, programName: string) {
+		this.setVertexAttribute(program, 'a_internal_uv', 2, programName);
 	}
 
-	private setVertexAttribute(program: WebGLProgram, name: string, size: number) {
+	private setVertexAttribute(program: WebGLProgram, name: string, size: number, programName: string) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
 		const location = gl.getAttribLocation(program, name);
-		console.log(location, name);
+		if (location < 0) {
+			throw new Error(`Unable to find vertex attribute "${name}" in program "${programName}".`);
+		}
 		// TODO: only float is supported for vertex attributes.
 		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
@@ -667,7 +669,7 @@ export class WebGLCompute {
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(glProgram);
+		this.setPositionAttribute(glProgram, program.name);
 
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
@@ -705,7 +707,7 @@ export class WebGLCompute {
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this.setPositionAttribute(glProgram);
+		this.setPositionAttribute(glProgram, program.name);
 
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
@@ -760,7 +762,7 @@ export class WebGLCompute {
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(glProgram);
+		this.setPositionAttribute(glProgram, program.name);
 		
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
@@ -801,7 +803,7 @@ export class WebGLCompute {
 			throw new Error(`numSegments for WebGLCompute.stepCircle must be greater than 2, got ${numSegments}.`);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
-		this.setPositionAttribute(glProgram);
+		this.setPositionAttribute(glProgram, program.name);
 		
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
@@ -864,7 +866,7 @@ export class WebGLCompute {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
 		}
 
-		this.setPositionAttribute(glProgram);
+		this.setPositionAttribute(glProgram, program.name);
 		
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
@@ -1049,16 +1051,16 @@ export class WebGLCompute {
 		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
-		this.setPositionAttribute(glProgram);
+		this.setPositionAttribute(glProgram, program.name);
 		if (uvs) {
 			// Init uv buffer.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs)!);
-			this.setUVAttribute(glProgram);
+			this.setUVAttribute(glProgram, program.name);
 		}
 		if (normals) {
 			// Init normals buffer.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals)!);
-			this.setVertexAttribute(glProgram, 'a_internal_normal', 2);
+			this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
 		}
 
 		// Draw.
@@ -1135,7 +1137,7 @@ export class WebGLCompute {
 			this.pointIndexBuffer = this.initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer!);
-		this.setIndexAttribute(glProgram);
+		this.setIndexAttribute(glProgram, program.name);
 
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
@@ -1206,7 +1208,7 @@ export class WebGLCompute {
 			this.vectorFieldIndexBuffer = this.initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vectorFieldIndexBuffer!);
-		this.setIndexAttribute(glProgram);
+		this.setIndexAttribute(glProgram, program.name);
 
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
@@ -1286,7 +1288,7 @@ export class WebGLCompute {
 			// Copy buffer data.
 			gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 		}
-		this.setIndexAttribute(glProgram);
+		this.setIndexAttribute(glProgram, program.name);
 
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
