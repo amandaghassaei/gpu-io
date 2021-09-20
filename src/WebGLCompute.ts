@@ -294,7 +294,7 @@ export class WebGLCompute {
 		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initProgram with name ${params.name}.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initProgram with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { gl, errorCallback, glslVersion } = this;
@@ -326,7 +326,7 @@ export class WebGLCompute {
 		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'data', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initDataLayer with name ${params.name}.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initDataLayer with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { gl, errorCallback, glslVersion } = this;
@@ -354,7 +354,7 @@ export class WebGLCompute {
 		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initTexture with name ${params.name}.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key ${key} passed to WebGLCompute.initTexture with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { url, name } = params;
@@ -587,10 +587,7 @@ export class WebGLCompute {
 		// Check if output is same as one of input layers.
 		if (input && ((input === output) || (isArray(input) && (input as (DataLayer | WebGLTexture)[]).indexOf(output) > -1))) {
 			if (output.numBuffers === 1) {
-				throw new Error(`
-Cannot use same buffer for input and output of a program.
-Try increasing the number of buffers in your output layer to at least 2 so you
-can render to nextState using currentState as an input.`);
+				throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
 			}
 			if (fullscreenRender) {
 				// Render and increment buffer so we are rendering to a different target
