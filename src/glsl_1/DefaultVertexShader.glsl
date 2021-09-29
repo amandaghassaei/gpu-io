@@ -13,10 +13,10 @@ uniform vec2 u_internal_translation;
 
 varying vec2 v_UV;
 #ifdef UV_ATTRIBUTE
-attribute vec2 v_UV_local;
+varying vec2 v_UV_local;
 #endif
 #ifdef NORMAL_ATTRIBUTE
-attribute vec2 v_normal;
+varying vec2 v_normal;
 #endif
 
 void main() {
