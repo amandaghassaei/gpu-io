@@ -4,7 +4,7 @@ precision highp float;
 varying vec2 v_UV;
 
 uniform vec3 u_color;
-uniform vec3 u_scale;
+uniform float u_scale;
 uniform sampler2D u_internal_data;
 
 void main() {
