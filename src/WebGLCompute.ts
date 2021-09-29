@@ -1175,6 +1175,16 @@ export class WebGLCompute {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(params.positions)!);
 		}
 		this.setPositionAttribute(glProgram, program.name);
+		if (uvs) {
+			// Init uv buffer.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs)!);
+			this.setUVAttribute(glProgram, program.name);
+		}
+		if (normals) {
+			// Init normals buffer.
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals)!);
+			this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+		}
 
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
