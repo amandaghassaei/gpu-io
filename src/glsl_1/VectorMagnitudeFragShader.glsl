@@ -10,5 +10,5 @@ uniform sampler2D u_internal_data;
 void main() {
 	vec4 value = texture2D(u_internal_data, v_UV);
 	float mag = length(value);
-	gl_FragColor = vec4(mag / u_scale * u_color, 1);
+	gl_FragColor = vec4(mag * u_scale * u_color, 1);
 }
