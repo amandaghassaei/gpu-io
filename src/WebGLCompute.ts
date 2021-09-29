@@ -55,6 +55,7 @@ export class WebGLCompute {
 	// Other util programs.
 	private _singleColorProgram?: GPUProgram;
 	private _singleColorWithWrapCheckProgram?: GPUProgram;
+	private _vectorMagnitudeProgram?: GPUProgram;
 
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
@@ -223,6 +224,17 @@ export class WebGLCompute {
 			this._singleColorWithWrapCheckProgram = program;
 		}
 		return this._singleColorWithWrapCheckProgram;
+	}
+
+	private get vectorMagnitudeProgram() {
+		if (this._vectorMagnitudeProgram === undefined) {
+			const program = this.initProgram({
+				name: 'vectorMagnitude',
+				fragmentShader: this.glslVersion === GLSL3 ? require('./glsl_3/VectorMagnitudeFragShader.glsl') : require('./glsl_1/VectorMagnitudeFragShader.glsl'),
+			});
+			this._vectorMagnitudeProgram = program;
+		}
+		return this._vectorMagnitudeProgram;
 	}
 
 	isWebGL2() {
@@ -1369,7 +1381,7 @@ export class WebGLCompute {
 
 	drawLayerAsVectorField(
 		params: {
-			field: DataLayer,
+			data: DataLayer,
 			program?: GPUProgram,
 			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer,
@@ -1380,7 +1392,7 @@ export class WebGLCompute {
 		},
 	) {
 		const { gl, errorState, vectorFieldIndexArray, width, height } = this;
-		const { field, output } = params;
+		const { data, output } = params;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -1388,8 +1400,8 @@ export class WebGLCompute {
 		}
 
 		// Check that field is valid.
-		if (field.numComponents !== 2) {
-			throw new Error(`WebGLCompute.drawVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${field.name}" with ${field.numComponents} components.`)
+		if (data.numComponents !== 2) {
+			throw new Error(`WebGLCompute.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${data.name}" with ${data.numComponents} components.`)
 		}
 		// Check aspect ratio.
 		// const dimensions = vectorLayer.getDimensions();
@@ -1405,14 +1417,14 @@ export class WebGLCompute {
 		}
 		const glProgram = program.dataLayerVectorFieldProgram!;
 
-		// Add field to end of input if needed.
-		const input = this.addLayerToInputs(field, params.input);
+		// Add data to end of input if needed.
+		const input = this.addLayerToInputs(data, params.input);
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(field), INT);
+		program.setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), INT);
 		// Set default scale.
 		const vectorScale = params.vectorScale || 1;
 		program.setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
@@ -1432,6 +1444,50 @@ export class WebGLCompute {
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.LINES, 0, length);
+		gl.disable(gl.BLEND);
+	}
+
+	drawLayerMagnitude(
+		params: {
+			data: DataLayer,
+			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			output?: DataLayer,
+			scale?: number,
+			color?: [number, number, number],
+			shouldBlendAlpha?: boolean,
+		},
+	) {
+		const { gl, errorState, quadPositionsBuffer } = this;
+		const { data, output } = params;
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+
+		const program = this.vectorMagnitudeProgram;
+		const color = params.color || [1, 0, 0]; // Default to red.
+		program.setUniform('u_color', color, FLOAT);
+		const scale = params.scale || 1;
+		program.setUniform('u_scale', scale, FLOAT);
+
+		const glProgram = program.defaultProgram!;
+
+		// Add data to end of input if needed.
+		const input = this.addLayerToInputs(data, params.input);
+		// Do setup - this must come first.
+		this.drawSetup(glProgram, true, input, output);
+
+		// Update uniforms and buffers.
+		program.setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), INT);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
+		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
+		this.setPositionAttribute(glProgram, program.name);
+
+		// Draw.
+		this.setBlendMode(params.shouldBlendAlpha);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.disable(gl.BLEND);
 	}
 	

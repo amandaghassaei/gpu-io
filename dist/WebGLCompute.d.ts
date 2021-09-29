@@ -25,6 +25,7 @@ export declare class WebGLCompute {
     private readonly copyUintProgram;
     private _singleColorProgram?;
     private _singleColorWithWrapCheckProgram?;
+    private _vectorMagnitudeProgram?;
     static initWithThreeRenderer(renderer: WebGLRenderer, params: {
         glslVersion?: GLSLVersion;
     }, errorCallback?: ErrorCallback): WebGLCompute;
@@ -36,6 +37,7 @@ export declare class WebGLCompute {
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
     private get singleColorProgram();
     private get singleColorWithWrapCheckProgram();
+    private get vectorMagnitudeProgram();
     isWebGL2(): boolean;
     private get quadPositionsBuffer();
     private get boundaryPositionsBuffer();
@@ -184,12 +186,20 @@ export declare class WebGLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     drawLayerAsVectorField(params: {
-        field: DataLayer;
+        data: DataLayer;
         program?: GPUProgram;
         input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
         output?: DataLayer;
         vectorSpacing?: number;
         vectorScale?: number;
+        color?: [number, number, number];
+        shouldBlendAlpha?: boolean;
+    }): void;
+    drawLayerMagnitude(params: {
+        data: DataLayer;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
+        scale?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
