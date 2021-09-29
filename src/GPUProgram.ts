@@ -35,46 +35,46 @@ const vertexShaders: {[key in PROGRAM_NAMES]: {
 	defines?: {[key: string]: string},
 }} = {
 	[DEFAULT_PROGRAM_NAME]: {
-		src_1: './glsl_1/DefaultVertexShader.glsl',
-		src_3: './glsl_3/DefaultVertexShader.glsl',
+		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
+		src_3: '',
 	},
 	[DEFAULT_W_UV_PROGRAM_NAME]: {
-		src_1: './glsl_1/DefaultVertexShader.glsl',
-		src_3: './glsl_3/DefaultVertexShader.glsl',
+		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
+		src_3: '',
 		defines: {
 			'UV_ATTRIBUTE': '1',
 		},
 	},
 	[DEFAULT_W_NORMAL_PROGRAM_NAME]: {
-		src_1: './glsl_1/DefaultVertexShader.glsl',
-		src_3: './glsl_3/DefaultVertexShader.glsl',
+		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
+		src_3: '',
 		defines: {
 			'NORMAL_ATTRIBUTE': '1',
 		},
 	},
 	[DEFAULT_W_UV_NORMAL_PROGRAM_NAME]: {
-		src_1: './glsl_1/DefaultVertexShader.glsl',
-		src_3: './glsl_3/DefaultVertexShader.glsl',
+		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
+		src_3: '',
 		defines: {
 			'UV_ATTRIBUTE': '1',
 			'NORMAL_ATTRIBUTE': '1',
 		},
 	},
 	[SEGMENT_PROGRAM_NAME]: {
-		src_1: './glsl_1/SegmentVertexShader.glsl',
-		src_3: './glsl_3/SegmentVertexShader.glsl',
+		src_1: require('./glsl_1/SegmentVertexShader.glsl'),
+		src_3: '',
 	},
 	[DATA_LAYER_POINTS_PROGRAM_NAME]: {
-		src_1: './glsl_1/DataLayerPointsVertexShader.glsl',
-		src_3: './glsl_3/DataLayerPointsVertexShader.glsl',
+		src_1: require('./glsl_1/DataLayerPointsVertexShader.glsl'),
+		src_3: '',
 	},
 	[DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
-		src_1: './glsl_1/DataLayerVectorFieldVertexShader.glsl',
-		src_3: './glsl_3/DataLayerVectorFieldVertexShader.glsl',
+		src_1: require('./glsl_1/DataLayerVectorFieldVertexShader.glsl'),
+		src_3: '',
 	},
 	[DATA_LAYER_LINES_PROGRAM_NAME]: {
-		src_1: './glsl_1/DataLayerLinesVertexShader.glsl',
-		src_3: './glsl_3/DataLayerLinesVertexShader.glsl',
+		src_1: require('./glsl_1/DataLayerLinesVertexShader.glsl'),
+		src_3: '',
 	},
 };
 
@@ -194,7 +194,10 @@ export class GPUProgram {
 		if (vertexShader.shader === undefined) {
 			const { gl, name, glslVersion } = this;
 			// Init a vertex shader.
-			let vertexShaderSource = require(glslVersion === GLSL3 ? vertexShader.src_3 : vertexShader.src_1);
+			let vertexShaderSource = glslVersion === GLSL3 ? vertexShader.src_3 : vertexShader.src_1;
+			if (vertexShaderSource === '') {
+				throw new Error(`No source for vertex shader ${this.name} : ${name}`)
+			}
 			if (vertexShader.defines) {
 				vertexShaderSource = GPUProgram.convertDefinesToString(vertexShader.defines) + vertexShaderSource;
 			}
