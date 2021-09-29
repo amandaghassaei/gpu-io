@@ -1470,6 +1470,7 @@ export class WebGLCompute {
 		program.setUniform('u_color', color, FLOAT);
 		const scale = params.scale || 1;
 		program.setUniform('u_scale', scale, FLOAT);
+		program.setUniform('u_internal_numDimensions', data.numComponents, INT);
 
 		const glProgram = program.defaultProgram!;
 
