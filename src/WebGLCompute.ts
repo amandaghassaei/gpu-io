@@ -1157,14 +1157,14 @@ export class WebGLCompute {
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
 
-		const count = params.count ? params.count : (indices ? indices.length : params.positions.length  / 2);
+		const count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
 
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		if (indices) {
 			// Reorder positions array to match indices.
-			const positions = new Float32Array(2 * indices.length);
+			const positions = new Float32Array(2 * count);
 			for (let i = 0; i < count; i++) {
 				const index = indices[i];
 				positions[2 * i] = params.positions[2 * index];
