@@ -12,6 +12,12 @@ uniform vec2 u_internal_scale;
 uniform vec2 u_internal_translation;
 
 varying vec2 v_UV;
+#ifdef UV_ATTRIBUTE
+attribute vec2 v_UV_local;
+#endif
+#ifdef NORMAL_ATTRIBUTE
+attribute vec2 v_normal;
+#endif
 
 void main() {
 	// Optional varyings.
