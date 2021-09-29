@@ -132,19 +132,33 @@ export declare class WebGLCompute {
         input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
         output?: DataLayer;
         closeLoop?: boolean;
+        includeUVs?: boolean;
+        includeNormals?: boolean;
         shouldBlendAlpha?: boolean;
     }): void;
-    stepStrip(params: {
+    stepTriangleStrip(params: {
         program: GPUProgram;
         positions: Float32Array;
-        normals: Float32Array;
-        uvs: Float32Array;
+        normals?: Float32Array;
+        uvs?: Float32Array;
         input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
         output?: DataLayer;
         count?: number;
         shouldBlendAlpha?: boolean;
     }): void;
-    stepPoints(params: {
+    stepLines(params: {
+        program: GPUProgram;
+        positions: Float32Array;
+        indices?: Uint16Array | Uint32Array | Int16Array | Int32Array;
+        normals?: Float32Array;
+        uvs?: Float32Array;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
+        count?: number;
+        closeLoop?: boolean;
+        shouldBlendAlpha?: boolean;
+    }): void;
+    drawLayerAsPoints(params: {
         positions: DataLayer;
         program?: GPUProgram;
         input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
@@ -156,19 +170,9 @@ export declare class WebGLCompute {
         wrapY?: boolean;
         shouldBlendAlpha?: boolean;
     }): void;
-    drawVectorField(params: {
-        field: DataLayer;
-        program?: GPUProgram;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
-        vectorSpacing?: number;
-        vectorScale?: number;
-        color?: [number, number, number];
-        shouldBlendAlpha?: boolean;
-    }): void;
-    drawLines(params: {
+    drawLayerAsLines(params: {
         positions: DataLayer;
-        indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array;
+        indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array;
         program?: GPUProgram;
         input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
         output?: DataLayer;
@@ -176,6 +180,17 @@ export declare class WebGLCompute {
         color?: [number, number, number];
         wrapX?: boolean;
         wrapY?: boolean;
+        closeLoop?: boolean;
+        shouldBlendAlpha?: boolean;
+    }): void;
+    drawLayerAsVectorField(params: {
+        field: DataLayer;
+        program?: GPUProgram;
+        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
+        output?: DataLayer;
+        vectorSpacing?: number;
+        vectorScale?: number;
+        color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;

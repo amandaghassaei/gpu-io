@@ -11,19 +11,72 @@ import {
 import { compileShader } from './utils';
 
 const DEFAULT_PROGRAM_NAME = 'DEFAULT';
+const DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
+const DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
+const DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
 const SEGMENT_PROGRAM_NAME = 'SEGMENT';
-const POINTS_PROGRAM_NAME = 'POINTS';
-const VECTOR_FIELD_PROGRAM_NAME = 'VECTOR_FIELD';
-const INDEXED_LINES_PROGRAM_NAME = 'INDEXED_LINES';
-const POLYLINE_PROGRAM_NAME = 'POLYLINE';
-const glProgramNames = [
-	DEFAULT_PROGRAM_NAME,
-	SEGMENT_PROGRAM_NAME,
-	POINTS_PROGRAM_NAME,
-	VECTOR_FIELD_PROGRAM_NAME,
-	INDEXED_LINES_PROGRAM_NAME,
-	POLYLINE_PROGRAM_NAME,
-];
+const DATA_LAYER_POINTS_PROGRAM_NAME = 'DATA_LAYER_POINTS';
+const DATA_LAYER_LINES_PROGRAM_NAME = 'DATA_LAYER_LINES';
+const DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = 'DATA_LAYER_VECTOR_FIELD';
+type PROGRAM_NAMES =
+	typeof DEFAULT_PROGRAM_NAME |
+	typeof DEFAULT_W_UV_PROGRAM_NAME |
+	typeof DEFAULT_W_NORMAL_PROGRAM_NAME |
+	typeof DEFAULT_W_UV_NORMAL_PROGRAM_NAME |
+	typeof SEGMENT_PROGRAM_NAME |
+	typeof DATA_LAYER_POINTS_PROGRAM_NAME |
+	typeof DATA_LAYER_LINES_PROGRAM_NAME |
+	typeof DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME;
+
+const vertexShaders: {[key in PROGRAM_NAMES]: {
+	src_1: string,
+	src_3: string,
+	shader?: WebGLProgram,
+	defines?: {[key: string]: string},
+}} = {
+	[DEFAULT_PROGRAM_NAME]: {
+		src_1: './glsl_1/DefaultVertexShader.glsl',
+		src_3: './glsl_3/DefaultVertexShader.glsl',
+	},
+	[DEFAULT_W_UV_PROGRAM_NAME]: {
+		src_1: './glsl_1/DefaultVertexShader.glsl',
+		src_3: './glsl_3/DefaultVertexShader.glsl',
+		defines: {
+			'UV_ATTRIBUTE': '1',
+		},
+	},
+	[DEFAULT_W_NORMAL_PROGRAM_NAME]: {
+		src_1: './glsl_1/DefaultVertexShader.glsl',
+		src_3: './glsl_3/DefaultVertexShader.glsl',
+		defines: {
+			'NORMAL_ATTRIBUTE': '1',
+		},
+	},
+	[DEFAULT_W_UV_NORMAL_PROGRAM_NAME]: {
+		src_1: './glsl_1/DefaultVertexShader.glsl',
+		src_3: './glsl_3/DefaultVertexShader.glsl',
+		defines: {
+			'UV_ATTRIBUTE': '1',
+			'NORMAL_ATTRIBUTE': '1',
+		},
+	},
+	[SEGMENT_PROGRAM_NAME]: {
+		src_1: './glsl_1/SegmentVertexShader.glsl',
+		src_3: './glsl_3/SegmentVertexShader.glsl',
+	},
+	[DATA_LAYER_POINTS_PROGRAM_NAME]: {
+		src_1: './glsl_1/DataLayerPointsVertexShader.glsl',
+		src_3: './glsl_3/DataLayerPointsVertexShader.glsl',
+	},
+	[DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
+		src_1: './glsl_1/DataLayerVectorFieldVertexShader.glsl',
+		src_3: './glsl_3/DataLayerVectorFieldVertexShader.glsl',
+	},
+	[DATA_LAYER_LINES_PROGRAM_NAME]: {
+		src_1: './glsl_1/DataLayerLinesVertexShader.glsl',
+		src_3: './glsl_3/DataLayerLinesVertexShader.glsl',
+	},
+};
 
 export class GPUProgram {
 	readonly name: string;
@@ -33,19 +86,7 @@ export class GPUProgram {
 	private readonly uniforms: { [ key: string]: Uniform } = {};
 	private readonly fragmentShader!: WebGLShader;
 	// Store gl programs.
-	private _defaultProgram?: WebGLProgram;
-	private _segmentProgram?: WebGLProgram;
-	private _pointsProgram?: WebGLProgram;
-	private _vectorFieldProgram?: WebGLProgram;
-	private _indexedLinesProgram?: WebGLProgram;
-	private _polylineProgram?: WebGLProgram;
-	// Store vertexShaders as class properties (for sharing).
-	private static defaultVertexShader?: WebGLShader;
-	private static segmentVertexShader?: WebGLShader;
-	private static pointsVertexShader?: WebGLShader;
-	private static vectorFieldVertexShader?: WebGLShader;
-	private static indexedLinesVertexShader?: WebGLShader;
-	private static polylineVertexShader?: WebGLShader;
+	private programs: {[key in PROGRAM_NAMES]?: WebGLProgram } = {};
 
 	constructor(
 		params: {
@@ -79,18 +120,7 @@ export class GPUProgram {
 				fragmentShader :
 				(fragmentShader as string[]).join('\n');
 			if (defines) {
-				// First convert defines to a string.
-				let definesSource = '';
-				const keys = Object.keys(defines);
-				for (let i = 0; i < keys.length; i++) {
-					const key = keys[i];
-					// Check that define is passed in as a string.
-					if (!isString(key) || !isString(defines[key])) {
-						throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type ${typeof key} : ${typeof defines[key]}.`)
-					}
-					definesSource += `#define ${key} ${defines[key]}\n`;
-				}
-				sourceString = definesSource + sourceString;
+				sourceString = GPUProgram.convertDefinesToString(defines) + sourceString;
 			}
 			const shader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
 			if (!shader) {
@@ -110,6 +140,20 @@ export class GPUProgram {
 				this.setUniform(name, value, dataType);
 			}
 		}
+	}
+
+	private static convertDefinesToString(defines: {[key: string]: string}) {
+		let definesSource = '';
+		const keys = Object.keys(defines);
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
+			// Check that define is passed in as a string.
+			if (!isString(key) || !isString(defines[key])) {
+				throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type ${typeof key} : ${typeof defines[key]}.`)
+			}
+			definesSource += `#define ${key} ${defines[key]}\n`;
+		}
+		return definesSource;
 	}
 
 	private initProgram(vertexShader: WebGLShader, programName: string) {
@@ -143,152 +187,63 @@ export class GPUProgram {
 		return program;
 	}
 
-	get defaultProgram() {
-		if (this._defaultProgram) return this._defaultProgram;
-		if (GPUProgram.defaultVertexShader === undefined) {
-			const { gl, name, errorCallback, glslVersion } = this;
-			// Init a default vertex shader that just passes through screen coords.
-			const vertexShaderSource = glslVersion === GLSL3 ? require('./glsl_3/DefaultVertexShader.glsl') : require('./glsl_1/DefaultVertexShader.glsl');
+	private getProgramWithName(name: PROGRAM_NAMES) {
+		if (this.programs[name]) return this.programs[name];
+		const { errorCallback } = this;
+		const vertexShader = vertexShaders[name];
+		if (vertexShader.shader === undefined) {
+			const { gl, name, glslVersion } = this;
+			// Init a vertex shader.
+			let vertexShaderSource = require(glslVersion === GLSL3 ? vertexShader.src_3 : vertexShader.src_1);
+			if (vertexShader.defines) {
+				vertexShaderSource = GPUProgram.convertDefinesToString(vertexShader.defines) + vertexShaderSource;
+			}
 			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
 			if (!shader) {
 				errorCallback(`Unable to compile default vertex shader for program "${name}".`);
 				return;
 			}
-			GPUProgram.defaultVertexShader = shader;
+			vertexShader.shader = shader;
 		}
-		const program = this.initProgram(GPUProgram.defaultVertexShader, DEFAULT_PROGRAM_NAME);
-		this._defaultProgram = program;
-		return this._defaultProgram;
+		const program = this.initProgram(vertexShader.shader, DEFAULT_PROGRAM_NAME);
+		if (program === undefined) {
+			errorCallback(`Unable to init program "${name}".`);
+			return;
+		}
+		this.programs[name] = program;
+		return program;
+	}
+
+	get defaultProgram() {
+		return this.getProgramWithName(DEFAULT_PROGRAM_NAME);
+	}
+
+	get defaultProgramWithUV() {
+		return this.getProgramWithName(DEFAULT_W_UV_PROGRAM_NAME);
+	}
+
+	get defaultProgramWithNormal() {
+		return this.getProgramWithName(DEFAULT_W_NORMAL_PROGRAM_NAME);
+	}
+
+	get defaultProgramWithUVNormal() {
+		return this.getProgramWithName(DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
 	}
 
 	get segmentProgram() {
-		if (this._segmentProgram) return this._segmentProgram;
-		if (GPUProgram.segmentVertexShader === undefined) {
-			const { gl, name, errorCallback, glslVersion } = this;
-			const vertexShaderSource = glslVersion === GLSL3 ? require('./glsl_3/SegmentVertexShader.glsl') : require('./glsl_1/SegmentVertexShader.glsl');
-			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
-			if (!shader) {
-				errorCallback(`Unable to compile segment vertex shader for program "${name}".`);
-				return;
-			}
-			GPUProgram.segmentVertexShader = shader;
-		}
-		const program = this.initProgram(GPUProgram.segmentVertexShader, SEGMENT_PROGRAM_NAME);
-		this._segmentProgram = program;
-		return this._segmentProgram;
+		return this.getProgramWithName(SEGMENT_PROGRAM_NAME);
 	}
 
-	get pointsProgram() {
-		if (this._pointsProgram) return this._pointsProgram;
-		if (GPUProgram.pointsVertexShader === undefined) {
-			const { gl, name, errorCallback, glslVersion } = this;
-			// @ts-ignore
-			const vertexShaderSource = glslVersion === GLSL3 ? pointsVertexShaderSource_glsl3 : require('./glsl_1/PointsVertexShader.glsl');
-			if (vertexShaderSource === undefined) {
-				throw new Error('Need to write glsl3 version of pointsVertexShader.');
-			}
-			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
-			if (!shader) {
-				errorCallback(`Unable to compile points vertex shader for program "${name}".`);
-				return;
-			}
-			GPUProgram.pointsVertexShader = shader;
-		}
-		const program = this.initProgram(GPUProgram.pointsVertexShader, POINTS_PROGRAM_NAME);
-		this._pointsProgram = program;
-		return this._pointsProgram;
+	get dataLayerPointsProgram() {
+		return this.getProgramWithName(DATA_LAYER_POINTS_PROGRAM_NAME);
 	}
 
-	get vectorFieldProgram() {
-		if (this._vectorFieldProgram) return this._vectorFieldProgram;
-		if (GPUProgram.vectorFieldVertexShader === undefined) {
-			const { gl, name, errorCallback, glslVersion } = this;
-			// @ts-ignore
-			const vertexShaderSource = glslVersion === GLSL3 ? vectorFieldVertexShaderSource_glsl3 : require('./glsl_1/VectorFieldVertexShader.glsl');
-			if (vertexShaderSource === undefined) {
-				throw new Error('Need to write glsl3 version of vectorFieldVertexShader.');
-			}
-			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
-			if (!shader) {
-				errorCallback(`Unable to compile vector field vertex shader for program "${name}".`);
-				return;
-			}
-			GPUProgram.vectorFieldVertexShader = shader;
-		}
-		const program = this.initProgram(GPUProgram.vectorFieldVertexShader, VECTOR_FIELD_PROGRAM_NAME);
-		this._vectorFieldProgram = program;
-		return this._vectorFieldProgram;
+	get dataLayerVectorFieldProgram() {
+		return this.getProgramWithName(DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME);
 	}
 
-	get indexedLinesProgram() {
-		if (this._indexedLinesProgram) return this._indexedLinesProgram;
-		if (GPUProgram.indexedLinesVertexShader === undefined) {
-			const { gl, name, errorCallback, glslVersion } = this;
-			// @ts-ignore
-			const vertexShaderSource = glslVersion === GLSL3 ? indexedLinesVertexShaderSource_glsl3 : require('./glsl_1/IndexedLinesVertexShader.glsl');
-			if (vertexShaderSource === undefined) {
-				throw new Error('Need to write glsl3 version of indexedLinesVertexShader.');
-			}
-			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
-			if (!shader) {
-				errorCallback(`Unable to compile vector field vertex shader for program "${name}".`);
-				return;
-			}
-			GPUProgram.indexedLinesVertexShader = shader;
-		}
-		const program = this.initProgram(GPUProgram.indexedLinesVertexShader, INDEXED_LINES_PROGRAM_NAME);
-		this._indexedLinesProgram = program;
-		return this._indexedLinesProgram;
-	}
-
-	get polylineProgram() {
-		if (this._polylineProgram) return this._polylineProgram;
-		if (GPUProgram.polylineVertexShader === undefined) {
-			const { gl, name, errorCallback, glslVersion } = this;
-			// @ts-ignore
-			const vertexShaderSource = glslVersion === GLSL3 ? polylineVertexShaderSource_glsl3 : require('./glsl_1/PolylineVertexShader.glsl');
-			if (vertexShaderSource === undefined) {
-				throw new Error('Need to write glsl3 version of polylineVertexShader.');
-			}
-			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
-			if (!shader) {
-				errorCallback(`Unable to compile vector field vertex shader for program "${name}".`);
-				return;
-			}
-			GPUProgram.polylineVertexShader = shader;
-		}
-		const program = this.initProgram(GPUProgram.polylineVertexShader, POLYLINE_PROGRAM_NAME);
-		this._polylineProgram = program;
-		return this._polylineProgram;
-	}
-
-	private get activePrograms() {
-		const programs = [];
-		if (this._defaultProgram) programs.push({
-			program: this._defaultProgram,
-			programName: DEFAULT_PROGRAM_NAME,
-		});
-		if (this._segmentProgram) programs.push({
-			program: this._segmentProgram,
-			programName: SEGMENT_PROGRAM_NAME,
-		});
-		if (this._pointsProgram) programs.push({
-			program: this._pointsProgram,
-			programName: POINTS_PROGRAM_NAME,
-		});
-		if (this._vectorFieldProgram) programs.push({
-			program: this._vectorFieldProgram,
-			programName: VECTOR_FIELD_PROGRAM_NAME,
-		});
-		if (this._indexedLinesProgram) programs.push({
-			program: this._indexedLinesProgram,
-			programName: INDEXED_LINES_PROGRAM_NAME,
-		});
-		if (this._polylineProgram) programs.push({
-			program: this._polylineProgram,
-			programName: POLYLINE_PROGRAM_NAME,
-		});
-		return programs;
+	get dataLayerLinesProgram() {
+		return this.getProgramWithName(DATA_LAYER_LINES_PROGRAM_NAME);
 	}
 
 	private uniformTypeForValue(
@@ -418,7 +373,7 @@ Error code: ${gl.getError()}.`);
 		value: UniformValueType,
 		dataType?: UniformDataType,
 	) {
-		const { activePrograms, uniforms } = this;
+		const { programs, uniforms } = this;
 
 		let type = uniforms[uniformName]?.type;
 		if (dataType) {
@@ -445,9 +400,10 @@ Error code: ${gl.getError()}.`);
 		}
 
 		// Update any active programs.
-		for (let i = 0; i < activePrograms.length; i++) {
-			const { program, programName } = activePrograms[i];
-			this.setProgramUniform(program, programName, uniformName, value, type);
+		const keys = Object.keys(programs);
+		for (let i = 0; i < keys.length; i++) {
+			const programName = keys[i] as PROGRAM_NAMES;
+			this.setProgramUniform(programs[programName]!, programName, uniformName, value, type);
 		}
 	};
 
@@ -461,48 +417,26 @@ Error code: ${gl.getError()}.`);
 		if (program === undefined) {
 			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
 		}
-		let programName: string | undefined;
-		switch(program) {
-			case this._defaultProgram:
-				programName = DEFAULT_PROGRAM_NAME;
-				break;
-			case this._segmentProgram:
-				programName = SEGMENT_PROGRAM_NAME;
-				break;
-			case this._pointsProgram:
-				programName = POINTS_PROGRAM_NAME;
-				break;
-			case this._vectorFieldProgram:
-				programName = VECTOR_FIELD_PROGRAM_NAME;
-				break;
-			case this._indexedLinesProgram:
-				programName = INDEXED_LINES_PROGRAM_NAME;
-				break;
-			case this._polylineProgram:
-				programName = POLYLINE_PROGRAM_NAME;
-				break;
-			default:
-				throw new Error(`Could not find valid vertex programName for WebGLProgram "${this.name}".`);
+		const programName = Object.keys(this.programs).find(key => this.programs[key as PROGRAM_NAMES] === program);
+		if (!programName) {
+			throw new Error(`Could not find valid vertex programName for WebGLProgram "${this.name}".`);
 		}
 		this.setProgramUniform(program, programName, uniformName, value, type);
 	}
 
 	destroy() {
-		const { gl, fragmentShader, activePrograms } = this;
+		const { gl, fragmentShader, programs } = this;
 		// Unbind all gl data before deleting.
-		activePrograms.forEach(({ program }) => {
-			gl.deleteProgram(program);
+		Object.values(programs).forEach(program => {
+			gl.deleteProgram(program!);
 		});
+		Object.keys(this.programs).forEach(key => {
+			delete this.programs[key as PROGRAM_NAMES];
+		});
+
 		// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
 		// This method has no effect if the shader has already been deleted
 		gl.deleteShader(fragmentShader);
-
-		delete this._defaultProgram;
-		delete this._segmentProgram;
-		delete this._pointsProgram;
-		delete this._vectorFieldProgram;
-		delete this._indexedLinesProgram;
-		delete this._polylineProgram;
 		// @ts-ignore
 		delete this.fragmentShader;
 
@@ -510,7 +444,5 @@ Error code: ${gl.getError()}.`);
 		delete this.gl;
 		// @ts-ignore
 		delete this.errorCallback;
-		// @ts-ignore
-		delete this.program;
 	}
 }

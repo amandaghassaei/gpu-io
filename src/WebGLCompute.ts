@@ -10,7 +10,7 @@ import {
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
 import * as utils from './utils/Vector4';
-import { isWebGL2, isPowerOf2 } from './utils';
+import { isWebGL2, isPowerOf2, initSequentialFloatArray } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
 	isArray,
@@ -663,7 +663,7 @@ export class WebGLCompute {
 		const glProgram = program.defaultProgram!;
 
 		// Do setup - this must come first.
-		this.drawSetup(program.defaultProgram!, true, input, output);
+		this.drawSetup(glProgram, true, input, output);
 
 		// Update uniforms and buffers.
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
@@ -886,15 +886,15 @@ export class WebGLCompute {
 			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer, // Undefined renders to screen.
 			closeLoop?: boolean,
-			// includeUVs?: boolean,
-			// includeNormals?: boolean,
+			includeUVs?: boolean,
+			includeNormals?: boolean,
 			shouldBlendAlpha?: boolean,
 		},
 	) {
 		const { program, input, output } = params;
 		const vertices = params.positions;
 		const closeLoop = !!params.closeLoop;
-		const halfThickness = params.thickness / 2;
+		
 		const { gl, width, height, errorState } = this;
 
 		// Ignore if we are in error state.
@@ -903,12 +903,11 @@ export class WebGLCompute {
 		}
 
 		// Offset vertices.
+		const halfThickness = params.thickness / 2;
 		const numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
 		const positions = new Float32Array(2 * numPositions);
-		// const uvs = params.includeUVs ? new Float32Array(2 * numPositions) : undefined;
-		// const normals = params.includeNormals ? new Float32Array(2 * numPositions) : undefined;
-		const uvs = new Float32Array(2 * numPositions);
-		const normals = new Float32Array(2 * numPositions);
+		const uvs = params.includeUVs ? new Float32Array(2 * numPositions) : undefined;
+		const normals = params.includeNormals ? new Float32Array(2 * numPositions) : undefined;
 
 		// tmp arrays.
 		const s1 = [0, 0];
@@ -1041,7 +1040,10 @@ export class WebGLCompute {
 			}
 		}
 
-		const glProgram = program.polylineProgram!;
+		const glProgram = (uvs ?
+			(normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
+			(normals ? program.defaultProgramWithNormal : program.defaultProgram)
+		)!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
@@ -1069,12 +1071,12 @@ export class WebGLCompute {
 		gl.disable(gl.BLEND);
 	}
 
-	stepStrip(
+	stepTriangleStrip(
 		params: {
 			program: GPUProgram,
 			positions: Float32Array,
-			normals: Float32Array,
-			uvs: Float32Array,
+			normals?: Float32Array,
+			uvs?: Float32Array,
 			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer, // Undefined renders to screen.
 			count?: number,
@@ -1090,7 +1092,10 @@ export class WebGLCompute {
 			return;
 		}
 
-		const glProgram = program.polylineProgram!;
+		const glProgram = (uvs ?
+			(normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
+			(normals ? program.defaultProgramWithNormal : program.defaultProgram)
+		)!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
@@ -1120,7 +1125,72 @@ export class WebGLCompute {
 		gl.disable(gl.BLEND);
 	}
 
-	stepPoints(
+	stepLines(params: {
+		program: GPUProgram,
+		positions: Float32Array,
+		indices?: Uint16Array | Uint32Array | Int16Array | Int32Array,
+		normals?: Float32Array,
+		uvs?: Float32Array,
+		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		count?: number,
+		closeLoop?: boolean,
+		shouldBlendAlpha?: boolean,
+	}) {
+		const { gl, errorState, width, height } = this;
+		const { indices, uvs, normals, input, output, program } = params;
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+		// Check that params are valid.
+		if (params.closeLoop && indices) {
+			throw new Error(`WebGLCompute.stepLines() can't be called with closeLoop == true and indices.`);
+		}
+		
+		const glProgram = (uvs ?
+			(normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
+			(normals ? program.defaultProgramWithNormal : program.defaultProgram)
+		)!;
+
+		// Do setup - this must come first.
+		this.drawSetup(glProgram, false, input, output);
+
+		const count = params.count ? params.count : (indices ? indices.length : params.positions.length  / 2);
+
+		// Update uniforms and buffers.
+		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		if (indices) {
+			// Reorder positions array to match indices.
+			const positions = new Float32Array(2 * indices.length);
+			for (let i = 0; i < count; i++) {
+				const index = indices[i];
+				positions[2 * i] = params.positions[2 * index];
+				positions[2 * i + 1] = params.positions[2 * index + 1];
+			}
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
+		} else {
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(params.positions)!);
+		}
+		this.setPositionAttribute(glProgram, program.name);
+
+		// Draw.
+		this.setBlendMode(params.shouldBlendAlpha);
+		if (params.indices) {
+			gl.drawArrays(gl.LINES, 0, count);
+		} else {
+			if (params.closeLoop) {
+				gl.drawArrays(gl.LINE_LOOP, 0, count);
+			} else {
+				gl.drawArrays(gl.LINE_STRIP, 0, count);
+			}
+		}
+		gl.disable(gl.BLEND);
+	}
+
+	drawLayerAsPoints(
 		params: {
 			positions: DataLayer, // Positions in canvas px.
 			program?: GPUProgram,
@@ -1158,7 +1228,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default of red.
 			program.setUniform('u_color', color, FLOAT);
 		}
-		const glProgram = program.pointsProgram!;
+		const glProgram = program.dataLayerPointsProgram!;
 
 		// Add positions to end of input if needed.
 		const input = this.addLayerToInputs(positions, params.input);
@@ -1180,10 +1250,7 @@ export class WebGLCompute {
 		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
-			const indices = new Float32Array(length);
-			for (let i = 0; i < length; i++) {
-				indices[i] = i;
-			}
+			const indices = initSequentialFloatArray(length);
 			this.pointIndexArray = indices;
 			this.pointIndexBuffer = this.initVertexBuffer(indices);
 		}
@@ -1196,7 +1263,101 @@ export class WebGLCompute {
 		gl.disable(gl.BLEND);
 	}
 
-	drawVectorField(
+	drawLayerAsLines(
+		params: {
+			positions: DataLayer,
+			indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
+			program?: GPUProgram,
+			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+			output?: DataLayer,
+			count?: number,
+			color?: [number, number, number],
+			wrapX?: boolean,
+			wrapY?: boolean,
+			closeLoop?: boolean,
+			shouldBlendAlpha?: boolean,
+		},
+	) {
+		const { gl, errorState, width, height } = this;
+		const { positions, output } = params;
+
+		// Ignore if we are in error state.
+		if (errorState) {
+			return;
+		}
+
+		// Check that positions is valid.
+		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
+			throw new Error(`WebGLCompute.drawLayerAsLines() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positions.name}" with ${positions.numComponents} components.`)
+		}
+		// Check that params are valid.
+		if (params.closeLoop && params.indices) {
+			throw new Error(`WebGLCompute.drawLayerAsLines() can't be called with closeLoop == true and indices.`);
+		}
+
+		let program = params.program;
+		if (program === undefined) {
+			program = params.wrapX || params.wrapY ? this.singleColorWithWrapCheckProgram : this.singleColorProgram;
+			const color = params.color || [1, 0, 0]; // Default to red.
+			program.setUniform('u_color', color, FLOAT);
+		}
+		const glProgram = program.dataLayerLinesProgram!;
+
+		// Add positionLayer to end of input if needed.
+		const input = this.addLayerToInputs(positions, params.input);
+
+		// Do setup - this must come first.
+		this.drawSetup(glProgram, false, input, output);
+
+		// TODO: cache indexArray if no indices passed in.
+		const indices = params.indices ? params.indices : initSequentialFloatArray(params.count || positions.getLength());
+		const count = params.count ? params.count : indices.length;
+
+		// Update uniforms and buffers.
+		program.setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
+		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
+		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
+		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
+		const positionLayerDimensions = positions.getDimensions();
+		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
+		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
+		if (this.indexedLinesIndexBuffer === undefined) {
+			// Have to use float32 array bc int is not supported as a vertex attribute type.
+			let floatArray: Float32Array;
+			if (indices.constructor !== Float32Array) {
+				// Have to use float32 array bc int is not supported as a vertex attribute type.
+				floatArray = new Float32Array(indices.length);
+				for (let i = 0; i < count; i++) {
+					floatArray[i] = indices[i];
+				}
+				console.warn(`Converting indices array of type ${indices.constructor} to Float32Array in WebGLCompute.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required.`);
+			} else {
+				floatArray = indices as Float32Array;
+			}
+			this.indexedLinesIndexBuffer = this.initVertexBuffer(floatArray);
+		} else {
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.indexedLinesIndexBuffer!);
+			// Copy buffer data.
+			gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+		}
+		this.setIndexAttribute(glProgram, program.name);
+
+		// Draw.
+		this.setBlendMode(params.shouldBlendAlpha);
+		if (params.indices) {
+			gl.drawArrays(gl.LINES, 0, count);
+		} else {
+			if (params.closeLoop) {
+				gl.drawArrays(gl.LINE_LOOP, 0, count);
+			} else {
+				gl.drawArrays(gl.LINE_STRIP, 0, count);
+			}
+		}
+		gl.disable(gl.BLEND);
+	}
+
+	drawLayerAsVectorField(
 		params: {
 			field: DataLayer,
 			program?: GPUProgram,
@@ -1232,7 +1393,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_color', color, FLOAT);
 		}
-		const glProgram = program.vectorFieldProgram!;
+		const glProgram = program.dataLayerVectorFieldProgram!;
 
 		// Add field to end of input if needed.
 		const input = this.addLayerToInputs(field, params.input);
@@ -1251,10 +1412,7 @@ export class WebGLCompute {
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
 		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
-			const indices = new Float32Array(length);
-			for (let i = 0; i < length; i++) {
-				indices[i] = i;
-			}
+			const indices = initSequentialFloatArray(length);
 			this.vectorFieldIndexArray = indices;
 			this.vectorFieldIndexBuffer = this.initVertexBuffer(indices);
 		}
@@ -1264,86 +1422,6 @@ export class WebGLCompute {
 		// Draw.
 		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.LINES, 0, length);
-		gl.disable(gl.BLEND);
-	}
-
-	drawLines(
-		params: {
-			positions: DataLayer,
-			// TODO: add option for no indices.
-			indices: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
-			program?: GPUProgram,
-			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer,
-			count?: number,
-			color?: [number, number, number],
-			wrapX?: boolean,
-			wrapY?: boolean,
-			shouldBlendAlpha?: boolean,
-		},
-	) {
-		const { gl, errorState, width, height } = this;
-		const { positions, indices, output } = params;
-
-		// Ignore if we are in error state.
-		if (errorState) {
-			return;
-		}
-
-		// Check that positions is valid.
-		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
-			throw new Error(`WebGLCompute.drawIndexedLines() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positions.name}" with ${positions.numComponents} components.`)
-		}
-
-		let program = params.program;
-		if (program === undefined) {
-			program = params.wrapX || params.wrapY ? this.singleColorWithWrapCheckProgram : this.singleColorProgram;
-			const color = params.color || [1, 0, 0]; // Default to red.
-			program.setUniform('u_color', color, FLOAT);
-		}
-		const glProgram = program.indexedLinesProgram!;
-
-		// Add positionLayer to end of input if needed.
-		const input = this.addLayerToInputs(positions, params.input);
-
-		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
-
-		const count = params.count ? params.count : indices.length;
-
-		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
-		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
-		const positionLayerDimensions = positions.getDimensions();
-		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
-		if (this.indexedLinesIndexBuffer === undefined) {
-			// Have to use float32 array bc int is not supported as a vertex attribute type.
-			let floatArray: Float32Array;
-			if (indices.constructor !== Float32Array) {
-				// Have to use float32 array bc int is not supported as a vertex attribute type.
-				floatArray = new Float32Array(indices.length);
-				for (let i = 0; i < count; i++) {
-					floatArray[i] = indices[i];
-				}
-				console.warn(`Converting indices array of type ${indices.constructor} to Float32Array in WebGLCompute.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required.`);
-			} else {
-				floatArray = indices as Float32Array;
-			}
-			this.indexedLinesIndexBuffer = this.initVertexBuffer(floatArray);
-		} else {
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.indexedLinesIndexBuffer!);
-			// Copy buffer data.
-			gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-		}
-		this.setIndexAttribute(glProgram, program.name);
-
-		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
-		gl.drawArrays(gl.LINES, 0, count);
 		gl.disable(gl.BLEND);
 	}
 	

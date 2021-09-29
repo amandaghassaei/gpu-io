@@ -40,3 +40,11 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 export function isPowerOf2(value: number) {
 	return (value & (value - 1)) == 0;
 }
+
+export function initSequentialFloatArray(length: number) {
+	const array = new Float32Array(length);
+	for (let i = 0; i < length; i++) {
+		array[i] = i;
+	}
+	return array;
+}
