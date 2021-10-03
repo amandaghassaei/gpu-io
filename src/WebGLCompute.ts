@@ -376,13 +376,18 @@ export class WebGLCompute {
 
 		// If writable, copy current state.
 		if (dataLayer.writable) {
-			for (let i = 0; i < dataLayer.numBuffers; i++) {
+			for (let i = 0; i < dataLayer.numBuffers - 1; i++) {
 				this.step({
 					program: this.copyProgramForType(dataLayer.type),
 					input: dataLayer.getPreviousStateTexture(-dataLayer.numBuffers + i + 1),
 					output: clone,
 				});
 			}
+			this.step({
+				program: this.copyProgramForType(dataLayer.type),
+				input: dataLayer.getCurrentStateTexture(),
+				output: clone,
+			});
 		}
 		return clone;
 	}
