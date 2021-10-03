@@ -38,6 +38,7 @@ export class DataLayer {
 	private height: number;
 
 	// DataLayer settings.
+	initializationData?: DataLayerArrayType; // Initial data passed in.
 	readonly type: DataLayerType; // Input type passed in during setup.
 	readonly internalType: DataLayerType; // Type that corresponds to glType, may be different from type.
 	readonly wrapS: DataLayerWrapType; // Input wrap type passed in during setup.
@@ -927,6 +928,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			errorCallback,
 		} = this;
 
+		this.initializationData = _data;
+
 		const data = this.validateDataArray(_data);
 
 		// Init a texture for each buffer.
@@ -1088,5 +1091,10 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		delete this.gl;
 		// @ts-ignore
 		delete this.errorCallback;
+	}
+
+	clone() {
+		// Make a deep copy.
+		
 	}
 }

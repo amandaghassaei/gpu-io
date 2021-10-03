@@ -67,6 +67,7 @@ export declare class WebGLCompute {
         writable?: boolean;
         numBuffers?: number;
     }): DataLayer;
+    cloneDataLayer(dataLayer: DataLayer): DataLayer;
     initTexture(params: {
         name: string;
         url: string;

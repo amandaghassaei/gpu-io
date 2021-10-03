@@ -14,6 +14,7 @@ export declare class DataLayer {
     private length?;
     private width;
     private height;
+    initializationData?: DataLayerArrayType;
     readonly type: DataLayerType;
     readonly internalType: DataLayerType;
     readonly wrapS: DataLayerWrapType;
@@ -71,5 +72,6 @@ export declare class DataLayer {
     getLength(): number;
     private destroyBuffers;
     destroy(): void;
+    clone(): void;
 }
 export {};

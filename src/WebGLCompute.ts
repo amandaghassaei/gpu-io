@@ -350,6 +350,43 @@ export class WebGLCompute {
 		});
 	};
 
+	cloneDataLayer(dataLayer: DataLayer) {
+		let dimensions: number | [number, number] = 0;
+		try {
+			dimensions = dataLayer.getLength();
+		} catch {
+			dimensions = dataLayer.getDimensions();
+		}
+
+		// If read only, get initialization data if it exists.
+		const data = dataLayer.writable ? undefined : dataLayer.initializationData;
+
+		const clone = this.initDataLayer({
+			name: `${dataLayer.name}-copy`,
+			dimensions: dimensions,
+			type: dataLayer.type,
+			numComponents: dataLayer.numComponents,
+			data,
+			filter: dataLayer.filter,
+			wrapS: dataLayer.wrapS,
+			wrapT: dataLayer.wrapT,
+			writable: dataLayer.writable,
+			numBuffers: dataLayer.numBuffers,
+		});
+
+		// If writable, copy current state.
+		if (dataLayer.writable) {
+			for (let i = 0; i < dataLayer.numBuffers; i++) {
+				this.step({
+					program: this.copyProgramForType(dataLayer.type),
+					input: dataLayer.getPreviousStateTexture(-dataLayer.numBuffers + i + 1),
+					output: clone,
+				});
+			}
+		}
+		return clone;
+	}
+
 	initTexture(
 		params: {
 			name: string,
