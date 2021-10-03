@@ -990,9 +990,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		if (this.numBuffers === 1) {
 			throw new Error(`Cannot call getPreviousStateTexture on DataLayer "${this.name}" with only one buffer.`);
 		}
-		const previousIndex = this._bufferIndex + index + this.numBuffers;
+		let previousIndex = this._bufferIndex + index;
+		if (previousIndex < 0) previousIndex += this.numBuffers;
 		if (previousIndex < 0 || previousIndex >= this.numBuffers) {
-			console.log(previousIndex, this.numBuffers, index, this._bufferIndex);
 			throw new Error(`Invalid index ${index} passed to getPreviousStateTexture on DataLayer ${this.name} with ${this.numBuffers} buffers.`);
 		}
 		if (this.textureOverrides && this.textureOverrides[previousIndex]) return this.textureOverrides[previousIndex]!;
