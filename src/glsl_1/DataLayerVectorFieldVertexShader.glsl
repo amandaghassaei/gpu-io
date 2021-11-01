@@ -11,6 +11,7 @@ uniform vec2 u_internal_dimensions;
 uniform vec2 u_internal_scale;
 
 varying vec2 v_UV;
+varying float v_index;
 
 void main() {
 	// Divide index by 2.
@@ -31,5 +32,6 @@ void main() {
 	// Calculate position in [-1, 1] range.
 	vec2 position = v_UV * 2.0 - 1.0;
 
+	v_index = a_internal_index;
 	gl_Position = vec4(position, 0, 1);
 }

@@ -15,6 +15,7 @@ uniform bool u_internal_wrapX;
 uniform bool u_internal_wrapY;
 
 varying vec2 v_UV;
+varying float v_index;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
@@ -45,6 +46,7 @@ void main() {
 	// Calculate position in [-1, 1] range.
 	vec2 position = v_UV * 2.0 - 1.0;
 
+	v_index = a_internal_index;
 	gl_PointSize = u_internal_pointSize;
 	gl_Position = vec4(position, 0, 1);
 }
