@@ -5,7 +5,7 @@ const ERROR = 'error';
 const WARNING = 'warning';
 
 requirejs([
-	'../../dist/index',
+	'../../dist/webgl-compute',
 	'../deps/micromodal.min',
 ], (
 	{ WebGLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3, GLSL1, CLAMP_TO_EDGE, REPEAT, NEAREST, LINEAR },

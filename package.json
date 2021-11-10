@@ -3,7 +3,13 @@
   "version": "0.0.1",
   "description": "A GPGPU library for WebGL",
   "keywords": [
-    "gpgpu webgl shader"
+    "gpgpu",
+    "gpu",
+    "glsl",
+    "webgl",
+    "shader",
+    "physics",
+    "simulation"
   ],
   "main": "dist/webgl-compute.js",
   "types": "dist/types/index.d.ts",
