@@ -9,7 +9,7 @@ import {
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
-import * as utils from './utils/Vector4';
+import * as utils from './Vector4';
 import { isWebGL2, isPowerOf2, initSequentialFloatArray } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
