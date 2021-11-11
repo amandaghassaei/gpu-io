@@ -1,4 +1,5 @@
-import { isArray, isInteger, isNumber, isString } from './Checks';
+import { BOOL } from '.';
+import { isArray, isBoolean, isInteger, isNumber, isString } from './Checks';
 import {
 	FLOAT,
 	FLOAT_1D_UNIFORM, FLOAT_2D_UNIFORM, FLOAT_3D_UNIFORM, FLOAT_4D_UNIFORM,
@@ -250,7 +251,7 @@ export class GPUProgram {
 	}
 
 	private uniformTypeForValue(
-		value: number | number[],
+		value: UniformValueType,
 		dataType: UniformDataType,
 	) {
 		if (dataType === FLOAT) {
@@ -305,6 +306,13 @@ export class GPUProgram {
 				return INT_4D_UNIFORM;
 			}
 			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);
+		} else if (dataType === BOOL) {
+			if (isBoolean(value)) {
+				// Boolean types are passed in as floats (ints works too as far as I know).
+				// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+				return FLOAT_1D_UNIFORM;
+			}
+			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected boolean.`);
 		} else {
 			throw new Error(`Invalid uniform data type: ${dataType} for program "${this.name}", expected ${FLOAT} or ${INT}.`);
 		}
@@ -343,7 +351,13 @@ Error code: ${gl.getError()}.`);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
-				gl.uniform1f(location, value as number);
+				if (isBoolean(value)) {
+					// We are setting boolean uniforms with uniform1f.
+					// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+					gl.uniform1f(location, value ? 1 : 0);
+				} else {
+					gl.uniform1f(location, value as number);
+				}
 				break;
 			case FLOAT_2D_UNIFORM:
 				gl.uniform2fv(location, value as number[]);

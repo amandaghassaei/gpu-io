@@ -13,3 +13,4 @@ export declare function isInteger(value: any): boolean;
 export declare function isPositiveInteger(value: any): boolean;
 export declare function isString(value: any): boolean;
 export declare function isArray(value: any): boolean;
+export declare function isBoolean(value: any): boolean;

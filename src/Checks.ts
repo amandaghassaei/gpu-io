@@ -48,3 +48,7 @@ export function isString(value: any){
 export function isArray(value: any) {
 	return Array.isArray(value);
 }
+
+export function isBoolean(value: any) {
+	return typeof value === 'boolean';
+}

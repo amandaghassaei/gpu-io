@@ -2255,7 +2255,7 @@ var nodeUtil = (function() {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isArray = exports.isString = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isValidTextureDataType = exports.validTextureDataTypes = exports.isValidTextureFormatType = exports.validTextureFormatTypes = exports.isValidWrapType = exports.validWrapTypes = exports.isValidFilterType = exports.validFilterTypes = exports.isValidDataType = exports.validDataTypes = void 0;
+exports.isBoolean = exports.isArray = exports.isString = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isValidTextureDataType = exports.validTextureDataTypes = exports.isValidTextureFormatType = exports.validTextureFormatTypes = exports.isValidWrapType = exports.validWrapTypes = exports.isValidFilterType = exports.validFilterTypes = exports.isValidDataType = exports.validDataTypes = void 0;
 var Constants_1 = __webpack_require__(738);
 exports.validDataTypes = [Constants_1.HALF_FLOAT, Constants_1.FLOAT, Constants_1.UNSIGNED_BYTE, Constants_1.BYTE, Constants_1.UNSIGNED_SHORT, Constants_1.SHORT, Constants_1.UNSIGNED_INT, Constants_1.INT];
 function isValidDataType(type) {
@@ -2302,6 +2302,10 @@ function isArray(value) {
     return Array.isArray(value);
 }
 exports.isArray = isArray;
+function isBoolean(value) {
+    return typeof value === 'boolean';
+}
+exports.isBoolean = isBoolean;
 
 
 /***/ }),
@@ -2312,7 +2316,7 @@ exports.isArray = isArray;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.GLSL1 = exports.GLSL3 = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.GLSL1 = exports.GLSL3 = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.HALF_FLOAT = 'HALF_FLOAT';
 exports.FLOAT = 'FLOAT';
 exports.UNSIGNED_BYTE = 'UNSIGNED_BYTE';
@@ -2321,6 +2325,7 @@ exports.UNSIGNED_SHORT = 'UNSIGNED_SHORT';
 exports.SHORT = 'SHORT';
 exports.UNSIGNED_INT = 'UNSIGNED_INT';
 exports.INT = 'INT';
+exports.BOOL = 'BOOL';
 exports.LINEAR = 'LINEAR';
 exports.NEAREST = 'NEAREST';
 exports.REPEAT = 'REPEAT';
@@ -3268,6 +3273,7 @@ exports.DataLayer = DataLayer;
 var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUProgram = void 0;
+var _1 = __webpack_require__(607);
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var utils_1 = __webpack_require__(593);
@@ -3547,6 +3553,14 @@ var GPUProgram = /** @class */ (function () {
             }
             throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected int or int[] of length 1-4.");
         }
+        else if (dataType === _1.BOOL) {
+            if (Checks_1.isBoolean(value)) {
+                // Boolean types are passed in as floats (ints works too as far as I know).
+                // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+                return Constants_1.FLOAT_1D_UNIFORM;
+            }
+            throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected boolean.");
+        }
         else {
             throw new Error("Invalid uniform data type: " + dataType + " for program \"" + this.name + "\", expected " + Constants_1.FLOAT + " or " + Constants_1.INT + ".");
         }
@@ -3574,7 +3588,14 @@ var GPUProgram = /** @class */ (function () {
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
         switch (type) {
             case Constants_1.FLOAT_1D_UNIFORM:
-                gl.uniform1f(location, value);
+                if (Checks_1.isBoolean(value)) {
+                    // We are setting boolean uniforms with uniform1f.
+                    // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+                    gl.uniform1f(location, value ? 1 : 0);
+                }
+                else {
+                    gl.uniform1f(location, value);
+                }
                 break;
             case Constants_1.FLOAT_2D_UNIFORM:
                 gl.uniform2fv(location, value);

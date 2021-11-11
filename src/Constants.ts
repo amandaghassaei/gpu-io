@@ -6,6 +6,7 @@ export const UNSIGNED_SHORT = 'UNSIGNED_SHORT';
 export const SHORT = 'SHORT';
 export const UNSIGNED_INT = 'UNSIGNED_INT';
 export const INT = 'INT';
+export const BOOL = 'BOOL';
 
 export const LINEAR = 'LINEAR';
 export const NEAREST = 'NEAREST';
@@ -40,8 +41,9 @@ export const INT_2D_UNIFORM = '2i';
 export const INT_3D_UNIFORM = '3i';
 export const INT_4D_UNIFORM = '3i';
 
-export type UniformDataType = typeof FLOAT | typeof INT;
+export type UniformDataType = typeof FLOAT | typeof INT |  typeof BOOL;
 export type UniformValueType = 
+	boolean |
 	number |
 	[number] |
 	[number, number] |

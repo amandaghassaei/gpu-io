@@ -6,6 +6,7 @@ export declare const UNSIGNED_SHORT = "UNSIGNED_SHORT";
 export declare const SHORT = "SHORT";
 export declare const UNSIGNED_INT = "UNSIGNED_INT";
 export declare const INT = "INT";
+export declare const BOOL = "BOOL";
 export declare const LINEAR = "LINEAR";
 export declare const NEAREST = "NEAREST";
 export declare const REPEAT = "REPEAT";
@@ -30,8 +31,8 @@ export declare const INT_1D_UNIFORM = "1i";
 export declare const INT_2D_UNIFORM = "2i";
 export declare const INT_3D_UNIFORM = "3i";
 export declare const INT_4D_UNIFORM = "3i";
-export declare type UniformDataType = typeof FLOAT | typeof INT;
-export declare type UniformValueType = number | [
+export declare type UniformDataType = typeof FLOAT | typeof INT | typeof BOOL;
+export declare type UniformValueType = boolean | number | [
     number
 ] | [
     number,
