@@ -151,7 +151,7 @@ export class GPUProgram {
 		return definesSource;
 	}
 
-	private recompile(defines?: CompileTimeVars) {
+	recompile(defines?: CompileTimeVars) {
 		const { gl, errorCallback, name } = this;
 		let fragmentShaderSource = this.fragmentShaderSource;
 

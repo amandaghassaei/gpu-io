@@ -26,7 +26,7 @@ export declare class GPUProgram {
         defines?: CompileTimeVars;
     });
     private static convertDefinesToString;
-    private recompile;
+    recompile(defines?: CompileTimeVars): void;
     private initProgram;
     private getProgramWithName;
     get defaultProgram(): WebGLProgram | undefined;
