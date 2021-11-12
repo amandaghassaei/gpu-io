@@ -90,7 +90,7 @@ export class GPUProgram {
 	private readonly uniforms: { [ key: string]: Uniform } = {};
 	private fragmentShader!: WebGLShader; // Compiled fragment shader.
 	private readonly fragmentShaderSource?: string; // Source code for fragment shader.
-	private definesSource?: string; // Source code for defines.
+	private defines: CompileTimeVars = {};
 	// Store gl programs.
 	private programs: {[key in PROGRAM_NAMES]?: WebGLProgram } = {};
 
@@ -152,15 +152,22 @@ export class GPUProgram {
 	}
 
 	recompile(defines?: CompileTimeVars) {
-		const { gl, errorCallback, name } = this;
-		let fragmentShaderSource = this.fragmentShaderSource;
+		const { gl, errorCallback, name, fragmentShaderSource } = this;
 
-		let definesSource = '';
+		// Update defines if needed.
+		let definesNeedUpdate = false;
 		if (defines) {
-		 	definesSource = GPUProgram.convertDefinesToString(defines);
+			const keys = Object.keys(defines);
+			for (let i = 0; i < keys.length; i++) {
+				const key = keys[i];
+				if (this.defines[key] !== defines[key]) {
+					definesNeedUpdate = true;
+					this.defines[key] = defines[key];
+				}
+			}
 		}
-		// Check if definesSource has actually changed.
-		if (this.fragmentShader && this.definesSource === definesSource) {
+		
+		if (this.fragmentShader && !definesNeedUpdate) {
 			// No need to recompile.
 			return;
 		}
@@ -169,12 +176,8 @@ export class GPUProgram {
 			// No fragment shader source available.
 			throw new Error(`Unable to recompile fragment shader for program "${name}" because fragment shader is already compiled, no source available.`);
 		}
-		if (definesSource !== '') {
-			this.definesSource = definesSource;
-			fragmentShaderSource = definesSource + fragmentShaderSource;
-		}
-
-		const shader = compileShader(gl, errorCallback, fragmentShaderSource, gl.FRAGMENT_SHADER, name);
+		const definesSource = GPUProgram.convertDefinesToString(this.defines);
+		const shader = compileShader(gl, errorCallback, `${definesSource}${fragmentShaderSource}`, gl.FRAGMENT_SHADER, name);
 		if (!shader) {
 			errorCallback(`Unable to compile fragment shader for program "${name}".`);
 			return;

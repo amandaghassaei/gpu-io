@@ -10,7 +10,7 @@ export declare class GPUProgram {
     private readonly uniforms;
     private fragmentShader;
     private readonly fragmentShaderSource?;
-    private definesSource?;
+    private defines;
     private programs;
     constructor(params: {
         gl: WebGLRenderingContext | WebGL2RenderingContext;
