@@ -154,7 +154,8 @@ export class GPUProgram {
 	recompile(defines?: CompileTimeVars) {
 		const { gl, errorCallback, name, fragmentShaderSource } = this;
 
-		// Update defines if needed.
+		// Update this.defines if needed.
+		// Passed in defines param may only be a partial list.
 		let definesNeedUpdate = false;
 		if (defines) {
 			const keys = Object.keys(defines);

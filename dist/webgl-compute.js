@@ -3374,7 +3374,8 @@ var GPUProgram = /** @class */ (function () {
     };
     GPUProgram.prototype.recompile = function (defines) {
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, name = _a.name, fragmentShaderSource = _a.fragmentShaderSource;
-        // Update defines if needed.
+        // Update this.defines if needed.
+        // Passed in defines param may only be a partial list.
         var definesNeedUpdate = false;
         if (defines) {
             var keys = Object.keys(defines);
