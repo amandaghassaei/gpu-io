@@ -3345,21 +3345,12 @@ var GPUProgram = /** @class */ (function () {
             var sourceString = typeof (fragmentShader) === 'string' ?
                 fragmentShader :
                 fragmentShader.join('\n');
-            if (defines) {
-                sourceString = GPUProgram.convertDefinesToString(defines) + sourceString;
-            }
-            var shader = utils_1.compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
-            if (!shader) {
-                errorCallback("Unable to compile fragment shader for program \"" + name + "\".");
-                return;
-            }
-            this.fragmentShader = shader;
+            this.fragmentShaderSource = sourceString;
         }
         else {
-            if (defines) {
-                throw new Error("Unable to attach defines to program \"" + name + "\" because fragment shader is already compiled.");
-            }
+            this.fragmentShader = fragmentShader;
         }
+        this.recompile(defines);
         if (uniforms) {
             for (var i = 0; i < (uniforms === null || uniforms === void 0 ? void 0 : uniforms.length); i++) {
                 var _a = uniforms[i], name_1 = _a.name, value = _a.value, dataType = _a.dataType;
@@ -3379,6 +3370,33 @@ var GPUProgram = /** @class */ (function () {
             definesSource += "#define " + key + " " + defines[key] + "\n";
         }
         return definesSource;
+    };
+    GPUProgram.prototype.recompile = function (defines) {
+        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, name = _a.name;
+        var fragmentShaderSource = this.fragmentShaderSource;
+        var definesSource = '';
+        if (defines) {
+            definesSource = GPUProgram.convertDefinesToString(defines);
+        }
+        // Check if definesSource has actually changed.
+        if (this.fragmentShader && this.definesSource === definesSource) {
+            // No need to recompile.
+            return;
+        }
+        if (!fragmentShaderSource) {
+            // No fragment shader source available.
+            throw new Error("Unable to recompile fragment shader for program \"" + name + "\" because fragment shader is already compiled, no source available.");
+        }
+        if (definesSource !== '') {
+            this.definesSource = definesSource;
+            fragmentShaderSource = definesSource + fragmentShaderSource;
+        }
+        var shader = utils_1.compileShader(gl, errorCallback, fragmentShaderSource, gl.FRAGMENT_SHADER, name);
+        if (!shader) {
+            errorCallback("Unable to compile fragment shader for program \"" + name + "\".");
+            return;
+        }
+        this.fragmentShader = shader;
     };
     GPUProgram.prototype.initProgram = function (vertexShader, programName) {
         var _a = this, gl = _a.gl, fragmentShader = _a.fragmentShader, errorCallback = _a.errorCallback, uniforms = _a.uniforms;

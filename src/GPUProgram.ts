@@ -29,11 +29,14 @@ type PROGRAM_NAMES =
 	typeof DATA_LAYER_LINES_PROGRAM_NAME |
 	typeof DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME;
 
+// Pass in #defines as strings to make it easier to control float vs int.
+type CompileTimeVars = { [key: string]: string };
+
 const vertexShaders: {[key in PROGRAM_NAMES]: {
 	src_1: string,
 	src_3: string,
 	shader?: WebGLProgram,
-	defines?: {[key: string]: string},
+	defines?: CompileTimeVars,
 }} = {
 	[DEFAULT_PROGRAM_NAME]: {
 		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
@@ -85,7 +88,9 @@ export class GPUProgram {
 	private readonly errorCallback: (message: string) => void;
 	private readonly glslVersion: GLSLVersion;
 	private readonly uniforms: { [ key: string]: Uniform } = {};
-	private readonly fragmentShader!: WebGLShader;
+	private fragmentShader!: WebGLShader; // Compiled fragment shader.
+	private readonly fragmentShaderSource?: string; // Source code for fragment shader.
+	private definesSource?: string; // Source code for defines.
 	// Store gl programs.
 	private programs: {[key in PROGRAM_NAMES]?: WebGLProgram } = {};
 
@@ -101,9 +106,7 @@ export class GPUProgram {
 				value: UniformValueType,
 				dataType: UniformDataType,
 			}[],
-			defines?: {// We'll allow some variables to be passed in as #define to the preprocessor for the fragment shader.
-				[key: string]: string, // We'll do these as strings to make it easier to control float vs int.
-			},
+			defines?: CompileTimeVars,// We'll allow some compile-time variables to be passed in as #define to the preprocessor for the fragment shader.
 		},
 		
 	) {
@@ -120,20 +123,11 @@ export class GPUProgram {
 			let sourceString = typeof(fragmentShader) === 'string' ?
 				fragmentShader :
 				(fragmentShader as string[]).join('\n');
-			if (defines) {
-				sourceString = GPUProgram.convertDefinesToString(defines) + sourceString;
-			}
-			const shader = compileShader(gl, errorCallback, sourceString, gl.FRAGMENT_SHADER, name);
-			if (!shader) {
-				errorCallback(`Unable to compile fragment shader for program "${name}".`);
-				return;
-			}
-			this.fragmentShader = shader;
+			this.fragmentShaderSource = sourceString;
 		} else {
-			if (defines) {
-				throw new Error(`Unable to attach defines to program "${name}" because fragment shader is already compiled.`);
-			}
+			this.fragmentShader = fragmentShader as WebGLShader;
 		}
+		this.recompile(defines);
 
 		if (uniforms) {
 			for (let i = 0; i < uniforms?.length; i++) {
@@ -143,7 +137,7 @@ export class GPUProgram {
 		}
 	}
 
-	private static convertDefinesToString(defines: {[key: string]: string}) {
+	private static convertDefinesToString(defines: CompileTimeVars) {
 		let definesSource = '';
 		const keys = Object.keys(defines);
 		for (let i = 0; i < keys.length; i++) {
@@ -155,6 +149,37 @@ export class GPUProgram {
 			definesSource += `#define ${key} ${defines[key]}\n`;
 		}
 		return definesSource;
+	}
+
+	private recompile(defines?: CompileTimeVars) {
+		const { gl, errorCallback, name } = this;
+		let fragmentShaderSource = this.fragmentShaderSource;
+
+		let definesSource = '';
+		if (defines) {
+		 	definesSource = GPUProgram.convertDefinesToString(defines);
+		}
+		// Check if definesSource has actually changed.
+		if (this.fragmentShader && this.definesSource === definesSource) {
+			// No need to recompile.
+			return;
+		}
+
+		if (!fragmentShaderSource) {
+			// No fragment shader source available.
+			throw new Error(`Unable to recompile fragment shader for program "${name}" because fragment shader is already compiled, no source available.`);
+		}
+		if (definesSource !== '') {
+			this.definesSource = definesSource;
+			fragmentShaderSource = definesSource + fragmentShaderSource;
+		}
+
+		const shader = compileShader(gl, errorCallback, fragmentShaderSource, gl.FRAGMENT_SHADER, name);
+		if (!shader) {
+			errorCallback(`Unable to compile fragment shader for program "${name}".`);
+			return;
+		}
+		this.fragmentShader = shader;
 	}
 
 	private initProgram(vertexShader: WebGLShader, programName: string) {

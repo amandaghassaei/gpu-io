@@ -1,11 +1,16 @@
 import { GLSLVersion, UniformDataType, UniformValueType } from './Constants';
+declare type CompileTimeVars = {
+    [key: string]: string;
+};
 export declare class GPUProgram {
     readonly name: string;
     private readonly gl;
     private readonly errorCallback;
     private readonly glslVersion;
     private readonly uniforms;
-    private readonly fragmentShader;
+    private fragmentShader;
+    private readonly fragmentShaderSource?;
+    private definesSource?;
     private programs;
     constructor(params: {
         gl: WebGLRenderingContext | WebGL2RenderingContext;
@@ -18,11 +23,10 @@ export declare class GPUProgram {
             value: UniformValueType;
             dataType: UniformDataType;
         }[];
-        defines?: {
-            [key: string]: string;
-        };
+        defines?: CompileTimeVars;
     });
     private static convertDefinesToString;
+    private recompile;
     private initProgram;
     private getProgramWithName;
     get defaultProgram(): WebGLProgram | undefined;
@@ -39,3 +43,4 @@ export declare class GPUProgram {
     setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
     destroy(): void;
 }
+export {};
