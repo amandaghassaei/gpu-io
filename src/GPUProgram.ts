@@ -393,7 +393,7 @@ Error code: ${gl.getError()}.`);
 			case INT_1D_UNIFORM:
 				if (isBoolean(value)) {
 					// We are setting boolean uniforms with uniform1i.
-					gl.uniform1f(location, value ? 1 : 0);
+					gl.uniform1i(location, value ? 1 : 0);
 				} else {
 					gl.uniform1i(location, value as number);
 				}
