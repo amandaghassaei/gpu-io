@@ -334,9 +334,10 @@ export class GPUProgram {
 			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);
 		} else if (dataType === BOOL) {
 			if (isBoolean(value)) {
-				// Boolean types are passed in as floats (ints works too as far as I know).
+				// Boolean types are passed in as ints.
+				// This suggest floats work, but I've seen this throwing errors in Chrome:
 				// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-				return FLOAT_1D_UNIFORM;
+				return INT_1D_UNIFORM;
 			}
 			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected boolean.`);
 		} else {
@@ -378,13 +379,7 @@ Error code: ${gl.getError()}.`);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
-				if (isBoolean(value)) {
-					// We are setting boolean uniforms with uniform1f.
-					// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-					gl.uniform1f(location, value ? 1 : 0);
-				} else {
-					gl.uniform1f(location, value as number);
-				}
+				gl.uniform1f(location, value as number);
 				break;
 			case FLOAT_2D_UNIFORM:
 				gl.uniform2fv(location, value as number[]);
@@ -396,7 +391,12 @@ Error code: ${gl.getError()}.`);
 				gl.uniform4fv(location, value as number[]);
 				break;
 			case INT_1D_UNIFORM:
-				gl.uniform1i(location, value as number);
+				if (isBoolean(value)) {
+					// We are setting boolean uniforms with uniform1i.
+					gl.uniform1f(location, value ? 1 : 0);
+				} else {
+					gl.uniform1i(location, value as number);
+				}
 				break;
 			case INT_2D_UNIFORM:
 				gl.uniform2iv(location, value as number[]);

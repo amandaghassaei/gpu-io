@@ -3593,9 +3593,10 @@ var GPUProgram = /** @class */ (function () {
         }
         else if (dataType === _1.BOOL) {
             if (Checks_1.isBoolean(value)) {
-                // Boolean types are passed in as floats (ints works too as far as I know).
+                // Boolean types are passed in as ints.
+                // This suggest floats work, but I've seen this throwing errors in Chrome:
                 // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-                return Constants_1.FLOAT_1D_UNIFORM;
+                return Constants_1.INT_1D_UNIFORM;
             }
             throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected boolean.");
         }
@@ -3627,14 +3628,7 @@ var GPUProgram = /** @class */ (function () {
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
         switch (type) {
             case Constants_1.FLOAT_1D_UNIFORM:
-                if (Checks_1.isBoolean(value)) {
-                    // We are setting boolean uniforms with uniform1f.
-                    // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-                    gl.uniform1f(location, value ? 1 : 0);
-                }
-                else {
-                    gl.uniform1f(location, value);
-                }
+                gl.uniform1f(location, value);
                 break;
             case Constants_1.FLOAT_2D_UNIFORM:
                 gl.uniform2fv(location, value);
@@ -3646,7 +3640,13 @@ var GPUProgram = /** @class */ (function () {
                 gl.uniform4fv(location, value);
                 break;
             case Constants_1.INT_1D_UNIFORM:
-                gl.uniform1i(location, value);
+                if (Checks_1.isBoolean(value)) {
+                    // We are setting boolean uniforms with uniform1i.
+                    gl.uniform1f(location, value ? 1 : 0);
+                }
+                else {
+                    gl.uniform1i(location, value);
+                }
                 break;
             case Constants_1.INT_2D_UNIFORM:
                 gl.uniform2iv(location, value);
