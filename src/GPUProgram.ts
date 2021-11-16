@@ -335,7 +335,7 @@ export class GPUProgram {
 		} else if (dataType === BOOL) {
 			if (isBoolean(value)) {
 				// Boolean types are passed in as ints.
-				// This suggest floats work, but I've seen this throwing errors in Chrome:
+				// This suggest floats work as well, but ints seem more natural:
 				// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
 				return INT_1D_UNIFORM;
 			}
@@ -379,7 +379,6 @@ Error code: ${gl.getError()}.`);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
-				console.log(location, value, uniformName, programName, type);
 				gl.uniform1f(location, value as number);
 				break;
 			case FLOAT_2D_UNIFORM:
