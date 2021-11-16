@@ -1,23 +1,19 @@
-import { GLSLVersion, UniformDataType, UniformValueType } from './Constants';
+import { WebGLCompute } from '.';
+import { UniformDataType, UniformValueType } from './Constants';
 declare type CompileTimeVars = {
     [key: string]: string;
 };
 export declare class GPUProgram {
     readonly name: string;
-    private readonly gl;
-    private readonly errorCallback;
-    private readonly glslVersion;
+    private readonly glcompute;
     private readonly uniforms;
     private fragmentShader;
     private readonly fragmentShaderSource?;
     private defines;
     private programs;
-    constructor(params: {
-        gl: WebGLRenderingContext | WebGL2RenderingContext;
+    constructor(glcompute: WebGLCompute, params: {
         name: string;
         fragmentShader: string | string[] | WebGLShader;
-        errorCallback: (message: string) => void;
-        glslVersion: GLSLVersion;
         uniforms?: {
             name: string;
             value: UniformValueType;

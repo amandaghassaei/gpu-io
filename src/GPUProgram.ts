@@ -1,10 +1,9 @@
-import { BOOL } from '.';
+import { BOOL, WebGLCompute } from '.';
 import { isArray, isBoolean, isInteger, isNumber, isString } from './Checks';
 import {
 	FLOAT,
 	FLOAT_1D_UNIFORM, FLOAT_2D_UNIFORM, FLOAT_3D_UNIFORM, FLOAT_4D_UNIFORM,
 	GLSL3,
-	GLSLVersion,
 	INT,
 	INT_1D_UNIFORM, INT_2D_UNIFORM, INT_3D_UNIFORM, INT_4D_UNIFORM,
 	Uniform, UniformDataType, UniformType, UniformValueType,
@@ -84,9 +83,7 @@ const vertexShaders: {[key in PROGRAM_NAMES]: {
 
 export class GPUProgram {
 	readonly name: string;
-	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
-	private readonly errorCallback: (message: string) => void;
-	private readonly glslVersion: GLSLVersion;
+	private readonly glcompute: WebGLCompute;
 	private readonly uniforms: { [ key: string]: Uniform } = {};
 	private fragmentShader!: WebGLShader; // Compiled fragment shader.
 	private readonly fragmentShaderSource?: string; // Source code for fragment shader.
@@ -95,12 +92,10 @@ export class GPUProgram {
 	private programs: {[key in PROGRAM_NAMES]?: WebGLProgram } = {};
 
 	constructor(
+		glcompute: WebGLCompute,
 		params: {
-			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			name: string,
 			fragmentShader: string | string[] | WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
-			errorCallback: (message: string) => void,
-			glslVersion: GLSLVersion,
 			uniforms?: {
 				name: string,
 				value: UniformValueType,
@@ -110,13 +105,11 @@ export class GPUProgram {
 		},
 		
 	) {
-		const { gl, errorCallback, name, fragmentShader, glslVersion, uniforms, defines } = params;
+		const { name, fragmentShader, uniforms, defines } = params;
 
 		// Save arguments.
-		this.gl = gl;
-		this.errorCallback = errorCallback;
+		this.glcompute = glcompute;
 		this.name = name;
-		this.glslVersion = glslVersion;
 
 		// Compile fragment shader.
 		if (typeof(fragmentShader) === 'string' || typeof((fragmentShader as string[])[0]) === 'string') {
@@ -152,7 +145,8 @@ export class GPUProgram {
 	}
 
 	recompile(defines?: CompileTimeVars) {
-		const { gl, errorCallback, name, fragmentShaderSource } = this;
+		const { glcompute, name, fragmentShaderSource } = this;
+		const { gl, errorCallback, verboseLogging } = glcompute;
 
 		// Update this.defines if needed.
 		// Passed in defines param may only be a partial list.
@@ -177,6 +171,7 @@ export class GPUProgram {
 			// No fragment shader source available.
 			throw new Error(`Unable to recompile fragment shader for program "${name}" because fragment shader is already compiled, no source available.`);
 		}
+		if (verboseLogging) console.log(`Compiling fragment shader "${name}" with defines ${JSON.stringify(this.defines)}`);
 		const definesSource = GPUProgram.convertDefinesToString(this.defines);
 		const shader = compileShader(gl, errorCallback, `${definesSource}${fragmentShaderSource}`, gl.FRAGMENT_SHADER, name);
 		if (!shader) {
@@ -187,7 +182,8 @@ export class GPUProgram {
 	}
 
 	private initProgram(vertexShader: WebGLShader, programName: string) {
-		const { gl, fragmentShader, errorCallback, uniforms } = this;
+		const { glcompute, fragmentShader, uniforms } = this;
+		const { gl, errorCallback} = glcompute;
 		// Create a program.
 		const program = gl.createProgram();
 		if (!program) {
@@ -219,10 +215,11 @@ export class GPUProgram {
 
 	private getProgramWithName(name: PROGRAM_NAMES) {
 		if (this.programs[name]) return this.programs[name];
-		const { errorCallback } = this;
+		const { errorCallback } = this.glcompute;
 		const vertexShader = vertexShaders[name];
 		if (vertexShader.shader === undefined) {
-			const { gl, name, glslVersion } = this;
+			const { glcompute, name } = this;
+			const { gl, glslVersion } = glcompute;
 			// Init a vertex shader.
 			let vertexShaderSource = glslVersion === GLSL3 ? vertexShader.src_3 : vertexShader.src_1;
 			if (vertexShaderSource === '') {
@@ -354,7 +351,8 @@ export class GPUProgram {
 		value: UniformValueType,
 		type: UniformType,
 	) {
-		const { gl, uniforms, errorCallback } = this;
+		const { glcompute, uniforms } = this;
+		const { gl, errorCallback } = glcompute;
 		// Set active program.
 		gl.useProgram(program);
 
@@ -419,7 +417,8 @@ Error code: ${gl.getError()}.`);
 		value: UniformValueType,
 		dataType?: UniformDataType,
 	) {
-		const { programs, uniforms } = this;
+		const { programs, uniforms, name, glcompute } = this;
+		const { verboseLogging } = glcompute;
 
 		let type = uniforms[uniformName]?.type;
 		if (dataType) {
@@ -442,8 +441,13 @@ Error code: ${gl.getError()}.`);
 			uniforms[uniformName] = { type, location: {}, value };
 		} else {
 			// Update value.
+			if (uniforms[uniformName].value === value) {
+				return; // No change.
+			}
 			uniforms[uniformName].value = value;
 		}
+
+		if (verboseLogging) console.log(`Setting uniform "${uniformName}" for program "${name}" to value ${JSON.stringify(value)} with type ${type}.`)
 
 		// Update any active programs.
 		const keys = Object.keys(programs);
@@ -453,6 +457,7 @@ Error code: ${gl.getError()}.`);
 		}
 	};
 
+	// This is used internally.
 	setVertexUniform(
 		program: WebGLProgram,
 		uniformName: string,
@@ -471,7 +476,10 @@ Error code: ${gl.getError()}.`);
 	}
 
 	destroy() {
-		const { gl, fragmentShader, programs } = this;
+		const { glcompute, fragmentShader, programs } = this;
+		const { gl, verboseLogging } = glcompute;
+		if (verboseLogging) console.log(`Destroying program "${name}".`);
+
 		// Unbind all gl data before deleting.
 		Object.values(programs).forEach(program => {
 			gl.deleteProgram(program!);
@@ -487,8 +495,6 @@ Error code: ${gl.getError()}.`);
 		delete this.fragmentShader;
 
 		// @ts-ignore
-		delete this.gl;
-		// @ts-ignore
-		delete this.errorCallback;
+		delete this.glcompute;
 	}
 }

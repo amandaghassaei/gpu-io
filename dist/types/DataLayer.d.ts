@@ -1,13 +1,12 @@
-import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, GLSLVersion } from './Constants';
+import { WebGLCompute } from '.';
+import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType } from './Constants';
 export declare type DataLayerBuffer = {
     texture: WebGLTexture;
     framebuffer?: WebGLFramebuffer;
 };
-declare type ErrorCallback = (message: string) => void;
 export declare class DataLayer {
     readonly name: string;
-    private readonly gl;
-    private readonly errorCallback;
+    private readonly glcompute;
     private _bufferIndex;
     readonly numBuffers: number;
     private readonly buffers;
@@ -33,20 +32,17 @@ export declare class DataLayer {
     readonly glWrapS: number;
     readonly glWrapT: number;
     readonly glFilter: number;
-    constructor(params: {
-        gl: WebGLRenderingContext | WebGL2RenderingContext;
+    constructor(glcompute: WebGLCompute, params: {
         name: string;
         dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
-        glslVersion: GLSLVersion;
         data?: DataLayerArrayType;
         filter?: DataLayerFilterType;
         wrapS?: DataLayerWrapType;
         wrapT?: DataLayerWrapType;
         writable?: boolean;
         numBuffers?: number;
-        errorCallback: ErrorCallback;
     });
     private static calcSize;
     private static getInternalWrap;
@@ -74,4 +70,3 @@ export declare class DataLayer {
     destroy(): void;
     clone(): void;
 }
-export {};

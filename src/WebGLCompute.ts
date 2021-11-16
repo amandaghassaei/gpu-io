@@ -29,7 +29,7 @@ export class WebGLCompute {
 	private height!: number;
 
 	private errorState = false;
-	private readonly errorCallback: ErrorCallback;
+	readonly errorCallback: ErrorCallback;
 
 	// Save threejs renderer if passed in.
 	private renderer?: WebGLRenderer;
@@ -57,10 +57,13 @@ export class WebGLCompute {
 	private _singleColorWithWrapCheckProgram?: GPUProgram;
 	private _vectorMagnitudeProgram?: GPUProgram;
 
+	verboseLogging = false;
+
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
 		params: {
 			glslVersion?: GLSLVersion,
+			verboseLogging?: boolean
 		},
 		errorCallback?: ErrorCallback,
 	) {
@@ -81,6 +84,7 @@ export class WebGLCompute {
 			context?: WebGLRenderingContext | WebGL2RenderingContext | null,
 			antialias?: boolean,
 			glslVersion?: GLSLVersion,
+			verboseLogging?: boolean,
 		},
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
 		// e.g. throw up a modal telling user this will not work on their device.
@@ -88,12 +92,15 @@ export class WebGLCompute {
 		renderer?: WebGLRenderer,
 	) {
 		// Check params.
-		const validKeys = ['canvas', 'context', 'antialias', 'glslVersion'];
+		const validKeys = ['canvas', 'context', 'antialias', 'glslVersion', 'verboseLogging'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
 				throw new Error(`Invalid key ${key} passed to WebGLCompute.constructor.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
+
+		if (params.verboseLogging !== undefined) this.verboseLogging = params.verboseLogging;
+
 		// Save callback in case we run into an error.
 		const self = this;
 		this.errorCallback = (message: string) => {
@@ -310,14 +317,7 @@ export class WebGLCompute {
 			}
 		});
 		const { gl, errorCallback, glslVersion } = this;
-		return new GPUProgram(
-			{
-				...params,
-				gl,
-				errorCallback,
-				glslVersion,
-			},
-		);
+		return new GPUProgram(this, params);
 	};
 
 	initDataLayer(
@@ -341,13 +341,7 @@ export class WebGLCompute {
 				throw new Error(`Invalid key ${key} passed to WebGLCompute.initDataLayer with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
-		const { gl, errorCallback, glslVersion } = this;
-		return new DataLayer({
-			...params,
-			gl,
-			glslVersion,
-			errorCallback,
-		});
+		return new DataLayer(this, params);
 	};
 
 	cloneDataLayer(dataLayer: DataLayer) {

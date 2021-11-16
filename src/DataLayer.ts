@@ -1,4 +1,5 @@
 import { setFloat16 } from '@petamoriken/float16';
+import { WebGLCompute } from '.';
 import { isPositiveInteger, isValidDataType, isValidFilterType, isValidWrapType, validDataTypes, validFilterTypes, validWrapTypes } from './Checks';
 import {
 	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
@@ -24,8 +25,7 @@ type ErrorCallback = (message: string) => void;
 
 export class DataLayer {
 	readonly name: string;
-	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
-	private readonly errorCallback: ErrorCallback;
+	private readonly glcompute: WebGLCompute;
 
 	// Each DataLayer may contain a number of buffers to store different instances of the state.
 	private _bufferIndex = 0;
@@ -63,28 +63,26 @@ export class DataLayer {
 	readonly glFilter: number;
 
 	constructor(
+		glcompute: WebGLCompute,
 		params: {
-			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			name: string,
 			dimensions: number | [number, number],
 			type: DataLayerType,
 			numComponents: DataLayerNumComponents,
-			glslVersion: GLSLVersion,
 			data?: DataLayerArrayType,
 			filter?: DataLayerFilterType,
 			wrapS?: DataLayerWrapType,
 			wrapT?: DataLayerWrapType,
 			writable?: boolean,
 			numBuffers?: number,
-			errorCallback: ErrorCallback,
 		},
 	) {
-		const { gl, errorCallback, name, dimensions, type, numComponents, data, glslVersion } = params;
+		const { name, dimensions, type, numComponents, data } = params;
 
 		// Save params.
 		this.name = name;
-		this.gl = gl;
-		this.errorCallback = errorCallback;
+		this.glcompute = glcompute;
+		const { gl, errorCallback, glslVersion } = glcompute;
 
 		// numComponents must be between 1 and 4.
 		if (!isPositiveInteger(numComponents) || numComponents > 4) {
@@ -787,7 +785,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		layer._setCurrentStateTexture(currentState);
 
 		// Bind swapped texture to framebuffer.
-		const { gl } = this;
+		const { gl } = this.glcompute;
 		const { framebuffer, texture } = this.buffers[this._bufferIndex];
 		if (!framebuffer) throw new Error(`No framebuffer for writable DataLayer ${this.name}.`);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -915,7 +913,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		const {
 			name,
 			numBuffers,
-			gl,
+			glcompute,
 			width,
 			height,
 			glInternalFormat,
@@ -925,8 +923,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			glWrapS,
 			glWrapT,
 			writable,
-			errorCallback,
 		} = this;
+		const { gl, errorCallback } = glcompute;
 
 		this.initializationData = _data;
 
@@ -1006,7 +1004,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	_bindOutputBufferForWrite(
 		incrementBufferIndex: boolean,
 	) {
-		const { gl } = this;
+		const { gl } = this.glcompute;
 		if (incrementBufferIndex) {
 			// Increment bufferIndex.
 			this._bufferIndex = (this._bufferIndex + 1) % this.numBuffers;
@@ -1020,7 +1018,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	_bindOutputBuffer() {
-		const { gl } = this;
+		const { gl } = this.glcompute;
 		const { framebuffer } = this.buffers[this._bufferIndex];
 		if (!framebuffer) {
 			throw new Error(`DataLayer "${this.name}" is not writable.`);
@@ -1038,7 +1036,10 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		dimensions: number | [number, number],
 		data?: DataLayerArrayType,
 	) {
-		const { length, width, height } = DataLayer.calcSize(dimensions, this.name);
+		const { name, glcompute } = this;
+		const { verboseLogging } = glcompute;
+		if (verboseLogging) console.log(`Resizing layer "${name}" to ${JSON.stringify(dimensions)}.`);
+		const { length, width, height } = DataLayer.calcSize(dimensions, name);
 		this.length = length;
 		this.width = width;
 		this.height = height;
@@ -1047,6 +1048,10 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	clear() {
+		const { name, glcompute } = this;
+		const { verboseLogging } = glcompute;
+		if (verboseLogging) console.log(`Clearing layer "${name}".`);
+	
 		// Reset everything to zero.
 		// TODO: This is not the most efficient way to do this (reallocating all textures and framebuffers), but ok for now.
 		this.destroyBuffers();
@@ -1068,7 +1073,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	private destroyBuffers() {
-		const { gl, buffers } = this;
+		const { glcompute, buffers } = this;
+		const { gl } = glcompute;
 		buffers.forEach(buffer => {
 			const { framebuffer, texture } = buffer;
 			gl.deleteTexture(texture);
@@ -1087,11 +1093,13 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	destroy() {
+		const { name, glcompute } = this;
+		const { verboseLogging } = glcompute;
+		if (verboseLogging) console.log(`Destroying layer "${name}".`);
+	
 		this.destroyBuffers();
 		// @ts-ignore
-		delete this.gl;
-		// @ts-ignore
-		delete this.errorCallback;
+		delete this.glcompute;
 	}
 
 	clone() {

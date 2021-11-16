@@ -2361,15 +2361,15 @@ var Constants_1 = __webpack_require__(738);
 var extensions_1 = __webpack_require__(581);
 var utils_1 = __webpack_require__(593);
 var DataLayer = /** @class */ (function () {
-    function DataLayer(params) {
+    function DataLayer(glcompute, params) {
         // Each DataLayer may contain a number of buffers to store different instances of the state.
         this._bufferIndex = 0;
         this.buffers = [];
-        var gl = params.gl, errorCallback = params.errorCallback, name = params.name, dimensions = params.dimensions, type = params.type, numComponents = params.numComponents, data = params.data, glslVersion = params.glslVersion;
+        var name = params.name, dimensions = params.dimensions, type = params.type, numComponents = params.numComponents, data = params.data;
         // Save params.
         this.name = name;
-        this.gl = gl;
-        this.errorCallback = errorCallback;
+        this.glcompute = glcompute;
+        var gl = glcompute.gl, errorCallback = glcompute.errorCallback, glslVersion = glcompute.glslVersion;
         // numComponents must be between 1 and 4.
         if (!Checks_1.isPositiveInteger(numComponents) || numComponents > 4) {
             throw new Error("Invalid numComponents " + numComponents + " for DataLayer \"" + name + "\".");
@@ -2998,7 +2998,7 @@ var DataLayer = /** @class */ (function () {
         this.buffers[this._bufferIndex].texture = layer.getCurrentStateTexture();
         layer._setCurrentStateTexture(currentState);
         // Bind swapped texture to framebuffer.
-        var gl = this.gl;
+        var gl = this.glcompute.gl;
         var _a = this.buffers[this._bufferIndex], framebuffer = _a.framebuffer, texture = _a.texture;
         if (!framebuffer)
             throw new Error("No framebuffer for writable DataLayer " + this.name + ".");
@@ -3113,7 +3113,8 @@ var DataLayer = /** @class */ (function () {
         return data;
     };
     DataLayer.prototype.initBuffers = function (_data) {
-        var _a = this, name = _a.name, numBuffers = _a.numBuffers, gl = _a.gl, width = _a.width, height = _a.height, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable, errorCallback = _a.errorCallback;
+        var _a = this, name = _a.name, numBuffers = _a.numBuffers, glcompute = _a.glcompute, width = _a.width, height = _a.height, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable;
+        var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
         this.initializationData = _data;
         var data = this.validateDataArray(_data);
         // Init a texture for each buffer.
@@ -3181,7 +3182,7 @@ var DataLayer = /** @class */ (function () {
         return this.textureOverrides && this.textureOverrides[this.bufferIndex];
     };
     DataLayer.prototype._bindOutputBufferForWrite = function (incrementBufferIndex) {
-        var gl = this.gl;
+        var gl = this.glcompute.gl;
         if (incrementBufferIndex) {
             // Increment bufferIndex.
             this._bufferIndex = (this._bufferIndex + 1) % this.numBuffers;
@@ -3193,7 +3194,7 @@ var DataLayer = /** @class */ (function () {
         }
     };
     DataLayer.prototype._bindOutputBuffer = function () {
-        var gl = this.gl;
+        var gl = this.glcompute.gl;
         var framebuffer = this.buffers[this._bufferIndex].framebuffer;
         if (!framebuffer) {
             throw new Error("DataLayer \"" + this.name + "\" is not writable.");
@@ -3206,7 +3207,11 @@ var DataLayer = /** @class */ (function () {
         this.initBuffers(data);
     };
     DataLayer.prototype.resize = function (dimensions, data) {
-        var _a = DataLayer.calcSize(dimensions, this.name), length = _a.length, width = _a.width, height = _a.height;
+        var _a = this, name = _a.name, glcompute = _a.glcompute;
+        var verboseLogging = glcompute.verboseLogging;
+        if (verboseLogging)
+            console.log("Resizing layer \"" + name + "\" to " + JSON.stringify(dimensions) + ".");
+        var _b = DataLayer.calcSize(dimensions, name), length = _b.length, width = _b.width, height = _b.height;
         this.length = length;
         this.width = width;
         this.height = height;
@@ -3214,6 +3219,10 @@ var DataLayer = /** @class */ (function () {
         this.initBuffers(data);
     };
     DataLayer.prototype.clear = function () {
+        var _a = this, name = _a.name, glcompute = _a.glcompute;
+        var verboseLogging = glcompute.verboseLogging;
+        if (verboseLogging)
+            console.log("Clearing layer \"" + name + "\".");
         // Reset everything to zero.
         // TODO: This is not the most efficient way to do this (reallocating all textures and framebuffers), but ok for now.
         this.destroyBuffers();
@@ -3232,7 +3241,8 @@ var DataLayer = /** @class */ (function () {
         return this.length;
     };
     DataLayer.prototype.destroyBuffers = function () {
-        var _a = this, gl = _a.gl, buffers = _a.buffers;
+        var _a = this, glcompute = _a.glcompute, buffers = _a.buffers;
+        var gl = glcompute.gl;
         buffers.forEach(function (buffer) {
             var framebuffer = buffer.framebuffer, texture = buffer.texture;
             gl.deleteTexture(texture);
@@ -3249,11 +3259,13 @@ var DataLayer = /** @class */ (function () {
         delete this.textureOverrides;
     };
     DataLayer.prototype.destroy = function () {
+        var _a = this, name = _a.name, glcompute = _a.glcompute;
+        var verboseLogging = glcompute.verboseLogging;
+        if (verboseLogging)
+            console.log("Destroying layer \"" + name + "\".");
         this.destroyBuffers();
         // @ts-ignore
-        delete this.gl;
-        // @ts-ignore
-        delete this.errorCallback;
+        delete this.glcompute;
     };
     DataLayer.prototype.clone = function () {
         // Make a deep copy.
@@ -3330,17 +3342,15 @@ var vertexShaders = (_a = {},
     },
     _a);
 var GPUProgram = /** @class */ (function () {
-    function GPUProgram(params) {
+    function GPUProgram(glcompute, params) {
         this.uniforms = {};
         this.defines = {};
         // Store gl programs.
         this.programs = {};
-        var gl = params.gl, errorCallback = params.errorCallback, name = params.name, fragmentShader = params.fragmentShader, glslVersion = params.glslVersion, uniforms = params.uniforms, defines = params.defines;
+        var name = params.name, fragmentShader = params.fragmentShader, uniforms = params.uniforms, defines = params.defines;
         // Save arguments.
-        this.gl = gl;
-        this.errorCallback = errorCallback;
+        this.glcompute = glcompute;
         this.name = name;
-        this.glslVersion = glslVersion;
         // Compile fragment shader.
         if (typeof (fragmentShader) === 'string' || typeof (fragmentShader[0]) === 'string') {
             var sourceString = typeof (fragmentShader) === 'string' ?
@@ -3373,7 +3383,8 @@ var GPUProgram = /** @class */ (function () {
         return definesSource;
     };
     GPUProgram.prototype.recompile = function (defines) {
-        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, name = _a.name, fragmentShaderSource = _a.fragmentShaderSource;
+        var _a = this, glcompute = _a.glcompute, name = _a.name, fragmentShaderSource = _a.fragmentShaderSource;
+        var gl = glcompute.gl, errorCallback = glcompute.errorCallback, verboseLogging = glcompute.verboseLogging;
         // Update this.defines if needed.
         // Passed in defines param may only be a partial list.
         var definesNeedUpdate = false;
@@ -3395,6 +3406,8 @@ var GPUProgram = /** @class */ (function () {
             // No fragment shader source available.
             throw new Error("Unable to recompile fragment shader for program \"" + name + "\" because fragment shader is already compiled, no source available.");
         }
+        if (verboseLogging)
+            console.log("Compiling fragment shader \"" + name + "\" with defines " + JSON.stringify(this.defines));
         var definesSource = GPUProgram.convertDefinesToString(this.defines);
         var shader = utils_1.compileShader(gl, errorCallback, "" + definesSource + fragmentShaderSource, gl.FRAGMENT_SHADER, name);
         if (!shader) {
@@ -3404,7 +3417,8 @@ var GPUProgram = /** @class */ (function () {
         this.fragmentShader = shader;
     };
     GPUProgram.prototype.initProgram = function (vertexShader, programName) {
-        var _a = this, gl = _a.gl, fragmentShader = _a.fragmentShader, errorCallback = _a.errorCallback, uniforms = _a.uniforms;
+        var _a = this, glcompute = _a.glcompute, fragmentShader = _a.fragmentShader, uniforms = _a.uniforms;
+        var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
         // Create a program.
         var program = gl.createProgram();
         if (!program) {
@@ -3436,10 +3450,11 @@ var GPUProgram = /** @class */ (function () {
     GPUProgram.prototype.getProgramWithName = function (name) {
         if (this.programs[name])
             return this.programs[name];
-        var errorCallback = this.errorCallback;
+        var errorCallback = this.glcompute.errorCallback;
         var vertexShader = vertexShaders[name];
         if (vertexShader.shader === undefined) {
-            var _a = this, gl = _a.gl, name_2 = _a.name, glslVersion = _a.glslVersion;
+            var _a = this, glcompute = _a.glcompute, name_2 = _a.name;
+            var gl = glcompute.gl, glslVersion = glcompute.glslVersion;
             // Init a vertex shader.
             var vertexShaderSource = glslVersion === Constants_1.GLSL3 ? vertexShader.src_3 : vertexShader.src_1;
             if (vertexShaderSource === '') {
@@ -3590,7 +3605,8 @@ var GPUProgram = /** @class */ (function () {
     };
     GPUProgram.prototype.setProgramUniform = function (program, programName, uniformName, value, type) {
         var _a;
-        var _b = this, gl = _b.gl, uniforms = _b.uniforms, errorCallback = _b.errorCallback;
+        var _b = this, glcompute = _b.glcompute, uniforms = _b.uniforms;
+        var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
         // Set active program.
         gl.useProgram(program);
         var location = (_a = uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.location[programName];
@@ -3647,7 +3663,8 @@ var GPUProgram = /** @class */ (function () {
     };
     GPUProgram.prototype.setUniform = function (uniformName, value, dataType) {
         var _a;
-        var _b = this, programs = _b.programs, uniforms = _b.uniforms;
+        var _b = this, programs = _b.programs, uniforms = _b.uniforms, name = _b.name, glcompute = _b.glcompute;
+        var verboseLogging = glcompute.verboseLogging;
         var type = (_a = uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.type;
         if (dataType) {
             var typeParam = this.uniformTypeForValue(value, dataType);
@@ -3670,8 +3687,13 @@ var GPUProgram = /** @class */ (function () {
         }
         else {
             // Update value.
+            if (uniforms[uniformName].value === value) {
+                return; // No change.
+            }
             uniforms[uniformName].value = value;
         }
+        if (verboseLogging)
+            console.log("Setting uniform \"" + uniformName + "\" for program \"" + name + "\" to value " + JSON.stringify(value) + " with type " + type + ".");
         // Update any active programs.
         var keys = Object.keys(programs);
         for (var i = 0; i < keys.length; i++) {
@@ -3680,6 +3702,7 @@ var GPUProgram = /** @class */ (function () {
         }
     };
     ;
+    // This is used internally.
     GPUProgram.prototype.setVertexUniform = function (program, uniformName, value, dataType) {
         var _this = this;
         var type = this.uniformTypeForValue(value, dataType);
@@ -3694,7 +3717,10 @@ var GPUProgram = /** @class */ (function () {
     };
     GPUProgram.prototype.destroy = function () {
         var _this = this;
-        var _a = this, gl = _a.gl, fragmentShader = _a.fragmentShader, programs = _a.programs;
+        var _a = this, glcompute = _a.glcompute, fragmentShader = _a.fragmentShader, programs = _a.programs;
+        var gl = glcompute.gl, verboseLogging = glcompute.verboseLogging;
+        if (verboseLogging)
+            console.log("Destroying program \"" + name + "\".");
         // Unbind all gl data before deleting.
         Object.values(programs).forEach(function (program) {
             gl.deleteProgram(program);
@@ -3708,9 +3734,7 @@ var GPUProgram = /** @class */ (function () {
         // @ts-ignore
         delete this.fragmentShader;
         // @ts-ignore
-        delete this.gl;
-        // @ts-ignore
-        delete this.errorCallback;
+        delete this.glcompute;
     };
     return GPUProgram;
 }());
@@ -3804,13 +3828,16 @@ var WebGLCompute = /** @class */ (function () {
         this.errorState = false;
         // Store multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
+        this.verboseLogging = false;
         // Check params.
-        var validKeys = ['canvas', 'context', 'antialias', 'glslVersion'];
+        var validKeys = ['canvas', 'context', 'antialias', 'glslVersion', 'verboseLogging'];
         Object.keys(params).forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
                 throw new Error("Invalid key " + key + " passed to WebGLCompute.constructor.  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
+        if (params.verboseLogging !== undefined)
+            this.verboseLogging = params.verboseLogging;
         // Save callback in case we run into an error.
         var self = this;
         this.errorCallback = function (message) {
@@ -4015,9 +4042,7 @@ var WebGLCompute = /** @class */ (function () {
             }
         });
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, glslVersion = _a.glslVersion;
-        return new GPUProgram_1.GPUProgram(__assign(__assign({}, params), { gl: gl,
-            errorCallback: errorCallback,
-            glslVersion: glslVersion }));
+        return new GPUProgram_1.GPUProgram(this, params);
     };
     ;
     WebGLCompute.prototype.initDataLayer = function (params) {
@@ -4028,10 +4053,7 @@ var WebGLCompute = /** @class */ (function () {
                 throw new Error("Invalid key " + key + " passed to WebGLCompute.initDataLayer with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
-        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, glslVersion = _a.glslVersion;
-        return new DataLayer_1.DataLayer(__assign(__assign({}, params), { gl: gl,
-            glslVersion: glslVersion,
-            errorCallback: errorCallback }));
+        return new DataLayer_1.DataLayer(this, params);
     };
     ;
     WebGLCompute.prototype.cloneDataLayer = function (dataLayer) {

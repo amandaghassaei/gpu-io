@@ -9,7 +9,7 @@ export declare class WebGLCompute {
     private width;
     private height;
     private errorState;
-    private readonly errorCallback;
+    readonly errorCallback: ErrorCallback;
     private renderer?;
     private readonly maxNumTextures;
     private _quadPositionsBuffer?;
@@ -26,14 +26,17 @@ export declare class WebGLCompute {
     private _singleColorProgram?;
     private _singleColorWithWrapCheckProgram?;
     private _vectorMagnitudeProgram?;
+    verboseLogging: boolean;
     static initWithThreeRenderer(renderer: WebGLRenderer, params: {
         glslVersion?: GLSLVersion;
+        verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback): WebGLCompute;
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
         antialias?: boolean;
         glslVersion?: GLSLVersion;
+        verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
     private get singleColorProgram();
     private get singleColorWithWrapCheckProgram();
