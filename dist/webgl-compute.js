@@ -3628,6 +3628,7 @@ var GPUProgram = /** @class */ (function () {
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
         switch (type) {
             case Constants_1.FLOAT_1D_UNIFORM:
+                console.log(value);
                 gl.uniform1f(location, value);
                 break;
             case Constants_1.FLOAT_2D_UNIFORM:
