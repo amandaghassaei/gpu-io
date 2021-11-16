@@ -379,7 +379,7 @@ Error code: ${gl.getError()}.`);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
 		switch (type) {
 			case FLOAT_1D_UNIFORM:
-				console.log(value);
+				console.log(location, value, uniformName, programName, type);
 				gl.uniform1f(location, value as number);
 				break;
 			case FLOAT_2D_UNIFORM:
