@@ -1,5 +1,5 @@
-import { WebGLCompute } from '.';
-import { UniformDataType, UniformValueType } from './Constants';
+import { WebGLCompute } from './WebGLCompute';
+import { UniformType, UniformValue } from './Constants';
 declare type CompileTimeVars = {
     [key: string]: string;
 };
@@ -16,8 +16,8 @@ export declare class GPUProgram {
         fragmentShader: string | string[] | WebGLShader;
         uniforms?: {
             name: string;
-            value: UniformValueType;
-            dataType: UniformDataType;
+            value: UniformValue;
+            type: UniformType;
         }[];
         defines?: CompileTimeVars;
     });
@@ -33,10 +33,10 @@ export declare class GPUProgram {
     get dataLayerPointsProgram(): WebGLProgram | undefined;
     get dataLayerVectorFieldProgram(): WebGLProgram | undefined;
     get dataLayerLinesProgram(): WebGLProgram | undefined;
-    private uniformTypeForValue;
+    private uniformInternalTypeForValue;
     private setProgramUniform;
-    setUniform(uniformName: string, value: UniformValueType, dataType?: UniformDataType): void;
-    setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValueType, dataType: UniformDataType): void;
+    setUniform(name: string, value: UniformValue, type?: UniformType): void;
+    setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValue, type: UniformType): void;
     destroy(): void;
 }
 export {};

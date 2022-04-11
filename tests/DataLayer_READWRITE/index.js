@@ -8,11 +8,27 @@ requirejs([
 	'../../dist/webgl-compute',
 	'../deps/micromodal.min',
 ], (
-	{ WebGLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3, GLSL1, CLAMP_TO_EDGE, REPEAT, NEAREST, LINEAR },
-	MicroModal,
+	{
+		WebGLCompute,
+		HALF_FLOAT,
+		FLOAT,
+		UNSIGNED_BYTE,
+		BYTE,
+		UNSIGNED_SHORT,
+		SHORT,
+		UNSIGNED_INT,
+		INT,
+		GLSL1,
+		CLAMP_TO_EDGE,
+		REPEAT,
+		NEAREST,
+		LINEAR,
+	}, MicroModal,
 ) => {
-	const canvas = document.getElementById('glcanvas');
 	MicroModal.init();
+
+	const gl1Canvas = document.createElement('canvas');
+	const gl2Canvas = document.createElement('canvas');
 
 	function offsetProgramForType(type, glslVersion) {
 		if (glslVersion === GLSL1) {
@@ -154,8 +170,9 @@ void main() {
 			TYPE,
 			DIM_X,
 			DIM_Y,
-			NUM_ELEMENTS,
+			WEBGL_VERSION,
 			GLSL_VERSION,
+			NUM_ELEMENTS,
 			WRAP,
 			FILTER,
 			TEST_EXTREMA,
@@ -175,13 +192,15 @@ void main() {
 		};
 
 		try {
+			config.webgl_version = WEBGL_VERSION === 'webgl2' ? 'webgl 2' : 'webgl 1';
+			config.glsl_version = GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3';
 			const glcompute = new WebGLCompute({
-				canvas,
-				antialias: true,
+				canvas: WEBGL_VERSION === WEBGL2 ? gl2Canvas : gl1Canvas,
+				contextID: WEBGL_VERSION,
 				glslVersion: GLSL_VERSION,
 			});
-			config.webgl_version = glcompute.isWebGL2() ? 'WebGL 2' : 'WebGL 1';
-			config.glsl_version = GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3';
+			// Set WebGL version to actual version.
+			config.webgl_version = glcompute.isWebGL2() ? 'webgl 2' : 'webgl 1';
 
 			let input;
 			let NUM_EXTREMA = 0;
@@ -417,20 +436,18 @@ void main() {
 					throw new Error(`Invalid type ${TYPE}.`);
 			}
 
-			const dataLayer = glcompute.initDataLayer(
-				{
-					name: `test-${TYPE}`,
-					dimensions: [DIM_X, DIM_Y],
-					type: TYPE,
-					numComponents: NUM_ELEMENTS,
-					data: input,
-					filter: FILTER,
-					wrapS: WRAP,
-					wrapT: WRAP,
-					writable: true,
-					numBuffers: 2,
-				},
-			);
+			const dataLayer = glcompute.initDataLayer({
+				name: `test-${TYPE}`,
+				dimensions: [DIM_X, DIM_Y],
+				type: TYPE,
+				numComponents: NUM_ELEMENTS,
+				array: input,
+				filter: FILTER,
+				wrapS: WRAP,
+				wrapT: WRAP,
+				writable: true,
+				numBuffers: 2,
+			});
 
 			const offsetProgram = glcompute.initProgram({
 				name: 'offset',
@@ -439,18 +456,22 @@ void main() {
 						{
 							name: 'u_state',
 							value: 0,
-							dataType: INT,
+							type: INT,
 						},
 						{
 							name: 'u_offset',
 							value: [OFFSET / DIM_X, OFFSET / DIM_Y],
-							dataType: FLOAT,
+							type: FLOAT,
 						},
 					],
 				},
 			);
 
-			glcompute.step(offsetProgram, [dataLayer], dataLayer);
+			glcompute.step({
+				program: offsetProgram,
+				input: dataLayer,
+				output: dataLayer,
+			});
 			const output = glcompute.getValues(dataLayer);
 
 			glcompute.destroy();
@@ -512,6 +533,9 @@ void main() {
 					status = WARNING;
 					extremaWarning.push(`Internal data type ${dataLayer.internalType} supports integers in range ${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")}.  Current type ${TYPE} contains integers in range ${input[0].toLocaleString("en-US")} to ${input[2].toLocaleString("en-US")}.`);
 				}
+
+				dataLayer.dispose();
+
 				return {
 					status,
 					log,

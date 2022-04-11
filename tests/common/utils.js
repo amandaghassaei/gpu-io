@@ -8,6 +8,8 @@ const UNSIGNED_INT = 'UNSIGNED_INT';
 const INT = 'INT';
 const GLSL3 = '300 es';
 const GLSL1 = '100';
+const WEBGL1 ='webgl';
+const WEBGL2 = 'webgl2';
 const LINEAR = 'LINEAR';
 const NEAREST = 'NEAREST';
 const REPEAT = 'REPEAT';
@@ -95,6 +97,14 @@ function getBrowserVersion() {
 	return M.join(' v');
 }
 
+function isWebGL2Supported() {
+	const gl = document.createElement('canvas').getContext('webgl2');
+	if (!gl) {
+		return false;
+	}
+	return true;
+}
+
 function makeTable(testFunction) {
 	// To make things simpler, keep DIM_X * DIMY < 256.
 	const DIM_X = 30;
@@ -135,16 +145,20 @@ function makeTable(testFunction) {
 		container.appendChild(makeTitleColumn(rowTitles));
 
 		// Loop through each glsl version.
-		const glslversions = [GLSL1, GLSL3];
-		glslversions.forEach(GLSL_VERSION => {
-
+		const glslversions = [
+			// { WEBGL_VERSION: WEBGL1, GLSL_VERSION: GLSL1 },
+			{ WEBGL_VERSION: WEBGL2, GLSL_VERSION: GLSL1 },
+			{ WEBGL_VERSION: WEBGL2, GLSL_VERSION: GLSL3 },
+		];
+		glslversions.forEach(({ GLSL_VERSION, WEBGL_VERSION }) => {
 			const outerTable = document.createElement('div');
 			outerTable.className="outerTable"
 			container.appendChild(outerTable);
 			const outerTableTitle = document.createElement('div');
 			outerTableTitle.className="outerTable-title entry"
-			outerTableTitle.innerHTML = `GLSL v${GLSL_VERSION === GLSL1 ? '1' : '3'}`;
+			outerTableTitle.innerHTML = `GLSL v${GLSL_VERSION === GLSL3 ? '3' : '1'}`;
 			outerTable.appendChild(outerTableTitle);
+
 
 			// Loop through various settings.
 			const extremaResults = [];
@@ -155,6 +169,7 @@ function makeTable(testFunction) {
 					DIM_X,
 					DIM_Y,
 					NUM_ELEMENTS,
+					WEBGL_VERSION,
 					GLSL_VERSION,
 					WRAP: CLAMP_TO_EDGE,
 					FILTER: NEAREST,
@@ -170,6 +185,7 @@ function makeTable(testFunction) {
 					DIM_X,
 					DIM_Y,
 					NUM_ELEMENTS,
+					WEBGL_VERSION,
 					GLSL_VERSION,
 					WRAP: CLAMP_TO_EDGE,
 					FILTER: NEAREST,
@@ -185,6 +201,7 @@ function makeTable(testFunction) {
 					DIM_X,
 					DIM_Y,
 					NUM_ELEMENTS,
+					WEBGL_VERSION,
 					GLSL_VERSION,
 					WRAP: CLAMP_TO_EDGE,
 					FILTER: LINEAR,
@@ -200,6 +217,7 @@ function makeTable(testFunction) {
 					DIM_X,
 					DIM_Y,
 					NUM_ELEMENTS,
+					WEBGL_VERSION,
 					GLSL_VERSION,
 					WRAP: REPEAT,
 					FILTER: NEAREST,
@@ -215,6 +233,7 @@ function makeTable(testFunction) {
 					DIM_X,
 					DIM_Y,
 					NUM_ELEMENTS,
+					WEBGL_VERSION,
 					GLSL_VERSION,
 					WRAP: REPEAT,
 					FILTER: LINEAR,

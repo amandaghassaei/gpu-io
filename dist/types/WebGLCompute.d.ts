@@ -1,5 +1,5 @@
 import { DataLayer } from './DataLayer';
-import { DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType, UniformDataType, UniformValueType, GLSLVersion, TextureFormatType, TextureDataType } from './Constants';
+import { DataLayerArrayType, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap, UniformType, UniformValue, GLSLVersion, TextureFormat, TextureType } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 declare type ErrorCallback = (message: string) => void;
@@ -34,7 +34,11 @@ export declare class WebGLCompute {
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
-        antialias?: boolean;
+        contextID?: 'webgl2' | 'webgl' | string;
+        contextOptions?: {
+            antialias?: boolean;
+            [key: string]: any;
+        };
         glslVersion?: GLSLVersion;
         verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
@@ -51,8 +55,8 @@ export declare class WebGLCompute {
         fragmentShader: string | WebGLShader;
         uniforms?: {
             name: string;
-            value: UniformValueType;
-            dataType: UniformDataType;
+            value: UniformValue;
+            type: UniformType;
         }[];
         defines?: {
             [key: string]: string;
@@ -63,22 +67,23 @@ export declare class WebGLCompute {
         dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
-        data?: DataLayerArrayType;
-        filter?: DataLayerFilterType;
-        wrapS?: DataLayerWrapType;
-        wrapT?: DataLayerWrapType;
+        array?: DataLayerArrayType | number[];
+        filter?: DataLayerFilter;
+        wrapS?: DataLayerWrap;
+        wrapT?: DataLayerWrap;
         writable?: boolean;
         numBuffers?: number;
+        clearValue?: number | number[];
     }): DataLayer;
     cloneDataLayer(dataLayer: DataLayer): DataLayer;
     initTexture(params: {
         name: string;
         url: string;
-        filter?: DataLayerFilterType;
-        wrapS?: DataLayerWrapType;
-        wrapT?: DataLayerWrapType;
-        format?: TextureFormatType;
-        type?: TextureDataType;
+        filter?: DataLayerFilter;
+        wrapS?: DataLayerWrap;
+        wrapT?: DataLayerWrap;
+        format?: TextureFormat;
+        type?: TextureType;
         onLoad?: (texture: WebGLTexture) => void;
     }): WebGLTexture;
     onResize(canvas: HTMLCanvasElement): void;

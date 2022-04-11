@@ -1,6 +1,12 @@
+import { inDevMode, isWebGL2Supported } from './utils';
 import { WebGLCompute } from './WebGLCompute';
-export * from './Constants';
 
+if (inDevMode()) {
+	console.log('Running in development mode.');
+}
+
+export * from './Constants';
 export {
 	WebGLCompute,
+	isWebGL2Supported,
 };

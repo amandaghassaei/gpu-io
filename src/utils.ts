@@ -37,6 +37,14 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 	// return !!(gl as WebGL2RenderingContext).HALF_FLOAT;
 }
 
+export function isWebGL2Supported() {
+	const gl = document.createElement('canvas').getContext('webgl2');
+	if (!gl) {
+		return false;
+	}
+	return true;
+}
+
 export function isPowerOf2(value: number) {
 	return (value & (value - 1)) == 0;
 }
@@ -47,4 +55,8 @@ export function initSequentialFloatArray(length: number) {
 		array[i] = i;
 	}
 	return array;
+}
+
+export function inDevMode() {
+	return process.env.NODE_ENV === 'development';
 }

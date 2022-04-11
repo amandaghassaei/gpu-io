@@ -1,14 +1,32 @@
-import { BOOL, WebGLCompute } from '.';
-import { isArray, isBoolean, isInteger, isNumber, isString } from './Checks';
+import { WebGLCompute } from './WebGLCompute';
+import {
+	isArray,
+	isBoolean,
+	isInteger,
+	isNumber,
+	isString,
+} from './Checks';
 import {
 	FLOAT,
-	FLOAT_1D_UNIFORM, FLOAT_2D_UNIFORM, FLOAT_3D_UNIFORM, FLOAT_4D_UNIFORM,
+	FLOAT_1D_UNIFORM,
+	FLOAT_2D_UNIFORM,
+	FLOAT_3D_UNIFORM,
+	FLOAT_4D_UNIFORM,
 	GLSL3,
 	INT,
-	INT_1D_UNIFORM, INT_2D_UNIFORM, INT_3D_UNIFORM, INT_4D_UNIFORM,
-	Uniform, UniformDataType, UniformType, UniformValueType,
+	BOOL,
+	INT_1D_UNIFORM,
+	INT_2D_UNIFORM,
+	INT_3D_UNIFORM,
+	INT_4D_UNIFORM,
+	Uniform,
+	UniformType,
+	UniformInternalType,
+	UniformValue,
 } from './Constants';
-import { compileShader } from './utils';
+import {
+	compileShader,
+} from './utils';
 
 const DEFAULT_PROGRAM_NAME = 'DEFAULT';
 const DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
@@ -18,7 +36,7 @@ const SEGMENT_PROGRAM_NAME = 'SEGMENT';
 const DATA_LAYER_POINTS_PROGRAM_NAME = 'DATA_LAYER_POINTS';
 const DATA_LAYER_LINES_PROGRAM_NAME = 'DATA_LAYER_LINES';
 const DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = 'DATA_LAYER_VECTOR_FIELD';
-type PROGRAM_NAMES =
+type PROGRAM_NAME_INTERNAL =
 	typeof DEFAULT_PROGRAM_NAME |
 	typeof DEFAULT_W_UV_PROGRAM_NAME |
 	typeof DEFAULT_W_NORMAL_PROGRAM_NAME |
@@ -31,7 +49,7 @@ type PROGRAM_NAMES =
 // Pass in #defines as strings to make it easier to control float vs int.
 type CompileTimeVars = { [key: string]: string };
 
-const vertexShaders: {[key in PROGRAM_NAMES]: {
+const vertexShaders: {[key in PROGRAM_NAME_INTERNAL]: {
 	src_1: string,
 	src_3: string,
 	shader?: WebGLProgram,
@@ -89,19 +107,21 @@ export class GPUProgram {
 	private readonly fragmentShaderSource?: string; // Source code for fragment shader.
 	private defines: CompileTimeVars = {};
 	// Store gl programs.
-	private programs: {[key in PROGRAM_NAMES]?: WebGLProgram } = {};
+	private programs: {[key in PROGRAM_NAME_INTERNAL]?: WebGLProgram } = {};
 
 	constructor(
 		glcompute: WebGLCompute,
 		params: {
 			name: string,
-			fragmentShader: string | string[] | WebGLShader,// We may want to pass in an array of shader string sources, if split across several files.
+			// We may want to pass in an array of shader string sources, if split across several files.
+			fragmentShader: string | string[] | WebGLShader,
 			uniforms?: {
 				name: string,
-				value: UniformValueType,
-				dataType: UniformDataType,
+				value: UniformValue,
+				type: UniformType,
 			}[],
-			defines?: CompileTimeVars,// We'll allow some compile-time variables to be passed in as #define to the preprocessor for the fragment shader.
+			// We'll allow some compile-time variables to be passed in as #define to the preprocessor for the fragment shader.
+			defines?: CompileTimeVars,
 		},
 		
 	) {
@@ -124,8 +144,8 @@ export class GPUProgram {
 
 		if (uniforms) {
 			for (let i = 0; i < uniforms?.length; i++) {
-				const { name, value, dataType } = uniforms[i];
-				this.setUniform(name, value, dataType);
+				const { name, value, type } = uniforms[i];
+				this.setUniform(name, value, type);
 			}
 		}
 	}
@@ -137,7 +157,7 @@ export class GPUProgram {
 			const key = keys[i];
 			// Check that define is passed in as a string.
 			if (!isString(key) || !isString(defines[key])) {
-				throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type ${typeof key} : ${typeof defines[key]}.`)
+				throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}].`)
 			}
 			definesSource += `#define ${key} ${defines[key]}\n`;
 		}
@@ -181,13 +201,13 @@ export class GPUProgram {
 		this.fragmentShader = shader;
 	}
 
-	private initProgram(vertexShader: WebGLShader, programName: string) {
+	private initProgram(vertexShader: WebGLShader, programName: PROGRAM_NAME_INTERNAL) {
 		const { glcompute, fragmentShader, uniforms } = this;
 		const { gl, errorCallback} = glcompute;
 		// Create a program.
 		const program = gl.createProgram();
 		if (!program) {
-			errorCallback(`Unable to init gl program: ${name}.`);
+			errorCallback(`Unable to init gl program: ${this.name}.`);
 			return;
 		}
 		// TODO: check that attachShader worked.
@@ -199,7 +219,7 @@ export class GPUProgram {
 		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
 		if (!success) {
 			// Something went wrong with the link.
-			errorCallback(`Program "${name}" failed to link: ${gl.getProgramInfoLog(program)}`);
+			errorCallback(`Program "${this.name}" failed to link: ${gl.getProgramInfoLog(program)}`);
 			return;
 		}
 		// If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
@@ -213,7 +233,7 @@ export class GPUProgram {
 		return program;
 	}
 
-	private getProgramWithName(name: PROGRAM_NAMES) {
+	private getProgramWithName(name: PROGRAM_NAME_INTERNAL) {
 		if (this.programs[name]) return this.programs[name];
 		const { errorCallback } = this.glcompute;
 		const vertexShader = vertexShaders[name];
@@ -276,11 +296,11 @@ export class GPUProgram {
 		return this.getProgramWithName(DATA_LAYER_LINES_PROGRAM_NAME);
 	}
 
-	private uniformTypeForValue(
-		value: UniformValueType,
-		dataType: UniformDataType,
+	private uniformInternalTypeForValue(
+		value: UniformValue,
+		type: UniformType,
 	) {
-		if (dataType === FLOAT) {
+		if (type === FLOAT) {
 			// Check that we are dealing with a number.
 			if (isArray(value)) {
 				for (let i = 0; i < (value as number[]).length; i++) {
@@ -306,7 +326,7 @@ export class GPUProgram {
 				return FLOAT_4D_UNIFORM;
 			}
 			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected float or float[] of length 1-4.`);
-		} else if (dataType === INT) {
+		} else if (type === INT) {
 			// Check that we are dealing with an int.
 			if (isArray(value)) {
 				for (let i = 0; i < (value as number[]).length; i++) {
@@ -332,7 +352,7 @@ export class GPUProgram {
 				return INT_4D_UNIFORM;
 			}
 			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);
-		} else if (dataType === BOOL) {
+		} else if (type === BOOL) {
 			if (isBoolean(value)) {
 				// Boolean types are passed in as ints.
 				// This suggest floats work as well, but ints seem more natural:
@@ -341,28 +361,28 @@ export class GPUProgram {
 			}
 			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected boolean.`);
 		} else {
-			throw new Error(`Invalid uniform data type: ${dataType} for program "${this.name}", expected ${FLOAT} or ${INT}.`);
+			throw new Error(`Invalid uniform type: ${type} for program "${this.name}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
 		}
 	}
 
 	private setProgramUniform(
 		program: WebGLProgram,
 		programName: string,
-		uniformName: string,
-		value: UniformValueType,
-		type: UniformType,
+		name: string,
+		value: UniformValue,
+		type: UniformInternalType,
 	) {
 		const { glcompute, uniforms } = this;
 		const { gl, errorCallback } = glcompute;
 		// Set active program.
 		gl.useProgram(program);
 
-		let location = uniforms[uniformName]?.location[programName];
+		let location = uniforms[name]?.location[programName];
 		// Init a location for WebGLProgram if needed.
 		if (location === undefined) {
-			const _location = gl.getUniformLocation(program, uniformName);
+			const _location = gl.getUniformLocation(program, name);
 			if (!_location) {
-				errorCallback(`Could not init uniform "${uniformName}" for program "${this.name}".
+				errorCallback(`Could not init uniform "${name}" for program "${this.name}".
 Check that uniform is present in shader code, unused uniforms may be removed by compiler.
 Also check that uniform type in shader code matches type ${type}.
 Error code: ${gl.getError()}.`);
@@ -370,8 +390,8 @@ Error code: ${gl.getError()}.`);
 			}
 			location = _location;
 			// Save location for future use.
-			if (uniforms[uniformName]) {
-				uniforms[uniformName].location[programName] = location;
+			if (uniforms[name]) {
+				uniforms[name].location[programName] = location;
 			}
 		}
 
@@ -413,47 +433,47 @@ Error code: ${gl.getError()}.`);
 	}
 
 	setUniform(
-		uniformName: string,
-		value: UniformValueType,
-		dataType?: UniformDataType,
+		name: string,
+		value: UniformValue,
+		type?: UniformType,
 	) {
-		const { programs, uniforms, name, glcompute } = this;
+		const { programs, uniforms, glcompute } = this;
 		const { verboseLogging } = glcompute;
 
-		let type = uniforms[uniformName]?.type;
-		if (dataType) {
-			const typeParam = this.uniformTypeForValue(value, dataType);
-			if (type === undefined) type = typeParam;
+		let currentType = uniforms[name]?.type;
+		if (type) {
+			const internalType = this.uniformInternalTypeForValue(value, type);
+			if (currentType === undefined) currentType = internalType;
 			else {
-				// console.warn(`Don't need to pass in dataType to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
+				// console.warn(`Don't need to pass in type to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
 				// Check that types match previously set uniform.
-				if (type !== typeParam) {
-					throw new Error(`Uniform "${uniformName}" for GPUProgram "${this.name}" cannot change from type ${type} to type ${typeParam}.`);
+				if (currentType !== internalType) {
+					throw new Error(`Uniform "${name}" for GPUProgram "${this.name}" cannot change from type ${currentType} to type ${internalType}.`);
 				}
 			}
 		}
-		if (type === undefined) {
-			throw new Error(`Unknown type for uniform "${uniformName}", please pass in dataType to GPUProgram.setUniform when initing a new uniform.`);
+		if (currentType === undefined) {
+			throw new Error(`Unknown type for uniform "${name}", please pass in type to GPUProgram.setUniform(name, value, type) when initing a new uniform.`);
 		}
 
-		if (!uniforms[uniformName]) {
+		if (!uniforms[name]) {
 			// Init uniform if needed.
-			uniforms[uniformName] = { type, location: {}, value };
+			uniforms[name] = { type: currentType, location: {}, value };
 		} else {
 			// Update value.
-			if (uniforms[uniformName].value === value) {
+			if (uniforms[name].value === value) {
 				return; // No change.
 			}
-			uniforms[uniformName].value = value;
+			uniforms[name].value = value;
 		}
 
-		if (verboseLogging) console.log(`Setting uniform "${uniformName}" for program "${name}" to value ${JSON.stringify(value)} with type ${type}.`)
+		if (verboseLogging) console.log(`Setting uniform "${name}" for program "${this.name}" to value ${JSON.stringify(value)} with type ${currentType}.`)
 
 		// Update any active programs.
 		const keys = Object.keys(programs);
 		for (let i = 0; i < keys.length; i++) {
-			const programName = keys[i] as PROGRAM_NAMES;
-			this.setProgramUniform(programs[programName]!, programName, uniformName, value, type);
+			const programName = keys[i] as PROGRAM_NAME_INTERNAL;
+			this.setProgramUniform(programs[programName]!, programName, name, value, currentType);
 		}
 	};
 
@@ -461,18 +481,18 @@ Error code: ${gl.getError()}.`);
 	setVertexUniform(
 		program: WebGLProgram,
 		uniformName: string,
-		value: UniformValueType,
-		dataType: UniformDataType,
+		value: UniformValue,
+		type: UniformType,
 	) {
-		const type = this.uniformTypeForValue(value, dataType);
+		const internalType = this.uniformInternalTypeForValue(value, type);
 		if (program === undefined) {
 			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
 		}
-		const programName = Object.keys(this.programs).find(key => this.programs[key as PROGRAM_NAMES] === program);
+		const programName = Object.keys(this.programs).find(key => this.programs[key as PROGRAM_NAME_INTERNAL] === program);
 		if (!programName) {
 			throw new Error(`Could not find valid vertex programName for WebGLProgram "${this.name}".`);
 		}
-		this.setProgramUniform(program, programName, uniformName, value, type);
+		this.setProgramUniform(program, programName, uniformName, value, internalType);
 	}
 
 	destroy() {
@@ -485,7 +505,7 @@ Error code: ${gl.getError()}.`);
 			gl.deleteProgram(program!);
 		});
 		Object.keys(this.programs).forEach(key => {
-			delete this.programs[key as PROGRAM_NAMES];
+			delete this.programs[key as PROGRAM_NAME_INTERNAL];
 		});
 
 		// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader

@@ -8,10 +8,24 @@ requirejs([
 	'../../dist/webgl-compute',
 	'../deps/micromodal.min',
 ], (
-	{ WebGLCompute, HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, GLSL3, GLSL1, CLAMP_TO_EDGE, REPEAT, NEAREST, LINEAR },
-	MicroModal,
+	{
+		WebGLCompute,
+		HALF_FLOAT,
+		FLOAT,
+		UNSIGNED_BYTE,
+		BYTE,
+		UNSIGNED_SHORT,
+		SHORT,
+		UNSIGNED_INT,
+		INT,
+		GLSL3,
+		GLSL1,
+		CLAMP_TO_EDGE,
+		REPEAT,
+		NEAREST,
+		LINEAR,
+	}, MicroModal,
 ) => {
-	const canvas = document.getElementById('glcanvas');
 	MicroModal.init();
 
 	function offsetProgramForType(type, glslVersion) {
@@ -115,7 +129,7 @@ void main() {
 
 		try {
 			const glcompute = new WebGLCompute({
-				canvas,
+				canvas: document.createElement('canvas'),
 				antialias: true,
 				glslVersion: GLSL_VERSION,
 			});
@@ -356,20 +370,18 @@ void main() {
 					throw new Error(`Invalid type ${TYPE}.`);
 			}
 
-			const dataLayer = glcompute.initDataLayer(
-				{
-					name: `test-${TYPE}`,
-					dimensions: [DIM_X, DIM_Y],
-					type: TYPE,
-					numComponents: NUM_ELEMENTS,
-					data: input,
-					filter: FILTER,
-					wrapS: WRAP,
-					wrapT: WRAP,
-					writable: true,
-					numBuffers: 2,
-				},
-			);
+			const dataLayer = glcompute.initDataLayer({
+				name: `test-${TYPE}`,
+				dimensions: [DIM_X, DIM_Y],
+				type: TYPE,
+				numComponents: NUM_ELEMENTS,
+				array: input,
+				filter: FILTER,
+				wrapS: WRAP,
+				wrapT: WRAP,
+				writable: true,
+				numBuffers: 2,
+			});
 
 			const offsetProgram = glcompute.initProgram({
 				name: 'offset',
@@ -378,18 +390,22 @@ void main() {
 						{
 							name: 'u_state',
 							value: 0,
-							dataType: INT,
+							type: INT,
 						},
 						{
 							name: 'u_offset',
 							value: [OFFSET / DIM_X, OFFSET / DIM_Y],
-							dataType: FLOAT,
+							type: FLOAT,
 						},
 					],
 				},
 			);
 
-			glcompute.step(offsetProgram, [dataLayer], dataLayer);
+			glcompute.step({
+				program: offsetProgram,
+				input: dataLayer,
+				output: dataLayer,
+			});
 			const output = glcompute.getValues(dataLayer);
 
 			glcompute.destroy();
@@ -517,5 +533,5 @@ void main() {
 		}
 	}
 
-	// makeTable(testArrayReads);
+	makeTable(testArrayReads);
 });

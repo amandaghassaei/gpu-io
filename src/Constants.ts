@@ -21,11 +21,11 @@ export const RGBA = 'RGBA';
 export type DataLayerArrayType =  Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
 export type DataLayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
 export type DataLayerNumComponents = 1 | 2 | 3 | 4;
-export type DataLayerFilterType = typeof LINEAR | typeof NEAREST;
-export type DataLayerWrapType = typeof REPEAT | typeof CLAMP_TO_EDGE;// | typeof MIRRORED_REPEAT;
+export type DataLayerFilter = typeof LINEAR | typeof NEAREST;
+export type DataLayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;// | typeof MIRRORED_REPEAT;
 
-export type TextureFormatType = typeof RGB | typeof RGBA;
-export type TextureDataType = typeof UNSIGNED_BYTE;
+export type TextureFormat = typeof RGB | typeof RGBA;
+export type TextureType = typeof UNSIGNED_BYTE;
 
 export const GLSL3 = '300 es';
 export const GLSL1 = '100';
@@ -41,15 +41,8 @@ export const INT_2D_UNIFORM = '2i';
 export const INT_3D_UNIFORM = '3i';
 export const INT_4D_UNIFORM = '3i';
 
-export type UniformDataType = typeof FLOAT | typeof INT |  typeof BOOL;
-export type UniformValueType = 
-	boolean |
-	number |
-	[number] |
-	[number, number] |
-	[number, number, number] |
-	[number, number, number, number];
-export type UniformType = 
+export type UniformType = typeof FLOAT | typeof INT |  typeof BOOL;
+export type UniformInternalType = 
 	typeof FLOAT_1D_UNIFORM |
 	typeof FLOAT_2D_UNIFORM |
 	typeof FLOAT_3D_UNIFORM |
@@ -58,9 +51,16 @@ export type UniformType =
 	typeof INT_2D_UNIFORM |
 	typeof INT_3D_UNIFORM |
 	typeof INT_4D_UNIFORM;
+export type UniformValue = 
+	boolean |
+	number |
+	[number] |
+	[number, number] |
+	[number, number, number] |
+	[number, number, number, number];
 export type Uniform = { 
 	location: { [key: string]: WebGLUniformLocation },
-	type: UniformType,
-	value: UniformValueType,
+	type: UniformInternalType,
+	value: UniformValue,
 };
 

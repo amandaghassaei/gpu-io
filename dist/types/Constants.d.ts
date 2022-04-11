@@ -16,10 +16,10 @@ export declare const RGBA = "RGBA";
 export declare type DataLayerArrayType = Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
 export declare type DataLayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
 export declare type DataLayerNumComponents = 1 | 2 | 3 | 4;
-export declare type DataLayerFilterType = typeof LINEAR | typeof NEAREST;
-export declare type DataLayerWrapType = typeof REPEAT | typeof CLAMP_TO_EDGE;
-export declare type TextureFormatType = typeof RGB | typeof RGBA;
-export declare type TextureDataType = typeof UNSIGNED_BYTE;
+export declare type DataLayerFilter = typeof LINEAR | typeof NEAREST;
+export declare type DataLayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;
+export declare type TextureFormat = typeof RGB | typeof RGBA;
+export declare type TextureType = typeof UNSIGNED_BYTE;
 export declare const GLSL3 = "300 es";
 export declare const GLSL1 = "100";
 export declare type GLSLVersion = typeof GLSL1 | typeof GLSL3;
@@ -31,8 +31,9 @@ export declare const INT_1D_UNIFORM = "1i";
 export declare const INT_2D_UNIFORM = "2i";
 export declare const INT_3D_UNIFORM = "3i";
 export declare const INT_4D_UNIFORM = "3i";
-export declare type UniformDataType = typeof FLOAT | typeof INT | typeof BOOL;
-export declare type UniformValueType = boolean | number | [
+export declare type UniformType = typeof FLOAT | typeof INT | typeof BOOL;
+export declare type UniformInternalType = typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof FLOAT_4D_UNIFORM | typeof INT_1D_UNIFORM | typeof INT_2D_UNIFORM | typeof INT_3D_UNIFORM | typeof INT_4D_UNIFORM;
+export declare type UniformValue = boolean | number | [
     number
 ] | [
     number,
@@ -47,11 +48,10 @@ export declare type UniformValueType = boolean | number | [
     number,
     number
 ];
-export declare type UniformType = typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof FLOAT_4D_UNIFORM | typeof INT_1D_UNIFORM | typeof INT_2D_UNIFORM | typeof INT_3D_UNIFORM | typeof INT_4D_UNIFORM;
 export declare type Uniform = {
     location: {
         [key: string]: WebGLUniformLocation;
     };
-    type: UniformType;
-    value: UniformValueType;
+    type: UniformInternalType;
+    value: UniformValue;
 };

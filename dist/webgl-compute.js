@@ -2255,33 +2255,56 @@ var nodeUtil = (function() {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isBoolean = exports.isArray = exports.isString = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isValidTextureDataType = exports.validTextureDataTypes = exports.isValidTextureFormatType = exports.validTextureFormatTypes = exports.isValidWrapType = exports.validWrapTypes = exports.isValidFilterType = exports.validFilterTypes = exports.isValidDataType = exports.validDataTypes = void 0;
+exports.isBoolean = exports.isArray = exports.isString = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isValidClearValue = exports.isValidTextureType = exports.validTextureTypes = exports.isValidTextureFormat = exports.validTextureFormats = exports.isValidWrap = exports.validWraps = exports.isValidFilter = exports.validFilters = exports.isValidDataType = exports.validDataTypes = exports.validArrayTypes = void 0;
 var Constants_1 = __webpack_require__(738);
+exports.validArrayTypes = [Float32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Array];
 exports.validDataTypes = [Constants_1.HALF_FLOAT, Constants_1.FLOAT, Constants_1.UNSIGNED_BYTE, Constants_1.BYTE, Constants_1.UNSIGNED_SHORT, Constants_1.SHORT, Constants_1.UNSIGNED_INT, Constants_1.INT];
 function isValidDataType(type) {
     return exports.validDataTypes.indexOf(type) > -1;
 }
 exports.isValidDataType = isValidDataType;
-exports.validFilterTypes = [Constants_1.LINEAR, Constants_1.NEAREST];
-function isValidFilterType(type) {
-    return exports.validFilterTypes.indexOf(type) > -1;
+exports.validFilters = [Constants_1.LINEAR, Constants_1.NEAREST];
+function isValidFilter(type) {
+    return exports.validFilters.indexOf(type) > -1;
 }
-exports.isValidFilterType = isValidFilterType;
-exports.validWrapTypes = [Constants_1.CLAMP_TO_EDGE, Constants_1.REPEAT]; // MIRRORED_REPEAT
-function isValidWrapType(type) {
-    return exports.validWrapTypes.indexOf(type) > -1;
+exports.isValidFilter = isValidFilter;
+exports.validWraps = [Constants_1.CLAMP_TO_EDGE, Constants_1.REPEAT]; // MIRRORED_REPEAT
+function isValidWrap(type) {
+    return exports.validWraps.indexOf(type) > -1;
 }
-exports.isValidWrapType = isValidWrapType;
-exports.validTextureFormatTypes = [Constants_1.RGB, Constants_1.RGBA];
-function isValidTextureFormatType(type) {
-    return exports.validTextureFormatTypes.indexOf(type) > -1;
+exports.isValidWrap = isValidWrap;
+// For image urls that are passed in and inited as textures.
+exports.validTextureFormats = [Constants_1.RGB, Constants_1.RGBA];
+function isValidTextureFormat(type) {
+    return exports.validTextureFormats.indexOf(type) > -1;
 }
-exports.isValidTextureFormatType = isValidTextureFormatType;
-exports.validTextureDataTypes = [Constants_1.UNSIGNED_BYTE];
-function isValidTextureDataType(type) {
-    return exports.validTextureDataTypes.indexOf(type) > -1;
+exports.isValidTextureFormat = isValidTextureFormat;
+// For image urls that are passed in and inited as textures.
+exports.validTextureTypes = [Constants_1.UNSIGNED_BYTE];
+function isValidTextureType(type) {
+    return exports.validTextureTypes.indexOf(type) > -1;
 }
-exports.isValidTextureDataType = isValidTextureDataType;
+exports.isValidTextureType = isValidTextureType;
+function isValidClearValue(clearValue, numComponents) {
+    if (isArray(clearValue)) {
+        // Length of clearValue must match numComponents.
+        if (clearValue.length !== numComponents) {
+            return false;
+        }
+        for (var i = 0; i < clearValue.length; i++) {
+            if (!isNumber(clearValue[i])) {
+                return false;
+            }
+        }
+    }
+    else {
+        if (!isNumber(clearValue)) {
+            return false;
+        }
+    }
+    return true;
+}
+exports.isValidClearValue = isValidClearValue;
 function isNumber(value) {
     return !isNaN(value);
 }
@@ -2363,53 +2386,57 @@ var utils_1 = __webpack_require__(593);
 var DataLayer = /** @class */ (function () {
     function DataLayer(glcompute, params) {
         // Each DataLayer may contain a number of buffers to store different instances of the state.
+        // e.g [currentState, previousState]
         this._bufferIndex = 0;
         this.buffers = [];
-        var name = params.name, dimensions = params.dimensions, type = params.type, numComponents = params.numComponents, data = params.data;
-        // Save params.
-        this.name = name;
-        this.glcompute = glcompute;
+        var name = params.name, dimensions = params.dimensions, type = params.type, numComponents = params.numComponents, array = params.array;
         var gl = glcompute.gl, errorCallback = glcompute.errorCallback, glslVersion = glcompute.glslVersion;
+        // Save params.
+        this.glcompute = glcompute;
+        this.name = name;
         // numComponents must be between 1 and 4.
         if (!Checks_1.isPositiveInteger(numComponents) || numComponents > 4) {
-            throw new Error("Invalid numComponents " + numComponents + " for DataLayer \"" + name + "\".");
+            throw new Error("Invalid numComponents: " + numComponents + " for DataLayer \"" + name + "\".");
         }
         this.numComponents = numComponents;
-        // writable defaults to false.
+        // clearValue defaults to zero.
+        var clearValue = params.clearValue !== undefined ? params.clearValue : 0;
+        this.clearValue = clearValue; // Setter can only be called after this.numComponents has been set.
+        // Writable defaults to false.
         var writable = !!params.writable;
         this.writable = writable;
         // Set dimensions, may be 1D or 2D.
         var _a = DataLayer.calcSize(dimensions, name), length = _a.length, width = _a.width, height = _a.height;
-        this.length = length;
+        this._length = length;
         if (!Checks_1.isPositiveInteger(width)) {
-            throw new Error("Invalid width " + width + " for DataLayer \"" + name + "\".");
+            throw new Error("Invalid width: " + width + " for DataLayer \"" + name + "\".");
         }
-        this.width = width;
+        this._width = width;
         if (!Checks_1.isPositiveInteger(height)) {
-            throw new Error("Invalid length " + height + " for DataLayer \"" + name + "\".");
+            throw new Error("Invalid length: " + height + " for DataLayer \"" + name + "\".");
         }
-        this.height = height;
+        this._height = height;
         // Set filtering - if we are processing a 1D array, default to NEAREST filtering.
         // Else default to LINEAR (interpolation) filtering.
         var filter = params.filter !== undefined ? params.filter : (length ? Constants_1.NEAREST : Constants_1.LINEAR);
-        if (!Checks_1.isValidFilterType(filter)) {
-            throw new Error("Invalid filter: " + filter + " for DataLayer \"" + name + "\", must be " + Checks_1.validFilterTypes.join(', ') + ".");
+        if (!Checks_1.isValidFilter(filter)) {
+            throw new Error("Invalid filter: " + filter + " for DataLayer \"" + name + "\", must be one of [" + Checks_1.validFilters.join(', ') + "].");
         }
         this.filter = filter;
         // Get wrap types, default to clamp to edge.
         var wrapS = params.wrapS !== undefined ? params.wrapS : Constants_1.CLAMP_TO_EDGE;
-        if (!Checks_1.isValidWrapType(wrapS)) {
-            throw new Error("Invalid wrapS: " + wrapS + " for DataLayer \"" + name + "\", must be " + Checks_1.validWrapTypes.join(', ') + ".");
+        if (!Checks_1.isValidWrap(wrapS)) {
+            throw new Error("Invalid wrapS: " + wrapS + " for DataLayer \"" + name + "\", must be one of [" + Checks_1.validWraps.join(', ') + "].");
         }
         this.wrapS = wrapS;
         var wrapT = params.wrapT !== undefined ? params.wrapT : Constants_1.CLAMP_TO_EDGE;
-        if (!Checks_1.isValidWrapType(wrapT)) {
-            throw new Error("Invalid wrapT: " + wrapT + " for DataLayer \"" + name + "\", must be " + Checks_1.validWrapTypes.join(', ') + ".");
+        if (!Checks_1.isValidWrap(wrapT)) {
+            throw new Error("Invalid wrapT: " + wrapT + " for DataLayer \"" + name + "\", must be one of [" + Checks_1.validWraps.join(', ') + "].");
         }
         this.wrapT = wrapT;
         // Set data type.
         if (!Checks_1.isValidDataType(type)) {
-            throw new Error("Invalid type " + type + " for DataLayer \"" + name + "\", must be one of " + Checks_1.validDataTypes.join(', ') + ".");
+            throw new Error("Invalid type: " + type + " for DataLayer \"" + name + "\", must be one of [" + Checks_1.validDataTypes.join(', ') + "].");
         }
         this.type = type;
         var internalType = DataLayer.getInternalType({
@@ -2449,15 +2476,15 @@ var DataLayer = /** @class */ (function () {
             throw new Error("Invalid numBuffers: " + numBuffers + " for DataLayer \"" + name + "\", must be positive integer.");
         }
         this.numBuffers = numBuffers;
-        this.initBuffers(data);
+        this.initBuffers(array);
     }
-    DataLayer.calcSize = function (dimensions, name) {
+    DataLayer.calcSize = function (size, name) {
         var length, width, height;
-        if (!isNaN(dimensions)) {
-            if (!Checks_1.isPositiveInteger(dimensions)) {
-                throw new Error("Invalid length " + dimensions + " for DataLayer \"" + name + "\".");
+        if (!isNaN(size)) {
+            if (!Checks_1.isPositiveInteger(size)) {
+                throw new Error("Invalid length: " + size + " for DataLayer \"" + name + "\", must be positive integer.");
             }
-            length = dimensions;
+            length = size;
             // Calc power of two width and height for length.
             var exp = 1;
             var remainder = length;
@@ -2467,15 +2494,18 @@ var DataLayer = /** @class */ (function () {
             }
             width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
             height = Math.pow(2, Math.floor(exp / 2));
+            if (utils_1.inDevMode()) {
+                console.log("Using [" + width + ", " + height + "] for 1D array of length " + size + " in DataLayer \"" + name + "\".");
+            }
         }
         else {
-            width = dimensions[0];
+            width = size[0];
             if (!Checks_1.isPositiveInteger(width)) {
-                throw new Error("Invalid width " + width + " for DataLayer \"" + name + "\".");
+                throw new Error("Invalid width: " + width + " for DataLayer \"" + name + "\", must be positive integer.");
             }
-            height = dimensions[1];
+            height = size[1];
             if (!Checks_1.isPositiveInteger(height)) {
-                throw new Error("Invalid height " + height + " for DataLayer \"" + name + "\".");
+                throw new Error("Invalid height: " + height + " for DataLayer \"" + name + "\", must be positive integer.");
             }
         }
         return { width: width, height: height, length: length };
@@ -2547,8 +2577,6 @@ var DataLayer = /** @class */ (function () {
                 // Integers between 0 and 16777216 can be exactly represented by float32 (also applies for negative integers between −16777216 and 0)
                 // This is sufficient for UNSIGNED_SHORT and SHORT types.
                 // Large UNSIGNED_INT and INT cannot be represented by FLOAT type.
-                if (internalType === Constants_1.INT || internalType === Constants_1.UNSIGNED_INT) {
-                }
                 console.warn("Falling back " + internalType + " type to FLOAT type for glsl1.x support for DataLayer \"" + name + "\".\nLarge UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on mobile UNSIGNED_INT, INT, UNSIGNED_SHORT, and SHORT with absolute value > 2,048 may not be supported.");
                 internalType = Constants_1.FLOAT;
             }
@@ -2595,6 +2623,7 @@ var DataLayer = /** @class */ (function () {
     };
     DataLayer.shouldCastIntTypeAsFloat = function (params) {
         var gl = params.gl, type = params.type, filter = params.filter, glslVersion = params.glslVersion;
+        // All types are supported by WebGL2 + glsl3.
         if (glslVersion === Constants_1.GLSL3 && utils_1.isWebGL2(gl))
             return false;
         // UNSIGNED_BYTE and LINEAR filtering is not supported, cast as float.
@@ -2604,6 +2633,8 @@ var DataLayer = /** @class */ (function () {
         // Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
         // https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
         // Use HALF_FLOAT/FLOAT instead.
+        // Some large values of INT and UNSIGNED_INT are not supported unfortunately.
+        // See tests for more information.
         return type === Constants_1.BYTE || type === Constants_1.SHORT || type === Constants_1.INT || type === Constants_1.UNSIGNED_SHORT || type === Constants_1.UNSIGNED_INT;
     };
     DataLayer.getGLTextureParameters = function (params) {
@@ -2635,23 +2666,25 @@ var DataLayer = /** @class */ (function () {
                         glFormat = gl.RGBA;
                         break;
                     default:
-                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                        throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                 }
             }
             else if (glslVersion === Constants_1.GLSL1 && internalType === Constants_1.UNSIGNED_BYTE) {
                 switch (glNumChannels) {
-                    // For read only textures in WebGL 1.0, use gl.ALPHA and gl.LUMINANCE_ALPHA.
+                    // For read only UNSIGNED_BYTE textures in GLSL 1, use gl.ALPHA and gl.LUMINANCE_ALPHA.
                     // Otherwise use RGB/RGBA.
                     case 1:
                         if (!writable) {
                             glFormat = gl.ALPHA;
                             break;
                         }
+                    // Purposely falling to next case here.
                     case 2:
                         if (!writable) {
                             glFormat = gl.LUMINANCE_ALPHA;
                             break;
                         }
+                    // Purposely falling to next case here.
                     case 3:
                         glFormat = gl.RGB;
                         glNumChannels = 3;
@@ -2661,10 +2694,12 @@ var DataLayer = /** @class */ (function () {
                         glNumChannels = 4;
                         break;
                     default:
-                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                        throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                 }
             }
             else {
+                // This case will only be hit by GLSL 3.
+                // Int textures are not supported in GLSL1.
                 switch (glNumChannels) {
                     case 1:
                         glFormat = gl.RED_INTEGER;
@@ -2679,7 +2714,7 @@ var DataLayer = /** @class */ (function () {
                         glFormat = gl.RGBA_INTEGER;
                         break;
                     default:
-                        throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                        throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                 }
             }
             switch (internalType) {
@@ -2699,7 +2734,7 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RGBA16F;
                             break;
                         default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                            throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                     }
                     break;
                 case Constants_1.FLOAT:
@@ -2718,7 +2753,7 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RGBA32F;
                             break;
                         default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                            throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                     }
                     break;
                 case Constants_1.UNSIGNED_BYTE:
@@ -2741,7 +2776,7 @@ var DataLayer = /** @class */ (function () {
                                 glInternalFormat = gl.RGBA8UI;
                                 break;
                             default:
-                                throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                                throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                         }
                     }
                     break;
@@ -2761,7 +2796,7 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RGBA8I;
                             break;
                         default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                            throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                     }
                     break;
                 case Constants_1.SHORT:
@@ -2780,7 +2815,7 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RGBA16I;
                             break;
                         default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                            throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                     }
                     break;
                 case Constants_1.UNSIGNED_SHORT:
@@ -2799,7 +2834,7 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RGBA16UI;
                             break;
                         default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                            throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                     }
                     break;
                 case Constants_1.INT:
@@ -2818,7 +2853,7 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RGBA32I;
                             break;
                         default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                            throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                     }
                     break;
                 case Constants_1.UNSIGNED_INT:
@@ -2837,26 +2872,35 @@ var DataLayer = /** @class */ (function () {
                             glInternalFormat = gl.RGBA32UI;
                             break;
                         default:
-                            throw new Error("Unsupported glNumChannels " + glNumChannels + " for DataLayer \"" + name + "\".");
+                            throw new Error("Unsupported glNumChannels: " + glNumChannels + " for DataLayer \"" + name + "\".");
                     }
                     break;
                 default:
-                    throw new Error("Unsupported type " + internalType + " for DataLayer \"" + name + "\".");
+                    throw new Error("Unsupported type: " + internalType + " for DataLayer \"" + name + "\".");
             }
         }
         else {
             switch (numComponents) {
-                // TODO: for read only textures in WebGL 1.0, we could use gl.ALPHA and gl.LUMINANCE_ALPHA here.
+                // For read only textures WebGL 1, use gl.ALPHA and gl.LUMINANCE_ALPHA.
+                // Otherwise use RGB/RGBA.
                 case 1:
                     if (!writable) {
                         glFormat = gl.ALPHA;
+                        // TODO: check these:
+                        glInternalFormat = gl.ALPHA;
+                        glNumChannels = 1;
                         break;
                     }
+                // Purposely falling to next case here.
                 case 2:
                     if (!writable) {
                         glFormat = gl.LUMINANCE_ALPHA;
+                        // TODO: check these:
+                        glInternalFormat = gl.LUMINANCE_ALPHA;
+                        glNumChannels = 2;
                         break;
                     }
+                // Purposely falling to next case here.
                 case 3:
                     glFormat = gl.RGB;
                     glInternalFormat = gl.RGB;
@@ -2868,7 +2912,7 @@ var DataLayer = /** @class */ (function () {
                     glNumChannels = 4;
                     break;
                 default:
-                    throw new Error("Unsupported numComponents " + numComponents + " for DataLayer \"" + name + "\".");
+                    throw new Error("Unsupported numComponents: " + numComponents + " for DataLayer \"" + name + "\".");
             }
             switch (internalType) {
                 case Constants_1.FLOAT:
@@ -2882,7 +2926,7 @@ var DataLayer = /** @class */ (function () {
                     break;
                 // No other types are supported in glsl1.x
                 default:
-                    throw new Error("Unsupported type " + internalType + " in WebGL 1.0 for DataLayer \"" + name + "\".");
+                    throw new Error("Unsupported type: " + internalType + " in WebGL 1.0 for DataLayer \"" + name + "\".");
             }
         }
         // Check for missing params.
@@ -2894,10 +2938,10 @@ var DataLayer = /** @class */ (function () {
                 missingParams.push('glFormat');
             if (glInternalFormat === undefined)
                 missingParams.push('glInternalFormat');
-            throw new Error("Invalid type: " + internalType + " for numComponents " + numComponents + ", unable to init parameter" + (missingParams.length > 1 ? 's' : '') + " " + missingParams.join(', ') + " for DataLayer \"" + name + "\".");
+            throw new Error("Invalid type: " + internalType + " for numComponents: " + numComponents + ", unable to init parameter" + (missingParams.length > 1 ? 's' : '') + " " + missingParams.join(', ') + " for DataLayer \"" + name + "\".");
         }
         if (glNumChannels === undefined || numComponents < 1 || numComponents > 4 || glNumChannels < numComponents) {
-            throw new Error("Invalid numChannels " + glNumChannels + " for numComponents " + numComponents + " for DataLayer \"" + name + "\".");
+            throw new Error("Invalid numChannels: " + glNumChannels + " for numComponents: " + numComponents + " for DataLayer \"" + name + "\".");
         }
         return {
             glFormat: glFormat,
@@ -2963,13 +3007,13 @@ var DataLayer = /** @class */ (function () {
         // A method for saving a copy of the current state without a draw call.
         // Draw calls are expensive, this optimization helps.
         if (this.numBuffers < 2) {
-            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer " + this.name + " with less than 2 buffers.");
+            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer \"" + this.name + "\" with less than 2 buffers.");
         }
         if (!this.writable) {
-            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on read-only DataLayer " + this.name + ".");
+            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on read-only DataLayer \"" + this.name + "\".");
         }
         if (layer.writable) {
-            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer " + this.name + " using writable DataLayer " + layer.name + ".");
+            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer \"" + this.name + "\" using writable DataLayer \"" + layer.name + "\".");
         }
         // Check that texture params are the same.
         if (layer.glWrapS !== this.glWrapS || layer.glWrapT !== this.glWrapT ||
@@ -2979,7 +3023,7 @@ var DataLayer = /** @class */ (function () {
             layer.glNumChannels !== this.glNumChannels || layer.numComponents !== this.numComponents ||
             layer.glType !== this.glType || layer.type !== this.type ||
             layer.glFormat !== this.glFormat || layer.glInternalFormat !== this.glInternalFormat) {
-            throw new Error("Incompatible texture params between DataLayers " + layer.name + " and " + this.name + ".");
+            throw new Error("Incompatible texture params between DataLayers \"" + layer.name + "\" and \"" + this.name + "\".");
         }
         // If we have not already inited overrides array, do so now.
         if (!this.textureOverrides) {
@@ -2989,19 +3033,19 @@ var DataLayer = /** @class */ (function () {
             }
         }
         // Check if we already have an override in place.
-        if (this.textureOverrides[this._bufferIndex]) {
-            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer " + this.name + ", this DataLayer has not written new state since last call to DataLayer.saveCurrentStateToDataLayer.");
+        if (this.textureOverrides[this.bufferIndex]) {
+            throw new Error("Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer \"" + this.name + "\", this DataLayer has not written new state since last call to DataLayer.saveCurrentStateToDataLayer.");
         }
-        var currentState = this.getCurrentStateTexture();
-        this.textureOverrides[this._bufferIndex] = currentState;
+        var currentState = this.currentState;
+        this.textureOverrides[this.bufferIndex] = currentState;
         // Swap textures.
-        this.buffers[this._bufferIndex].texture = layer.getCurrentStateTexture();
+        this.buffers[this.bufferIndex].texture = layer.currentState;
         layer._setCurrentStateTexture(currentState);
         // Bind swapped texture to framebuffer.
         var gl = this.glcompute.gl;
-        var _a = this.buffers[this._bufferIndex], framebuffer = _a.framebuffer, texture = _a.texture;
+        var _a = this.buffers[this.bufferIndex], framebuffer = _a.framebuffer, texture = _a.texture;
         if (!framebuffer)
-            throw new Error("No framebuffer for writable DataLayer " + this.name + ".");
+            throw new Error("No framebuffer for writable DataLayer \"" + this.name + "\".");
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
@@ -3010,113 +3054,108 @@ var DataLayer = /** @class */ (function () {
     };
     DataLayer.prototype._setCurrentStateTexture = function (texture) {
         if (this.writable) {
-            throw new Error("Can't call DataLayer._setCurrentStateTexture on writable texture " + this.name + ".");
+            throw new Error("Can't call DataLayer._setCurrentStateTexture on writable texture \"" + this.name + "\".");
         }
-        this.buffers[this._bufferIndex].texture = texture;
+        this.buffers[this.bufferIndex].texture = texture;
     };
-    DataLayer.prototype.validateDataArray = function (_data) {
-        if (!_data) {
-            return;
-        }
-        var _a = this, width = _a.width, height = _a.height, length = _a.length, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, type = _a.type, internalType = _a.internalType, name = _a.name;
+    DataLayer.prototype.validateDataArray = function (array) {
+        var _a = this, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, type = _a.type, internalType = _a.internalType, width = _a.width, height = _a.height;
+        var length = this._length;
         // Check that data is correct length (user error).
-        if ((length && _data.length !== length * numComponents) || (!length && _data.length !== width * height * numComponents)) {
-            throw new Error("Invalid data length " + _data.length + " for DataLayer \"" + name + "\" of size " + (length ? length : width + "x" + height) + "x" + numComponents + ".");
+        if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
+            if (!length || (length && array.length !== length * numComponents)) { // Of the correct length for 1D array.
+                throw new Error("Invalid data length: " + array.length + " for DataLayer \"" + this.name + "\" of " + (length ? "length " + length + " and " : '') + "dimensions: [" + width + ", " + height + "] and numComponents: " + numComponents + ".");
+            }
         }
-        // Check that data is correct type (user error).
-        var invalidTypeFound = false;
-        switch (type) {
-            case Constants_1.HALF_FLOAT:
-            // Since there is no Float16Array, we must use Float32Arrays to init texture.
-            // Continue to next case.
-            case Constants_1.FLOAT:
-                invalidTypeFound = invalidTypeFound || _data.constructor !== Float32Array;
+        // Get array type to figure out if we need to type cast.
+        // For webgl1.0 we may need to cast an int type to a FLOAT or HALF_FLOAT.
+        var shouldTypeCast = false;
+        switch (array.constructor) {
+            case Array:
+                shouldTypeCast = true;
                 break;
-            case Constants_1.UNSIGNED_BYTE:
-                invalidTypeFound = invalidTypeFound || _data.constructor !== Uint8Array;
+            case Float32Array:
+                shouldTypeCast = internalType !== Constants_1.FLOAT;
                 break;
-            case Constants_1.BYTE:
-                invalidTypeFound = invalidTypeFound || _data.constructor !== Int8Array;
+            case Uint8Array:
+                shouldTypeCast = internalType !== Constants_1.UNSIGNED_BYTE;
                 break;
-            case Constants_1.UNSIGNED_SHORT:
-                invalidTypeFound = invalidTypeFound || _data.constructor !== Uint16Array;
+            case Int8Array:
+                shouldTypeCast = internalType !== Constants_1.BYTE;
                 break;
-            case Constants_1.SHORT:
-                invalidTypeFound = invalidTypeFound || _data.constructor !== Int16Array;
+            case Uint16Array:
+                shouldTypeCast = internalType !== Constants_1.UNSIGNED_SHORT;
                 break;
-            case Constants_1.UNSIGNED_INT:
-                invalidTypeFound = invalidTypeFound || _data.constructor !== Uint32Array;
+            case Int16Array:
+                shouldTypeCast = internalType !== Constants_1.SHORT;
                 break;
-            case Constants_1.INT:
-                invalidTypeFound = invalidTypeFound || _data.constructor !== Int32Array;
+            case Uint32Array:
+                shouldTypeCast = internalType !== Constants_1.UNSIGNED_INT;
+                break;
+            case Int32Array:
+                shouldTypeCast = internalType !== Constants_1.INT;
                 break;
             default:
-                throw new Error("Error initing DataLayer \"" + name + "\".  Unsupported type \"" + type + "\" for WebGLCompute.initDataLayer.");
+                throw new Error("Invalid array type: " + array.constructor.name + " for DataLayer \"" + this.name + "\", please use one of [" + Checks_1.validArrayTypes.map(function (constructor) { return constructor.name; }).join(', ') + "].");
         }
-        if (invalidTypeFound) {
-            throw new Error("Invalid TypedArray of type " + _data.constructor.name + " supplied to DataLayer \"" + name + "\" of type \"" + type + "\".");
-        }
-        var data = _data;
         var imageSize = width * height * glNumChannels;
         // Then check if array needs to be lengthened.
         // This could be because glNumChannels !== numComponents.
         // Or because length !== width * height.
-        var incorrectSize = data.length !== imageSize;
+        var incorrectSize = array.length !== imageSize;
         // We have to handle the case of Float16 specially by converting data to Uint16Array.
         var handleFloat16 = internalType === Constants_1.HALF_FLOAT;
-        // For webgl1.0 we may need to cast an int type to a FLOAT or HALF_FLOAT.
-        var shouldTypeCast = type !== internalType;
+        var validatedArray = array;
         if (shouldTypeCast || incorrectSize || handleFloat16) {
             switch (internalType) {
                 case Constants_1.HALF_FLOAT:
-                    data = new Uint16Array(imageSize);
+                    validatedArray = new Uint16Array(imageSize);
                     break;
                 case Constants_1.FLOAT:
-                    data = new Float32Array(imageSize);
+                    validatedArray = new Float32Array(imageSize);
                     break;
                 case Constants_1.UNSIGNED_BYTE:
-                    data = new Uint8Array(imageSize);
+                    validatedArray = new Uint8Array(imageSize);
                     break;
                 case Constants_1.BYTE:
-                    data = new Int8Array(imageSize);
+                    validatedArray = new Int8Array(imageSize);
                     break;
                 case Constants_1.UNSIGNED_SHORT:
-                    data = new Uint16Array(imageSize);
+                    validatedArray = new Uint16Array(imageSize);
                     break;
                 case Constants_1.SHORT:
-                    data = new Int16Array(imageSize);
+                    validatedArray = new Int16Array(imageSize);
                     break;
                 case Constants_1.UNSIGNED_INT:
-                    data = new Uint32Array(imageSize);
+                    validatedArray = new Uint32Array(imageSize);
                     break;
                 case Constants_1.INT:
-                    data = new Int32Array(imageSize);
+                    validatedArray = new Int32Array(imageSize);
                     break;
                 default:
-                    throw new Error("Error initing " + name + ".  Unsupported internalType " + internalType + " for WebGLCompute.initDataLayer.");
+                    throw new Error("Error initing DataLayer \"" + this.name + "\", unsupported internalType: " + internalType + ".");
             }
             // Fill new data array with old data.
-            var view = handleFloat16 ? new DataView(data.buffer) : null;
-            for (var i = 0, _len = _data.length / numComponents; i < _len; i++) {
+            var view = handleFloat16 ? new DataView(validatedArray.buffer) : null;
+            for (var i = 0, _len = array.length / numComponents; i < _len; i++) {
                 for (var j = 0; j < numComponents; j++) {
-                    var value = _data[i * numComponents + j];
+                    var value = array[i * numComponents + j];
                     var index = i * glNumChannels + j;
                     if (handleFloat16) {
                         float16_1.setFloat16(view, 2 * index, value, true);
                     }
                     else {
-                        data[index] = value;
+                        validatedArray[index] = value;
                     }
                 }
             }
         }
-        return data;
+        return validatedArray;
     };
-    DataLayer.prototype.initBuffers = function (_data) {
-        var _a = this, name = _a.name, numBuffers = _a.numBuffers, glcompute = _a.glcompute, width = _a.width, height = _a.height, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable;
+    DataLayer.prototype.initBuffers = function (array) {
+        var _a = this, name = _a.name, numBuffers = _a.numBuffers, glcompute = _a.glcompute, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
         var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
-        this.initializationData = _data;
-        var data = this.validateDataArray(_data);
+        var validatedArray = array ? this.validateDataArray(array) : undefined;
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
@@ -3131,7 +3170,7 @@ var DataLayer = /** @class */ (function () {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrapT);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
-            gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, data ? data : null);
+            gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, validatedArray ? validatedArray : null);
             var buffer = {
                 texture: texture,
             };
@@ -3156,90 +3195,152 @@ var DataLayer = /** @class */ (function () {
             this.buffers.push(buffer);
         }
         // Unbind.
+        gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     };
-    DataLayer.prototype.getCurrentStateTexture = function () {
-        if (this.textureOverrides && this.textureOverrides[this._bufferIndex])
-            return this.textureOverrides[this._bufferIndex];
-        return this.buffers[this._bufferIndex].texture;
-    };
-    DataLayer.prototype.getPreviousStateTexture = function (index) {
-        if (index === void 0) { index = -1; }
-        if (this.numBuffers === 1) {
-            throw new Error("Cannot call getPreviousStateTexture on DataLayer \"" + this.name + "\" with only one buffer.");
+    DataLayer.prototype.getStateAtIndex = function (index) {
+        if (index < 0 || index >= this.numBuffers) {
+            throw new Error("Invalid buffer index: " + index + " for DataLayer \"" + this.name + "\" with " + this.numBuffers + " buffer" + (this.numBuffers > 1 ? 's' : '') + ".");
         }
-        var previousIndex = this._bufferIndex + index;
-        if (previousIndex < 0)
-            previousIndex += this.numBuffers;
-        if (previousIndex < 0 || previousIndex >= this.numBuffers) {
-            throw new Error("Invalid index " + index + " passed to getPreviousStateTexture on DataLayer " + this.name + " with " + this.numBuffers + " buffers.");
-        }
-        if (this.textureOverrides && this.textureOverrides[previousIndex])
-            return this.textureOverrides[previousIndex];
-        return this.buffers[previousIndex].texture;
+        if (this.textureOverrides && this.textureOverrides[index])
+            return this.textureOverrides[index];
+        return this.buffers[index].texture;
     };
+    Object.defineProperty(DataLayer.prototype, "currentState", {
+        get: function () {
+            return this.getStateAtIndex(this.bufferIndex);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataLayer.prototype, "lastState", {
+        get: function () {
+            if (this.numBuffers === 1) {
+                throw new Error("Cannot access lastState on DataLayer \"" + this.name + "\" with only one buffer.");
+            }
+            return this.getStateAtIndex((this.bufferIndex - 1 + this.numBuffers) % this.numBuffers);
+        },
+        enumerable: false,
+        configurable: true
+    });
     DataLayer.prototype._usingTextureOverrideForCurrentBuffer = function () {
         return this.textureOverrides && this.textureOverrides[this.bufferIndex];
     };
     DataLayer.prototype._bindOutputBufferForWrite = function (incrementBufferIndex) {
-        var gl = this.glcompute.gl;
         if (incrementBufferIndex) {
             // Increment bufferIndex.
-            this._bufferIndex = (this._bufferIndex + 1) % this.numBuffers;
+            this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
         }
         this._bindOutputBuffer();
         // We are going to do a data write, if we have overrides enabled, we can remove them.
         if (this.textureOverrides) {
-            this.textureOverrides[this._bufferIndex] = undefined;
+            this.textureOverrides[this.bufferIndex] = undefined;
         }
     };
     DataLayer.prototype._bindOutputBuffer = function () {
         var gl = this.glcompute.gl;
-        var framebuffer = this.buffers[this._bufferIndex].framebuffer;
+        var framebuffer = this.buffers[this.bufferIndex].framebuffer;
         if (!framebuffer) {
             throw new Error("DataLayer \"" + this.name + "\" is not writable.");
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     };
-    DataLayer.prototype.setData = function (data) {
-        // TODO: Rather than destroying buffers, we could write to certain window.
-        this.destroyBuffers();
-        this.initBuffers(data);
-    };
-    DataLayer.prototype.resize = function (dimensions, data) {
-        var _a = this, name = _a.name, glcompute = _a.glcompute;
-        var verboseLogging = glcompute.verboseLogging;
-        if (verboseLogging)
-            console.log("Resizing layer \"" + name + "\" to " + JSON.stringify(dimensions) + ".");
-        var _b = DataLayer.calcSize(dimensions, name), length = _b.length, width = _b.width, height = _b.height;
-        this.length = length;
-        this.width = width;
-        this.height = height;
-        this.destroyBuffers();
-        this.initBuffers(data);
-    };
-    DataLayer.prototype.clear = function () {
-        var _a = this, name = _a.name, glcompute = _a.glcompute;
-        var verboseLogging = glcompute.verboseLogging;
-        if (verboseLogging)
-            console.log("Clearing layer \"" + name + "\".");
-        // Reset everything to zero.
-        // TODO: This is not the most efficient way to do this (reallocating all textures and framebuffers), but ok for now.
-        this.destroyBuffers();
-        this.initBuffers();
-    };
-    DataLayer.prototype.getDimensions = function () {
-        return [
-            this.width,
-            this.height,
-        ];
-    };
-    DataLayer.prototype.getLength = function () {
-        if (!this.length) {
-            throw new Error("Cannot call getLength() on 2D DataLayer \"" + this.name + "\".");
+    DataLayer.prototype.setFromArray = function (array, applyToAllBuffers) {
+        if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
+        var _a = this, glcompute = _a.glcompute, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, numBuffers = _a.numBuffers, width = _a.width, height = _a.height, bufferIndex = _a.bufferIndex;
+        var gl = glcompute.gl;
+        var validatedArray = this.validateDataArray(array);
+        // TODO: check that this is working.
+        var startIndex = applyToAllBuffers ? 0 : bufferIndex;
+        var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
+        for (var i = startIndex; i < endIndex; i++) {
+            var texture = this.getStateAtIndex(i);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, validatedArray);
         }
-        return this.length;
+        // Unbind texture.
+        gl.bindTexture(gl.TEXTURE_2D, null);
     };
+    DataLayer.prototype.resize = function (dimensions, array) {
+        var _a = this, name = _a.name, glcompute = _a.glcompute;
+        var verboseLogging = glcompute.verboseLogging;
+        if (verboseLogging)
+            console.log("Resizing DataLayer \"" + name + "\" to " + JSON.stringify(dimensions) + ".");
+        var _b = DataLayer.calcSize(dimensions, name), length = _b.length, width = _b.width, height = _b.height;
+        this._length = length;
+        this._width = width;
+        this._height = height;
+        this.destroyBuffers();
+        this.initBuffers(array);
+    };
+    Object.defineProperty(DataLayer.prototype, "clearValue", {
+        get: function () {
+            return this._clearValue;
+        },
+        set: function (clearValue) {
+            var numComponents = this.numComponents;
+            if (!Checks_1.isValidClearValue(clearValue, numComponents)) {
+                throw new Error("Invalid clearValue: " + JSON.stringify(clearValue) + " for DataLayer \"" + this.name + "\", expected number or array of number of length " + numComponents + ".");
+            }
+            this._clearValue = clearValue;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    DataLayer.prototype.clear = function (applyToAllBuffers) {
+        if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
+        var _a = this, name = _a.name, glcompute = _a.glcompute, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, numComponents = _a.numComponents;
+        var verboseLogging = glcompute.verboseLogging;
+        if (verboseLogging)
+            console.log("Clearing DataLayer \"" + name + "\".");
+        var startIndex = applyToAllBuffers ? 0 : bufferIndex;
+        var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
+        for (var i = startIndex; i < endIndex; i++) {
+            if (this.writable) {
+                // TODO: finish this.
+                // Write clear value to buffers.
+                switch (numComponents) {
+                    case 1:
+                        break;
+                    case 2:
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        break;
+                    default:
+                        throw new Error("Invalid numComponents: " + numComponents + " for DataLayer \"" + this.name + "\".");
+                }
+            }
+            else {
+                // Init a typed array containing clearValue and pass to buffers.
+            }
+        }
+    };
+    Object.defineProperty(DataLayer.prototype, "width", {
+        get: function () {
+            return this._width;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataLayer.prototype, "height", {
+        get: function () {
+            return this._height;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataLayer.prototype, "length", {
+        get: function () {
+            if (!this._length) {
+                throw new Error("Cannot access length on 2D DataLayer \"" + this.name + "\".");
+            }
+            return this._length;
+        },
+        enumerable: false,
+        configurable: true
+    });
     DataLayer.prototype.destroyBuffers = function () {
         var _a = this, glcompute = _a.glcompute, buffers = _a.buffers;
         var gl = glcompute.gl;
@@ -3258,17 +3359,18 @@ var DataLayer = /** @class */ (function () {
         // so we are not responsible for deleting them from gl context.
         delete this.textureOverrides;
     };
-    DataLayer.prototype.destroy = function () {
+    DataLayer.prototype.dispose = function () {
         var _a = this, name = _a.name, glcompute = _a.glcompute;
         var verboseLogging = glcompute.verboseLogging;
         if (verboseLogging)
-            console.log("Destroying layer \"" + name + "\".");
+            console.log("Destroying DataLayer \"" + name + "\".");
         this.destroyBuffers();
         // @ts-ignore
         delete this.glcompute;
     };
     DataLayer.prototype.clone = function () {
         // Make a deep copy.
+        return this.glcompute.cloneDataLayer(this);
     };
     return DataLayer;
 }());
@@ -3285,7 +3387,6 @@ exports.DataLayer = DataLayer;
 var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUProgram = void 0;
-var _1 = __webpack_require__(607);
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var utils_1 = __webpack_require__(593);
@@ -3364,8 +3465,8 @@ var GPUProgram = /** @class */ (function () {
         this.recompile(defines);
         if (uniforms) {
             for (var i = 0; i < (uniforms === null || uniforms === void 0 ? void 0 : uniforms.length); i++) {
-                var _a = uniforms[i], name_1 = _a.name, value = _a.value, dataType = _a.dataType;
-                this.setUniform(name_1, value, dataType);
+                var _a = uniforms[i], name_1 = _a.name, value = _a.value, type = _a.type;
+                this.setUniform(name_1, value, type);
             }
         }
     }
@@ -3376,7 +3477,7 @@ var GPUProgram = /** @class */ (function () {
             var key = keys[i];
             // Check that define is passed in as a string.
             if (!Checks_1.isString(key) || !Checks_1.isString(defines[key])) {
-                throw new Error("GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type " + typeof key + " : " + typeof defines[key] + ".");
+                throw new Error("GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [" + typeof key + " : " + typeof defines[key] + "].");
             }
             definesSource += "#define " + key + " " + defines[key] + "\n";
         }
@@ -3422,7 +3523,7 @@ var GPUProgram = /** @class */ (function () {
         // Create a program.
         var program = gl.createProgram();
         if (!program) {
-            errorCallback("Unable to init gl program: " + name + ".");
+            errorCallback("Unable to init gl program: " + this.name + ".");
             return;
         }
         // TODO: check that attachShader worked.
@@ -3434,7 +3535,7 @@ var GPUProgram = /** @class */ (function () {
         var success = gl.getProgramParameter(program, gl.LINK_STATUS);
         if (!success) {
             // Something went wrong with the link.
-            errorCallback("Program \"" + name + "\" failed to link: " + gl.getProgramInfoLog(program));
+            errorCallback("Program \"" + this.name + "\" failed to link: " + gl.getProgramInfoLog(program));
             return;
         }
         // If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
@@ -3534,8 +3635,8 @@ var GPUProgram = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    GPUProgram.prototype.uniformTypeForValue = function (value, dataType) {
-        if (dataType === Constants_1.FLOAT) {
+    GPUProgram.prototype.uniformInternalTypeForValue = function (value, type) {
+        if (type === Constants_1.FLOAT) {
             // Check that we are dealing with a number.
             if (Checks_1.isArray(value)) {
                 for (var i = 0; i < value.length; i++) {
@@ -3563,7 +3664,7 @@ var GPUProgram = /** @class */ (function () {
             }
             throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected float or float[] of length 1-4.");
         }
-        else if (dataType === Constants_1.INT) {
+        else if (type === Constants_1.INT) {
             // Check that we are dealing with an int.
             if (Checks_1.isArray(value)) {
                 for (var i = 0; i < value.length; i++) {
@@ -3591,7 +3692,7 @@ var GPUProgram = /** @class */ (function () {
             }
             throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected int or int[] of length 1-4.");
         }
-        else if (dataType === _1.BOOL) {
+        else if (type === Constants_1.BOOL) {
             if (Checks_1.isBoolean(value)) {
                 // Boolean types are passed in as ints.
                 // This suggest floats work as well, but ints seem more natural:
@@ -3601,27 +3702,27 @@ var GPUProgram = /** @class */ (function () {
             throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected boolean.");
         }
         else {
-            throw new Error("Invalid uniform data type: " + dataType + " for program \"" + this.name + "\", expected " + Constants_1.FLOAT + " or " + Constants_1.INT + ".");
+            throw new Error("Invalid uniform type: " + type + " for program \"" + this.name + "\", expected " + Constants_1.FLOAT + " or " + Constants_1.INT + " of " + Constants_1.BOOL + ".");
         }
     };
-    GPUProgram.prototype.setProgramUniform = function (program, programName, uniformName, value, type) {
+    GPUProgram.prototype.setProgramUniform = function (program, programName, name, value, type) {
         var _a;
         var _b = this, glcompute = _b.glcompute, uniforms = _b.uniforms;
         var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
         // Set active program.
         gl.useProgram(program);
-        var location = (_a = uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.location[programName];
+        var location = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.location[programName];
         // Init a location for WebGLProgram if needed.
         if (location === undefined) {
-            var _location = gl.getUniformLocation(program, uniformName);
+            var _location = gl.getUniformLocation(program, name);
             if (!_location) {
-                errorCallback("Could not init uniform \"" + uniformName + "\" for program \"" + this.name + "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
+                errorCallback("Could not init uniform \"" + name + "\" for program \"" + this.name + "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
                 return;
             }
             location = _location;
             // Save location for future use.
-            if (uniforms[uniformName]) {
-                uniforms[uniformName].location[programName] = location;
+            if (uniforms[name]) {
+                uniforms[name].location[programName] = location;
             }
         }
         // Set uniform.
@@ -3661,51 +3762,51 @@ var GPUProgram = /** @class */ (function () {
                 throw new Error("Unknown uniform type " + type + " for GPUProgram \"" + this.name + "\".");
         }
     };
-    GPUProgram.prototype.setUniform = function (uniformName, value, dataType) {
+    GPUProgram.prototype.setUniform = function (name, value, type) {
         var _a;
-        var _b = this, programs = _b.programs, uniforms = _b.uniforms, name = _b.name, glcompute = _b.glcompute;
+        var _b = this, programs = _b.programs, uniforms = _b.uniforms, glcompute = _b.glcompute;
         var verboseLogging = glcompute.verboseLogging;
-        var type = (_a = uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.type;
-        if (dataType) {
-            var typeParam = this.uniformTypeForValue(value, dataType);
-            if (type === undefined)
-                type = typeParam;
+        var currentType = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
+        if (type) {
+            var internalType = this.uniformInternalTypeForValue(value, type);
+            if (currentType === undefined)
+                currentType = internalType;
             else {
-                // console.warn(`Don't need to pass in dataType to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
+                // console.warn(`Don't need to pass in type to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
                 // Check that types match previously set uniform.
-                if (type !== typeParam) {
-                    throw new Error("Uniform \"" + uniformName + "\" for GPUProgram \"" + this.name + "\" cannot change from type " + type + " to type " + typeParam + ".");
+                if (currentType !== internalType) {
+                    throw new Error("Uniform \"" + name + "\" for GPUProgram \"" + this.name + "\" cannot change from type " + currentType + " to type " + internalType + ".");
                 }
             }
         }
-        if (type === undefined) {
-            throw new Error("Unknown type for uniform \"" + uniformName + "\", please pass in dataType to GPUProgram.setUniform when initing a new uniform.");
+        if (currentType === undefined) {
+            throw new Error("Unknown type for uniform \"" + name + "\", please pass in type to GPUProgram.setUniform(name, value, type) when initing a new uniform.");
         }
-        if (!uniforms[uniformName]) {
+        if (!uniforms[name]) {
             // Init uniform if needed.
-            uniforms[uniformName] = { type: type, location: {}, value: value };
+            uniforms[name] = { type: currentType, location: {}, value: value };
         }
         else {
             // Update value.
-            if (uniforms[uniformName].value === value) {
+            if (uniforms[name].value === value) {
                 return; // No change.
             }
-            uniforms[uniformName].value = value;
+            uniforms[name].value = value;
         }
         if (verboseLogging)
-            console.log("Setting uniform \"" + uniformName + "\" for program \"" + name + "\" to value " + JSON.stringify(value) + " with type " + type + ".");
+            console.log("Setting uniform \"" + name + "\" for program \"" + this.name + "\" to value " + JSON.stringify(value) + " with type " + currentType + ".");
         // Update any active programs.
         var keys = Object.keys(programs);
         for (var i = 0; i < keys.length; i++) {
             var programName = keys[i];
-            this.setProgramUniform(programs[programName], programName, uniformName, value, type);
+            this.setProgramUniform(programs[programName], programName, name, value, currentType);
         }
     };
     ;
     // This is used internally.
-    GPUProgram.prototype.setVertexUniform = function (program, uniformName, value, dataType) {
+    GPUProgram.prototype.setVertexUniform = function (program, uniformName, value, type) {
         var _this = this;
-        var type = this.uniformTypeForValue(value, dataType);
+        var internalType = this.uniformInternalTypeForValue(value, type);
         if (program === undefined) {
             throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
         }
@@ -3713,7 +3814,7 @@ var GPUProgram = /** @class */ (function () {
         if (!programName) {
             throw new Error("Could not find valid vertex programName for WebGLProgram \"" + this.name + "\".");
         }
-        this.setProgramUniform(program, programName, uniformName, value, type);
+        this.setProgramUniform(program, programName, uniformName, value, internalType);
     };
     GPUProgram.prototype.destroy = function () {
         var _this = this;
@@ -3830,12 +3931,15 @@ var WebGLCompute = /** @class */ (function () {
         this._circlePositionsBuffer = {};
         this.verboseLogging = false;
         // Check params.
-        var validKeys = ['canvas', 'context', 'antialias', 'glslVersion', 'verboseLogging'];
+        var validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging'];
         Object.keys(params).forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key " + key + " passed to WebGLCompute.constructor.  Valid keys are " + validKeys.join(', ') + ".");
+                throw new Error("Invalid key \"" + key + "\" passed to WebGLCompute.constructor.  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
+        if (!params.canvas) {
+            throw new Error("Must init WebGLCompute with a canvas.");
+        }
         if (params.verboseLogging !== undefined)
             this.verboseLogging = params.verboseLogging;
         // Save callback in case we run into an error.
@@ -3851,23 +3955,30 @@ var WebGLCompute = /** @class */ (function () {
         var gl = params.context;
         // Init GL.
         if (!gl) {
-            var options = {};
-            if (params.antialias !== undefined)
-                options.antialias = params.antialias;
             // Init a gl context if not passed in.
-            gl = canvas.getContext('webgl2', options)
-                || canvas.getContext('webgl', options)
-                || canvas.getContext('experimental-webgl', options);
+            if (params.contextID) {
+                gl = canvas.getContext(params.contextID, params.contextOptions);
+                if (!gl) {
+                    console.warn("Unable to initialize WebGL context with contextID: " + params.contextID + ".");
+                }
+            }
+            if (!gl) {
+                gl = canvas.getContext('webgl2', params.contextOptions)
+                    || canvas.getContext('webgl', params.contextOptions)
+                    || canvas.getContext('experimental-webgl', params.contextOptions);
+            }
             if (gl === null) {
                 this.errorCallback('Unable to initialize WebGL context.');
                 return;
             }
         }
         if (utils_1.isWebGL2(gl)) {
-            console.log('Using WebGL 2.0 context.');
+            if (utils_1.inDevMode())
+                console.log('Using WebGL 2.0 context.');
         }
         else {
-            console.log('Using WebGL 1.0 context.');
+            if (utils_1.inDevMode())
+                console.log('Using WebGL 1.0 context.');
         }
         this.gl = gl;
         this.renderer = renderer;
@@ -3899,7 +4010,7 @@ var WebGLCompute = /** @class */ (function () {
                 {
                     name: 'u_state',
                     value: 0,
-                    dataType: Constants_1.INT,
+                    type: Constants_1.INT,
                 },
             ],
         });
@@ -3911,7 +4022,7 @@ var WebGLCompute = /** @class */ (function () {
                     {
                         name: 'u_state',
                         value: 0,
-                        dataType: Constants_1.INT,
+                        type: Constants_1.INT,
                     },
                 ],
             });
@@ -3922,7 +4033,7 @@ var WebGLCompute = /** @class */ (function () {
                     {
                         name: 'u_state',
                         value: 0,
-                        dataType: Constants_1.INT,
+                        type: Constants_1.INT,
                     },
                 ],
             });
@@ -3937,7 +4048,8 @@ var WebGLCompute = /** @class */ (function () {
         this.onResize(canvas);
         // Log number of textures available.
         this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
-        console.log(this.maxNumTextures + " textures max.");
+        if (utils_1.inDevMode())
+            console.log(this.maxNumTextures + " textures max.");
     }
     WebGLCompute.initWithThreeRenderer = function (renderer, params, errorCallback) {
         return new WebGLCompute(__assign({ canvas: renderer.domElement, context: renderer.getContext() }, params), errorCallback, renderer);
@@ -4012,7 +4124,7 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.getCirclePositionsBuffer = function (numSegments) {
         if (this._circlePositionsBuffer[numSegments] == undefined) {
             var unitCirclePoints = [0, 0];
-            for (var i = 0; i <= numSegments; i++) {
+            for (var i = 0; i <= numSegments; i++) { // TODO: should this be just less than?
                 unitCirclePoints.push(Math.cos(2 * Math.PI * i / numSegments), Math.sin(2 * Math.PI * i / numSegments));
             }
             var circlePositions = new Float32Array(unitCirclePoints);
@@ -4038,19 +4150,18 @@ var WebGLCompute = /** @class */ (function () {
         var validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
         Object.keys(params).forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key " + key + " passed to WebGLCompute.initProgram with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
+                throw new Error("Invalid key \"" + key + "\" passed to WebGLCompute.initProgram with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
-        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback, glslVersion = _a.glslVersion;
         return new GPUProgram_1.GPUProgram(this, params);
     };
     ;
     WebGLCompute.prototype.initDataLayer = function (params) {
         // Check params.
-        var validKeys = ['name', 'dimensions', 'type', 'numComponents', 'data', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers'];
+        var validKeys = ['name', 'dimensions', 'type', 'numComponents', 'array', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue'];
         Object.keys(params).forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key " + key + " passed to WebGLCompute.initDataLayer with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
+                throw new Error("Invalid key \"" + key + "\" passed to WebGLCompute.initDataLayer with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
         return new DataLayer_1.DataLayer(this, params);
@@ -4059,37 +4170,37 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.cloneDataLayer = function (dataLayer) {
         var dimensions = 0;
         try {
-            dimensions = dataLayer.getLength();
+            dimensions = dataLayer.length;
         }
         catch (_a) {
-            dimensions = dataLayer.getDimensions();
+            dimensions = [dataLayer.width, dataLayer.height];
         }
-        // If read only, get initialization data if it exists.
-        var data = dataLayer.writable ? undefined : dataLayer.initializationData;
+        // If read only, get state by reading to GPU.
+        var array = dataLayer.writable ? undefined : this.getValues(dataLayer);
         var clone = this.initDataLayer({
-            name: dataLayer.name + "-copy",
+            name: dataLayer.name + "-clone",
             dimensions: dimensions,
             type: dataLayer.type,
             numComponents: dataLayer.numComponents,
-            data: data,
+            array: array,
             filter: dataLayer.filter,
             wrapS: dataLayer.wrapS,
             wrapT: dataLayer.wrapT,
             writable: dataLayer.writable,
             numBuffers: dataLayer.numBuffers,
         });
-        // If writable, copy current state.
+        // If writable, copy current state with a draw call.
         if (dataLayer.writable) {
             for (var i = 0; i < dataLayer.numBuffers - 1; i++) {
                 this.step({
                     program: this.copyProgramForType(dataLayer.type),
-                    input: dataLayer.getPreviousStateTexture(-dataLayer.numBuffers + i + 1),
+                    input: dataLayer.getStateAtIndex((dataLayer.bufferIndex + i + 1) % dataLayer.numBuffers),
                     output: clone,
                 });
             }
             this.step({
                 program: this.copyProgramForType(dataLayer.type),
-                input: dataLayer.getCurrentStateTexture(),
+                input: dataLayer.currentState,
                 output: clone,
             });
         }
@@ -4100,7 +4211,7 @@ var WebGLCompute = /** @class */ (function () {
         var validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
         Object.keys(params).forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key " + key + " passed to WebGLCompute.initTexture with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
+                throw new Error("Invalid key \"" + key + "\" passed to WebGLCompute.initTexture with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
         var url = params.url, name = params.name;
@@ -4112,27 +4223,27 @@ var WebGLCompute = /** @class */ (function () {
         }
         // Get filter type, default to nearest.
         var filter = params.filter !== undefined ? params.filter : Constants_1.NEAREST;
-        if (!Checks_1.isValidFilterType(filter)) {
-            throw new Error("Invalid filter: " + filter + " for DataLayer \"" + name + "\", must be " + Checks_1.validFilterTypes.join(', ') + ".");
+        if (!Checks_1.isValidFilter(filter)) {
+            throw new Error("Invalid filter: " + filter + " for DataLayer \"" + name + "\", must be " + Checks_1.validFilters.join(', ') + ".");
         }
         // Get wrap types, default to clamp to edge.
         var wrapS = params.wrapS !== undefined ? params.wrapS : Constants_1.CLAMP_TO_EDGE;
-        if (!Checks_1.isValidWrapType(wrapS)) {
-            throw new Error("Invalid wrapS: " + wrapS + " for DataLayer \"" + name + "\", must be " + Checks_1.validWrapTypes.join(', ') + ".");
+        if (!Checks_1.isValidWrap(wrapS)) {
+            throw new Error("Invalid wrapS: " + wrapS + " for DataLayer \"" + name + "\", must be " + Checks_1.validWraps.join(', ') + ".");
         }
         var wrapT = params.wrapT !== undefined ? params.wrapT : Constants_1.CLAMP_TO_EDGE;
-        if (!Checks_1.isValidWrapType(wrapT)) {
-            throw new Error("Invalid wrapT: " + wrapT + " for DataLayer \"" + name + "\", must be " + Checks_1.validWrapTypes.join(', ') + ".");
+        if (!Checks_1.isValidWrap(wrapT)) {
+            throw new Error("Invalid wrapT: " + wrapT + " for DataLayer \"" + name + "\", must be " + Checks_1.validWraps.join(', ') + ".");
         }
         // Get image format type, default to rgba.
         var format = params.format !== undefined ? params.format : Constants_1.RGBA;
-        if (!Checks_1.isValidTextureFormatType(format)) {
-            throw new Error("Invalid format: " + format + " for DataLayer \"" + name + "\", must be " + Checks_1.validTextureFormatTypes.join(', ') + ".");
+        if (!Checks_1.isValidTextureFormat(format)) {
+            throw new Error("Invalid format: " + format + " for DataLayer \"" + name + "\", must be " + Checks_1.validTextureFormats.join(', ') + ".");
         }
         // Get image data type, default to unsigned byte.
         var type = params.type !== undefined ? params.type : Constants_1.UNSIGNED_BYTE;
-        if (!Checks_1.isValidTextureDataType(type)) {
-            throw new Error("Invalid type: " + type + " for DataLayer \"" + name + "\", must be " + Checks_1.validTextureDataTypes.join(', ') + ".");
+        if (!Checks_1.isValidTextureType(type)) {
+            throw new Error("Invalid type: " + type + " for DataLayer \"" + name + "\", must be " + Checks_1.validTextureTypes.join(', ') + ".");
         }
         var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         var texture = gl.createTexture();
@@ -4214,13 +4325,13 @@ var WebGLCompute = /** @class */ (function () {
                 inputTextures.push(input);
             }
             else if (input.constructor === DataLayer_1.DataLayer) {
-                inputTextures.push(input.getCurrentStateTexture());
+                inputTextures.push(input.currentState);
             }
             else {
                 for (var i = 0; i < input.length; i++) {
                     var layer = input[i];
                     // @ts-ignore
-                    inputTextures.push(layer.getCurrentStateTexture ? layer.getCurrentStateTexture() : layer);
+                    inputTextures.push(layer.getCurrentStateTexture ? layer.currentState : layer);
                 }
             }
         }
@@ -4333,7 +4444,7 @@ var WebGLCompute = /** @class */ (function () {
             }
         }
         // Resize viewport.
-        var _b = output.getDimensions(), width = _b[0], height = _b[1];
+        var width = output.width, height = output.height;
         gl.viewport(0, 0, width, height);
     };
     ;
@@ -4383,7 +4494,8 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.stepBoundary = function (params) {
         var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer;
         var program = params.program, input = params.input, output = params.output;
-        var _b = output ? output.getDimensions() : [this.width, this.height], width = _b[0], height = _b[1];
+        var width = output ? output.width : this.width;
+        var height = output ? output.height : this.height;
         // Ignore if we are in error state.
         if (errorState) {
             return;
@@ -4427,7 +4539,8 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.stepNonBoundary = function (params) {
         var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         var program = params.program, input = params.input, output = params.output;
-        var _b = output ? output.getDimensions() : [this.width, this.height], width = _b[0], height = _b[1];
+        var width = output ? output.width : this.width;
+        var height = output ? output.height : this.height;
         // Ignore if we are in error state.
         if (errorState) {
             return;
@@ -4475,7 +4588,8 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.stepSegment = function (params) {
         var _a = this, gl = _a.gl, errorState = _a.errorState;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
-        var _b = output ? output.getDimensions() : [this.width, this.height], width = _b[0], height = _b[1];
+        var width = output ? output.width : this.width;
+        var height = output ? output.height : this.height;
         // Ignore if we are in error state.
         if (errorState) {
             return;
@@ -4791,7 +4905,7 @@ var WebGLCompute = /** @class */ (function () {
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
             throw new Error("WebGLCompute.drawPoints() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer \"" + positions.name + "\" with " + positions.numComponents + " components.");
         }
-        var length = positions.getLength();
+        var length = positions.length;
         var count = params.count || length;
         if (count > length) {
             throw new Error("Invalid count " + count + " for position DataLayer of length " + length + ".");
@@ -4815,7 +4929,7 @@ var WebGLCompute = /** @class */ (function () {
         // Set default pointSize.
         var pointSize = params.pointSize || 1;
         program.setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, Constants_1.FLOAT);
-        var positionLayerDimensions = positions.getDimensions();
+        var positionLayerDimensions = [positions.width, positions.height];
         program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, Constants_1.FLOAT);
         program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, Constants_1.INT);
         program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, Constants_1.INT);
@@ -4859,14 +4973,14 @@ var WebGLCompute = /** @class */ (function () {
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // TODO: cache indexArray if no indices passed in.
-        var indices = params.indices ? params.indices : utils_1.initSequentialFloatArray(params.count || positions.getLength());
+        var indices = params.indices ? params.indices : utils_1.initSequentialFloatArray(params.count || positions.length);
         var count = params.count ? params.count : indices.length;
         // Update uniforms and buffers.
         program.setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), Constants_1.INT);
         program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], Constants_1.FLOAT);
         // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
         program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, Constants_1.INT);
-        var positionLayerDimensions = positions.getDimensions();
+        var positionLayerDimensions = [positions.width, positions.height];
         program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, Constants_1.FLOAT);
         program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, Constants_1.INT);
         program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, Constants_1.INT);
@@ -4919,7 +5033,7 @@ var WebGLCompute = /** @class */ (function () {
             throw new Error("WebGLCompute.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer \"" + data.name + "\" with " + data.numComponents + " components.");
         }
         // Check aspect ratio.
-        // const dimensions = vectorLayer.getDimensions();
+        // const dimensions = [vectorLayer.width, vectorLayer.height];
         // if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.01) {
         // 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector DataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
         // }
@@ -4992,7 +5106,7 @@ var WebGLCompute = /** @class */ (function () {
         var _a = this, gl = _a.gl, glslVersion = _a.glslVersion;
         // In case dataLayer was not the last output written to.
         dataLayer._bindOutputBuffer();
-        var _b = dataLayer.getDimensions(), width = _b[0], height = _b[1];
+        var width = dataLayer.width, height = dataLayer.height;
         var glNumChannels = dataLayer.glNumChannels, glType = dataLayer.glType, glFormat = dataLayer.glFormat, internalType = dataLayer.internalType;
         var values;
         switch (internalType) {
@@ -5150,7 +5264,7 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.savePNG = function (dataLayer, filename, dpi) {
         if (filename === void 0) { filename = dataLayer.name; }
         var values = this.getValues(dataLayer);
-        var _a = dataLayer.getDimensions(), width = _a[0], height = _a[1];
+        var width = dataLayer.width, height = dataLayer.height;
         var canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -5204,7 +5318,7 @@ var WebGLCompute = /** @class */ (function () {
             throw new Error("DataLayer \"" + dataLayer.name + "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a DataLayer with one buffer.");
         }
         var offsetTextureProperties = this.renderer.properties.get(texture);
-        offsetTextureProperties.__webglTexture = dataLayer.getCurrentStateTexture();
+        offsetTextureProperties.__webglTexture = dataLayer.currentState;
         offsetTextureProperties.__webglInit = true;
     };
     WebGLCompute.prototype.resetThreeState = function () {
@@ -5307,9 +5421,14 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.WebGLCompute = void 0;
+exports.isWebGL2Supported = exports.WebGLCompute = void 0;
+var utils_1 = __webpack_require__(593);
+Object.defineProperty(exports, "isWebGL2Supported", ({ enumerable: true, get: function () { return utils_1.isWebGL2Supported; } }));
 var WebGLCompute_1 = __webpack_require__(215);
 Object.defineProperty(exports, "WebGLCompute", ({ enumerable: true, get: function () { return WebGLCompute_1.WebGLCompute; } }));
+if (utils_1.inDevMode()) {
+    console.log('Running in development mode.');
+}
 __exportStar(__webpack_require__(738), exports);
 
 
@@ -5321,7 +5440,7 @@ __exportStar(__webpack_require__(738), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.initSequentialFloatArray = exports.isPowerOf2 = exports.isWebGL2 = exports.compileShader = void 0;
+exports.inDevMode = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.isWebGL2Supported = exports.isWebGL2 = exports.compileShader = void 0;
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
 function compileShader(gl, errorCallback, shaderSource, shaderType, programName) {
     // Create the shader object
@@ -5351,6 +5470,14 @@ function isWebGL2(gl) {
     // return !!(gl as WebGL2RenderingContext).HALF_FLOAT;
 }
 exports.isWebGL2 = isWebGL2;
+function isWebGL2Supported() {
+    var gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) {
+        return false;
+    }
+    return true;
+}
+exports.isWebGL2Supported = isWebGL2Supported;
 function isPowerOf2(value) {
     return (value & (value - 1)) == 0;
 }
@@ -5363,6 +5490,10 @@ function initSequentialFloatArray(length) {
     return array;
 }
 exports.initSequentialFloatArray = initSequentialFloatArray;
+function inDevMode() {
+    return "production" === 'development';
+}
+exports.inDevMode = inDevMode;
 
 
 /***/ }),

@@ -3,19 +3,58 @@ import { saveAs } from 'file-saver';
 import { changeDpiBlob } from 'changedpi';
 import { DataLayer } from './DataLayer';
 import {
-	DataLayerArrayType, DataLayerFilterType, DataLayerNumComponents, DataLayerType, DataLayerWrapType,
-	FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
-	UniformDataType, UniformValueType, GLSLVersion, GLSL1, GLSL3, CLAMP_TO_EDGE, TextureFormatType, NEAREST, RGBA, TextureDataType,
+	DataLayerArrayType,
+	DataLayerFilter,
+	DataLayerNumComponents,
+	DataLayerType,
+	DataLayerWrap,
+	FLOAT,
+	HALF_FLOAT,
+	UNSIGNED_BYTE,
+	BYTE,
+	UNSIGNED_SHORT,
+	SHORT,
+	UNSIGNED_INT,
+	INT,
+	UniformType,
+	UniformValue,
+	GLSLVersion,
+	GLSL1,
+	GLSL3,
+	CLAMP_TO_EDGE,
+	TextureFormat,
+	NEAREST,
+	RGBA,
+	TextureType,
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
-import { WebGLRenderer, Texture, Vector4 } from 'three';// Just importing the types here.
+// Just importing the types here.
+// Only @types/three is installed.
+import {
+	WebGLRenderer,
+	Texture,
+	Vector4,
+} from 'three';
 import * as utils from './Vector4';
-import { isWebGL2, isPowerOf2, initSequentialFloatArray } from './utils';
+import {
+	isWebGL2,
+	isPowerOf2,
+	initSequentialFloatArray,
+	inDevMode,
+} from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
 	isArray,
-	isString, isValidFilterType, isValidTextureDataType, isValidTextureFormatType, isValidWrapType,
-	validFilterTypes, validTextureDataTypes, validTextureFormatTypes, validWrapTypes } from './Checks';
+	isString,
+	isValidFilter,
+	isValidTextureType,
+	isValidTextureFormat,
+	isValidWrap,
+	validFilters,
+	validTextureTypes,
+	validTextureFormats,
+	validWraps,
+} from './Checks';
 
 const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;// Must be divisible by 6 to work with stepSegment().
 
@@ -82,7 +121,11 @@ export class WebGLCompute {
 		params: {
 			canvas: HTMLCanvasElement,
 			context?: WebGLRenderingContext | WebGL2RenderingContext | null,
-			antialias?: boolean,
+			contextID?: 'webgl2' | 'webgl' | string,
+			contextOptions?: {
+				antialias?: boolean,
+				[key: string]: any,
+			},
 			glslVersion?: GLSLVersion,
 			verboseLogging?: boolean,
 		},
@@ -92,12 +135,16 @@ export class WebGLCompute {
 		renderer?: WebGLRenderer,
 	) {
 		// Check params.
-		const validKeys = ['canvas', 'context', 'antialias', 'glslVersion', 'verboseLogging'];
+		const validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.constructor.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key "${key}" passed to WebGLCompute.constructor.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
+
+		if (!params.canvas) {
+			throw new Error(`Must init WebGLCompute with a canvas.`);
+		}
 
 		if (params.verboseLogging !== undefined) this.verboseLogging = params.verboseLogging;
 
@@ -116,21 +163,27 @@ export class WebGLCompute {
 
 		// Init GL.
 		if (!gl) {
-			const options: any = {};
-			if (params.antialias !== undefined) options.antialias = params.antialias;
 			// Init a gl context if not passed in.
-			gl = canvas.getContext('webgl2', options)  as WebGL2RenderingContext | null
-				|| canvas.getContext('webgl', options)  as WebGLRenderingContext | null
-				|| canvas.getContext('experimental-webgl', options)  as WebGLRenderingContext | null;
+			if (params.contextID) {
+				gl = canvas.getContext(params.contextID, params.contextOptions)  as WebGLRenderingContext | null;
+				if (!gl) {
+					console.warn(`Unable to initialize WebGL context with contextID: ${params.contextID}.`);
+				}
+			}
+			if (!gl) {
+				gl = canvas.getContext('webgl2', params.contextOptions)  as WebGL2RenderingContext | null
+					|| canvas.getContext('webgl', params.contextOptions)  as WebGLRenderingContext | null
+					|| canvas.getContext('experimental-webgl', params.contextOptions)  as WebGLRenderingContext | null;
+			}
 			if (gl === null) {
 				this.errorCallback('Unable to initialize WebGL context.');
 				return;
 			}
 		}
 		if (isWebGL2(gl)) {
-			console.log('Using WebGL 2.0 context.');
+			if (inDevMode()) console.log('Using WebGL 2.0 context.');
 		} else {
-			console.log('Using WebGL 1.0 context.');
+			if (inDevMode()) console.log('Using WebGL 1.0 context.');
 		}
 		this.gl = gl;
 		this.renderer = renderer;
@@ -165,7 +218,7 @@ export class WebGLCompute {
 					{
 						name: 'u_state',
 						value: 0,
-						dataType: INT,
+						type: INT,
 					},
 				],
 			},
@@ -178,7 +231,7 @@ export class WebGLCompute {
 						{
 							name: 'u_state',
 							value: 0,
-							dataType: INT,
+							type: INT,
 						},
 					],
 				},
@@ -190,7 +243,7 @@ export class WebGLCompute {
 						{
 							name: 'u_state',
 							value: 0,
-							dataType: INT,
+							type: INT,
 						},
 					],
 				},
@@ -208,7 +261,7 @@ export class WebGLCompute {
 
 		// Log number of textures available.
 		this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
-		console.log(`${this.maxNumTextures} textures max.`);
+		if (inDevMode()) console.log(`${this.maxNumTextures} textures max.`);
 	}
 
 	private get singleColorProgram() {
@@ -267,7 +320,7 @@ export class WebGLCompute {
 	private getCirclePositionsBuffer(numSegments: number) {
 		if (this._circlePositionsBuffer[numSegments] == undefined) {
 			const unitCirclePoints = [0, 0];
-			for (let i = 0; i <= numSegments; i++) {
+			for (let i = 0; i <= numSegments; i++) { // TODO: should this be just less than?
 				unitCirclePoints.push(
 					Math.cos(2 * Math.PI * i / numSegments),
 					Math.sin(2 * Math.PI * i / numSegments),
@@ -301,8 +354,8 @@ export class WebGLCompute {
 			fragmentShader: string | WebGLShader,
 			uniforms?: {
 				name: string,
-				value: UniformValueType,
-				dataType: UniformDataType,
+				value: UniformValue,
+				type: UniformType,
 			}[],
 			defines?: {
 				[key : string]: string,
@@ -313,10 +366,9 @@ export class WebGLCompute {
 		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initProgram with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initProgram with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
-		const { gl, errorCallback, glslVersion } = this;
 		return new GPUProgram(this, params);
 	};
 
@@ -326,19 +378,20 @@ export class WebGLCompute {
 			dimensions: number | [number, number],
 			type: DataLayerType,
 			numComponents: DataLayerNumComponents,
-			data?: DataLayerArrayType,
-			filter?: DataLayerFilterType,
-			wrapS?: DataLayerWrapType,
-			wrapT?: DataLayerWrapType,
+			array?: DataLayerArrayType | number[],
+			filter?: DataLayerFilter,
+			wrapS?: DataLayerWrap,
+			wrapT?: DataLayerWrap,
 			writable?: boolean,
 			numBuffers?: number,
+			clearValue?: number | number[],
 		},
 	) {
 		// Check params.
-		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'data', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers'];
+		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'array', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initDataLayer with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initDataLayer with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		return new DataLayer(this, params);
@@ -347,20 +400,20 @@ export class WebGLCompute {
 	cloneDataLayer(dataLayer: DataLayer) {
 		let dimensions: number | [number, number] = 0;
 		try {
-			dimensions = dataLayer.getLength();
+			dimensions = dataLayer.length;
 		} catch {
-			dimensions = dataLayer.getDimensions();
+			dimensions = [dataLayer.width, dataLayer.height];
 		}
 
-		// If read only, get initialization data if it exists.
-		const data = dataLayer.writable ? undefined : dataLayer.initializationData;
+		// If read only, get state by reading to GPU.
+		const array = dataLayer.writable ? undefined : this.getValues(dataLayer);
 
 		const clone = this.initDataLayer({
-			name: `${dataLayer.name}-copy`,
-			dimensions: dimensions,
+			name: `${dataLayer.name}-clone`,
+			dimensions,
 			type: dataLayer.type,
 			numComponents: dataLayer.numComponents,
-			data,
+			array,
 			filter: dataLayer.filter,
 			wrapS: dataLayer.wrapS,
 			wrapT: dataLayer.wrapT,
@@ -368,18 +421,18 @@ export class WebGLCompute {
 			numBuffers: dataLayer.numBuffers,
 		});
 
-		// If writable, copy current state.
+		// If writable, copy current state with a draw call.
 		if (dataLayer.writable) {
 			for (let i = 0; i < dataLayer.numBuffers - 1; i++) {
 				this.step({
 					program: this.copyProgramForType(dataLayer.type),
-					input: dataLayer.getPreviousStateTexture(-dataLayer.numBuffers + i + 1),
+					input: dataLayer.getStateAtIndex((dataLayer.bufferIndex + i + 1) % dataLayer.numBuffers),
 					output: clone,
 				});
 			}
 			this.step({
 				program: this.copyProgramForType(dataLayer.type),
-				input: dataLayer.getCurrentStateTexture(),
+				input: dataLayer.currentState,
 				output: clone,
 			});
 		}
@@ -390,11 +443,11 @@ export class WebGLCompute {
 		params: {
 			name: string,
 			url: string,
-			filter?: DataLayerFilterType,
-			wrapS?: DataLayerWrapType,
-			wrapT?: DataLayerWrapType,
-			format?: TextureFormatType,
-			type?: TextureDataType,
+			filter?: DataLayerFilter,
+			wrapS?: DataLayerWrap,
+			wrapT?: DataLayerWrap,
+			format?: TextureFormat,
+			type?: TextureType,
 			onLoad?: (texture: WebGLTexture) => void,
 		},
 	) {
@@ -402,7 +455,7 @@ export class WebGLCompute {
 		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key ${key} passed to WebGLCompute.initTexture with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initTexture with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { url, name } = params;
@@ -415,30 +468,30 @@ export class WebGLCompute {
 
 		// Get filter type, default to nearest.
 		const filter = params.filter !== undefined ? params.filter : NEAREST;
-		if (!isValidFilterType(filter)) {
-			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${validFilterTypes.join(', ')}.`);
+		if (!isValidFilter(filter)) {
+			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${validFilters.join(', ')}.`);
 		}
 
 		// Get wrap types, default to clamp to edge.
 		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
-		if (!isValidWrapType(wrapS)) {
-			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		if (!isValidWrap(wrapS)) {
+			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be ${validWraps.join(', ')}.`);
 		}
 		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
-		if (!isValidWrapType(wrapT)) {
-			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be ${validWrapTypes.join(', ')}.`);
+		if (!isValidWrap(wrapT)) {
+			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be ${validWraps.join(', ')}.`);
 		}
 
 		// Get image format type, default to rgba.
 		const format = params.format !== undefined ? params.format : RGBA;
-		if (!isValidTextureFormatType(format)) {
-			throw new Error(`Invalid format: ${format} for DataLayer "${name}", must be ${validTextureFormatTypes.join(', ')}.`);
+		if (!isValidTextureFormat(format)) {
+			throw new Error(`Invalid format: ${format} for DataLayer "${name}", must be ${validTextureFormats.join(', ')}.`);
 		}
 
 		// Get image data type, default to unsigned byte.
 		const type = params.type !== undefined ? params.type : UNSIGNED_BYTE;
-		if (!isValidTextureDataType(type)) {
-			throw new Error(`Invalid type: ${type} for DataLayer "${name}", must be ${validTextureDataTypes.join(', ')}.`);
+		if (!isValidTextureType(type)) {
+			throw new Error(`Invalid type: ${type} for DataLayer "${name}", must be ${validTextureTypes.join(', ')}.`);
 		}
 
 		const { gl, errorCallback } = this;
@@ -532,12 +585,12 @@ export class WebGLCompute {
 			if (input.constructor === WebGLTexture) {
 				inputTextures.push(input as WebGLTexture);
 			} else if (input.constructor === DataLayer) {
-				inputTextures.push((input as DataLayer).getCurrentStateTexture());
+				inputTextures.push((input as DataLayer).currentState);
 			} else {
 				for (let i = 0; i < (input as (DataLayer | WebGLTexture)[]).length; i++) {
 					const layer = (input as (DataLayer | WebGLTexture)[])[i];
 					// @ts-ignore
-					inputTextures.push((layer as DataLayer).getCurrentStateTexture ? (layer as DataLayer).getCurrentStateTexture() : layer as WebGLTexture)
+					inputTextures.push((layer as DataLayer).getCurrentStateTexture ? (layer as DataLayer).currentState : layer as WebGLTexture)
 				}
 			}
 		}
@@ -662,7 +715,7 @@ export class WebGLCompute {
 		}
 		
 		// Resize viewport.
-		const [ width, height ] = output.getDimensions();
+		const { width, height } = output;
 		gl.viewport(0, 0, width, height);
 	};
 
@@ -737,7 +790,8 @@ export class WebGLCompute {
 	) {
 		const { gl, errorState, boundaryPositionsBuffer} = this;
 		const { program, input, output } = params;
-		const [ width, height ] = output ? output.getDimensions() : [ this.width, this.height ];
+		const width = output ? output.width : this.width;
+		const height = output ? output.height : this.height;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -793,7 +847,8 @@ export class WebGLCompute {
 	) {
 		const { gl, errorState, quadPositionsBuffer } = this;
 		const { program, input, output } = params;
-		const [ width, height ] = output ? output.getDimensions() : [ this.width, this.height ];
+		const width = output ? output.width : this.width;
+		const height = output ? output.height : this.height;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -875,7 +930,8 @@ export class WebGLCompute {
 	) {
 		const { gl, errorState } = this;
 		const { program, position1, position2, thickness, input, output } = params;
-		const [ width, height ] = output ? output.getDimensions() : [ this.width, this.height ];
+		const width = output ? output.width : this.width;
+		const height = output ? output.height : this.height;
 
 		// Ignore if we are in error state.
 		if (errorState) {
@@ -1274,7 +1330,7 @@ export class WebGLCompute {
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
 			throw new Error(`WebGLCompute.drawPoints() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positions.name}" with ${positions.numComponents} components.`)
 		}
-		const length = positions.getLength();
+		const { length } = positions;
 		const count = params.count || length;
 		if (count > length) {
 			throw new Error(`Invalid count ${count} for position DataLayer of length ${length}.`);
@@ -1302,7 +1358,7 @@ export class WebGLCompute {
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
 		program.setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
-		const positionLayerDimensions = positions.getDimensions();
+		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
 		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
@@ -1368,7 +1424,7 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, false, input, output);
 
 		// TODO: cache indexArray if no indices passed in.
-		const indices = params.indices ? params.indices : initSequentialFloatArray(params.count || positions.getLength());
+		const indices = params.indices ? params.indices : initSequentialFloatArray(params.count || positions.length);
 		const count = params.count ? params.count : indices.length;
 
 		// Update uniforms and buffers.
@@ -1376,7 +1432,7 @@ export class WebGLCompute {
 		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
 		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
-		const positionLayerDimensions = positions.getDimensions();
+		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
 		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
 		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
@@ -1440,7 +1496,7 @@ export class WebGLCompute {
 			throw new Error(`WebGLCompute.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${data.name}" with ${data.numComponents} components.`)
 		}
 		// Check aspect ratio.
-		// const dimensions = vectorLayer.getDimensions();
+		// const dimensions = [vectorLayer.width, vectorLayer.height];
 		// if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.01) {
 		// 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector DataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
 		// }
@@ -1538,7 +1594,7 @@ export class WebGLCompute {
 		// In case dataLayer was not the last output written to.
 		dataLayer._bindOutputBuffer();
 
-		const [ width, height ] = dataLayer.getDimensions();
+		const { width, height } = dataLayer;
 		let { glNumChannels, glType, glFormat, internalType } = dataLayer;
 		let values;
 		switch (internalType) {
@@ -1699,7 +1755,7 @@ export class WebGLCompute {
 
 	savePNG(dataLayer: DataLayer, filename = dataLayer.name, dpi?: number) {
 		const values = this.getValues(dataLayer);
-		const [width, height] = dataLayer.getDimensions();
+		const { width, height } = dataLayer;
 
 		const canvas = document.createElement('canvas');
 		canvas.width = width;
@@ -1756,7 +1812,7 @@ export class WebGLCompute {
 			throw new Error(`DataLayer "${dataLayer.name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a DataLayer with one buffer.`);
 		}
 		const offsetTextureProperties = this.renderer.properties.get(texture);
-		offsetTextureProperties.__webglTexture = dataLayer.getCurrentStateTexture();
+		offsetTextureProperties.__webglTexture = dataLayer.currentState;
 		offsetTextureProperties.__webglInit = true;
 	}
 
