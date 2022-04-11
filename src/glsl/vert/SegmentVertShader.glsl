@@ -1,7 +1,7 @@
-// Vertex shader for fullscreen quad.
-precision highp float;
+#version 300 es
+@import ../common/precision;
 
-attribute vec2 a_internal_position;
+in vec2 a_internal_position;
 
 uniform float u_internal_halfThickness;
 uniform vec2 u_internal_scale;
@@ -9,8 +9,8 @@ uniform float u_internal_length;
 uniform float u_internal_rotation;
 uniform vec2 u_internal_translation;
 
-varying vec2 v_UV_local;
-varying vec2 v_UV;
+out vec2 v_UV_local;
+out vec2 v_UV;
 
 mat2 rotate2d(float _angle){
 	return mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));

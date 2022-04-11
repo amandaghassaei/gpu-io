@@ -26,6 +26,18 @@ import {
 	NEAREST,
 	RGBA,
 	TextureType,
+	PROGRAM_NAME_INTERNAL,
+	CompileTimeVars,
+	DEFAULT_PROGRAM_NAME,
+	DEFAULT_W_UV_PROGRAM_NAME,
+	DEFAULT_W_NORMAL_PROGRAM_NAME,
+	DEFAULT_W_UV_NORMAL_PROGRAM_NAME,
+	SEGMENT_PROGRAM_NAME,
+	DATA_LAYER_POINTS_PROGRAM_NAME,
+	DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME,
+	DATA_LAYER_LINES_PROGRAM_NAME,
+	ErrorCallback,
+	DEFAULT_CIRCLE_NUM_SEGMENTS,
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -55,10 +67,7 @@ import {
 	validTextureFormats,
 	validWraps,
 } from './Checks';
-
-const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;// Must be divisible by 6 to work with stepSegment().
-
-type ErrorCallback = (message: string) => void;
+const defaultVertexShaderSource = require('./glsl/vert/DefaultVertShader.glsl');
 
 export class WebGLCompute {
 	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
@@ -95,6 +104,48 @@ export class WebGLCompute {
 	private _singleColorProgram?: GPUProgram;
 	private _singleColorWithWrapCheckProgram?: GPUProgram;
 	private _vectorMagnitudeProgram?: GPUProgram;
+
+	// Vertex shaders are shared across all GPUProgram instances.
+	readonly _vertexShaders: {[key in PROGRAM_NAME_INTERNAL]: {
+		src: string,
+		shader?: WebGLProgram,
+		defines?: CompileTimeVars,
+	}} = {
+		[DEFAULT_PROGRAM_NAME]: {
+			src: defaultVertexShaderSource,
+		},
+		[DEFAULT_W_UV_PROGRAM_NAME]: {
+			src: defaultVertexShaderSource,
+			defines: {
+				'UV_ATTRIBUTE': '1',
+			},
+		},
+		[DEFAULT_W_NORMAL_PROGRAM_NAME]: {
+			src: defaultVertexShaderSource,
+			defines: {
+				'NORMAL_ATTRIBUTE': '1',
+			},
+		},
+		[DEFAULT_W_UV_NORMAL_PROGRAM_NAME]: {
+			src: defaultVertexShaderSource,
+			defines: {
+				'UV_ATTRIBUTE': '1',
+				'NORMAL_ATTRIBUTE': '1',
+			},
+		},
+		[SEGMENT_PROGRAM_NAME]: {
+			src: require('./glsl/vert/SegmentVertShader.glsl'),
+		},
+		[DATA_LAYER_POINTS_PROGRAM_NAME]: {
+			src: require('./glsl/vert/DataLayerPointsVertShader.glsl'),
+		},
+		[DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
+			src: require('./glsl/vert/DataLayerVectorFieldVertShader.glsl'),
+		},
+		[DATA_LAYER_LINES_PROGRAM_NAME]: {
+			src: require('./glsl/vert/DataLayerLinesVertShader.glsl'),
+		},
+	};
 
 	verboseLogging = false;
 
@@ -211,9 +262,10 @@ export class WebGLCompute {
 		// gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
 		// Init programs to pass values from one texture to another.
+		// Be sure that this.glslVersion has been set before reaching these lines.
 		this.copyFloatProgram = this.initProgram({
 			name: 'copyFloat',
-			fragmentShader: glslVersion === GLSL3 ? require('./glsl_3/CopyFloatFragShader.glsl') : require('./glsl_1/CopyFragShader.glsl'),
+			fragmentShader: this._preprocessFragShader(require('./glsl/frag/CopyFloatFragShader.glsl')),
 			uniforms: [
 					{
 						name: 'u_state',
@@ -226,7 +278,7 @@ export class WebGLCompute {
 		if (glslVersion === GLSL3) {
 			this.copyIntProgram = this.initProgram({
 				name: 'copyInt',
-				fragmentShader: require('./glsl_3/CopyIntFragShader.glsl'),
+				fragmentShader: require('./glsl/frag/CopyIntFragShader.glsl'),
 				uniforms: [
 						{
 							name: 'u_state',
@@ -238,7 +290,7 @@ export class WebGLCompute {
 			);
 			this.copyUintProgram = this.initProgram({
 				name: 'copyUint',
-				fragmentShader: require('./glsl_3/CopyUintFragShader.glsl'),
+				fragmentShader: require('./glsl/frag/CopyUintFragShader.glsl'),
 				uniforms: [
 						{
 							name: 'u_state',
@@ -264,11 +316,57 @@ export class WebGLCompute {
 		if (inDevMode()) console.log(`${this.maxNumTextures} textures max.`);
 	}
 
+	private preprocessShader(shaderSource: string) {
+		// Convert to glsl1.
+		// Get rid of version declaration.
+		shaderSource = shaderSource.replace('#version 300 es\n', '');
+		// Remove unnecessary precision declarations.
+		shaderSource = shaderSource.replace(/precision \w+ isampler2D;*\n/g, '');
+		shaderSource = shaderSource.replace(/precision \w+ usampler2D;*\n/g, '');
+		// Convert types.
+		shaderSource = shaderSource.replace(/uvec2/g, 'vec2');
+		shaderSource = shaderSource.replace(/uvec3/g, 'vec3');
+		shaderSource = shaderSource.replace(/uvec4/g, 'vec4');
+		shaderSource = shaderSource.replace(/usampler2D/g, 'sampler2D');
+		shaderSource = shaderSource.replace(/ivec2/g, 'vec2');
+		shaderSource = shaderSource.replace(/ivec3/g, 'vec3');
+		shaderSource = shaderSource.replace(/ivec4/g, 'vec4');
+		shaderSource = shaderSource.replace(/isampler2D/g, 'sampler2D');
+		// Convert functions.
+		shaderSource = shaderSource.replace(/texture\(/g, 'texture2D(');
+		return shaderSource;
+	}
+
+	_preprocessFragShader(shaderSource: string) {
+		const { glslVersion } = this;
+		if (glslVersion === GLSL3) return shaderSource;
+		// Convert to glsl1.
+		shaderSource = this.preprocessShader(shaderSource);
+		// Convert in to varying.
+		shaderSource = shaderSource.replace(/\nin\s+/, '\nvarying ');
+		// Convert out to gl_FragColor.
+		shaderSource = shaderSource.replace(/out \w+ out_fragOut;\n/, '');
+		shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
+		return shaderSource;
+	}
+
+	_preprocessVertShader(shaderSource: string) {
+		const { glslVersion } = this;
+		if (glslVersion === GLSL3) return shaderSource;
+		// Convert to glsl1.
+		shaderSource = this.preprocessShader(shaderSource);
+		// Convert in to attribute.
+		shaderSource = shaderSource.replace(/\nin\s+/g, '\nattribute ');
+		// Convert out to varying.
+		shaderSource = shaderSource.replace(/\nout\s+/g, '\nvarying ');
+		return shaderSource;
+	}
+
 	private get singleColorProgram() {
 		if (this._singleColorProgram === undefined) {
 			const program = this.initProgram({
 				name: 'singleColor',
-				fragmentShader: this.glslVersion === GLSL3 ? require('./glsl_3/SingleColorFragShader.glsl') : require('./glsl_1/SingleColorFragShader.glsl'),
+				fragmentShader: this._preprocessFragShader(require('./glsl_3/SingleColorFragShader.glsl')),
 			});
 			this._singleColorProgram = program;
 		}
@@ -279,7 +377,7 @@ export class WebGLCompute {
 		if (this._singleColorWithWrapCheckProgram === undefined) {
 			const program = this.initProgram({
 				name: 'singleColorWithWrapCheck',
-				fragmentShader: this.glslVersion === GLSL3 ? require('./glsl_3/SingleColorWithWrapCheckFragShader.glsl') : require('./glsl_1/SingleColorWithWrapCheckFragShader.glsl'),
+				fragmentShader: this._preprocessFragShader(require('./glsl_3/SingleColorWithWrapCheckFragShader.glsl')),
 			});
 			this._singleColorWithWrapCheckProgram = program;
 		}
@@ -290,7 +388,7 @@ export class WebGLCompute {
 		if (this._vectorMagnitudeProgram === undefined) {
 			const program = this.initProgram({
 				name: 'vectorMagnitude',
-				fragmentShader: this.glslVersion === GLSL3 ? require('./glsl_3/VectorMagnitudeFragShader.glsl') : require('./glsl_1/VectorMagnitudeFragShader.glsl'),
+				fragmentShader: this._preprocessFragShader(require('./glsl_3/VectorMagnitudeFragShader.glsl')),
 			});
 			this._vectorMagnitudeProgram = program;
 		}
@@ -1830,8 +1928,15 @@ export class WebGLCompute {
 		this.renderer.resetState();
 	}
 	
-	destroy() {
+	dispose() {
 		// TODO: Need to implement this.
 		delete this.renderer;
+		// Delete vertex shaders.
+		Object.values(this._vertexShaders).forEach(vertexShader => {
+			if (vertexShader.shader) {
+				this.gl.deleteShader(vertexShader.shader);
+				delete vertexShader.shader;
+			}
+		});
 	}
 }

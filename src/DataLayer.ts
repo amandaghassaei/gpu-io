@@ -1,8 +1,6 @@
 import { setFloat16 } from '@petamoriken/float16';
 import { WebGLCompute } from '.';
 import {
-	isArray,
-	isNumber,
 	isPositiveInteger,
 	isValidClearValue,
 	isValidDataType,
@@ -33,6 +31,8 @@ import {
 	GLSLVersion,
 	GLSL3,
 	GLSL1,
+	DataLayerBuffer,
+	ErrorCallback,
  } from './Constants';
 import {
 	getExtension,
@@ -46,13 +46,6 @@ import {
 	inDevMode,
 	isWebGL2,
 } from './utils';
-
-export type DataLayerBuffer = {
-	texture: WebGLTexture,
-	framebuffer?: WebGLFramebuffer,
-}
-
-type ErrorCallback = (message: string) => void;
 
 export class DataLayer {
 	private readonly glcompute: WebGLCompute;
@@ -155,10 +148,15 @@ export class DataLayer {
 		this._height = height;
 
 		// Set filtering - if we are processing a 1D array, default to NEAREST filtering.
-		// Else default to LINEAR (interpolation) filtering.
-		const filter = params.filter !== undefined ? params.filter : (length ? NEAREST : LINEAR);
+		// Else default to LINEAR (interpolation) filtering for float types and NEAREST for integer types.
+		const defaultFilter = length ? NEAREST : ((type === FLOAT || type == HALF_FLOAT) ? LINEAR : NEAREST);
+		const filter = params.filter !== undefined ? params.filter : defaultFilter;
 		if (!isValidFilter(filter)) {
 			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be one of [${validFilters.join(', ')}].`);
+		}
+		// Don't allow LINEAR filtering on integer types, it is not supported.
+		if (filter === LINEAR && !(type === FLOAT || type == HALF_FLOAT)) {
+			throw new Error(`LINEAR filtering is not supported on integer types, please use NEAREST filtering for DataLayer "${name}" with type: ${type}.`);
 		}
 		this.filter = filter;
 
@@ -184,7 +182,6 @@ export class DataLayer {
 			type,
 			glslVersion,
 			writable,
-			filter,
 			name,
 			errorCallback,
 		});
@@ -333,7 +330,6 @@ export class DataLayer {
 			type: DataLayerType,
 			glslVersion: GLSLVersion,
 			writable: boolean,
-			filter: DataLayerFilter,
 			name: string,
 			errorCallback: ErrorCallback,
 		},
@@ -402,17 +398,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			type: DataLayerType,
-			filter: DataLayerFilter,
 			glslVersion: GLSLVersion,
 		}
 	) {
-		const { gl, type, filter, glslVersion } = params;
+		const { gl, type, glslVersion } = params;
 		// All types are supported by WebGL2 + glsl3.
 		if (glslVersion === GLSL3 && isWebGL2(gl)) return false;
-		// UNSIGNED_BYTE and LINEAR filtering is not supported, cast as float.
-		if (type === UNSIGNED_BYTE && filter === LINEAR) {
-			return true;
-		}
 		// Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
 		// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
 		// Use HALF_FLOAT/FLOAT instead.

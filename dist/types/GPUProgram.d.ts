@@ -1,8 +1,5 @@
 import { WebGLCompute } from './WebGLCompute';
-import { UniformType, UniformValue } from './Constants';
-declare type CompileTimeVars = {
-    [key: string]: string;
-};
+import { UniformType, UniformValue, CompileTimeVars } from './Constants';
 export declare class GPUProgram {
     readonly name: string;
     private readonly glcompute;
@@ -37,6 +34,5 @@ export declare class GPUProgram {
     private setProgramUniform;
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
     setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValue, type: UniformType): void;
-    destroy(): void;
+    dispose(): void;
 }
-export {};

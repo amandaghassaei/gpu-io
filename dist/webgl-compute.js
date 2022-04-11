@@ -2339,7 +2339,7 @@ exports.isBoolean = isBoolean;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.GLSL1 = exports.GLSL3 = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.DATA_LAYER_LINES_PROGRAM_NAME = exports.DATA_LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.GLSL1 = exports.GLSL3 = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.HALF_FLOAT = 'HALF_FLOAT';
 exports.FLOAT = 'FLOAT';
 exports.UNSIGNED_BYTE = 'UNSIGNED_BYTE';
@@ -2367,6 +2367,16 @@ exports.INT_1D_UNIFORM = '1i';
 exports.INT_2D_UNIFORM = '2i';
 exports.INT_3D_UNIFORM = '3i';
 exports.INT_4D_UNIFORM = '3i';
+// Vertex shaders.
+exports.DEFAULT_PROGRAM_NAME = 'DEFAULT';
+exports.DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
+exports.DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
+exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
+exports.SEGMENT_PROGRAM_NAME = 'SEGMENT';
+exports.DATA_LAYER_POINTS_PROGRAM_NAME = 'DATA_LAYER_POINTS';
+exports.DATA_LAYER_LINES_PROGRAM_NAME = 'DATA_LAYER_LINES';
+exports.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = 'DATA_LAYER_VECTOR_FIELD';
+exports.DEFAULT_CIRCLE_NUM_SEGMENTS = 18; // Must be divisible by 6 to work with stepSegment().
 
 
 /***/ }),
@@ -2417,10 +2427,15 @@ var DataLayer = /** @class */ (function () {
         }
         this._height = height;
         // Set filtering - if we are processing a 1D array, default to NEAREST filtering.
-        // Else default to LINEAR (interpolation) filtering.
-        var filter = params.filter !== undefined ? params.filter : (length ? Constants_1.NEAREST : Constants_1.LINEAR);
+        // Else default to LINEAR (interpolation) filtering for float types and NEAREST for integer types.
+        var defaultFilter = length ? Constants_1.NEAREST : ((type === Constants_1.FLOAT || type == Constants_1.HALF_FLOAT) ? Constants_1.LINEAR : Constants_1.NEAREST);
+        var filter = params.filter !== undefined ? params.filter : defaultFilter;
         if (!Checks_1.isValidFilter(filter)) {
             throw new Error("Invalid filter: " + filter + " for DataLayer \"" + name + "\", must be one of [" + Checks_1.validFilters.join(', ') + "].");
+        }
+        // Don't allow LINEAR filtering on integer types, it is not supported.
+        if (filter === Constants_1.LINEAR && !(type === Constants_1.FLOAT || type == Constants_1.HALF_FLOAT)) {
+            throw new Error("LINEAR filtering is not supported on integer types, please use NEAREST filtering for DataLayer \"" + name + "\" with type: " + type + ".");
         }
         this.filter = filter;
         // Get wrap types, default to clamp to edge.
@@ -2444,7 +2459,6 @@ var DataLayer = /** @class */ (function () {
             type: type,
             glslVersion: glslVersion,
             writable: writable,
-            filter: filter,
             name: name,
             errorCallback: errorCallback,
         });
@@ -2622,14 +2636,10 @@ var DataLayer = /** @class */ (function () {
         return internalType;
     };
     DataLayer.shouldCastIntTypeAsFloat = function (params) {
-        var gl = params.gl, type = params.type, filter = params.filter, glslVersion = params.glslVersion;
+        var gl = params.gl, type = params.type, glslVersion = params.glslVersion;
         // All types are supported by WebGL2 + glsl3.
         if (glslVersion === Constants_1.GLSL3 && utils_1.isWebGL2(gl))
             return false;
-        // UNSIGNED_BYTE and LINEAR filtering is not supported, cast as float.
-        if (type === Constants_1.UNSIGNED_BYTE && filter === Constants_1.LINEAR) {
-            return true;
-        }
         // Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
         // https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
         // Use HALF_FLOAT/FLOAT instead.
@@ -3384,64 +3394,11 @@ exports.DataLayer = DataLayer;
 
 "use strict";
 
-var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUProgram = void 0;
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var utils_1 = __webpack_require__(593);
-var DEFAULT_PROGRAM_NAME = 'DEFAULT';
-var DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
-var DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
-var DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
-var SEGMENT_PROGRAM_NAME = 'SEGMENT';
-var DATA_LAYER_POINTS_PROGRAM_NAME = 'DATA_LAYER_POINTS';
-var DATA_LAYER_LINES_PROGRAM_NAME = 'DATA_LAYER_LINES';
-var DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = 'DATA_LAYER_VECTOR_FIELD';
-var vertexShaders = (_a = {},
-    _a[DEFAULT_PROGRAM_NAME] = {
-        src_1: __webpack_require__(790),
-        src_3: '',
-    },
-    _a[DEFAULT_W_UV_PROGRAM_NAME] = {
-        src_1: __webpack_require__(790),
-        src_3: '',
-        defines: {
-            'UV_ATTRIBUTE': '1',
-        },
-    },
-    _a[DEFAULT_W_NORMAL_PROGRAM_NAME] = {
-        src_1: __webpack_require__(790),
-        src_3: '',
-        defines: {
-            'NORMAL_ATTRIBUTE': '1',
-        },
-    },
-    _a[DEFAULT_W_UV_NORMAL_PROGRAM_NAME] = {
-        src_1: __webpack_require__(790),
-        src_3: '',
-        defines: {
-            'UV_ATTRIBUTE': '1',
-            'NORMAL_ATTRIBUTE': '1',
-        },
-    },
-    _a[SEGMENT_PROGRAM_NAME] = {
-        src_1: __webpack_require__(852),
-        src_3: '',
-    },
-    _a[DATA_LAYER_POINTS_PROGRAM_NAME] = {
-        src_1: __webpack_require__(87),
-        src_3: '',
-    },
-    _a[DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME] = {
-        src_1: __webpack_require__(444),
-        src_3: '',
-    },
-    _a[DATA_LAYER_LINES_PROGRAM_NAME] = {
-        src_1: __webpack_require__(328),
-        src_3: '',
-    },
-    _a);
 var GPUProgram = /** @class */ (function () {
     function GPUProgram(glcompute, params) {
         this.uniforms = {};
@@ -3509,6 +3466,7 @@ var GPUProgram = /** @class */ (function () {
         }
         if (verboseLogging)
             console.log("Compiling fragment shader \"" + name + "\" with defines " + JSON.stringify(this.defines));
+        // TODO: defines should come after version declaration.
         var definesSource = GPUProgram.convertDefinesToString(this.defines);
         var shader = utils_1.compileShader(gl, errorCallback, "" + definesSource + fragmentShaderSource, gl.FRAGMENT_SHADER, name);
         if (!shader) {
@@ -3551,17 +3509,19 @@ var GPUProgram = /** @class */ (function () {
     GPUProgram.prototype.getProgramWithName = function (name) {
         if (this.programs[name])
             return this.programs[name];
-        var errorCallback = this.glcompute.errorCallback;
-        var vertexShader = vertexShaders[name];
+        var glcompute = this.glcompute;
+        var errorCallback = glcompute.errorCallback, _vertexShaders = glcompute._vertexShaders;
+        var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
-            var _a = this, glcompute = _a.glcompute, name_2 = _a.name;
-            var gl = glcompute.gl, glslVersion = glcompute.glslVersion;
+            var _a = this, glcompute_1 = _a.glcompute, name_2 = _a.name;
+            var gl = glcompute_1.gl;
             // Init a vertex shader.
-            var vertexShaderSource = glslVersion === Constants_1.GLSL3 ? vertexShader.src_3 : vertexShader.src_1;
+            var vertexShaderSource = glcompute_1._preprocessVertShader(vertexShader.src);
             if (vertexShaderSource === '') {
                 throw new Error("No source for vertex shader " + this.name + " : " + name_2);
             }
             if (vertexShader.defines) {
+                // TODO: defines should come after version declaration.
                 vertexShaderSource = GPUProgram.convertDefinesToString(vertexShader.defines) + vertexShaderSource;
             }
             var shader = utils_1.compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name_2);
@@ -3571,7 +3531,7 @@ var GPUProgram = /** @class */ (function () {
             }
             vertexShader.shader = shader;
         }
-        var program = this.initProgram(vertexShader.shader, DEFAULT_PROGRAM_NAME);
+        var program = this.initProgram(vertexShader.shader, Constants_1.DEFAULT_PROGRAM_NAME);
         if (program === undefined) {
             errorCallback("Unable to init program \"" + name + "\".");
             return;
@@ -3581,56 +3541,56 @@ var GPUProgram = /** @class */ (function () {
     };
     Object.defineProperty(GPUProgram.prototype, "defaultProgram", {
         get: function () {
-            return this.getProgramWithName(DEFAULT_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.DEFAULT_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(GPUProgram.prototype, "defaultProgramWithUV", {
         get: function () {
-            return this.getProgramWithName(DEFAULT_W_UV_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.DEFAULT_W_UV_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(GPUProgram.prototype, "defaultProgramWithNormal", {
         get: function () {
-            return this.getProgramWithName(DEFAULT_W_NORMAL_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(GPUProgram.prototype, "defaultProgramWithUVNormal", {
         get: function () {
-            return this.getProgramWithName(DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(GPUProgram.prototype, "segmentProgram", {
         get: function () {
-            return this.getProgramWithName(SEGMENT_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.SEGMENT_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(GPUProgram.prototype, "dataLayerPointsProgram", {
         get: function () {
-            return this.getProgramWithName(DATA_LAYER_POINTS_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.DATA_LAYER_POINTS_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(GPUProgram.prototype, "dataLayerVectorFieldProgram", {
         get: function () {
-            return this.getProgramWithName(DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(GPUProgram.prototype, "dataLayerLinesProgram", {
         get: function () {
-            return this.getProgramWithName(DATA_LAYER_LINES_PROGRAM_NAME);
+            return this.getProgramWithName(Constants_1.DATA_LAYER_LINES_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -3816,7 +3776,7 @@ var GPUProgram = /** @class */ (function () {
         }
         this.setProgramUniform(program, programName, uniformName, value, internalType);
     };
-    GPUProgram.prototype.destroy = function () {
+    GPUProgram.prototype.dispose = function () {
         var _this = this;
         var _a = this, glcompute = _a.glcompute, fragmentShader = _a.fragmentShader, programs = _a.programs;
         var gl = glcompute.gl, verboseLogging = glcompute.verboseLogging;
@@ -3919,16 +3879,54 @@ var utils = __webpack_require__(404);
 var utils_1 = __webpack_require__(593);
 var float16_1 = __webpack_require__(501);
 var Checks_1 = __webpack_require__(627);
-var DEFAULT_CIRCLE_NUM_SEGMENTS = 18; // Must be divisible by 6 to work with stepSegment().
+var defaultVertexShaderSource = __webpack_require__(726);
 var WebGLCompute = /** @class */ (function () {
     function WebGLCompute(params, 
     // Optionally pass in an error callback in case we want to handle errors related to webgl support.
     // e.g. throw up a modal telling user this will not work on their device.
     errorCallback, renderer) {
+        var _a;
         if (errorCallback === void 0) { errorCallback = function (message) { throw new Error(message); }; }
         this.errorState = false;
         // Store multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
+        // Vertex shaders are shared across all GPUProgram instances.
+        this._vertexShaders = (_a = {},
+            _a[Constants_1.DEFAULT_PROGRAM_NAME] = {
+                src: defaultVertexShaderSource,
+            },
+            _a[Constants_1.DEFAULT_W_UV_PROGRAM_NAME] = {
+                src: defaultVertexShaderSource,
+                defines: {
+                    'UV_ATTRIBUTE': '1',
+                },
+            },
+            _a[Constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME] = {
+                src: defaultVertexShaderSource,
+                defines: {
+                    'NORMAL_ATTRIBUTE': '1',
+                },
+            },
+            _a[Constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME] = {
+                src: defaultVertexShaderSource,
+                defines: {
+                    'UV_ATTRIBUTE': '1',
+                    'NORMAL_ATTRIBUTE': '1',
+                },
+            },
+            _a[Constants_1.SEGMENT_PROGRAM_NAME] = {
+                src: __webpack_require__(680),
+            },
+            _a[Constants_1.DATA_LAYER_POINTS_PROGRAM_NAME] = {
+                src: __webpack_require__(262),
+            },
+            _a[Constants_1.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME] = {
+                src: __webpack_require__(396),
+            },
+            _a[Constants_1.DATA_LAYER_LINES_PROGRAM_NAME] = {
+                src: __webpack_require__(656),
+            },
+            _a);
         this.verboseLogging = false;
         // Check params.
         var validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging'];
@@ -4003,9 +4001,10 @@ var WebGLCompute = /** @class */ (function () {
         // // uploaded to a WebGL texture when the UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter is set to false.
         // gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         // Init programs to pass values from one texture to another.
+        // Be sure that this.glslVersion has been set before reaching these lines.
         this.copyFloatProgram = this.initProgram({
             name: 'copyFloat',
-            fragmentShader: glslVersion === Constants_1.GLSL3 ? __webpack_require__(518) : __webpack_require__(541),
+            fragmentShader: this._preprocessFragShader(__webpack_require__(129)),
             uniforms: [
                 {
                     name: 'u_state',
@@ -4017,7 +4016,7 @@ var WebGLCompute = /** @class */ (function () {
         if (glslVersion === Constants_1.GLSL3) {
             this.copyIntProgram = this.initProgram({
                 name: 'copyInt',
-                fragmentShader: __webpack_require__(546),
+                fragmentShader: __webpack_require__(548),
                 uniforms: [
                     {
                         name: 'u_state',
@@ -4028,7 +4027,7 @@ var WebGLCompute = /** @class */ (function () {
             });
             this.copyUintProgram = this.initProgram({
                 name: 'copyUint',
-                fragmentShader: __webpack_require__(374),
+                fragmentShader: __webpack_require__(707),
                 uniforms: [
                     {
                         name: 'u_state',
@@ -4054,12 +4053,57 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.initWithThreeRenderer = function (renderer, params, errorCallback) {
         return new WebGLCompute(__assign({ canvas: renderer.domElement, context: renderer.getContext() }, params), errorCallback, renderer);
     };
+    WebGLCompute.prototype.preprocessShader = function (shaderSource) {
+        // Convert to glsl1.
+        // Get rid of version declaration.
+        shaderSource = shaderSource.replace('#version 300 es\n', '');
+        // Remove unnecessary precision declarations.
+        shaderSource = shaderSource.replace(/precision \w+ isampler2D;*\n/g, '');
+        shaderSource = shaderSource.replace(/precision \w+ usampler2D;*\n/g, '');
+        // Convert types.
+        shaderSource = shaderSource.replace(/uvec2/g, 'vec2');
+        shaderSource = shaderSource.replace(/uvec3/g, 'vec3');
+        shaderSource = shaderSource.replace(/uvec4/g, 'vec4');
+        shaderSource = shaderSource.replace(/usampler2D/g, 'sampler2D');
+        shaderSource = shaderSource.replace(/ivec2/g, 'vec2');
+        shaderSource = shaderSource.replace(/ivec3/g, 'vec3');
+        shaderSource = shaderSource.replace(/ivec4/g, 'vec4');
+        shaderSource = shaderSource.replace(/isampler2D/g, 'sampler2D');
+        // Convert functions.
+        shaderSource = shaderSource.replace(/texture\(/g, 'texture2D(');
+        return shaderSource;
+    };
+    WebGLCompute.prototype._preprocessFragShader = function (shaderSource) {
+        var glslVersion = this.glslVersion;
+        if (glslVersion === Constants_1.GLSL3)
+            return shaderSource;
+        // Convert to glsl1.
+        shaderSource = this.preprocessShader(shaderSource);
+        // Convert in to varying.
+        shaderSource = shaderSource.replace(/\nin\s+/, '\nvarying ');
+        // Convert out to gl_FragColor.
+        shaderSource = shaderSource.replace(/out \w+ out_fragOut;\n/, '');
+        shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
+        return shaderSource;
+    };
+    WebGLCompute.prototype._preprocessVertShader = function (shaderSource) {
+        var glslVersion = this.glslVersion;
+        if (glslVersion === Constants_1.GLSL3)
+            return shaderSource;
+        // Convert to glsl1.
+        shaderSource = this.preprocessShader(shaderSource);
+        // Convert in to attribute.
+        shaderSource = shaderSource.replace(/\nin\s+/g, '\nattribute ');
+        // Convert out to varying.
+        shaderSource = shaderSource.replace(/\nout\s+/g, '\nvarying ');
+        return shaderSource;
+    };
     Object.defineProperty(WebGLCompute.prototype, "singleColorProgram", {
         get: function () {
             if (this._singleColorProgram === undefined) {
                 var program = this.initProgram({
                     name: 'singleColor',
-                    fragmentShader: this.glslVersion === Constants_1.GLSL3 ? __webpack_require__(805) : __webpack_require__(971),
+                    fragmentShader: this._preprocessFragShader(__webpack_require__(805)),
                 });
                 this._singleColorProgram = program;
             }
@@ -4073,7 +4117,7 @@ var WebGLCompute = /** @class */ (function () {
             if (this._singleColorWithWrapCheckProgram === undefined) {
                 var program = this.initProgram({
                     name: 'singleColorWithWrapCheck',
-                    fragmentShader: this.glslVersion === Constants_1.GLSL3 ? __webpack_require__(674) : __webpack_require__(425),
+                    fragmentShader: this._preprocessFragShader(__webpack_require__(674)),
                 });
                 this._singleColorWithWrapCheckProgram = program;
             }
@@ -4087,7 +4131,7 @@ var WebGLCompute = /** @class */ (function () {
             if (this._vectorMagnitudeProgram === undefined) {
                 var program = this.initProgram({
                     name: 'vectorMagnitude',
-                    fragmentShader: this.glslVersion === Constants_1.GLSL3 ? __webpack_require__(850) : __webpack_require__(754),
+                    fragmentShader: this._preprocessFragShader(__webpack_require__(850)),
                 });
                 this._vectorMagnitudeProgram = program;
             }
@@ -4573,7 +4617,7 @@ var WebGLCompute = /** @class */ (function () {
         // Update uniforms and buffers.
         program.setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], Constants_1.FLOAT);
         program.setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], Constants_1.FLOAT);
-        var numSegments = params.numSegments ? params.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
+        var numSegments = params.numSegments ? params.numSegments : Constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (numSegments < 3) {
             throw new Error("numSegments for WebGLCompute.stepCircle must be greater than 2, got " + numSegments + ".");
         }
@@ -4608,7 +4652,7 @@ var WebGLCompute = /** @class */ (function () {
         var centerY = (position1[1] + position2[1]) / 2;
         program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this.width - 1, 2 * centerY / this.height - 1], Constants_1.FLOAT);
         var length = Math.sqrt(diffX * diffX + diffY * diffY);
-        var numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
+        var numSegments = params.numCapSegments ? params.numCapSegments * 2 : Constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (params.endCaps) {
             if (numSegments < 6 || numSegments % 6 !== 0) {
                 throw new Error("numSegments for WebGLCompute.stepSegment must be divisible by 6, got " + numSegments + ".");
@@ -5334,9 +5378,17 @@ var WebGLCompute = /** @class */ (function () {
         // Reset texture bindings.
         this.renderer.resetState();
     };
-    WebGLCompute.prototype.destroy = function () {
+    WebGLCompute.prototype.dispose = function () {
+        var _this = this;
         // TODO: Need to implement this.
         delete this.renderer;
+        // Delete vertex shaders.
+        Object.values(this._vertexShaders).forEach(function (vertexShader) {
+            if (vertexShader.shader) {
+                _this.gl.deleteShader(vertexShader.shader);
+                delete vertexShader.shader;
+            }
+        });
     };
     return WebGLCompute;
 }());
@@ -5498,87 +5550,59 @@ exports.inDevMode = inDevMode;
 
 /***/ }),
 
-/***/ 541:
+/***/ 129:
 /***/ ((module) => {
 
-module.exports = "precision highp float;\n\nvarying vec2 v_UV;\n\nuniform sampler2D u_state;\n\nvoid main() {\n\tgl_FragColor = texture2D(u_state, v_UV);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 v_UV;\n\nuniform sampler2D u_state;\n\nout vec4 out_fragOut;\n\nvoid main() {\n\tout_fragOut = texture(u_state, v_UV);\n}"
 
 /***/ }),
 
-/***/ 328:
+/***/ 548:
 /***/ ((module) => {
 
-module.exports = "precision highp float;\nprecision highp int;\n\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nattribute float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_positions; // Texture lookup with position data.\nuniform vec2 u_internal_positionsDimensions;\nuniform vec2 u_internal_scale;\nuniform bool u_internal_positionWithAccumulation;\nuniform bool u_internal_wrapX;\nuniform bool u_internal_wrapY;\n\nvarying vec2 v_UV;\nvarying vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.\nvarying float v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\tvec2 particleUV = vec2(\n\t\tmodI(a_internal_index, u_internal_positionsDimensions.x),\n\t\tfloor(floor(a_internal_index + 0.5) / u_internal_positionsDimensions.x)\n\t) / u_internal_positionsDimensions;\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t// We have packed a 2D displacement with the position.\n\tvec4 positionData = texture2D(u_internal_positions, particleUV);\n\t// position = first two components plus last two components (optional accumulation buffer).\n\tvec2 positionAbsolute = positionData.rg;\n\tif (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;\n\tv_UV = positionAbsolute * u_internal_scale;\n\n\t// Wrap if needed.\n\tv_lineWrapping = vec2(0.0);\n\tif (u_internal_wrapX) {\n\t\tif (v_UV.x < 0.0) {\n\t\t\tv_UV.x += 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t} else if (v_UV.x > 1.0) {\n\t\t\tv_UV.x -= 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t}\n\t}\n\tif (u_internal_wrapY) {\n\t\tif (v_UV.y < 0.0) {\n\t\t\tv_UV.y += 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t} else if (v_UV.y > 1.0) {\n\t\t\tv_UV.y -= 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t}\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 v_UV;\n\nuniform isampler2D u_state;\n\nout ivec4 out_fragOut;\n\nvoid main() {\n\tout_fragOut = texture(u_state, v_UV);\n}"
 
 /***/ }),
 
-/***/ 87:
+/***/ 707:
 /***/ ((module) => {
 
-module.exports = "precision highp float;\nprecision highp int;\n\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nattribute float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_positions; // Texture lookup with position data.\nuniform vec2 u_internal_positionsDimensions;\nuniform vec2 u_internal_scale;\nuniform float u_internal_pointSize;\nuniform bool u_internal_positionWithAccumulation;\nuniform bool u_internal_wrapX;\nuniform bool u_internal_wrapY;\n\nvarying vec2 v_UV;\nvarying float v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\tvec2 particleUV = vec2(\n\t\tmodI(a_internal_index, u_internal_positionsDimensions.x),\n\t\tfloor(floor(a_internal_index + 0.5) / u_internal_positionsDimensions.x)\n\t) / u_internal_positionsDimensions;\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t// We have packed a 2D displacement with the position.\n\tvec4 positionData = texture2D(u_internal_positions, particleUV);\n\t// position = first two components plus last two components (optional accumulation buffer).\n\tvec2 positionAbsolute = positionData.rg;\n\tif (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;\n\tv_UV = positionAbsolute * u_internal_scale;\n\n\t// Wrap if needed.\n\tif (u_internal_wrapX) {\n\t\tif (v_UV.x < 0.0) v_UV.x += 1.0;\n\t\tif (v_UV.x > 1.0) v_UV.x -= 1.0;\n\t}\n\tif (u_internal_wrapY) {\n\t\tif (v_UV.y < 0.0) v_UV.y += 1.0;\n\t\tif (v_UV.y > 1.0) v_UV.y -= 1.0;\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_PointSize = u_internal_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 v_UV;\n\nuniform usampler2D u_state;\n\nout uvec4 out_fragOut;\n\nvoid main() {\n\tout_fragOut = texture(u_state, v_UV);\n}"
 
 /***/ }),
 
-/***/ 444:
+/***/ 656:
 /***/ ((module) => {
 
-module.exports = "precision highp float;\nprecision highp int;\n\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nattribute float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_vectors; // Texture lookup with vector data.\nuniform vec2 u_internal_dimensions;\nuniform vec2 u_internal_scale;\n\nvarying vec2 v_UV;\nvarying float v_index;\n\nvoid main() {\n\t// Divide index by 2.\n\tfloat index = floor((a_internal_index + 0.5) / 2.0);\n\t// Calculate a uv based on the vertex index attribute.\n\tv_UV = vec2(\n\t\tmodI(index, u_internal_dimensions.x),\n\t\tfloor(floor(index + 0.5) / u_internal_dimensions.x)\n\t) / u_internal_dimensions;\n\n\t// Add vector displacement if needed.\n\tif (modI(a_internal_index, 2.0) > 0.0) {\n\t\t// Lookup vectorData at current UV.\n\t\tvec2 vectorData = texture2D(u_internal_vectors, v_UV).xy;\n\t\tv_UV += vectorData * u_internal_scale;\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nin float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_positions; // Texture lookup with position data.\nuniform vec2 u_internal_positionsDimensions;\nuniform vec2 u_internal_scale;\n// TODO: remove branching, do these as defines and make separate vert shaders.\nuniform bool u_internal_positionWithAccumulation;\nuniform bool u_internal_wrapX;\nuniform bool u_internal_wrapY;\n\nout vec2 v_UV;\nout vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.\nout float v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\tvec2 particleUV = vec2(\n\t\tmodI(a_internal_index, u_internal_positionsDimensions.x),\n\t\tfloor(floor(a_internal_index + 0.5) / u_internal_positionsDimensions.x)\n\t) / u_internal_positionsDimensions;\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t// We have packed a 2D displacement with the position.\n\tvec4 positionData = texture2D(u_internal_positions, particleUV);\n\t// position = first two components plus last two components (optional accumulation buffer).\n\tvec2 positionAbsolute = positionData.rg;\n\tif (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;\n\tv_UV = positionAbsolute * u_internal_scale;\n\n\t// Wrap if needed.\n\tv_lineWrapping = vec2(0.0);\n\tif (u_internal_wrapX) {\n\t\tif (v_UV.x < 0.0) {\n\t\t\tv_UV.x += 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t} else if (v_UV.x > 1.0) {\n\t\t\tv_UV.x -= 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t}\n\t}\n\tif (u_internal_wrapY) {\n\t\tif (v_UV.y < 0.0) {\n\t\t\tv_UV.y += 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t} else if (v_UV.y > 1.0) {\n\t\t\tv_UV.y -= 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t}\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_Position = vec4(position, 0, 1);\n}"
 
 /***/ }),
 
-/***/ 790:
+/***/ 262:
 /***/ ((module) => {
 
-module.exports = "precision highp float;\n\nattribute vec2 a_internal_position;\n#ifdef UV_ATTRIBUTE\nattribute vec2 a_internal_uv;\n#endif\n#ifdef NORMAL_ATTRIBUTE\nattribute vec2 a_internal_normal;\n#endif\n\nuniform vec2 u_internal_scale;\nuniform vec2 u_internal_translation;\n\nvarying vec2 v_UV;\nvarying vec2 v_UV_local;\n#ifdef NORMAL_ATTRIBUTE\nvarying vec2 v_normal;\n#endif\n\nvoid main() {\n\t// Optional varyings.\n\t#ifdef UV_ATTRIBUTE\n\tv_UV_local = a_internal_uv;\n\t#else\n\tv_UV_local = a_internal_position;\n\t#endif\n\t#ifdef NORMAL_ATTRIBUTE\n\tv_normal = a_internal_normal;\n\t#endif\n\n\t// Apply transformations.\n\tvec2 position = u_internal_scale * a_internal_position + u_internal_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_UV = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nin float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_positions; // Texture lookup with position data.\nuniform vec2 u_internal_positionsDimensions;\nuniform vec2 u_internal_scale;\nuniform float u_internal_pointSize;\nuniform bool u_internal_positionWithAccumulation;\nuniform bool u_internal_wrapX;\nuniform bool u_internal_wrapY;\n\nout vec2 v_UV;\nout float v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\tvec2 particleUV = vec2(\n\t\tmodI(a_internal_index, u_internal_positionsDimensions.x),\n\t\tfloor(floor(a_internal_index + 0.5) / u_internal_positionsDimensions.x)\n\t) / u_internal_positionsDimensions;\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t// We have packed a 2D displacement with the position.\n\tvec4 positionData = texture2D(u_internal_positions, particleUV);\n\t// position = first two components plus last two components (optional accumulation buffer).\n\tvec2 positionAbsolute = positionData.rg;\n\tif (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;\n\tv_UV = positionAbsolute * u_internal_scale;\n\n\t// Wrap if needed.\n\tif (u_internal_wrapX) {\n\t\tif (v_UV.x < 0.0) v_UV.x += 1.0;\n\t\tif (v_UV.x > 1.0) v_UV.x -= 1.0;\n\t}\n\tif (u_internal_wrapY) {\n\t\tif (v_UV.y < 0.0) v_UV.y += 1.0;\n\t\tif (v_UV.y > 1.0) v_UV.y -= 1.0;\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_PointSize = u_internal_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}"
 
 /***/ }),
 
-/***/ 852:
+/***/ 396:
 /***/ ((module) => {
 
-module.exports = "// Vertex shader for fullscreen quad.\nprecision highp float;\n\nattribute vec2 a_internal_position;\n\nuniform float u_internal_halfThickness;\nuniform vec2 u_internal_scale;\nuniform float u_internal_length;\nuniform float u_internal_rotation;\nuniform vec2 u_internal_translation;\n\nvarying vec2 v_UV_local;\nvarying vec2 v_UV;\n\nmat2 rotate2d(float _angle){\n\treturn mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));\n}\n\nvoid main() {\n\t// Calculate UV coordinates of current rendered object.\n\tv_UV_local = 0.5 * (a_internal_position + 1.0);\n\n\tvec2 position = a_internal_position;\n\n\t// Apply thickness / radius.\n\tposition *= u_internal_halfThickness;\n\n\t// Stretch center of shape to form a round-capped line segment.\n\tif (position.x < 0.0) {\n\t\tposition.x -= u_internal_length / 2.0;\n\t\tv_UV_local.x = 0.0; // Set entire cap UV.x to 0.\n\t} else if (position.x > 0.0) {\n\t\tposition.x += u_internal_length / 2.0;\n\t\tv_UV_local.x = 1.0; // Set entire cap UV.x to 1.\n\t}\n\n\t// Apply transformations.\n\tposition = u_internal_scale * (rotate2d(-u_internal_rotation) * position) + u_internal_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_UV = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nint float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_vectors; // Texture lookup with vector data.\nuniform vec2 u_internal_dimensions;\nuniform vec2 u_internal_scale;\n\nout vec2 v_UV;\nout float v_index;\n\nvoid main() {\n\t// Divide index by 2.\n\tfloat index = floor((a_internal_index + 0.5) / 2.0);\n\t// Calculate a uv based on the vertex index attribute.\n\tv_UV = vec2(\n\t\tmodI(index, u_internal_dimensions.x),\n\t\tfloor(floor(index + 0.5) / u_internal_dimensions.x)\n\t) / u_internal_dimensions;\n\n\t// Add vector displacement if needed.\n\tif (modI(a_internal_index, 2.0) > 0.0) {\n\t\t// Lookup vectorData at current UV.\n\t\tvec2 vectorData = texture2D(u_internal_vectors, v_UV).xy;\n\t\tv_UV += vectorData * u_internal_scale;\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_Position = vec4(position, 0, 1);\n}"
 
 /***/ }),
 
-/***/ 971:
+/***/ 726:
 /***/ ((module) => {
 
-module.exports = "// Fragment shader that draws a single color.\nprecision highp float;\n\nuniform vec3 u_color;\n\nvoid main() {\n\tgl_FragColor = vec4(u_color, 1);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 a_internal_position;\n#ifdef UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\n\nuniform vec2 u_internal_scale;\nuniform vec2 u_internal_translation;\n\nout vec2 v_UV;\nout vec2 v_UV_local;\n#ifdef NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\n\nvoid main() {\n\t// Optional varyings.\n\t#ifdef UV_ATTRIBUTE\n\tv_UV_local = a_internal_uv;\n\t#else\n\tv_UV_local = a_internal_position;\n\t#endif\n\t#ifdef NORMAL_ATTRIBUTE\n\tv_normal = a_internal_normal;\n\t#endif\n\n\t// Apply transformations.\n\tvec2 position = u_internal_scale * a_internal_position + u_internal_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_UV = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}"
 
 /***/ }),
 
-/***/ 425:
+/***/ 680:
 /***/ ((module) => {
 
-module.exports = "// Fragment shader that draws a single color.\nprecision highp float;\n\nuniform vec3 u_color;\nvarying vec2 v_lineWrapping;\n\nvoid main() {\n\t// Check if this line has wrapped.\n\tif ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {\n\t\t// Render nothing.\n\t\tdiscard;\n\t\treturn;\n\t}\n\tgl_FragColor = vec4(u_color, 1);\n}"
-
-/***/ }),
-
-/***/ 754:
-/***/ ((module) => {
-
-module.exports = "// Fragment shader that draws the magnitude of a DataLayer.\nprecision highp float;\n\nvarying vec2 v_UV;\n\nuniform vec3 u_color;\nuniform float u_scale;\nuniform int u_internal_numDimensions;\nuniform sampler2D u_internal_data;\n\nvoid main() {\n\tvec4 value = texture2D(u_internal_data, v_UV);\n\tif (u_internal_numDimensions < 4) value.a = 0.0;\n\tif (u_internal_numDimensions < 3) value.b = 0.0;\n\tif (u_internal_numDimensions < 2) value.g = 0.0;\n\tfloat mag = length(value);\n\tgl_FragColor = vec4(mag * u_scale * u_color, 1);\n}"
-
-/***/ }),
-
-/***/ 518:
-/***/ ((module) => {
-
-module.exports = "#version 300 es\nprecision highp float;\nprecision highp sampler2D;\n\nin vec2 v_UV;\n\nuniform sampler2D u_state;\n\nout vec4 out_fragColor;\n\nvoid main() {\n\tout_fragColor = texture(u_state, v_UV);\n}"
-
-/***/ }),
-
-/***/ 546:
-/***/ ((module) => {
-
-module.exports = "#version 300 es\nprecision highp float;\nprecision highp int;\nprecision highp isampler2D;\n\nin vec2 v_UV;\n\nuniform isampler2D u_state;\n\nout ivec4 out_fragColor;\n\nvoid main() {\n\tout_fragColor = texture(u_state, v_UV);\n}"
-
-/***/ }),
-
-/***/ 374:
-/***/ ((module) => {
-
-module.exports = "#version 300 es\nprecision highp float;\nprecision highp int;\nprecision highp usampler2D;\n\nin vec2 v_UV;\n\nuniform usampler2D u_state;\n\nout uvec4 out_fragColor;\n\nvoid main() {\n\tout_fragColor = texture(u_state, v_UV);\n}"
+module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 a_internal_position;\n\nuniform float u_internal_halfThickness;\nuniform vec2 u_internal_scale;\nuniform float u_internal_length;\nuniform float u_internal_rotation;\nuniform vec2 u_internal_translation;\n\nout vec2 v_UV_local;\nout vec2 v_UV;\n\nmat2 rotate2d(float _angle){\n\treturn mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));\n}\n\nvoid main() {\n\t// Calculate UV coordinates of current rendered object.\n\tv_UV_local = 0.5 * (a_internal_position + 1.0);\n\n\tvec2 position = a_internal_position;\n\n\t// Apply thickness / radius.\n\tposition *= u_internal_halfThickness;\n\n\t// Stretch center of shape to form a round-capped line segment.\n\tif (position.x < 0.0) {\n\t\tposition.x -= u_internal_length / 2.0;\n\t\tv_UV_local.x = 0.0; // Set entire cap UV.x to 0.\n\t} else if (position.x > 0.0) {\n\t\tposition.x += u_internal_length / 2.0;\n\t\tv_UV_local.x = 1.0; // Set entire cap UV.x to 1.\n\t}\n\n\t// Apply transformations.\n\tposition = u_internal_scale * (rotate2d(-u_internal_rotation) * position) + u_internal_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_UV = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}"
 
 /***/ }),
 

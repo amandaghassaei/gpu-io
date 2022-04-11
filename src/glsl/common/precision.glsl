@@ -3,3 +3,5 @@
 precision highp int;
 precision highp float;
 precision lowp sampler2D;
+precision lowp isampler2D;
+precision lowp usampler2D;

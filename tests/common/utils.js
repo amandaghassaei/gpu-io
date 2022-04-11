@@ -51,26 +51,28 @@ function makeColumn(results, extremaResults, title) {
 	titleDiv.innerHTML = title;
 	container.appendChild(titleDiv);
 	results.forEach((result, index) => {
-		// Merge in extrema result.
-		const extremaResult = extremaResults[index];
-		if (extremaResult.extremaError) result.error.push(...extremaResult.extremaError);
-		if (extremaResult.extremaWarning) result.error.push(...extremaResult.extremaWarning);
-		if (extremaResult.status === ERROR) {
-			result.status = ERROR;
-		} else if (extremaResult.status === WARNING && result.status !== ERROR) {
-			result.status = WARNING;
+		if (result.status !== NA) {
+			// Merge in extrema result.
+			const extremaResult = extremaResults[index];
+			if (extremaResult.extremaError) result.error.push(...extremaResult.extremaError);
+			if (extremaResult.extremaWarning) result.error.push(...extremaResult.extremaWarning);
+			if (extremaResult.status === ERROR) {
+				result.status = ERROR;
+			} else if (extremaResult.status === WARNING && result.status !== ERROR) {
+				result.status = WARNING;
+			}
 		}
 
 		const element = document.createElement('div');
 		element.className = `entry result ${result.status}`;
 		if (result.status === SUCCESS) {
 			element.innerHTML = `&#10003;${result.error.length ? '*' : ''}`;
-		} else {
-			if (result.status === WARNING) {
-				element.innerHTML = '!'
-			} else if (result.status === ERROR) {
-				element.innerHTML = 'X'
-			}
+		} else if (result.status === NA) {
+			element.innerHTML = 'NA'
+		} else if (result.status === WARNING) {
+			element.innerHTML = '!'
+		} else if (result.status === ERROR) {
+			element.innerHTML = 'X'
 		}
 		const link = document.createElement('a');
 		link.href = '#';

@@ -1,10 +1,9 @@
-precision highp float;
-precision highp int;
-
-@import ./Utils;
+#version 300 es
+@import ../common/precision;
+@import ../common/utils;
 
 // Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl
-attribute float a_internal_index; // Index of point.
+in float a_internal_index; // Index of point.
 
 uniform sampler2D u_internal_positions; // Texture lookup with position data.
 uniform vec2 u_internal_positionsDimensions;
@@ -14,8 +13,8 @@ uniform bool u_internal_positionWithAccumulation;
 uniform bool u_internal_wrapX;
 uniform bool u_internal_wrapY;
 
-varying vec2 v_UV;
-varying float v_index;
+out vec2 v_UV;
+out float v_index;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.

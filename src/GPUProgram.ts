@@ -12,7 +12,6 @@ import {
 	FLOAT_2D_UNIFORM,
 	FLOAT_3D_UNIFORM,
 	FLOAT_4D_UNIFORM,
-	GLSL3,
 	INT,
 	BOOL,
 	INT_1D_UNIFORM,
@@ -23,81 +22,20 @@ import {
 	UniformType,
 	UniformInternalType,
 	UniformValue,
+	CompileTimeVars,
+	PROGRAM_NAME_INTERNAL,
+	DEFAULT_PROGRAM_NAME,
+	DEFAULT_W_UV_PROGRAM_NAME,
+	DEFAULT_W_NORMAL_PROGRAM_NAME,
+	DEFAULT_W_UV_NORMAL_PROGRAM_NAME,
+	SEGMENT_PROGRAM_NAME,
+	DATA_LAYER_POINTS_PROGRAM_NAME,
+	DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME,
+	DATA_LAYER_LINES_PROGRAM_NAME,
 } from './Constants';
 import {
 	compileShader,
 } from './utils';
-
-const DEFAULT_PROGRAM_NAME = 'DEFAULT';
-const DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
-const DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
-const DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
-const SEGMENT_PROGRAM_NAME = 'SEGMENT';
-const DATA_LAYER_POINTS_PROGRAM_NAME = 'DATA_LAYER_POINTS';
-const DATA_LAYER_LINES_PROGRAM_NAME = 'DATA_LAYER_LINES';
-const DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = 'DATA_LAYER_VECTOR_FIELD';
-type PROGRAM_NAME_INTERNAL =
-	typeof DEFAULT_PROGRAM_NAME |
-	typeof DEFAULT_W_UV_PROGRAM_NAME |
-	typeof DEFAULT_W_NORMAL_PROGRAM_NAME |
-	typeof DEFAULT_W_UV_NORMAL_PROGRAM_NAME |
-	typeof SEGMENT_PROGRAM_NAME |
-	typeof DATA_LAYER_POINTS_PROGRAM_NAME |
-	typeof DATA_LAYER_LINES_PROGRAM_NAME |
-	typeof DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME;
-
-// Pass in #defines as strings to make it easier to control float vs int.
-type CompileTimeVars = { [key: string]: string };
-
-const vertexShaders: {[key in PROGRAM_NAME_INTERNAL]: {
-	src_1: string,
-	src_3: string,
-	shader?: WebGLProgram,
-	defines?: CompileTimeVars,
-}} = {
-	[DEFAULT_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
-		src_3: '',
-	},
-	[DEFAULT_W_UV_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
-		src_3: '',
-		defines: {
-			'UV_ATTRIBUTE': '1',
-		},
-	},
-	[DEFAULT_W_NORMAL_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
-		src_3: '',
-		defines: {
-			'NORMAL_ATTRIBUTE': '1',
-		},
-	},
-	[DEFAULT_W_UV_NORMAL_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/DefaultVertexShader.glsl'),
-		src_3: '',
-		defines: {
-			'UV_ATTRIBUTE': '1',
-			'NORMAL_ATTRIBUTE': '1',
-		},
-	},
-	[SEGMENT_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/SegmentVertexShader.glsl'),
-		src_3: '',
-	},
-	[DATA_LAYER_POINTS_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/DataLayerPointsVertexShader.glsl'),
-		src_3: '',
-	},
-	[DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/DataLayerVectorFieldVertexShader.glsl'),
-		src_3: '',
-	},
-	[DATA_LAYER_LINES_PROGRAM_NAME]: {
-		src_1: require('./glsl_1/DataLayerLinesVertexShader.glsl'),
-		src_3: '',
-	},
-};
 
 export class GPUProgram {
 	readonly name: string;
@@ -192,6 +130,7 @@ export class GPUProgram {
 			throw new Error(`Unable to recompile fragment shader for program "${name}" because fragment shader is already compiled, no source available.`);
 		}
 		if (verboseLogging) console.log(`Compiling fragment shader "${name}" with defines ${JSON.stringify(this.defines)}`);
+		// TODO: defines should come after version declaration.
 		const definesSource = GPUProgram.convertDefinesToString(this.defines);
 		const shader = compileShader(gl, errorCallback, `${definesSource}${fragmentShaderSource}`, gl.FRAGMENT_SHADER, name);
 		if (!shader) {
@@ -235,17 +174,19 @@ export class GPUProgram {
 
 	private getProgramWithName(name: PROGRAM_NAME_INTERNAL) {
 		if (this.programs[name]) return this.programs[name];
-		const { errorCallback } = this.glcompute;
-		const vertexShader = vertexShaders[name];
+		const { glcompute } = this;
+		const { errorCallback, _vertexShaders } = glcompute;
+		const vertexShader = _vertexShaders[name];
 		if (vertexShader.shader === undefined) {
 			const { glcompute, name } = this;
-			const { gl, glslVersion } = glcompute;
+			const { gl } = glcompute;
 			// Init a vertex shader.
-			let vertexShaderSource = glslVersion === GLSL3 ? vertexShader.src_3 : vertexShader.src_1;
+			let vertexShaderSource = glcompute._preprocessVertShader(vertexShader.src);
 			if (vertexShaderSource === '') {
 				throw new Error(`No source for vertex shader ${this.name} : ${name}`)
 			}
 			if (vertexShader.defines) {
+				// TODO: defines should come after version declaration.
 				vertexShaderSource = GPUProgram.convertDefinesToString(vertexShader.defines) + vertexShaderSource;
 			}
 			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
@@ -495,7 +436,7 @@ Error code: ${gl.getError()}.`);
 		this.setProgramUniform(program, programName, uniformName, value, internalType);
 	}
 
-	destroy() {
+	dispose() {
 		const { glcompute, fragmentShader, programs } = this;
 		const { gl, verboseLogging } = glcompute;
 		if (verboseLogging) console.log(`Destroying program "${name}".`);

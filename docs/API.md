@@ -16,15 +16,16 @@ const dataLayer = glcompute.initDataLayer({
 	type: HALF_FLOAT | FLOAT | UNSIGNED_BYTE | BYTE | UNSIGNED_SHORT | SHORT | UNSIGNED_INT | INT,
 	// How many components does this DataLayer contain?
 	// Scalar state has 1 component, 2D vector fields have 2.
-	// Limited to 4 here because  WebGL textures only support up to RGBA channels.
+	// Limited to 4 because WebGL textures only support up to RGBA channels.
 	numComponents: 1 | 2 | 3 | 4,
 	// Optionally pass in initial data array, otherwise DataLayer is allocated but not initialized with a value.
-	// If you need to texture to be initialized to zero, you will need to manually write zero to it.
+	// If you need to texture to be initialized to zero, you must manually write zero to it (see DataLayer.clear()).
 	// For HALF_FLOAT types, pass in a Float32Array (there is no Float16Array in Javascript).
 	// Length of array must correspond to dimensions and numComponents.
 	array?: TypedArray | number[],
 	// Filter to use when interpolating pixels during read operations.
-	// For 1D arrays this defaults to NEAREST, and for 2D arrays this defaults to LINEAR.
+	// For 1D arrays and 2D integer arrays this defaults to NEAREST.
+	// For 2D float arrays this defaults to LINEAR.
 	filter?: LINEAR | NEAREST,
 	// Wrapping in X / Y, defaults to CLAMP_TO_EDGE.
 	wrapS?: REPEAT | CLAMP_TO_EDGE,
@@ -49,6 +50,7 @@ DataLayer properties:
 
 ```js
 // Options passed into the constructor are available as properties.
+
 readonly name: string;
 readonly type: HALF_FLOAT | FLOAT | UNSIGNED_BYTE | BYTE | UNSIGNED_SHORT | SHORT | UNSIGNED_INT | INT;
 readonly numComponents: 1 | 2 | 3 | 4;
@@ -58,6 +60,7 @@ readonly wrapT: REPEAT | CLAMP_TO_EDGE;
 readonly writable: boolean;
 readonly numBuffers: number;
 clearValue: number | number[]; // clearValue can be set at any time.
+
 // DataLayer.width and DataLayer.height give the dimensions of the WebGLTexture used to perform fragment shader computations.
 // for 2D DataLayers, this will be the same as the dimensions parameter passed to the constructor.
 // 1D DataLayers will have a width and height satisfying: width * height >= length;
@@ -76,17 +79,22 @@ readonly bufferIndex: number; // Index of currently used buffer (incremented on 
 // All "gl" variables are used to initialize internal WebGLTexture.
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texParameter
+
 readonly glInternalFormat: number;
 readonly glFormat: number;
+
 // DataLayer.internalType corresponds to DataLayer.glType, may be different from DataLayer.type.
 readonly internalType: HALF_FLOAT | FLOAT | UNSIGNED_BYTE | BYTE | UNSIGNED_SHORT | SHORT | UNSIGNED_INT | INT; 
 readonly glType: number;
+
 // Internally, DataLayer.glNumChannels may represent a larger number of channels than DataLayer.numComponents.
 // For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
 readonly glNumChannels: number;
+
 // DataLayer.internalFilter corresponds to DataLayer.glFilter, may be different from DataLayer.filter.
 readonly internalFilter: LINEAR | NEAREST;
 readonly glFilter: number;
+
 // DataLayer.internalWrapS corresponds to DataLayer.glWrapS, may be different from DataLayer.wrapS.
 readonly internalWrapS: REPEAT | CLAMP_TO_EDGE;
 readonly glWrapS: number;
@@ -138,3 +146,23 @@ saveCurrentStateToDataLayer(layer: DataLayer)
 ```
 
 ## GPUProgram
+
+GPUProgram are programs that can be applied to [DataLayers](#datalayer).
+
+To initialize a GPUProgram:
+
+```js
+
+
+```
+
+GPUProgram properties:
+
+```js
+```
+
+You are in charge of deallocating GUPrograms when you are done with them:
+
+```js
+gpuProgram.dispose();
+```

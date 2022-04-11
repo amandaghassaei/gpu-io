@@ -1,8 +1,7 @@
 import { DataLayer } from './DataLayer';
-import { DataLayerArrayType, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap, UniformType, UniformValue, GLSLVersion, TextureFormat, TextureType } from './Constants';
+import { DataLayerArrayType, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap, UniformType, UniformValue, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
-declare type ErrorCallback = (message: string) => void;
 export declare class WebGLCompute {
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     readonly glslVersion: GLSLVersion;
@@ -26,6 +25,13 @@ export declare class WebGLCompute {
     private _singleColorProgram?;
     private _singleColorWithWrapCheckProgram?;
     private _vectorMagnitudeProgram?;
+    readonly _vertexShaders: {
+        [key in PROGRAM_NAME_INTERNAL]: {
+            src: string;
+            shader?: WebGLProgram;
+            defines?: CompileTimeVars;
+        };
+    };
     verboseLogging: boolean;
     static initWithThreeRenderer(renderer: WebGLRenderer, params: {
         glslVersion?: GLSLVersion;
@@ -42,6 +48,9 @@ export declare class WebGLCompute {
         glslVersion?: GLSLVersion;
         verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
+    private preprocessShader;
+    _preprocessFragShader(shaderSource: string): string;
+    _preprocessVertShader(shaderSource: string): string;
     private get singleColorProgram();
     private get singleColorWithWrapCheckProgram();
     private get vectorMagnitudeProgram();
@@ -219,6 +228,5 @@ export declare class WebGLCompute {
     reset(): void;
     attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;
     resetThreeState(): void;
-    destroy(): void;
+    dispose(): void;
 }
-export {};

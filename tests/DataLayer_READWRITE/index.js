@@ -3,6 +3,7 @@ const { setFloat16, getFloat16 } = float16;
 const SUCCESS = 'success';
 const ERROR = 'error';
 const WARNING = 'warning';
+const NA = 'NA';
 
 requirejs([
 	'../../dist/webgl-compute',
@@ -49,7 +50,7 @@ void main() {
 			case FLOAT:
 				return `#version 300 es
 precision highp float;
-precision highp sampler2D;
+precision lowp sampler2D;
 
 in vec2 v_UV;
 
@@ -67,7 +68,7 @@ void main() {
 				return `#version 300 es
 precision highp float;
 precision highp int;
-precision highp usampler2D;
+precision lowp usampler2D;
 
 in vec2 v_UV;
 
@@ -85,7 +86,7 @@ void main() {
 				return `#version 300 es
 precision highp float;
 precision highp int;
-precision highp isampler2D;
+precision lowp isampler2D;
 
 in vec2 v_UV;
 
@@ -189,11 +190,20 @@ void main() {
 			num_channels: NUM_ELEMENTS,
 			wrap: WRAP,
 			filter: FILTER,
+			webgl_version: WEBGL_VERSION === 'webgl2' ? 'webgl 2' : 'webgl 1',
+			glsl_version: GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3',
 		};
 
+		if (FILTER === LINEAR && !(TYPE == FLOAT || TYPE === HALF_FLOAT)) {
+			return {
+				status: NA,
+				log: ['Integer DataLayers do not support LINEAR filtering.'],
+				error: [],
+				config,
+			};
+		}
+
 		try {
-			config.webgl_version = WEBGL_VERSION === 'webgl2' ? 'webgl 2' : 'webgl 1';
-			config.glsl_version = GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3';
 			const glcompute = new WebGLCompute({
 				canvas: WEBGL_VERSION === WEBGL2 ? gl2Canvas : gl1Canvas,
 				contextID: WEBGL_VERSION,
@@ -474,8 +484,6 @@ void main() {
 			});
 			const output = glcompute.getValues(dataLayer);
 
-			glcompute.destroy();
-
 			let status = SUCCESS;
 			const error = [];
 			const log = [];
@@ -535,6 +543,8 @@ void main() {
 				}
 
 				dataLayer.dispose();
+				offsetProgram.dispose();
+				glcompute.dispose();
 
 				return {
 					status,

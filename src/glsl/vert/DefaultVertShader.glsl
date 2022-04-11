@@ -1,20 +1,21 @@
-precision highp float;
+#version 300 es
+@import ../common/precision;
 
-attribute vec2 a_internal_position;
+in vec2 a_internal_position;
 #ifdef UV_ATTRIBUTE
-attribute vec2 a_internal_uv;
+in vec2 a_internal_uv;
 #endif
 #ifdef NORMAL_ATTRIBUTE
-attribute vec2 a_internal_normal;
+in vec2 a_internal_normal;
 #endif
 
 uniform vec2 u_internal_scale;
 uniform vec2 u_internal_translation;
 
-varying vec2 v_UV;
-varying vec2 v_UV_local;
+out vec2 v_UV;
+out vec2 v_UV_local;
 #ifdef NORMAL_ATTRIBUTE
-varying vec2 v_normal;
+out vec2 v_normal;
 #endif
 
 void main() {

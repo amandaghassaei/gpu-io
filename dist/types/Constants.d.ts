@@ -55,3 +55,21 @@ export declare type Uniform = {
     type: UniformInternalType;
     value: UniformValue;
 };
+export declare const DEFAULT_PROGRAM_NAME = "DEFAULT";
+export declare const DEFAULT_W_UV_PROGRAM_NAME = "DEFAULT_W_UV";
+export declare const DEFAULT_W_NORMAL_PROGRAM_NAME = "DEFAULT_W_NORMAL";
+export declare const DEFAULT_W_UV_NORMAL_PROGRAM_NAME = "DEFAULT_W_UV_NORMAL";
+export declare const SEGMENT_PROGRAM_NAME = "SEGMENT";
+export declare const DATA_LAYER_POINTS_PROGRAM_NAME = "DATA_LAYER_POINTS";
+export declare const DATA_LAYER_LINES_PROGRAM_NAME = "DATA_LAYER_LINES";
+export declare const DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = "DATA_LAYER_VECTOR_FIELD";
+export declare type PROGRAM_NAME_INTERNAL = typeof DEFAULT_PROGRAM_NAME | typeof DEFAULT_W_UV_PROGRAM_NAME | typeof DEFAULT_W_NORMAL_PROGRAM_NAME | typeof DEFAULT_W_UV_NORMAL_PROGRAM_NAME | typeof SEGMENT_PROGRAM_NAME | typeof DATA_LAYER_POINTS_PROGRAM_NAME | typeof DATA_LAYER_LINES_PROGRAM_NAME | typeof DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME;
+export declare type CompileTimeVars = {
+    [key: string]: string;
+};
+export declare type DataLayerBuffer = {
+    texture: WebGLTexture;
+    framebuffer?: WebGLFramebuffer;
+};
+export declare type ErrorCallback = (message: string) => void;
+export declare const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;

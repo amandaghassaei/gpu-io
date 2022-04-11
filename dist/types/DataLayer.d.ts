@@ -1,9 +1,5 @@
 import { WebGLCompute } from '.';
 import { DataLayerArrayType, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap } from './Constants';
-export declare type DataLayerBuffer = {
-    texture: WebGLTexture;
-    framebuffer?: WebGLFramebuffer;
-};
 export declare class DataLayer {
     private readonly glcompute;
     readonly name: string;

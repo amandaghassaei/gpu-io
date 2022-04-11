@@ -64,3 +64,33 @@ export type Uniform = {
 	value: UniformValue,
 };
 
+// Vertex shaders.
+export const DEFAULT_PROGRAM_NAME = 'DEFAULT';
+export const DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
+export const DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
+export const DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
+export const SEGMENT_PROGRAM_NAME = 'SEGMENT';
+export const DATA_LAYER_POINTS_PROGRAM_NAME = 'DATA_LAYER_POINTS';
+export const DATA_LAYER_LINES_PROGRAM_NAME = 'DATA_LAYER_LINES';
+export const DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = 'DATA_LAYER_VECTOR_FIELD';
+export type PROGRAM_NAME_INTERNAL =
+	typeof DEFAULT_PROGRAM_NAME |
+	typeof DEFAULT_W_UV_PROGRAM_NAME |
+	typeof DEFAULT_W_NORMAL_PROGRAM_NAME |
+	typeof DEFAULT_W_UV_NORMAL_PROGRAM_NAME |
+	typeof SEGMENT_PROGRAM_NAME |
+	typeof DATA_LAYER_POINTS_PROGRAM_NAME |
+	typeof DATA_LAYER_LINES_PROGRAM_NAME |
+	typeof DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME;
+
+// Pass in #defines as strings to make it easier to control float vs int.
+export type CompileTimeVars = { [key: string]: string };
+
+export type DataLayerBuffer = {
+	texture: WebGLTexture,
+	framebuffer?: WebGLFramebuffer,
+}
+
+export type ErrorCallback = (message: string) => void;
+
+export const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;// Must be divisible by 6 to work with stepSegment().

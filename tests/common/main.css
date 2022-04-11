@@ -94,3 +94,6 @@ a, a:link, a:visited, a:hover, a:active {
 .error {
 	background-color: lightpink;
 }
+.log {
+	background-color: white;
+}
