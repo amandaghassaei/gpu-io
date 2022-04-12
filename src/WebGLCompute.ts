@@ -295,7 +295,6 @@ export class WebGLCompute {
 	private preprocessShader(shaderSource: string) {
 		// Convert to glsl1.
 		// Get rid of version declaration.
-		console.log(shaderSource);
 		shaderSource = shaderSource.replace('#version 300 es', '');
 		// Remove unnecessary precision declarations.
 		shaderSource = shaderSource.replace(/precision \w+ isampler2D;/g, '');
@@ -1947,40 +1946,54 @@ export class WebGLCompute {
 	}
 	
 	dispose() {
-		// TODO: Need to implement this.
-		delete this.renderer;
+		const {
+			gl, verboseLogging,
+			_vertexShaders,
+			copyPrograms, setValuePrograms, vectorMagnitudePrograms,
+		} = this;
+
+		if (verboseLogging) console.log(`Deallocating WebGLCompute.`);
+
+		// TODO: delete buffers.
+
 		// Delete vertex shaders.
-		Object.values(this._vertexShaders).forEach(vertexShader => {
+		Object.values(_vertexShaders).forEach(vertexShader => {
 			if (vertexShader.shader) {
-				this.gl.deleteShader(vertexShader.shader);
+				gl.deleteShader(vertexShader.shader);
 				delete vertexShader.shader;
 			}
 		});
 		
 		// Delete fragment shaders.
-		Object.values(this.copyPrograms).forEach(program => {
+		Object.values(copyPrograms).forEach(program => {
 			// @ts-ignore
 			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
 		});
-		Object.keys(this.copyPrograms).forEach(key => {
+		Object.keys(copyPrograms).forEach(key => {
 			// @ts-ignore
-			delete this.copyPrograms[key];
+			delete copyPrograms[key];
 		});
-		Object.values(this.setValuePrograms).forEach(program => {
-			// @ts-ignore
-			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
-		});
-		Object.keys(this.setValuePrograms).forEach(key => {
-			// @ts-ignore
-			delete this.copyPrograms[key];
-		});
-		Object.values(this.vectorMagnitudePrograms).forEach(program => {
+		Object.values(setValuePrograms).forEach(program => {
 			// @ts-ignore
 			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
 		});
-		Object.keys(this.vectorMagnitudePrograms).forEach(key => {
+		Object.keys(setValuePrograms).forEach(key => {
 			// @ts-ignore
-			delete this.copyPrograms[key];
+			delete setValuePrograms[key];
 		});
+		Object.values(vectorMagnitudePrograms).forEach(program => {
+			// @ts-ignore
+			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
+		});
+		Object.keys(vectorMagnitudePrograms).forEach(key => {
+			// @ts-ignore
+			delete vectorMagnitudePrograms[key];
+		});
+		this._wrappedLineColorProgram?.dispose();
+		delete this._wrappedLineColorProgram;
+
+		delete this.renderer;
+		// @ts-ignore
+		delete this.gl;
 	}
 }

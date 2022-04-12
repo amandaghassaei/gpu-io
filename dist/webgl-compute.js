@@ -3422,7 +3422,7 @@ var DataLayer = /** @class */ (function () {
         var _a = this, name = _a.name, glcompute = _a.glcompute;
         var verboseLogging = glcompute.verboseLogging;
         if (verboseLogging)
-            console.log("Destroying DataLayer \"" + name + "\".");
+            console.log("Deallocating DataLayer \"" + name + "\".");
         this.destroyBuffers();
         // @ts-ignore
         delete this.glcompute;
@@ -3450,9 +3450,11 @@ var Constants_1 = __webpack_require__(738);
 var utils_1 = __webpack_require__(593);
 var GPUProgram = /** @class */ (function () {
     function GPUProgram(glcompute, params) {
-        this.uniforms = {};
-        this.defines = {};
-        // Store gl programs.
+        this.defines = {}; // #define variables for fragment shader program.
+        this.uniforms = {}; // Uniform locations, values, and types.
+        // Store WebGLPrograms programs - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
+        // Each combination of vertex + fragment shader requires a separate WebGLProgram.
+        // These programs are compiled as needed.
         this.programs = {};
         var name = params.name, fragmentShader = params.fragmentShader, uniforms = params.uniforms, defines = params.defines;
         // Save arguments.
@@ -3464,11 +3466,11 @@ var GPUProgram = /** @class */ (function () {
                 fragmentShader :
                 fragmentShader.join('\n');
             this.fragmentShaderSource = sourceString;
+            this.recompile(defines);
         }
         else {
             this.fragmentShader = fragmentShader;
         }
-        this.recompile(defines);
         if (uniforms) {
             for (var i = 0; i < (uniforms === null || uniforms === void 0 ? void 0 : uniforms.length); i++) {
                 var _a = uniforms[i], name_1 = _a.name, value = _a.value, type = _a.type;
@@ -3498,13 +3500,13 @@ var GPUProgram = /** @class */ (function () {
         }
         if (!fragmentShaderSource) {
             // No fragment shader source available.
-            throw new Error("Unable to recompile fragment shader for program \"" + name + "\" because fragment shader is already compiled, no source available.");
+            throw new Error("Unable to recompile fragment shader for GPUProgram \"" + name + "\" because fragment shader compiled outside this scope, no source available.");
         }
         if (verboseLogging)
-            console.log("Compiling fragment shader \"" + name + "\" with defines " + JSON.stringify(this.defines));
+            console.log("Compiling fragment shader for GPUProgram \"" + name + "\" with defines: " + JSON.stringify(this.defines));
         var shader = utils_1.compileShader(glcompute, fragmentShaderSource, gl.FRAGMENT_SHADER, name, this.defines);
         if (!shader) {
-            errorCallback("Unable to compile fragment shader for program \"" + name + "\".");
+            errorCallback("Unable to compile fragment shader for GPUProgram \"" + name + "\".");
             return;
         }
         this.fragmentShader = shader;
@@ -3515,7 +3517,7 @@ var GPUProgram = /** @class */ (function () {
         // Create a program.
         var program = gl.createProgram();
         if (!program) {
-            errorCallback("Unable to init gl program: " + this.name + ".");
+            errorCallback("Unable to init gl program, gl.createProgram() has failed.");
             return;
         }
         // TODO: check that attachShader worked.
@@ -3547,23 +3549,23 @@ var GPUProgram = /** @class */ (function () {
         var errorCallback = glcompute.errorCallback, _vertexShaders = glcompute._vertexShaders;
         var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
-            var _a = this, glcompute_1 = _a.glcompute, name_2 = _a.name;
+            var glcompute_1 = this.glcompute;
             var gl = glcompute_1.gl;
             // Init a vertex shader.
             var vertexShaderSource = glcompute_1._preprocessVertShader(vertexShader.src);
             if (vertexShaderSource === '') {
-                throw new Error("No source for vertex shader " + this.name + " : " + name_2);
+                throw new Error("No source for vertex shader " + this.name + " : " + name);
             }
-            var shader = utils_1.compileShader(glcompute_1, vertexShaderSource, gl.VERTEX_SHADER, name_2, vertexShader.defines);
+            var shader = utils_1.compileShader(glcompute_1, vertexShaderSource, gl.VERTEX_SHADER, this.name, vertexShader.defines);
             if (!shader) {
-                errorCallback("Unable to compile default vertex shader for program \"" + name_2 + "\".");
+                errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + this.name + "\".");
                 return;
             }
             vertexShader.shader = shader;
         }
         var program = this.initProgram(vertexShader.shader, Constants_1.DEFAULT_PROGRAM_NAME);
         if (program === undefined) {
-            errorCallback("Unable to init program \"" + name + "\".");
+            errorCallback("Unable to init program \"" + name + "\" for GPUProgram \"" + this.name + "\".");
             return;
         }
         this.programs[name] = program;
@@ -3778,6 +3780,7 @@ var GPUProgram = /** @class */ (function () {
         }
         else {
             // Update value.
+            // TODO: do a deep check for array values.
             if (uniforms[name].value === value) {
                 return; // No change.
             }
@@ -3808,10 +3811,10 @@ var GPUProgram = /** @class */ (function () {
     };
     GPUProgram.prototype.dispose = function () {
         var _this = this;
-        var _a = this, glcompute = _a.glcompute, fragmentShader = _a.fragmentShader, programs = _a.programs;
+        var _a = this, glcompute = _a.glcompute, fragmentShaderSource = _a.fragmentShaderSource, fragmentShader = _a.fragmentShader, programs = _a.programs;
         var gl = glcompute.gl, verboseLogging = glcompute.verboseLogging;
         if (verboseLogging)
-            console.log("Destroying program \"" + this.name + "\".");
+            console.log("Deallocating GPUProgram \"" + this.name + "\".");
         // Unbind all gl data before deleting.
         Object.values(programs).forEach(function (program) {
             gl.deleteProgram(program);
@@ -3819,9 +3822,12 @@ var GPUProgram = /** @class */ (function () {
         Object.keys(this.programs).forEach(function (key) {
             delete _this.programs[key];
         });
+        // If the shader was compiled internally, delete it.
         // From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
-        // This method has no effect if the shader has already been deleted
-        gl.deleteShader(fragmentShader);
+        // This method has no effect if the shader has already been deleted.
+        if (fragmentShaderSource) {
+            gl.deleteShader(fragmentShader);
+        }
         // @ts-ignore
         delete this.fragmentShader;
         // @ts-ignore
@@ -4063,7 +4069,6 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.preprocessShader = function (shaderSource) {
         // Convert to glsl1.
         // Get rid of version declaration.
-        console.log(shaderSource);
         shaderSource = shaderSource.replace('#version 300 es', '');
         // Remove unnecessary precision declarations.
         shaderSource = shaderSource.replace(/precision \w+ isampler2D;/g, '');
@@ -5425,44 +5430,51 @@ var WebGLCompute = /** @class */ (function () {
         this.renderer.resetState();
     };
     WebGLCompute.prototype.dispose = function () {
-        var _this = this;
-        // TODO: Need to implement this.
-        delete this.renderer;
+        var _a;
+        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, copyPrograms = _b.copyPrograms, setValuePrograms = _b.setValuePrograms, vectorMagnitudePrograms = _b.vectorMagnitudePrograms;
+        if (verboseLogging)
+            console.log("Deallocating WebGLCompute.");
+        // TODO: delete buffers.
         // Delete vertex shaders.
-        Object.values(this._vertexShaders).forEach(function (vertexShader) {
+        Object.values(_vertexShaders).forEach(function (vertexShader) {
             if (vertexShader.shader) {
-                _this.gl.deleteShader(vertexShader.shader);
+                gl.deleteShader(vertexShader.shader);
                 delete vertexShader.shader;
             }
         });
         // Delete fragment shaders.
-        Object.values(this.copyPrograms).forEach(function (program) {
+        Object.values(copyPrograms).forEach(function (program) {
             // @ts-ignore
             if (program.dispose)
                 program.dispose();
         });
-        Object.keys(this.copyPrograms).forEach(function (key) {
+        Object.keys(copyPrograms).forEach(function (key) {
             // @ts-ignore
-            delete _this.copyPrograms[key];
+            delete copyPrograms[key];
         });
-        Object.values(this.setValuePrograms).forEach(function (program) {
-            // @ts-ignore
-            if (program.dispose)
-                program.dispose();
-        });
-        Object.keys(this.setValuePrograms).forEach(function (key) {
-            // @ts-ignore
-            delete _this.copyPrograms[key];
-        });
-        Object.values(this.vectorMagnitudePrograms).forEach(function (program) {
+        Object.values(setValuePrograms).forEach(function (program) {
             // @ts-ignore
             if (program.dispose)
                 program.dispose();
         });
-        Object.keys(this.vectorMagnitudePrograms).forEach(function (key) {
+        Object.keys(setValuePrograms).forEach(function (key) {
             // @ts-ignore
-            delete _this.copyPrograms[key];
+            delete setValuePrograms[key];
         });
+        Object.values(vectorMagnitudePrograms).forEach(function (program) {
+            // @ts-ignore
+            if (program.dispose)
+                program.dispose();
+        });
+        Object.keys(vectorMagnitudePrograms).forEach(function (key) {
+            // @ts-ignore
+            delete vectorMagnitudePrograms[key];
+        });
+        (_a = this._wrappedLineColorProgram) === null || _a === void 0 ? void 0 : _a.dispose();
+        delete this._wrappedLineColorProgram;
+        delete this.renderer;
+        // @ts-ignore
+        delete this.gl;
     };
     return WebGLCompute;
 }());
@@ -5589,7 +5601,7 @@ function compileShader(glcompute, shaderSource, shaderType, programName, defines
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print the error.
-        errorCallback("Could not compile " + (shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex') + "\n\t\t\t shader" + (programName ? " for program \"" + programName + "\"" : '') + ": " + gl.getShaderInfoLog(shader) + ".");
+        errorCallback("Could not compile " + (shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex') + "\n\t\t\t shader for program \"" + programName + "\": " + gl.getShaderInfoLog(shader) + ".");
         return null;
     }
     return shader;

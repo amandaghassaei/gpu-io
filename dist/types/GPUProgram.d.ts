@@ -1,12 +1,12 @@
 import { WebGLCompute } from './WebGLCompute';
 import { UniformType, UniformValue, CompileTimeVars } from './Constants';
 export declare class GPUProgram {
-    readonly name: string;
     private readonly glcompute;
-    private readonly uniforms;
+    readonly name: string;
     private fragmentShader;
     private readonly fragmentShaderSource?;
     private defines;
+    private readonly uniforms;
     private programs;
     constructor(glcompute: WebGLCompute, params: {
         name: string;

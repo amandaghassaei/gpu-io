@@ -4,7 +4,6 @@ import {
 	isBoolean,
 	isInteger,
 	isNumber,
-	isString,
 } from './Checks';
 import {
 	FLOAT,
@@ -38,13 +37,23 @@ import {
 } from './utils';
 
 export class GPUProgram {
-	readonly name: string;
+	// Keep a reference to WebGLCompute.
 	private readonly glcompute: WebGLCompute;
-	private readonly uniforms: { [ key: string]: Uniform } = {};
+
+	readonly name: string; // Name of DataLayer, used for error logging.
+
 	private fragmentShader!: WebGLShader; // Compiled fragment shader.
-	private readonly fragmentShaderSource?: string; // Source code for fragment shader.
-	private defines: CompileTimeVars = {};
-	// Store gl programs.
+
+	// Source code for fragment shader.
+	// Hold onto this in case we need to recompile with different #defines.
+	private readonly fragmentShaderSource?: string;
+	
+	private defines: CompileTimeVars = {}; // #define variables for fragment shader program.
+	private readonly uniforms: { [ key: string]: Uniform } = {}; // Uniform locations, values, and types.
+
+	// Store WebGLPrograms programs - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
+	// Each combination of vertex + fragment shader requires a separate WebGLProgram.
+	// These programs are compiled as needed.
 	private programs: {[key in PROGRAM_NAME_INTERNAL]?: WebGLProgram } = {};
 
 	constructor(
@@ -75,10 +84,10 @@ export class GPUProgram {
 				fragmentShader :
 				(fragmentShader as string[]).join('\n');
 			this.fragmentShaderSource = sourceString;
+			this.recompile(defines);
 		} else {
 			this.fragmentShader = fragmentShader as WebGLShader;
 		}
-		this.recompile(defines);
 
 		if (uniforms) {
 			for (let i = 0; i < uniforms?.length; i++) {
@@ -113,12 +122,12 @@ export class GPUProgram {
 
 		if (!fragmentShaderSource) {
 			// No fragment shader source available.
-			throw new Error(`Unable to recompile fragment shader for program "${name}" because fragment shader is already compiled, no source available.`);
+			throw new Error(`Unable to recompile fragment shader for GPUProgram "${name}" because fragment shader compiled outside this scope, no source available.`);
 		}
-		if (verboseLogging) console.log(`Compiling fragment shader "${name}" with defines ${JSON.stringify(this.defines)}`);
+		if (verboseLogging) console.log(`Compiling fragment shader for GPUProgram "${name}" with defines: ${JSON.stringify(this.defines)}`);
 		const shader = compileShader( glcompute, fragmentShaderSource, gl.FRAGMENT_SHADER, name, this.defines);
 		if (!shader) {
-			errorCallback(`Unable to compile fragment shader for program "${name}".`);
+			errorCallback(`Unable to compile fragment shader for GPUProgram "${name}".`);
 			return;
 		}
 		this.fragmentShader = shader;
@@ -130,7 +139,7 @@ export class GPUProgram {
 		// Create a program.
 		const program = gl.createProgram();
 		if (!program) {
-			errorCallback(`Unable to init gl program: ${this.name}.`);
+			errorCallback(`Unable to init gl program, gl.createProgram() has failed.`);
 			return;
 		}
 		// TODO: check that attachShader worked.
@@ -162,23 +171,23 @@ export class GPUProgram {
 		const { errorCallback, _vertexShaders } = glcompute;
 		const vertexShader = _vertexShaders[name];
 		if (vertexShader.shader === undefined) {
-			const { glcompute, name } = this;
+			const { glcompute } = this;
 			const { gl } = glcompute;
 			// Init a vertex shader.
 			let vertexShaderSource = glcompute._preprocessVertShader(vertexShader.src);
 			if (vertexShaderSource === '') {
 				throw new Error(`No source for vertex shader ${this.name} : ${name}`)
 			}
-			const shader = compileShader(glcompute, vertexShaderSource, gl.VERTEX_SHADER, name, vertexShader.defines);
+			const shader = compileShader(glcompute, vertexShaderSource, gl.VERTEX_SHADER, this.name, vertexShader.defines);
 			if (!shader) {
-				errorCallback(`Unable to compile default vertex shader for program "${name}".`);
+				errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${this.name}".`);
 				return;
 			}
 			vertexShader.shader = shader;
 		}
 		const program = this.initProgram(vertexShader.shader, DEFAULT_PROGRAM_NAME);
 		if (program === undefined) {
-			errorCallback(`Unable to init program "${name}".`);
+			errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
 			return;
 		}
 		this.programs[name] = program;
@@ -382,6 +391,7 @@ Error code: ${gl.getError()}.`);
 			uniforms[name] = { type: currentType, location: {}, value };
 		} else {
 			// Update value.
+			// TODO: do a deep check for array values.
 			if (uniforms[name].value === value) {
 				return; // No change.
 			}
@@ -417,9 +427,10 @@ Error code: ${gl.getError()}.`);
 	}
 
 	dispose() {
-		const { glcompute, fragmentShader, programs } = this;
+		const { glcompute, fragmentShaderSource, fragmentShader, programs } = this;
 		const { gl, verboseLogging } = glcompute;
-		if (verboseLogging) console.log(`Destroying program "${this.name}".`);
+
+		if (verboseLogging) console.log(`Deallocating GPUProgram "${this.name}".`);
 
 		// Unbind all gl data before deleting.
 		Object.values(programs).forEach(program => {
@@ -429,9 +440,12 @@ Error code: ${gl.getError()}.`);
 			delete this.programs[key as PROGRAM_NAME_INTERNAL];
 		});
 
+		// If the shader was compiled internally, delete it.
 		// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
-		// This method has no effect if the shader has already been deleted
-		gl.deleteShader(fragmentShader);
+		// This method has no effect if the shader has already been deleted.
+		if (fragmentShaderSource) {
+			gl.deleteShader(fragmentShader);
+		}
 		// @ts-ignore
 		delete this.fragmentShader;
 

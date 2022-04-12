@@ -202,7 +202,7 @@ void main() {
 			};
 		}
 
-		try {
+		// try {
 			const glcompute = new WebGLCompute({
 				canvas: WEBGL_VERSION === WEBGL2 ? gl2Canvas : gl1Canvas,
 				contextID: WEBGL_VERSION,
@@ -603,13 +603,13 @@ void main() {
 				error,
 				config,
 			};
-		} catch (error) {
-			return {
-				status: ERROR,
-				error: [error.message],
-				config,
-			};
-		}
+		// } catch (error) {
+		// 	return {
+		// 		status: ERROR,
+		// 		error: [error.message],
+		// 		config,
+		// 	};
+		// }
 	}
 
 	makeTable(testArrayWrites);

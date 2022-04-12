@@ -49,9 +49,10 @@ import {
 } from './utils';
 
 export class DataLayer {
+	// Keep a reference to WebGLCompute.
 	private readonly glcompute: WebGLCompute;
 
-	readonly name: string;
+	readonly name: string; // Name of DataLayer, used for error logging.
 	readonly type: DataLayerType; // Input type passed in during setup.
 	readonly numComponents: DataLayerNumComponents; // Number of RGBA channels to use for this DataLayer.
 	readonly filter: DataLayerFilter; // Interpolation filter for pixel read operations.
@@ -1215,7 +1216,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	dispose() {
 		const { name, glcompute } = this;
 		const { verboseLogging } = glcompute;
-		if (verboseLogging) console.log(`Destroying DataLayer "${name}".`);
+		if (verboseLogging) console.log(`Deallocating DataLayer "${name}".`);
 	
 		this.destroyBuffers();
 		// @ts-ignore

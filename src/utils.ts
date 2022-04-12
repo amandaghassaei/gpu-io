@@ -32,7 +32,7 @@ export function compileShader(
 	if (!success) {
 		// Something went wrong during compilation - print the error.
 		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
-			 shader${programName ? ` for program "${programName}"` : ''}: ${gl.getShaderInfoLog(shader)}.`);
+			 shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}
 	return shader;
