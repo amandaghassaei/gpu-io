@@ -1,5 +1,5 @@
 import { WebGLCompute } from '.';
-import { DataLayerArrayType, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap } from './Constants';
+import { DataLayerArray, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap } from './Constants';
 export declare class DataLayer {
     private readonly glcompute;
     readonly name: string;
@@ -33,7 +33,7 @@ export declare class DataLayer {
         dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
-        array?: DataLayerArrayType | number[];
+        array?: DataLayerArray | number[];
         filter?: DataLayerFilter;
         wrapS?: DataLayerWrap;
         wrapT?: DataLayerWrap;
@@ -51,6 +51,7 @@ export declare class DataLayer {
     get bufferIndex(): number;
     saveCurrentStateToDataLayer(layer: DataLayer): void;
     _setCurrentStateTexture(texture: WebGLTexture): void;
+    private static initArrayForInternalType;
     private validateDataArray;
     private initBuffers;
     getStateAtIndex(index: number): WebGLTexture;
@@ -59,8 +60,8 @@ export declare class DataLayer {
     _usingTextureOverrideForCurrentBuffer(): WebGLTexture | undefined;
     _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
     _bindOutputBuffer(): void;
-    setFromArray(array: DataLayerArrayType | number[], applyToAllBuffers?: boolean): void;
-    resize(dimensions: number | [number, number], array?: DataLayerArrayType | number[]): void;
+    setFromArray(array: DataLayerArray | number[], applyToAllBuffers?: boolean): void;
+    resize(dimensions: number | [number, number], array?: DataLayerArray | number[]): void;
     get clearValue(): number | number[];
     set clearValue(clearValue: number | number[]);
     clear(applyToAllBuffers?: boolean): void;

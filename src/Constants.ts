@@ -7,6 +7,7 @@ export const SHORT = 'SHORT';
 export const UNSIGNED_INT = 'UNSIGNED_INT';
 export const INT = 'INT';
 export const BOOL = 'BOOL';
+export const UINT = 'UINT';
 
 export const LINEAR = 'LINEAR';
 export const NEAREST = 'NEAREST';
@@ -18,14 +19,21 @@ export const CLAMP_TO_EDGE = 'CLAMP_TO_EDGE';
 export const RGB = 'RGB';
 export const RGBA = 'RGBA';
 
-export type DataLayerArrayType =  Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
+export type DataLayerArray =  Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
+export const validArrayTypes = [Float32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Array];
 export type DataLayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
+export const validDataTypes = [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT];
 export type DataLayerNumComponents = 1 | 2 | 3 | 4;
 export type DataLayerFilter = typeof LINEAR | typeof NEAREST;
+export const validFilters = [LINEAR, NEAREST];
+export const validWraps = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
 export type DataLayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;// | typeof MIRRORED_REPEAT;
 
+// For image urls that are passed in and inited as textures.
 export type TextureFormat = typeof RGB | typeof RGBA;
+export const validTextureFormats = [RGB, RGBA];
 export type TextureType = typeof UNSIGNED_BYTE;
+export const validTextureTypes = [UNSIGNED_BYTE];
 
 export const GLSL3 = '300 es';
 export const GLSL1 = '100';

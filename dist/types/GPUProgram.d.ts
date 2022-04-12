@@ -18,7 +18,6 @@ export declare class GPUProgram {
         }[];
         defines?: CompileTimeVars;
     });
-    private static convertDefinesToString;
     recompile(defines?: CompileTimeVars): void;
     private initProgram;
     private getProgramWithName;
@@ -30,9 +29,9 @@ export declare class GPUProgram {
     get dataLayerPointsProgram(): WebGLProgram | undefined;
     get dataLayerVectorFieldProgram(): WebGLProgram | undefined;
     get dataLayerLinesProgram(): WebGLProgram | undefined;
-    private uniformInternalTypeForValue;
+    private static uniformInternalTypeForValue;
     private setProgramUniform;
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
-    setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValue, type: UniformType): void;
+    _setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValue, type: UniformType): void;
     dispose(): void;
 }

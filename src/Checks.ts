@@ -1,54 +1,75 @@
 import {
-	HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT,
-	LINEAR, NEAREST,
-	REPEAT, CLAMP_TO_EDGE, RGB, RGBA,
+	validDataTypes,
+	validFilters,
+	validWraps,
+	validTextureFormats,
+	validTextureTypes,
+	DataLayerType,
+	HALF_FLOAT,
+	FLOAT,
+	BYTE,
+	SHORT,
+	INT,
+	UNSIGNED_BYTE,
+	UNSIGNED_SHORT,
+	UNSIGNED_INT,
 } from './Constants';
 
-export const validArrayTypes = [Float32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Array];
-
-export const validDataTypes = [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT];
 export function isValidDataType(type: string) {
 	return validDataTypes.indexOf(type) > -1;
 }
 
-export const validFilters = [LINEAR, NEAREST];
 export function isValidFilter(type: string) {
 	return validFilters.indexOf(type) > -1;
 }
 
-export const validWraps = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
 export function isValidWrap(type: string) {
 	return validWraps.indexOf(type) > -1;
 }
 
 // For image urls that are passed in and inited as textures.
-export const validTextureFormats = [RGB, RGBA];
 export function isValidTextureFormat(type: string) {
 	return validTextureFormats.indexOf(type) > -1;
 }
-// For image urls that are passed in and inited as textures.
-export const validTextureTypes = [UNSIGNED_BYTE];
 export function isValidTextureType(type: string) {
 	return validTextureTypes.indexOf(type) > -1;
 }
 
-export function isValidClearValue(clearValue: number | number[], numComponents: number) {
+export function isValidClearValue(clearValue: number | number[], numComponents: number, type: DataLayerType) {
 	if (isArray(clearValue)) {
 		// Length of clearValue must match numComponents.
 		if ((clearValue as number[]).length !== numComponents) {
 			return false;
 		}
 		for (let i = 0; i < (clearValue as number[]).length; i++) {
-			if (!isNumber((clearValue as number[])[i])) {
+			if (!isNumberOfType((clearValue as number[])[i], type)) {
 				return false;
 			}
 		}
 	} else {
-		if (!isNumber(clearValue)) {
+		if (!isNumberOfType(clearValue, type)) {
 			return false;
 		}
 	}
 	return true;
+}
+
+export function isNumberOfType(value: any, type: DataLayerType) {
+	switch (type) {
+		case HALF_FLOAT:
+		case FLOAT:
+			return isNumber(value);
+		case BYTE:
+		case SHORT:
+		case INT:
+			return isInteger(value);
+		case UNSIGNED_BYTE:
+		case UNSIGNED_SHORT:
+		case UNSIGNED_INT:
+			return isNonNegativeInteger(value);
+		default:
+			throw new Error(`Unknown type ${type}`);
+	}
 }
 
 export function isNumber(value: any) {
@@ -61,6 +82,10 @@ export function isInteger(value: any) {
 
 export function isPositiveInteger(value: any) {
 	return isInteger(value) &&  value > 0;
+}
+
+export function isNonNegativeInteger(value: any) {
+	return isInteger(value) &&  value >= 0;
 }
 
 export function isString(value: any){

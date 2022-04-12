@@ -34,7 +34,7 @@ import {
 	DATA_LAYER_LINES_PROGRAM_NAME,
 } from './Constants';
 import {
-	compileShader,
+	compileShader, insertDefinesAfterVersionDeclaration,
 } from './utils';
 
 export class GPUProgram {
@@ -88,20 +88,6 @@ export class GPUProgram {
 		}
 	}
 
-	private static convertDefinesToString(defines: CompileTimeVars) {
-		let definesSource = '';
-		const keys = Object.keys(defines);
-		for (let i = 0; i < keys.length; i++) {
-			const key = keys[i];
-			// Check that define is passed in as a string.
-			if (!isString(key) || !isString(defines[key])) {
-				throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}].`)
-			}
-			definesSource += `#define ${key} ${defines[key]}\n`;
-		}
-		return definesSource;
-	}
-
 	recompile(defines?: CompileTimeVars) {
 		const { glcompute, name, fragmentShaderSource } = this;
 		const { gl, errorCallback, verboseLogging } = glcompute;
@@ -130,9 +116,7 @@ export class GPUProgram {
 			throw new Error(`Unable to recompile fragment shader for program "${name}" because fragment shader is already compiled, no source available.`);
 		}
 		if (verboseLogging) console.log(`Compiling fragment shader "${name}" with defines ${JSON.stringify(this.defines)}`);
-		// TODO: defines should come after version declaration.
-		const definesSource = GPUProgram.convertDefinesToString(this.defines);
-		const shader = compileShader(gl, errorCallback, `${definesSource}${fragmentShaderSource}`, gl.FRAGMENT_SHADER, name);
+		const shader = compileShader( glcompute, fragmentShaderSource, gl.FRAGMENT_SHADER, name, this.defines);
 		if (!shader) {
 			errorCallback(`Unable to compile fragment shader for program "${name}".`);
 			return;
@@ -185,11 +169,7 @@ export class GPUProgram {
 			if (vertexShaderSource === '') {
 				throw new Error(`No source for vertex shader ${this.name} : ${name}`)
 			}
-			if (vertexShader.defines) {
-				// TODO: defines should come after version declaration.
-				vertexShaderSource = GPUProgram.convertDefinesToString(vertexShader.defines) + vertexShaderSource;
-			}
-			const shader = compileShader(gl, errorCallback, vertexShaderSource, gl.VERTEX_SHADER, name);
+			const shader = compileShader(glcompute, vertexShaderSource, gl.VERTEX_SHADER, name, vertexShader.defines);
 			if (!shader) {
 				errorCallback(`Unable to compile default vertex shader for program "${name}".`);
 				return;
@@ -237,7 +217,7 @@ export class GPUProgram {
 		return this.getProgramWithName(DATA_LAYER_LINES_PROGRAM_NAME);
 	}
 
-	private uniformInternalTypeForValue(
+	private static uniformInternalTypeForValue(
 		value: UniformValue,
 		type: UniformType,
 	) {
@@ -383,7 +363,7 @@ Error code: ${gl.getError()}.`);
 
 		let currentType = uniforms[name]?.type;
 		if (type) {
-			const internalType = this.uniformInternalTypeForValue(value, type);
+			const internalType = GPUProgram.uniformInternalTypeForValue(value, type);
 			if (currentType === undefined) currentType = internalType;
 			else {
 				// console.warn(`Don't need to pass in type to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
@@ -419,13 +399,13 @@ Error code: ${gl.getError()}.`);
 	};
 
 	// This is used internally.
-	setVertexUniform(
+	_setVertexUniform(
 		program: WebGLProgram,
 		uniformName: string,
 		value: UniformValue,
 		type: UniformType,
 	) {
-		const internalType = this.uniformInternalTypeForValue(value, type);
+		const internalType = GPUProgram.uniformInternalTypeForValue(value, type);
 		if (program === undefined) {
 			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
 		}
@@ -439,7 +419,7 @@ Error code: ${gl.getError()}.`);
 	dispose() {
 		const { glcompute, fragmentShader, programs } = this;
 		const { gl, verboseLogging } = glcompute;
-		if (verboseLogging) console.log(`Destroying program "${name}".`);
+		if (verboseLogging) console.log(`Destroying program "${this.name}".`);
 
 		// Unbind all gl data before deleting.
 		Object.values(programs).forEach(program => {

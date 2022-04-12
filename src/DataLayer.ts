@@ -1,15 +1,12 @@
 import { setFloat16 } from '@petamoriken/float16';
 import { WebGLCompute } from '.';
 import {
+	isNumber,
 	isPositiveInteger,
 	isValidClearValue,
 	isValidDataType,
 	isValidFilter,
 	isValidWrap,
-	validArrayTypes,
-	validDataTypes,
-	validFilters,
-	validWraps,
 } from './Checks';
 import {
 	HALF_FLOAT,
@@ -23,7 +20,7 @@ import {
 	NEAREST,
 	LINEAR,
 	CLAMP_TO_EDGE,
-	DataLayerArrayType,
+	DataLayerArray,
 	DataLayerFilter,
 	DataLayerNumComponents,
 	DataLayerType,
@@ -33,6 +30,10 @@ import {
 	GLSL1,
 	DataLayerBuffer,
 	ErrorCallback,
+	validArrayTypes,
+	validFilters,
+	validWraps,
+	validDataTypes,
  } from './Constants';
 import {
 	getExtension,
@@ -105,7 +106,7 @@ export class DataLayer {
 			dimensions: number | [number, number],
 			type: DataLayerType,
 			numComponents: DataLayerNumComponents,
-			array?: DataLayerArrayType | number[],
+			array?: DataLayerArray | number[],
 			filter?: DataLayerFilter,
 			wrapS?: DataLayerWrap,
 			wrapT?: DataLayerWrap,
@@ -126,10 +127,6 @@ export class DataLayer {
 			throw new Error(`Invalid numComponents: ${numComponents} for DataLayer "${name}".`);
 		}
 		this.numComponents = numComponents;
-
-		// clearValue defaults to zero.
-		const clearValue = params.clearValue !== undefined ? params.clearValue : 0;
-		this.clearValue = clearValue; // Setter can only be called after this.numComponents has been set.
 
 		// Writable defaults to false.
 		const writable = !!params.writable;
@@ -220,6 +217,11 @@ export class DataLayer {
 			throw new Error(`Invalid numBuffers: ${numBuffers} for DataLayer "${name}", must be positive integer.`);
 		}
 		this.numBuffers = numBuffers;
+
+		// clearValue defaults to zero.
+		// Wait until after type has been set to set clearValue.
+		const clearValue = params.clearValue !== undefined ? params.clearValue : 0;
+		this.clearValue = clearValue; // Setter can only be called after this.numComponents has been set.
 
 		this.initBuffers(array);
 	}
@@ -850,6 +852,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
+	// This is used internally.
 	_setCurrentStateTexture(texture: WebGLTexture) {
 		if (this.writable) {
 			throw new Error(`Can't call DataLayer._setCurrentStateTexture on writable texture "${this.name}".`);
@@ -857,7 +860,30 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		this.buffers[this.bufferIndex].texture = texture;
 	}
 
-	private validateDataArray(array: DataLayerArrayType | number[]) {
+	private static initArrayForInternalType(internalType: DataLayerType, length: number) {
+		switch (internalType) {
+			case HALF_FLOAT:
+				return new Uint16Array(length);
+			case FLOAT:
+				return new Float32Array(length);
+			case UNSIGNED_BYTE:
+				return new Uint8Array(length);
+			case BYTE:
+				return new Int8Array(length);
+			case UNSIGNED_SHORT:
+				return new Uint16Array(length);
+			case SHORT:
+				return new Int16Array(length);
+			case UNSIGNED_INT:
+				return new Uint32Array(length);
+			case INT:
+				return new Int32Array(length);
+			default:
+				throw new Error(`Unsupported internalType: ${internalType}.`);
+		}
+	}
+
+	private validateDataArray(array: DataLayerArray | number[]) {
 		const { numComponents, glNumChannels, type, internalType, width, height } = this;
 		const length = this._length;
 
@@ -908,36 +934,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		// We have to handle the case of Float16 specially by converting data to Uint16Array.
 		const handleFloat16 = internalType === HALF_FLOAT;
 		
-		let validatedArray = array as DataLayerArrayType;
+		let validatedArray = array as DataLayerArray;
 		if (shouldTypeCast || incorrectSize || handleFloat16) {
-			switch (internalType) {
-				case HALF_FLOAT:
-					validatedArray = new Uint16Array(imageSize);
-					break;
-				case FLOAT:
-					validatedArray = new Float32Array(imageSize);
-					break;
-				case UNSIGNED_BYTE:
-					validatedArray = new Uint8Array(imageSize);
-					break;
-				case BYTE:
-					validatedArray = new Int8Array(imageSize);
-					break;
-				case UNSIGNED_SHORT:
-					validatedArray = new Uint16Array(imageSize);
-					break;
-				case SHORT:
-					validatedArray = new Int16Array(imageSize);
-					break;
-				case UNSIGNED_INT:
-					validatedArray = new Uint32Array(imageSize);
-					break;
-				case INT:
-					validatedArray = new Int32Array(imageSize);
-					break;
-			default:
-					throw new Error(`Error initing DataLayer "${this.name}", unsupported internalType: ${internalType}.`);
-			}
+			validatedArray = DataLayer.initArrayForInternalType(internalType, imageSize);
 			// Fill new data array with old data.
 			const view = handleFloat16 ? new DataView(validatedArray.buffer) : null;
 			for (let i = 0, _len = array.length / numComponents; i < _len; i++) {
@@ -957,7 +956,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	private initBuffers(
-		array?: DataLayerArrayType | number[],
+		array?: DataLayerArray | number[],
 	) {
 		const {
 			name,
@@ -1046,10 +1045,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		return this.getStateAtIndex((this.bufferIndex - 1 + this.numBuffers) % this.numBuffers);
 	}
 
+	// This is used internally.
 	_usingTextureOverrideForCurrentBuffer() {
 		return this.textureOverrides && this.textureOverrides[this.bufferIndex];
 	}
 
+	// This is used internally.
 	_bindOutputBufferForWrite(
 		incrementBufferIndex: boolean,
 	) {
@@ -1065,6 +1066,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		}
 	}
 
+	// This is used internally.
 	_bindOutputBuffer() {
 		const { gl } = this.glcompute;
 		const { framebuffer } = this.buffers[this.bufferIndex];
@@ -1074,7 +1076,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
 
-	setFromArray(array: DataLayerArrayType | number[], applyToAllBuffers = false) {
+	setFromArray(array: DataLayerArray | number[], applyToAllBuffers = false) {
 		const { glcompute, glInternalFormat, glFormat, glType, numBuffers, width, height, bufferIndex } = this;
 		const { gl } = glcompute;
 		const validatedArray = this.validateDataArray(array);
@@ -1092,7 +1094,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 	resize(
 		dimensions: number | [number, number],
-		array?: DataLayerArrayType | number[],
+		array?: DataLayerArray | number[],
 	) {
 		const { name, glcompute } = this;
 		const { verboseLogging } = glcompute;
@@ -1110,39 +1112,68 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	set clearValue(clearValue: number | number[]) {
-		const { numComponents } = this;
-		if (!isValidClearValue(clearValue, numComponents)) {
-			throw new Error(`Invalid clearValue: ${JSON.stringify(clearValue)} for DataLayer "${this.name}", expected number or array of number of length ${numComponents}.`);
+		const { numComponents, type } = this;
+		if (!isValidClearValue(clearValue, numComponents, type)) {
+			throw new Error(`Invalid clearValue: ${JSON.stringify(clearValue)} for DataLayer "${this.name}", expected ${type} or array of ${type} of length ${numComponents}.`);
 		}
 		this._clearValue = clearValue;
 	}
 
 	clear(applyToAllBuffers = false) {
-		const { name, glcompute, clearValue, numBuffers, bufferIndex, numComponents } = this;
+		const { name, glcompute, clearValue, numBuffers, bufferIndex, type } = this;
 		const { verboseLogging } = glcompute;
 		if (verboseLogging) console.log(`Clearing DataLayer "${name}".`);
+
+		const value: number[] = [];
+		if (isNumber(clearValue)) {
+			value.push(clearValue as number, clearValue as number, clearValue as number, clearValue as number);
+		} else {
+			value.push(...clearValue as number[]);
+			for (let j = value.length; j < 4; j++) {
+				value.push(0);
+			}
+		}
 	
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
-		for (let i = startIndex; i < endIndex; i++) {
-			if (this.writable) {
-				// TODO: finish this.
+		if (this.writable) {
+			const program = glcompute.setValueProgramForType(type);
+			program.setUniform('u_value', value as [number, number, number, number]);
+			for (let i = startIndex; i < endIndex; i++) {
 				// Write clear value to buffers.
-				switch(numComponents) {
-					case 1:
-						break;
-					case 2:
-						break;
-					case 3:
-						break;
-					case 4:
-						break;
-					default:
-						throw new Error(`Invalid numComponents: ${numComponents} for DataLayer "${this.name}".`);
-				}
-			} else {
-				// Init a typed array containing clearValue and pass to buffers.
+				glcompute.step({
+					program,
+					output: this,
+				});
 			}
+		} else {
+			// Init a typed array containing clearValue and pass to buffers.
+			const {
+				width, height, glNumChannels, internalType,
+				glInternalFormat, glFormat, glType,
+			} = this;
+			const { gl } = glcompute;
+			const fillLength = this._length ? this._length : width * height;
+			const array = DataLayer.initArrayForInternalType(internalType, width * height * glNumChannels);
+			const float16View = internalType === HALF_FLOAT ? new DataView(array.buffer) : null;
+			for (let j = 0; j < fillLength; j++) {
+				for (let k = 0; k < glNumChannels; k++) {
+					const index = j * glNumChannels + k;
+					if (internalType === HALF_FLOAT) {
+						// Float16s need to be handled separately.
+						setFloat16(float16View!, 2 * index, value[k], true);
+					} else {
+						array[index] = value[k];
+					}
+				}
+			}
+			for (let i = startIndex; i < endIndex; i++) {
+				const texture = this.getStateAtIndex(i);
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+				gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, array);
+			}
+			// Unbind texture.
+			gl.bindTexture(gl.TEXTURE_2D, null);
 		}
 	}
 

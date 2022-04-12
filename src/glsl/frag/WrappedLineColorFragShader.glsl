@@ -1,8 +1,11 @@
-// Fragment shader that draws a single color.
-precision highp float;
+#version 300 es
+@import ../common/precision;
 
-uniform vec3 u_color;
-varying vec2 v_lineWrapping;
+in vec2 v_lineWrapping;
+
+uniform vec4 u_value;
+
+out vec4 out_fragOut;
 
 void main() {
 	// Check if this line has wrapped.
@@ -11,5 +14,5 @@ void main() {
 		discard;
 		return;
 	}
-	gl_FragColor = vec4(u_color, 1);
+	out_fragOut = vec4(u_value);
 }

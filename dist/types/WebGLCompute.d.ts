@@ -1,5 +1,5 @@
 import { DataLayer } from './DataLayer';
-import { DataLayerArrayType, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap, UniformType, UniformValue, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback } from './Constants';
+import { DataLayerArray, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap, UniformType, UniformValue, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 export declare class WebGLCompute {
@@ -19,12 +19,10 @@ export declare class WebGLCompute {
     private vectorFieldIndexArray?;
     private vectorFieldIndexBuffer?;
     private indexedLinesIndexBuffer?;
-    private readonly copyFloatProgram;
-    private readonly copyIntProgram;
-    private readonly copyUintProgram;
-    private _singleColorProgram?;
-    private _singleColorWithWrapCheckProgram?;
-    private _vectorMagnitudeProgram?;
+    private readonly copyPrograms;
+    private readonly setValuePrograms;
+    private _wrappedLineColorProgram?;
+    private readonly vectorMagnitudePrograms;
     readonly _vertexShaders: {
         [key in PROGRAM_NAME_INTERNAL]: {
             src: string;
@@ -51,9 +49,11 @@ export declare class WebGLCompute {
     private preprocessShader;
     _preprocessFragShader(shaderSource: string): string;
     _preprocessVertShader(shaderSource: string): string;
-    private get singleColorProgram();
-    private get singleColorWithWrapCheckProgram();
-    private get vectorMagnitudeProgram();
+    private glslKeyForType;
+    setValueProgramForType(type: DataLayerType): GPUProgram;
+    copyProgramForType(type: DataLayerType): GPUProgram;
+    private get wrappedLineColorProgram();
+    private vectorMagnitudeProgramForType;
     isWebGL2(): boolean;
     private get quadPositionsBuffer();
     private get boundaryPositionsBuffer();
@@ -76,7 +76,7 @@ export declare class WebGLCompute {
         dimensions: number | [number, number];
         type: DataLayerType;
         numComponents: DataLayerNumComponents;
-        array?: DataLayerArrayType | number[];
+        array?: DataLayerArray | number[];
         filter?: DataLayerFilter;
         wrapS?: DataLayerWrap;
         wrapT?: DataLayerWrap;
@@ -97,7 +97,6 @@ export declare class WebGLCompute {
     }): WebGLTexture;
     onResize(canvas: HTMLCanvasElement): void;
     private drawSetup;
-    copyProgramForType(type: DataLayerType): GPUProgram;
     private setBlendMode;
     private addLayerToInputs;
     private passThroughLayerDataFromInputToOutput;
@@ -222,7 +221,7 @@ export declare class WebGLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     getContext(): WebGLRenderingContext | WebGL2RenderingContext;
-    getValues(dataLayer: DataLayer): DataLayerArrayType;
+    getValues(dataLayer: DataLayer): DataLayerArray;
     private readyToRead;
     savePNG(dataLayer: DataLayer, filename?: string, dpi?: number): void;
     reset(): void;

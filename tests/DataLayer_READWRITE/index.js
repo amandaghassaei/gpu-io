@@ -166,7 +166,6 @@ void main() {
 
 	// General code for testing array writes.
 	function testArrayWrites(options) {
-
 		const { 
 			TYPE,
 			DIM_X,

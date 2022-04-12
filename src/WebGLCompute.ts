@@ -3,7 +3,7 @@ import { saveAs } from 'file-saver';
 import { changeDpiBlob } from 'changedpi';
 import { DataLayer } from './DataLayer';
 import {
-	DataLayerArrayType,
+	DataLayerArray,
 	DataLayerFilter,
 	DataLayerNumComponents,
 	DataLayerType,
@@ -38,6 +38,11 @@ import {
 	DATA_LAYER_LINES_PROGRAM_NAME,
 	ErrorCallback,
 	DEFAULT_CIRCLE_NUM_SEGMENTS,
+	validFilters,
+	validWraps,
+	validTextureFormats,
+	validTextureTypes,
+	UINT,
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -62,10 +67,6 @@ import {
 	isValidTextureType,
 	isValidTextureFormat,
 	isValidWrap,
-	validFilters,
-	validTextureTypes,
-	validTextureFormats,
-	validWraps,
 } from './Checks';
 const defaultVertexShaderSource = require('./glsl/vert/DefaultVertShader.glsl');
 
@@ -96,14 +97,33 @@ export class WebGLCompute {
 	private indexedLinesIndexBuffer?: WebGLBuffer;
 
 	// Programs for copying data (these are needed for rendering partial screen geometries).
-	private readonly copyFloatProgram!: GPUProgram;
-	private readonly copyIntProgram!: GPUProgram;
-	private readonly copyUintProgram!: GPUProgram;
+	private readonly copyPrograms: {
+		src: string,
+		[FLOAT]?: GPUProgram,
+		[INT]?: GPUProgram,
+		[UINT]?: GPUProgram,
+	} = {
+		src: require('./glsl/frag/CopyFragShader.glsl'),
+	};
 
 	// Other util programs.
-	private _singleColorProgram?: GPUProgram;
-	private _singleColorWithWrapCheckProgram?: GPUProgram;
-	private _vectorMagnitudeProgram?: GPUProgram;
+	private readonly setValuePrograms: {
+		src: string,
+		[FLOAT]?: GPUProgram,
+		[INT]?: GPUProgram,
+		[UINT]?: GPUProgram,
+	} = {
+		src: require('./glsl/frag/SetValueFragShader.glsl'),
+	};
+	private _wrappedLineColorProgram?: GPUProgram;
+	private readonly vectorMagnitudePrograms: {
+		src: string,
+		[FLOAT]?: GPUProgram,
+		[INT]?: GPUProgram,
+		[UINT]?: GPUProgram,
+	} = {
+		src: require('./glsl/frag/VectorMagnitudeFragShader.glsl'),
+	};
 
 	// Vertex shaders are shared across all GPUProgram instances.
 	readonly _vertexShaders: {[key in PROGRAM_NAME_INTERNAL]: {
@@ -261,50 +281,6 @@ export class WebGLCompute {
 		// // uploaded to a WebGL texture when the UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter is set to false.
 		// gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
-		// Init programs to pass values from one texture to another.
-		// Be sure that this.glslVersion has been set before reaching these lines.
-		this.copyFloatProgram = this.initProgram({
-			name: 'copyFloat',
-			fragmentShader: this._preprocessFragShader(require('./glsl/frag/CopyFloatFragShader.glsl')),
-			uniforms: [
-					{
-						name: 'u_state',
-						value: 0,
-						type: INT,
-					},
-				],
-			},
-		);
-		if (glslVersion === GLSL3) {
-			this.copyIntProgram = this.initProgram({
-				name: 'copyInt',
-				fragmentShader: require('./glsl/frag/CopyIntFragShader.glsl'),
-				uniforms: [
-						{
-							name: 'u_state',
-							value: 0,
-							type: INT,
-						},
-					],
-				},
-			);
-			this.copyUintProgram = this.initProgram({
-				name: 'copyUint',
-				fragmentShader: require('./glsl/frag/CopyUintFragShader.glsl'),
-				uniforms: [
-						{
-							name: 'u_state',
-							value: 0,
-							type: INT,
-						},
-					],
-				},
-			);
-		} else {
-			this.copyIntProgram = this.copyFloatProgram;
-			this.copyUintProgram = this.copyFloatProgram;
-		}
-
 		// Unbind active buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
@@ -343,9 +319,9 @@ export class WebGLCompute {
 		// Convert to glsl1.
 		shaderSource = this.preprocessShader(shaderSource);
 		// Convert in to varying.
-		shaderSource = shaderSource.replace(/\nin\s+/, '\nvarying ');
+		shaderSource = shaderSource.replace(/\nin\s+/g, '\nvarying ');
 		// Convert out to gl_FragColor.
-		shaderSource = shaderSource.replace(/out \w+ out_fragOut;\n/, '');
+		shaderSource = shaderSource.replace(/out \w+ out_fragOut;\n/g, '');
 		shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
 		return shaderSource;
 	}
@@ -362,37 +338,93 @@ export class WebGLCompute {
 		return shaderSource;
 	}
 
-	private get singleColorProgram() {
-		if (this._singleColorProgram === undefined) {
-			const program = this.initProgram({
-				name: 'singleColor',
-				fragmentShader: this._preprocessFragShader(require('./glsl_3/SingleColorFragShader.glsl')),
-			});
-			this._singleColorProgram = program;
+	private glslKeyForType(type: DataLayerType) {
+		if (this.glslVersion === GLSL1) return FLOAT;
+		switch (type) {
+			case HALF_FLOAT:
+			case FLOAT:
+				return FLOAT;
+			case UNSIGNED_BYTE:
+			case UNSIGNED_SHORT:
+			case UNSIGNED_INT:
+				return UINT;
+			case BYTE:
+			case SHORT:
+			case INT:
+				return INT;
+			default:
+				throw new Error(`Invalid type: ${type} passed to WebGLCompute.copyProgramForType.`);
 		}
-		return this._singleColorProgram;
 	}
 
-	private get singleColorWithWrapCheckProgram() {
-		if (this._singleColorWithWrapCheckProgram === undefined) {
+	setValueProgramForType(type: DataLayerType) {
+		const key = this.glslKeyForType(type);
+		if (this.setValuePrograms[key] === undefined) {
 			const program = this.initProgram({
-				name: 'singleColorWithWrapCheck',
-				fragmentShader: this._preprocessFragShader(require('./glsl_3/SingleColorWithWrapCheckFragShader.glsl')),
+				name: `setValue-${key}`,
+				fragmentShader: this._preprocessFragShader(this.setValuePrograms.src),
+				uniforms: [
+					{
+						name: 'u_value',
+						value: [0, 0, 0, 0],
+						type: key === UINT ? INT : key, // TODO: is there a uint type?
+					},
+				],
+				defines: {
+					[key]: '1',
+				},
 			});
-			this._singleColorWithWrapCheckProgram = program;
+			this.setValuePrograms[key] = program;
 		}
-		return this._singleColorWithWrapCheckProgram;
+		return this.setValuePrograms[key]!;
 	}
 
-	private get vectorMagnitudeProgram() {
-		if (this._vectorMagnitudeProgram === undefined) {
+	copyProgramForType(type: DataLayerType) {
+		const key = this.glslKeyForType(type);
+		if (this.copyPrograms[key] === undefined) {
 			const program = this.initProgram({
-				name: 'vectorMagnitude',
-				fragmentShader: this._preprocessFragShader(require('./glsl_3/VectorMagnitudeFragShader.glsl')),
+				name: `copy-${key}`,
+				fragmentShader: this._preprocessFragShader(this.copyPrograms.src),
+				uniforms: [
+					{
+						name: 'u_state',
+						value: 0,
+						type: INT,
+					},
+				],
+				defines: {
+					[key]: '1',
+				},
 			});
-			this._vectorMagnitudeProgram = program;
+			this.copyPrograms[key] = program;
 		}
-		return this._vectorMagnitudeProgram;
+		return this.copyPrograms[key]!;
+	}
+
+	private get wrappedLineColorProgram() {
+		if (this._wrappedLineColorProgram === undefined) {
+			const program = this.initProgram({
+				name: 'wrappedLineColor',
+				fragmentShader: this._preprocessFragShader(require('./glsl/frag/WrappedLineColorFragShader.glsl')),
+			});
+			this._wrappedLineColorProgram = program;
+		}
+		return this._wrappedLineColorProgram;
+	}
+
+	private vectorMagnitudeProgramForType(type: DataLayerType) {
+		const key = this.glslKeyForType(type);
+		if (this.vectorMagnitudePrograms[key] === undefined) {
+			const program = this.initProgram({
+				name: `vectorMagnitude-${key}`,
+				fragmentShader: this._preprocessFragShader(this.vectorMagnitudePrograms.src),
+				defines: {
+					[key]: '1',
+				},
+			});
+			this.vectorMagnitudePrograms[key] = program;
+		}
+		return this.vectorMagnitudePrograms[key]!;
 	}
 
 	isWebGL2() {
@@ -476,7 +508,7 @@ export class WebGLCompute {
 			dimensions: number | [number, number],
 			type: DataLayerType,
 			numComponents: DataLayerNumComponents,
-			array?: DataLayerArrayType | number[],
+			array?: DataLayerArray | number[],
 			filter?: DataLayerFilter,
 			wrapS?: DataLayerWrap,
 			wrapT?: DataLayerWrap,
@@ -707,24 +739,6 @@ export class WebGLCompute {
 		}
 	}
 
-	copyProgramForType(type: DataLayerType) {
-		switch (type) {
-			case HALF_FLOAT:
-			case FLOAT:
-				return this.copyFloatProgram;
-			case UNSIGNED_BYTE:
-			case UNSIGNED_SHORT:
-			case UNSIGNED_INT:
-				return this.copyUintProgram;
-			case BYTE:
-			case SHORT:
-			case INT:
-				return this.copyIntProgram;
-			default:
-				throw new Error(`Invalid type: ${type} passed to WebGLCompute.copyProgramForType.`);
-		}
-	}
-
 	private setBlendMode(shouldBlendAlpha?: boolean) {
 		const { gl } = this;
 		if (shouldBlendAlpha) {
@@ -865,8 +879,8 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, true, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(glProgram, program.name);
 
@@ -904,8 +918,8 @@ export class WebGLCompute {
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
 		this.setPositionAttribute(glProgram, program.name);
 
@@ -960,8 +974,8 @@ export class WebGLCompute {
 
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(glProgram, program.name);
 		
@@ -997,8 +1011,8 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
 		const numSegments = params.numSegments ? params.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 3) {
 			throw new Error(`numSegments for WebGLCompute.stepCircle must be greater than 2, got ${numSegments}.`);
@@ -1042,15 +1056,15 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
 		const diffX = position1[0] - position2[0];
 		const diffY = position1[1] - position2[1];
 		const angle = Math.atan2(diffY, diffX);
-		program.setVertexUniform(glProgram, 'u_internal_rotation', angle, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_rotation', angle, FLOAT);
 		const centerX = (position1[0] + position2[0]) / 2;
 		const centerY = (position1[1] + position2[1]) / 2;
-		program.setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this.width - 1, 2 * centerY / this.height - 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this.width - 1, 2 * centerY / this.height - 1], FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
 		
 		const numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
@@ -1059,11 +1073,11 @@ export class WebGLCompute {
 				throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
 			}
 			// Have to subtract a small offset from length.
-			program.setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
+			program._setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
 		} else {
 			// Have to subtract a small offset from length.
-			program.setVertexUniform(glProgram, 'u_internal_length', length - thickness, FLOAT);
+			program._setVertexUniform(glProgram, 'u_internal_length', length - thickness, FLOAT);
 			// Use a rectangle in case of no caps.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
 		}
@@ -1251,8 +1265,8 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
 		this.setPositionAttribute(glProgram, program.name);
@@ -1303,8 +1317,8 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
 		this.setPositionAttribute(glProgram, program.name);
@@ -1362,8 +1376,8 @@ export class WebGLCompute {
 		const count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		if (indices) {
 			// Reorder positions array to match indices.
 			const positions = new Float32Array(2 * count);
@@ -1436,9 +1450,9 @@ export class WebGLCompute {
 
 		let program = params.program;
 		if (program === undefined) {
-			program = this.singleColorProgram;
+			program = this.setValueProgramForType(FLOAT);
 			const color = params.color || [1, 0, 0]; // Default of red.
-			program.setUniform('u_color', color, FLOAT);
+			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
 		const glProgram = program.dataLayerPointsProgram!;
 
@@ -1449,17 +1463,17 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
-		program.setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
-		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
 		if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = initSequentialFloatArray(length);
@@ -1509,9 +1523,9 @@ export class WebGLCompute {
 
 		let program = params.program;
 		if (program === undefined) {
-			program = params.wrapX || params.wrapY ? this.singleColorWithWrapCheckProgram : this.singleColorProgram;
+			program = params.wrapX || params.wrapY ? this.wrappedLineColorProgram : this.setValueProgramForType(FLOAT);;
 			const color = params.color || [1, 0, 0]; // Default to red.
-			program.setUniform('u_color', color, FLOAT);
+			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
 		const glProgram = program.dataLayerLinesProgram!;
 
@@ -1526,14 +1540,14 @@ export class WebGLCompute {
 		const count = params.count ? params.count : indices.length;
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program.setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
-		program.setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
-		program.setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
 		if (this.indexedLinesIndexBuffer === undefined) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			let floatArray: Float32Array;
@@ -1601,9 +1615,9 @@ export class WebGLCompute {
 
 		let program = params.program;
 		if (program === undefined) {
-			program = this.singleColorProgram;
+			program = this.setValueProgramForType(FLOAT);;
 			const color = params.color || [1, 0, 0]; // Default to red.
-			program.setUniform('u_color', color, FLOAT);
+			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
 		const glProgram = program.dataLayerVectorFieldProgram!;
 
@@ -1614,13 +1628,13 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), INT);
+		program._setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), INT);
 		// Set default scale.
 		const vectorScale = params.vectorScale || 1;
-		program.setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], FLOAT);
 		const vectorSpacing = params.vectorSpacing || 10;
 		const spacedDimensions = [Math.floor(width / vectorSpacing), Math.floor(height / vectorSpacing)] as [number, number];
-		program.setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, FLOAT);
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
 		if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
@@ -1655,7 +1669,7 @@ export class WebGLCompute {
 			return;
 		}
 
-		const program = this.vectorMagnitudeProgram;
+		const program = this.vectorMagnitudeProgramForType(data.type);
 		const color = params.color || [1, 0, 0]; // Default to red.
 		program.setUniform('u_color', color, FLOAT);
 		const scale = params.scale || 1;
@@ -1670,9 +1684,9 @@ export class WebGLCompute {
 		this.drawSetup(glProgram, true, input, output);
 
 		// Update uniforms and buffers.
-		program.setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), INT);
-		program.setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
-		program.setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), INT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
 		this.setPositionAttribute(glProgram, program.name);
 
@@ -1790,7 +1804,7 @@ export class WebGLCompute {
 			// @ts-ignore
 			const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
 
-			let output: DataLayerArrayType = values;
+			let output: DataLayerArray = values;
 			
 			// We may use a different internal type than the assigned type of the DataLayer.
 			if (internalType !== type) {
@@ -1937,6 +1951,32 @@ export class WebGLCompute {
 				this.gl.deleteShader(vertexShader.shader);
 				delete vertexShader.shader;
 			}
+		});
+		
+		// Delete fragment shaders.
+		Object.values(this.copyPrograms).forEach(program => {
+			// @ts-ignore
+			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
+		});
+		Object.keys(this.copyPrograms).forEach(key => {
+			// @ts-ignore
+			delete this.copyPrograms[key];
+		});
+		Object.values(this.setValuePrograms).forEach(program => {
+			// @ts-ignore
+			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
+		});
+		Object.keys(this.setValuePrograms).forEach(key => {
+			// @ts-ignore
+			delete this.copyPrograms[key];
+		});
+		Object.values(this.vectorMagnitudePrograms).forEach(program => {
+			// @ts-ignore
+			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
+		});
+		Object.keys(this.vectorMagnitudePrograms).forEach(key => {
+			// @ts-ignore
+			delete this.copyPrograms[key];
 		});
 	}
 }

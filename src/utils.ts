@@ -1,11 +1,19 @@
+import { isString } from './Checks';
+import { CompileTimeVars, GLSL1 } from './Constants';
+import { WebGLCompute } from './WebGLCompute';
+
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
 export function compileShader(
-	gl: WebGLRenderingContext | WebGL2RenderingContext,
-	errorCallback: (message: string) => void,
+	glcompute: WebGLCompute,
 	shaderSource: string,
 	shaderType: number,
-	programName?: string,
+	programName: string,
+	defines?: CompileTimeVars,
 ) {
+	const { gl, errorCallback } = glcompute;
+	if (defines) {
+		shaderSource = insertDefinesAfterVersionDeclaration(glcompute, shaderSource, defines);
+	}
 	// Create the shader object
 	const shader = gl.createShader(shaderType);
 	if (!shader) {
@@ -28,6 +36,22 @@ export function compileShader(
 		return null;
 	}
 	return shader;
+}
+
+export function insertDefinesAfterVersionDeclaration(
+	glcompute: WebGLCompute,
+	shaderSource: string,
+	defines: CompileTimeVars) {
+		const definesSource = convertDefinesToString(defines);
+		if (glcompute.glslVersion === GLSL1) {
+			// GLSL version 1.
+			shaderSource = `${definesSource}\n${shaderSource}`
+		} else {
+			// GLSL version 3.
+			// Defines should come after version declaration.
+			shaderSource = shaderSource.replace('\n', `\n${definesSource}\n`);
+		}
+		return shaderSource;
 }
 
 export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
@@ -59,4 +83,18 @@ export function initSequentialFloatArray(length: number) {
 
 export function inDevMode() {
 	return process.env.NODE_ENV === 'development';
+}
+
+function convertDefinesToString(defines: CompileTimeVars) {
+	let definesSource = '';
+	const keys = Object.keys(defines);
+	for (let i = 0; i < keys.length; i++) {
+		const key = keys[i];
+		// Check that define is passed in as a string.
+		if (!isString(key) || !isString(defines[key])) {
+			throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}].`)
+		}
+		definesSource += `#define ${key} ${defines[key]}\n`;
+	}
+	return definesSource;
 }
