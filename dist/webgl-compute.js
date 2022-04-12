@@ -3427,9 +3427,9 @@ var DataLayer = /** @class */ (function () {
         // @ts-ignore
         delete this.glcompute;
     };
-    DataLayer.prototype.clone = function () {
+    DataLayer.prototype.clone = function (name) {
         // Make a deep copy.
-        return this.glcompute.cloneDataLayer(this);
+        return this.glcompute.cloneDataLayer(this, name);
     };
     return DataLayer;
 }());
@@ -3466,7 +3466,7 @@ var GPUProgram = /** @class */ (function () {
                 fragmentShader :
                 fragmentShader.join('\n');
             this.fragmentShaderSource = sourceString;
-            this.recompile(defines);
+            this.recompile(defines || this.defines);
         }
         else {
             this.fragmentShader = fragmentShader;
@@ -3484,14 +3484,12 @@ var GPUProgram = /** @class */ (function () {
         // Update this.defines if needed.
         // Passed in defines param may only be a partial list.
         var definesNeedUpdate = false;
-        if (defines) {
-            var keys = Object.keys(defines);
-            for (var i = 0; i < keys.length; i++) {
-                var key = keys[i];
-                if (this.defines[key] !== defines[key]) {
-                    definesNeedUpdate = true;
-                    this.defines[key] = defines[key];
-                }
+        var keys = Object.keys(defines);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (this.defines[key] !== defines[key]) {
+                definesNeedUpdate = true;
+                this.defines[key] = defines[key];
             }
         }
         if (this.fragmentShader && !definesNeedUpdate) {
@@ -3571,63 +3569,64 @@ var GPUProgram = /** @class */ (function () {
         this.programs[name] = program;
         return program;
     };
-    Object.defineProperty(GPUProgram.prototype, "defaultProgram", {
+    Object.defineProperty(GPUProgram.prototype, "_defaultProgram", {
+        // These getters are used internally.
         get: function () {
             return this.getProgramWithName(Constants_1.DEFAULT_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPUProgram.prototype, "defaultProgramWithUV", {
+    Object.defineProperty(GPUProgram.prototype, "_defaultProgramWithUV", {
         get: function () {
             return this.getProgramWithName(Constants_1.DEFAULT_W_UV_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPUProgram.prototype, "defaultProgramWithNormal", {
+    Object.defineProperty(GPUProgram.prototype, "_defaultProgramWithNormal", {
         get: function () {
             return this.getProgramWithName(Constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPUProgram.prototype, "defaultProgramWithUVNormal", {
+    Object.defineProperty(GPUProgram.prototype, "_defaultProgramWithUVNormal", {
         get: function () {
             return this.getProgramWithName(Constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPUProgram.prototype, "segmentProgram", {
+    Object.defineProperty(GPUProgram.prototype, "_segmentProgram", {
         get: function () {
             return this.getProgramWithName(Constants_1.SEGMENT_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPUProgram.prototype, "dataLayerPointsProgram", {
+    Object.defineProperty(GPUProgram.prototype, "_dataLayerPointsProgram", {
         get: function () {
             return this.getProgramWithName(Constants_1.DATA_LAYER_POINTS_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPUProgram.prototype, "dataLayerVectorFieldProgram", {
+    Object.defineProperty(GPUProgram.prototype, "_dataLayerVectorFieldProgram", {
         get: function () {
             return this.getProgramWithName(Constants_1.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPUProgram.prototype, "dataLayerLinesProgram", {
+    Object.defineProperty(GPUProgram.prototype, "_dataLayerLinesProgram", {
         get: function () {
             return this.getProgramWithName(Constants_1.DATA_LAYER_LINES_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
     });
-    GPUProgram.uniformInternalTypeForValue = function (value, type) {
+    GPUProgram.prototype.uniformInternalTypeForValue = function (value, type) {
         if (type === Constants_1.FLOAT) {
             // Check that we are dealing with a number.
             if (Checks_1.isArray(value)) {
@@ -3758,9 +3757,15 @@ var GPUProgram = /** @class */ (function () {
         var _a;
         var _b = this, programs = _b.programs, uniforms = _b.uniforms, glcompute = _b.glcompute;
         var verboseLogging = glcompute.verboseLogging;
+        // Check that length of value is correct.
+        if (Checks_1.isArray(value)) {
+            var length_1 = value.length;
+            if (length_1 > 4)
+                throw new Error("Invalid uniform value: [" + value.join(', ') + "] passed to GPUProgram \"" + this.name + ", uniforms must be of type number[] with length <= 4, number, or boolean.\"");
+        }
         var currentType = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
         if (type) {
-            var internalType = GPUProgram.uniformInternalTypeForValue(value, type);
+            var internalType = this.uniformInternalTypeForValue(value, type);
             if (currentType === undefined)
                 currentType = internalType;
             else {
@@ -3799,7 +3804,7 @@ var GPUProgram = /** @class */ (function () {
     // This is used internally.
     GPUProgram.prototype._setVertexUniform = function (program, uniformName, value, type) {
         var _this = this;
-        var internalType = GPUProgram.uniformInternalTypeForValue(value, type);
+        var internalType = this.uniformInternalTypeForValue(value, type);
         if (program === undefined) {
             throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
         }
@@ -4277,7 +4282,7 @@ var WebGLCompute = /** @class */ (function () {
         return new DataLayer_1.DataLayer(this, params);
     };
     ;
-    WebGLCompute.prototype.cloneDataLayer = function (dataLayer) {
+    WebGLCompute.prototype.cloneDataLayer = function (dataLayer, name) {
         var dimensions = 0;
         try {
             dimensions = dataLayer.length;
@@ -4288,7 +4293,7 @@ var WebGLCompute = /** @class */ (function () {
         // If read only, get state by reading to GPU.
         var array = dataLayer.writable ? undefined : this.getValues(dataLayer);
         var clone = this.initDataLayer({
-            name: dataLayer.name + "-clone",
+            name: name || dataLayer.name + "-clone",
             dimensions: dimensions,
             type: dataLayer.type,
             numComponents: dataLayer.numComponents,
@@ -4570,7 +4575,7 @@ var WebGLCompute = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        var glProgram = program.defaultProgram;
+        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this.drawSetup(glProgram, true, input, output);
         // Update uniforms and buffers.
@@ -4593,7 +4598,7 @@ var WebGLCompute = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        var glProgram = program.defaultProgram;
+        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
@@ -4638,7 +4643,7 @@ var WebGLCompute = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        var glProgram = program.defaultProgram;
+        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
@@ -4660,7 +4665,7 @@ var WebGLCompute = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        var glProgram = program.defaultProgram;
+        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
@@ -4687,7 +4692,7 @@ var WebGLCompute = /** @class */ (function () {
         if (errorState) {
             return;
         }
-        var glProgram = program.segmentProgram;
+        var glProgram = program._segmentProgram;
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
@@ -4869,8 +4874,8 @@ var WebGLCompute = /** @class */ (function () {
             }
         }
         var glProgram = (uvs ?
-            (normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
-            (normals ? program.defaultProgramWithNormal : program.defaultProgram));
+            (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
+            (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
@@ -4902,8 +4907,8 @@ var WebGLCompute = /** @class */ (function () {
             return;
         }
         var glProgram = (uvs ?
-            (normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
-            (normals ? program.defaultProgramWithNormal : program.defaultProgram));
+            (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
+            (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
@@ -4940,8 +4945,8 @@ var WebGLCompute = /** @class */ (function () {
             throw new Error("WebGLCompute.stepLines() can't be called with closeLoop == true and indices.");
         }
         var glProgram = (uvs ?
-            (normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
-            (normals ? program.defaultProgramWithNormal : program.defaultProgram));
+            (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
+            (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         var count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
@@ -5009,7 +5014,7 @@ var WebGLCompute = /** @class */ (function () {
             var color = params.color || [1, 0, 0]; // Default of red.
             program.setUniform('u_value', __spreadArrays(color, [1]), Constants_1.FLOAT);
         }
-        var glProgram = program.dataLayerPointsProgram;
+        var glProgram = program._dataLayerPointsProgram;
         // Add positions to end of input if needed.
         var input = this.addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
@@ -5061,7 +5066,7 @@ var WebGLCompute = /** @class */ (function () {
             var color = params.color || [1, 0, 0]; // Default to red.
             program.setUniform('u_value', __spreadArrays(color, [1]), Constants_1.FLOAT);
         }
-        var glProgram = program.dataLayerLinesProgram;
+        var glProgram = program._dataLayerLinesProgram;
         // Add positionLayer to end of input if needed.
         var input = this.addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
@@ -5138,7 +5143,7 @@ var WebGLCompute = /** @class */ (function () {
             var color = params.color || [1, 0, 0]; // Default to red.
             program.setUniform('u_value', __spreadArrays(color, [1]), Constants_1.FLOAT);
         }
-        var glProgram = program.dataLayerVectorFieldProgram;
+        var glProgram = program._dataLayerVectorFieldProgram;
         // Add data to end of input if needed.
         var input = this.addLayerToInputs(data, params.input);
         // Do setup - this must come first.
@@ -5178,7 +5183,7 @@ var WebGLCompute = /** @class */ (function () {
         var scale = params.scale || 1;
         program.setUniform('u_scale', scale, Constants_1.FLOAT);
         program.setUniform('u_internal_numDimensions', data.numComponents, Constants_1.INT);
-        var glProgram = program.defaultProgram;
+        var glProgram = program._defaultProgram;
         // Add data to end of input if needed.
         var input = this.addLayerToInputs(data, params.input);
         // Do setup - this must come first.

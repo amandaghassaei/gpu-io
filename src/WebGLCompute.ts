@@ -46,7 +46,7 @@ import {
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
-// Only @types/three is installed.
+// Only @types/three is installed as dev dependency.
 import {
 	WebGLRenderer,
 	Texture,
@@ -78,7 +78,8 @@ export class WebGLCompute {
 	private height!: number;
 
 	private errorState = false;
-	readonly errorCallback: ErrorCallback;
+	// For internal use only.
+	readonly _errorCallback: ErrorCallback;
 
 	// Save threejs renderer if passed in.
 	private renderer?: WebGLRenderer;
@@ -115,7 +116,7 @@ export class WebGLCompute {
 	} = {
 		src: require('./glsl/frag/SetValueFragShader.glsl'),
 	};
-	private _wrappedLineColorProgram?: GPUProgram;
+	private _wrappedLineColorProgram?: GPUProgram; // We only need a FLOAT version of this.
 	private readonly vectorMagnitudePrograms: {
 		src: string,
 		[FLOAT]?: GPUProgram,
@@ -171,7 +172,7 @@ export class WebGLCompute {
 
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
-		params: {
+		params?: {
 			glslVersion?: GLSLVersion,
 			verboseLogging?: boolean
 		},
@@ -221,7 +222,7 @@ export class WebGLCompute {
 
 		// Save callback in case we run into an error.
 		const self = this;
-		this.errorCallback = (message: string) => {
+		this._errorCallback = (message: string) => {
 			if (self.errorState) {
 				return;
 			}
@@ -247,7 +248,7 @@ export class WebGLCompute {
 					|| canvas.getContext('experimental-webgl', params.contextOptions)  as WebGLRenderingContext | null;
 			}
 			if (gl === null) {
-				this.errorCallback('Unable to initialize WebGL context.');
+				this._errorCallback('Unable to initialize WebGL context.');
 				return;
 			}
 		}
@@ -260,11 +261,12 @@ export class WebGLCompute {
 		this.renderer = renderer;
 
 		// Save glsl version, default to 1.x.
-		const glslVersion = params.glslVersion === undefined ? GLSL1 : params.glslVersion;
-		this.glslVersion = glslVersion;
+		let glslVersion = params.glslVersion === undefined ? GLSL1 : params.glslVersion;
 		if (!isWebGL2(gl) && glslVersion === GLSL3) {
-			console.warn('GLSL3.x is incompatible with WebGL1.0 contexts.');
+			console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
+			glslVersion = GLSL1; // Fall back to GLSL1 in these cases.
 		}
+		this.glslVersion = glslVersion;
 
 		// GL setup.
 		// Disable depth testing globally.
@@ -313,6 +315,7 @@ export class WebGLCompute {
 		return shaderSource;
 	}
 
+	// Used internally.
 	_preprocessFragShader(shaderSource: string) {
 		const { glslVersion } = this;
 		if (glslVersion === GLSL3) return shaderSource;
@@ -327,6 +330,7 @@ export class WebGLCompute {
 		return shaderSource;
 	}
 
+	// Used internally.
 	_preprocessVertShader(shaderSource: string) {
 		const { glslVersion } = this;
 		if (glslVersion === GLSL3) return shaderSource;
@@ -360,7 +364,8 @@ export class WebGLCompute {
 		}
 	}
 
-	setValueProgramForType(type: DataLayerType) {
+	// Used internally.
+	_setValueProgramForType(type: DataLayerType) {
 		const key = this.glslKeyForType(type);
 		if (this.setValuePrograms[key] === undefined) {
 			const program = this.initProgram({
@@ -382,7 +387,7 @@ export class WebGLCompute {
 		return this.setValuePrograms[key]!;
 	}
 
-	copyProgramForType(type: DataLayerType) {
+	private copyProgramForType(type: DataLayerType) {
 		const key = this.glslKeyForType(type);
 		if (this.copyPrograms[key] === undefined) {
 			const program = this.initProgram({
@@ -469,10 +474,10 @@ export class WebGLCompute {
 	private initVertexBuffer(
 		data: Float32Array,
 	) {
-		const { errorCallback, gl } = this;
+		const { _errorCallback, gl } = this;
 		const buffer = gl.createBuffer();
 		if (!buffer) {
-			errorCallback('Unable to allocate gl buffer.');
+			_errorCallback('Unable to allocate gl buffer.');
 			return;
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -480,30 +485,6 @@ export class WebGLCompute {
 		gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 		return buffer;
 	}
-
-	initProgram(
-		params: {
-			name: string,
-			fragmentShader: string | WebGLShader,
-			uniforms?: {
-				name: string,
-				value: UniformValue,
-				type: UniformType,
-			}[],
-			defines?: {
-				[key : string]: string,
-			},
-		},
-	) {
-		// Check params.
-		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
-		Object.keys(params).forEach(key => {
-			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initProgram with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
-			}
-		});
-		return new GPUProgram(this, params);
-	};
 
 	initDataLayer(
 		params: {
@@ -530,7 +511,32 @@ export class WebGLCompute {
 		return new DataLayer(this, params);
 	};
 
-	cloneDataLayer(dataLayer: DataLayer, name?: string) {
+	initProgram(
+		params: {
+			name: string,
+			fragmentShader: string | string[],
+			uniforms?: {
+				name: string,
+				value: UniformValue,
+				type: UniformType,
+			}[],
+			defines?: {
+				[key : string]: string,
+			},
+		},
+	) {
+		// Check params.
+		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
+		Object.keys(params).forEach(key => {
+			if (validKeys.indexOf(key) < 0) {
+				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initProgram with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+			}
+		});
+		return new GPUProgram(this, params);
+	};
+
+	// Used internally, see DataLayer.clone() for public API.
+	_cloneDataLayer(dataLayer: DataLayer, name?: string) {
 		let dimensions: number | [number, number] = 0;
 		try {
 			dimensions = dataLayer.length;
@@ -627,7 +633,7 @@ export class WebGLCompute {
 			throw new Error(`Invalid type: ${type} for DataLayer "${name}", must be ${validTextureTypes.join(', ')}.`);
 		}
 
-		const { gl, errorCallback } = this;
+		const { gl, _errorCallback } = this;
 		const texture = gl.createTexture();
 		if (texture === null) {
 			throw new Error(`Unable to init glTexture.`);
@@ -678,7 +684,7 @@ export class WebGLCompute {
 			if (params.onLoad) params.onLoad(texture);
 		};
 		image.onerror = (e) => {
-			errorCallback(`Error loading image ${name}: ${e}`);
+			_errorCallback(`Error loading image ${name}: ${e}`);
 		}
 		image.src = url;
 
@@ -992,8 +998,8 @@ export class WebGLCompute {
 	stepCircle(
 		params: {
 			program: GPUProgram,
-			position: [number, number], // Position is in screen space coords.
-			radius: number, // Radius is in screen space units.
+			position: [number, number], // Position is in units of pixels.
+			radius: number, // Radius is in units of pixels.
 			input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer, // Undefined renders to screen.
 			numSegments?: number,
@@ -1033,9 +1039,9 @@ export class WebGLCompute {
 	stepSegment(
 		params: {
 			program: GPUProgram,
-			position1: [number, number], // Position is in screen space coords.
-			position2: [number, number], // Position is in screen space coords.
-			thickness: number, // Thickness is in px.
+			position1: [number, number], // Position is in units of pixels.
+			position2: [number, number], // Position is in units of pixels.
+			thickness: number, // Thickness is in units of pixels.
 			input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer, // Undefined renders to screen.
 			endCaps?: boolean,
@@ -1101,7 +1107,7 @@ export class WebGLCompute {
 		params: {
 			program: GPUProgram,
 			positions: [number, number][],
-			thickness: number, // Thickness of line is in px.
+			thickness: number, // Thickness of line is in units of pixels.
 			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer, // Undefined renders to screen.
 			closeLoop?: boolean,
@@ -1421,7 +1427,7 @@ export class WebGLCompute {
 
 	drawLayerAsPoints(
 		params: {
-			positions: DataLayer, // Positions in canvas px.
+			positions: DataLayer, // Positions in units of pixels.
 			program?: GPUProgram,
 			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
 			output?: DataLayer,
@@ -1453,7 +1459,7 @@ export class WebGLCompute {
 
 		let program = params.program;
 		if (program === undefined) {
-			program = this.setValueProgramForType(FLOAT);
+			program = this._setValueProgramForType(FLOAT);
 			const color = params.color || [1, 0, 0]; // Default of red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
@@ -1526,7 +1532,7 @@ export class WebGLCompute {
 
 		let program = params.program;
 		if (program === undefined) {
-			program = params.wrapX || params.wrapY ? this.wrappedLineColorProgram : this.setValueProgramForType(FLOAT);;
+			program = params.wrapX || params.wrapY ? this.wrappedLineColorProgram : this._setValueProgramForType(FLOAT);;
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
@@ -1618,7 +1624,7 @@ export class WebGLCompute {
 
 		let program = params.program;
 		if (program === undefined) {
-			program = this.setValueProgramForType(FLOAT);;
+			program = this._setValueProgramForType(FLOAT);;
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
@@ -1697,10 +1703,6 @@ export class WebGLCompute {
 		this.setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.disable(gl.BLEND);
-	}
-	
-	getContext() {
-		return this.gl;
 	}
 
 	getValues(dataLayer: DataLayer) {
@@ -1800,7 +1802,7 @@ export class WebGLCompute {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
 			gl.readPixels(0, 0, width, height, glFormat, glType, values);
 			const { numComponents, type } = dataLayer;
-			const OUTPUT_LENGTH = width * height * numComponents;
+			const OUTPUT_LENGTH = (dataLayer._length ? dataLayer._length : width * height) * numComponents;
 
 			// Convert uint16 to float32 if needed.
 			const handleFloat16Conversion = internalType === HALF_FLOAT && values.constructor === Uint16Array;
@@ -1844,6 +1846,7 @@ export class WebGLCompute {
 				for (let i = 0, length = width * height; i < length; i++) {
 					const index1 = i * glNumChannels;
 					const index2 = i * numComponents;
+					if (index2 >= OUTPUT_LENGTH) break;
 					for (let j = 0; j < numComponents; j++) {
 						if (handleFloat16Conversion) {
 							output[index2 + j] = getFloat16(view!, 2 * (index1 + j), true);
@@ -1868,7 +1871,7 @@ export class WebGLCompute {
 		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
 	};
 
-	savePNG(dataLayer: DataLayer, filename = dataLayer.name, dpi?: number) {
+	savePNG(dataLayer: DataLayer, filename = dataLayer.name, dpi?: number, callback = saveAs) {
 		const values = this.getValues(dataLayer);
 		const { width, height } = dataLayer;
 
@@ -1889,11 +1892,10 @@ export class WebGLCompute {
 					buffer[4 * indexFlipped + i] = values[dataLayer.numComponents * index + i] * (isFloat ? 255 : 1);
 				}
 				if (dataLayer.numComponents < 4) {
-					buffer[4 * indexFlipped + 3] = 255;
+					buffer[4 * indexFlipped + 3] = 255; // Set alpha channel to 255.
 				}
 			}
 		}
-		// console.log(values, buffer);
 		context.putImageData(imageData, 0, 0);
 
 		canvas!.toBlob((blob) => {
@@ -1903,19 +1905,14 @@ export class WebGLCompute {
 			}
 			if (dpi) {
 				changeDpiBlob(blob, dpi).then((blob: Blob) =>{
-					saveAs(blob, `${filename}.png`);
+					callback(blob, `${filename}.png`);
 				});
 			} else {
-				saveAs(blob, `${filename}.png`);
+				callback(blob, `${filename}.png`);
 			}
 			
 		}, 'image/png');
 	}
-
-    reset() {
-		// TODO: implement this.
-		throw new Error('WebGLCompute.reset() not implemented.');
-	};
 
 	attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture) {
 		if (!this.renderer) {

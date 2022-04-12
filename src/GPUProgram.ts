@@ -46,7 +46,7 @@ export class GPUProgram {
 
 	// Source code for fragment shader.
 	// Hold onto this in case we need to recompile with different #defines.
-	private readonly fragmentShaderSource?: string;
+	private readonly fragmentShaderSource: string;
 	
 	private defines: CompileTimeVars = {}; // #define variables for fragment shader program.
 	private readonly uniforms: { [ key: string]: Uniform } = {}; // Uniform locations, values, and types.
@@ -61,7 +61,7 @@ export class GPUProgram {
 		params: {
 			name: string,
 			// We may want to pass in an array of shader string sources, if split across several files.
-			fragmentShader: string | string[] | WebGLShader,
+			fragmentShader: string | string[],
 			uniforms?: {
 				name: string,
 				value: UniformValue,
@@ -79,15 +79,11 @@ export class GPUProgram {
 		this.name = name;
 
 		// Compile fragment shader.
-		if (typeof(fragmentShader) === 'string' || typeof((fragmentShader as string[])[0]) === 'string') {
-			let sourceString = typeof(fragmentShader) === 'string' ?
-				fragmentShader :
-				(fragmentShader as string[]).join('\n');
-			this.fragmentShaderSource = sourceString;
-			this.recompile(defines || this.defines);
-		} else {
-			this.fragmentShader = fragmentShader as WebGLShader;
-		}
+		let sourceString = typeof(fragmentShader) === 'string' ?
+			fragmentShader :
+			(fragmentShader as string[]).join('\n');
+		this.fragmentShaderSource = sourceString;
+		this.recompile(defines || this.defines);
 
 		if (uniforms) {
 			for (let i = 0; i < uniforms?.length; i++) {
@@ -99,7 +95,7 @@ export class GPUProgram {
 
 	recompile(defines: CompileTimeVars) {
 		const { glcompute, name, fragmentShaderSource } = this;
-		const { gl, errorCallback, verboseLogging } = glcompute;
+		const { gl, _errorCallback, verboseLogging } = glcompute;
 
 		// Update this.defines if needed.
 		// Passed in defines param may only be a partial list.
@@ -118,14 +114,10 @@ export class GPUProgram {
 			return;
 		}
 
-		if (!fragmentShaderSource) {
-			// No fragment shader source available.
-			throw new Error(`Unable to recompile fragment shader for GPUProgram "${name}" because fragment shader compiled outside this scope, no source available.`);
-		}
 		if (verboseLogging) console.log(`Compiling fragment shader for GPUProgram "${name}" with defines: ${JSON.stringify(this.defines)}`);
-		const shader = compileShader( glcompute, fragmentShaderSource, gl.FRAGMENT_SHADER, name, this.defines);
+		const shader = compileShader(glcompute, fragmentShaderSource, gl.FRAGMENT_SHADER, name, this.defines);
 		if (!shader) {
-			errorCallback(`Unable to compile fragment shader for GPUProgram "${name}".`);
+			_errorCallback(`Unable to compile fragment shader for GPUProgram "${name}".`);
 			return;
 		}
 		this.fragmentShader = shader;
@@ -133,11 +125,11 @@ export class GPUProgram {
 
 	private initProgram(vertexShader: WebGLShader, programName: PROGRAM_NAME_INTERNAL) {
 		const { glcompute, fragmentShader, uniforms } = this;
-		const { gl, errorCallback} = glcompute;
+		const { gl, _errorCallback} = glcompute;
 		// Create a program.
 		const program = gl.createProgram();
 		if (!program) {
-			errorCallback(`Unable to init gl program, gl.createProgram() has failed.`);
+			_errorCallback(`Unable to init gl program, gl.createProgram() has failed.`);
 			return;
 		}
 		// TODO: check that attachShader worked.
@@ -149,7 +141,7 @@ export class GPUProgram {
 		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
 		if (!success) {
 			// Something went wrong with the link.
-			errorCallback(`Program "${this.name}" failed to link: ${gl.getProgramInfoLog(program)}`);
+			_errorCallback(`Program "${this.name}" failed to link: ${gl.getProgramInfoLog(program)}`);
 			return;
 		}
 		// If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
@@ -166,7 +158,7 @@ export class GPUProgram {
 	private getProgramWithName(name: PROGRAM_NAME_INTERNAL) {
 		if (this.programs[name]) return this.programs[name];
 		const { glcompute } = this;
-		const { errorCallback, _vertexShaders } = glcompute;
+		const { _errorCallback, _vertexShaders } = glcompute;
 		const vertexShader = _vertexShaders[name];
 		if (vertexShader.shader === undefined) {
 			const { glcompute } = this;
@@ -178,14 +170,14 @@ export class GPUProgram {
 			}
 			const shader = compileShader(glcompute, vertexShaderSource, gl.VERTEX_SHADER, this.name, vertexShader.defines);
 			if (!shader) {
-				errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${this.name}".`);
+				_errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${this.name}".`);
 				return;
 			}
 			vertexShader.shader = shader;
 		}
 		const program = this.initProgram(vertexShader.shader, DEFAULT_PROGRAM_NAME);
 		if (program === undefined) {
-			errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
+			_errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
 			return;
 		}
 		this.programs[name] = program;
@@ -295,7 +287,7 @@ export class GPUProgram {
 		type: UniformInternalType,
 	) {
 		const { glcompute, uniforms } = this;
-		const { gl, errorCallback } = glcompute;
+		const { gl, _errorCallback } = glcompute;
 		// Set active program.
 		gl.useProgram(program);
 
@@ -304,7 +296,7 @@ export class GPUProgram {
 		if (location === undefined) {
 			const _location = gl.getUniformLocation(program, name);
 			if (!_location) {
-				errorCallback(`Could not init uniform "${name}" for program "${this.name}".
+				_errorCallback(`Could not init uniform "${name}" for program "${this.name}".
 Check that uniform is present in shader code, unused uniforms may be removed by compiler.
 Also check that uniform type in shader code matches type ${type}.
 Error code: ${gl.getError()}.`);
@@ -425,7 +417,7 @@ Error code: ${gl.getError()}.`);
 	}
 
 	dispose() {
-		const { glcompute, fragmentShaderSource, fragmentShader, programs } = this;
+		const { glcompute, fragmentShader, programs } = this;
 		const { gl, verboseLogging } = glcompute;
 
 		if (verboseLogging) console.log(`Deallocating GPUProgram "${this.name}".`);
@@ -438,12 +430,8 @@ Error code: ${gl.getError()}.`);
 			delete this.programs[key as PROGRAM_NAME_INTERNAL];
 		});
 
-		// If the shader was compiled internally, delete it.
-		// From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
-		// This method has no effect if the shader has already been deleted.
-		if (fragmentShaderSource) {
-			gl.deleteShader(fragmentShader);
-		}
+		// Delete fragment shader.
+		gl.deleteShader(fragmentShader);
 		// @ts-ignore
 		delete this.fragmentShader;
 

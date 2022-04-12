@@ -68,9 +68,9 @@ export class DataLayer {
 	private readonly buffers: DataLayerBuffer[] = [];
 
 	// Texture sizes.
-	private _length?: number; // This is only used for 1D data layers.
-	private _width: number;
-	private _height: number;
+	_length?: number; // This is only used for 1D data layers, _length is used internally, access with DataLayer.length.
+	private _width: number; // Access with DataLayer.width.
+	private _height: number; // Access with DataLayer.height.
 
 	// DataLayer settings.
 	// Due to variable browser support of WebGL features, "internal" variables may be different
@@ -117,7 +117,7 @@ export class DataLayer {
 		},
 	) {
 		const { name, dimensions, type, numComponents, array } = params;
-		const { gl, errorCallback, glslVersion } = glcompute;
+		const { gl, _errorCallback, glslVersion } = glcompute;
 
 		// Save params.
 		this.glcompute = glcompute;
@@ -181,7 +181,7 @@ export class DataLayer {
 			glslVersion,
 			writable,
 			name,
-			errorCallback,
+			errorCallback: _errorCallback,
 		});
 		this.internalType = internalType;
 		// Set gl texture parameters.
@@ -197,7 +197,7 @@ export class DataLayer {
 			writable,
 			internalType,
 			glslVersion,
-			errorCallback,
+			errorCallback: _errorCallback,
 		});
 		this.glInternalFormat = glInternalFormat;
 		this.glFormat = glFormat;
@@ -205,7 +205,7 @@ export class DataLayer {
 		this.glNumChannels = glNumChannels;
 
 		// Set internal filtering/wrap types.
-		this.internalFilter = DataLayer.getInternalFilter({ gl, filter, internalType, name, errorCallback });
+		this.internalFilter = DataLayer.getInternalFilter({ gl, filter, internalType, name, errorCallback: _errorCallback });
 		this.glFilter = gl[this.internalFilter];
 		this.internalWrapS = DataLayer.getInternalWrap({ gl, wrap: wrapS, name });
 		this.glWrapS = gl[this.internalWrapS];
@@ -973,7 +973,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			width,
 			height,
 		} = this;
-		const { gl, errorCallback } = glcompute;
+		const { gl, _errorCallback } = glcompute;
 
 		const validatedArray = array ? this.validateDataArray(array) : undefined;
 
@@ -981,7 +981,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		for (let i = 0; i < numBuffers; i++) {
 			const texture = gl.createTexture();
 			if (!texture) {
-				errorCallback(`Could not init texture for DataLayer "${name}": ${gl.getError()}.`);
+				_errorCallback(`Could not init texture for DataLayer "${name}": ${gl.getError()}.`);
 				return;
 			}
 			gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -1003,7 +1003,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				// Init a framebuffer for this texture so we can write to it.
 				const framebuffer = gl.createFramebuffer();
 				if (!framebuffer) {
-					errorCallback(`Could not init framebuffer for DataLayer "${name}": ${gl.getError()}.`);
+					_errorCallback(`Could not init framebuffer for DataLayer "${name}": ${gl.getError()}.`);
 					return;
 				}
 				gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -1012,7 +1012,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 				const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 				if(status != gl.FRAMEBUFFER_COMPLETE){
-					errorCallback(`Invalid status for framebuffer for DataLayer "${name}": ${status}.`);
+					_errorCallback(`Invalid status for framebuffer for DataLayer "${name}": ${status}.`);
 				}
 
 				// Add framebuffer.
@@ -1138,7 +1138,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
 		if (this.writable) {
-			const program = glcompute.setValueProgramForType(type);
+			const program = glcompute._setValueProgramForType(type);
 			program.setUniform('u_value', value as [number, number, number, number]);
 			for (let i = startIndex; i < endIndex; i++) {
 				// Write clear value to buffers.
@@ -1225,6 +1225,6 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 	clone(name?: string) {
 		// Make a deep copy.
-		return this.glcompute.cloneDataLayer(this, name);
+		return this.glcompute._cloneDataLayer(this, name);
 	}
 }

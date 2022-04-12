@@ -70,5 +70,5 @@ export declare class DataLayer {
     get length(): number;
     private destroyBuffers;
     dispose(): void;
-    clone(): DataLayer;
+    clone(name?: string): DataLayer;
 }

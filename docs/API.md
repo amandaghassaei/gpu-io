@@ -1,6 +1,259 @@
 ## WebGLCompute
 
+There are two ways to initialize WebGLCompute:
 
+```js
+const glcompute = new WebGLCompute(
+	params: {
+		canvas: HTMLCanvasElement,// Init with a canvas element.
+
+		context?: WebGLRenderingContext | WebGL2RenderingContext | null, // Optionally pass in a WebGLContext.
+		// contextID to pass to canvas.getContext(), ignored if a context is passed into constructor.
+		// If not set, this library attempts to init a 'webgl2' context, then tries 'webgl', then 'experimental-webgl'.
+		contextID?: 'webgl2' | 'webgl' | string,
+		// Options to pass to canvas.getContext(), ignored if a context is passed into constructor.
+		contextOptions?: {
+			antialias?: boolean,
+			[key: string]: any,
+		},
+
+		// GLSL shader version to use, defaults to GLSL1.
+		// If set to GLSL3 and WebGL2 is not available, will attempt to fall back to GLSL1.
+		glslVersion?: GLSL3 | GLSL1,
+
+		verboseLogging?: boolean,
+	},
+	// Optionally pass in an error callback in case we want to handle errors related to webgl support.
+	// e.g. throw up a modal telling user this will not work on their device.
+	// Defaults to (message: string) => { throw new Error(message); }
+	errorCallback: (message: string) => void,
+);
+
+// For interop with Threejs, init with a static function:
+const glcompute = WebGLCompute.initWithThreeRenderer(
+	// Pass in a copy of the Threejs WebGLRenderer.
+	renderer: THREE.WebGLRenderer,
+	params?: {
+		glslVersion?: GLSL3 | GLSL1,
+		verboseLogging?: boolean
+	},
+	errorCallback?: (message: string) => void,
+);
+```
+
+WebGLCompute properties:
+
+```js
+readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
+
+// GLSL version may be different than value passed to constructor depending on browser support.
+readonly glslVersion: GLSL3 | GLSL1;
+```js
+
+WebGLCompute methods:
+
+```js
+isWebGL2(): boolean; // Text if the inited context is WebGL2.
+getContext(): WebGLRenderingContext | WebGL2RenderingContext;
+
+initDataLayer(params): DataLayer; // See description in DataLayer section.
+initProgram(params): GPUProgram; // See description in GPUProgram section.
+
+initTexture(
+	params: {
+		name: string,
+		url: string,
+		filter?: DataLayerFilter,
+		wrapS?: DataLayerWrap,
+		wrapT?: DataLayerWrap,
+		format?: TextureFormat,
+		type?: TextureType,
+		onLoad?: (texture: WebGLTexture) => void,
+	},
+): WebGLTexture;
+
+// Let WebGLCompute know that canvas has resized.
+// You will still need to call resize on DataLayers individual.
+onResize(canvas: HTMLCanvasElement): void;
+
+getValues(dataLayer: DataLayer): TypedArray; // Read current state of DataLayer.
+savePNG( // Save an RGBA image from DataLayer.
+	dataLayer: DataLayer,
+	filename: string, // defaults to DataLayer.name.
+	dpi?: number, // Defaults to 72 DPI.
+	callback?: (blob: Blob, filename: string) => void, // Defaults to downloading image.
+): void;
+
+
+// Step for entire fullscreen quad.
+step(
+	params: {
+		program: GPUProgram,
+		input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+// Step program only for a strip of px along the boundary.
+stepBoundary(
+	params: {
+		program: GPUProgram,
+		input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+// Step program for all but a strip of px along the boundary.
+stepNonBoundary(
+	params: {
+		program: GPUProgram,
+		input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+// Step program only for a circular spot.
+stepCircle(
+	params: {
+		program: GPUProgram,
+		position: [number, number], // Position is in units of pixels.
+		radius: number, // Radius is in units of pixels.
+		input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		numSegments?: number,
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+// Step program only for a thickened line segment (rounded end caps available).
+stepSegment(
+	params: {
+		program: GPUProgram,
+		position1: [number, number], // Position is in units of pixels.
+		position2: [number, number], // Position is in units of pixels.
+		thickness: number, // Thickness is in units of pixels.
+		input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		endCaps?: boolean,
+		numCapSegments?: number,
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+stepPolyline(
+	params: {
+		program: GPUProgram,
+		positions: [number, number][], // Positions are in units of pixels.
+		thickness: number, // Thickness of line is in units of pixels.
+		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		closeLoop?: boolean,
+		includeUVs?: boolean,
+		includeNormals?: boolean,
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+stepTriangleStrip(
+	params: {
+		program: GPUProgram,
+		positions: Float32Array, // Positions are in units of pixels.
+		normals?: Float32Array,
+		uvs?: Float32Array,
+		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer, // Undefined renders to screen.
+		count?: number,
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+stepLines(
+params: {
+	program: GPUProgram,
+	positions: Float32Array, // Positions are in units of pixels.
+	indices?: Uint16Array | Uint32Array | Int16Array | Int32Array,
+	normals?: Float32Array,
+	uvs?: Float32Array,
+	input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+	output?: DataLayer, // Undefined renders to screen.
+	count?: number,
+	closeLoop?: boolean,
+	shouldBlendAlpha?: boolean,
+}): void;
+
+drawLayerAsPoints(
+	params: {
+		positions: DataLayer, // Positions are stored in DataLayer in units of pixels.
+		program?: GPUProgram,
+		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer,
+		pointSize?: number, // pointSize in units of pixels.
+		count?: number,
+		color?: [number, number, number],
+		wrapX?: boolean,
+		wrapY?: boolean,
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+
+drawLayerAsLines(
+	params: {
+		positions: DataLayer, // Positions are stored in DataLayer in units of pixels.
+		indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
+		program?: GPUProgram,
+		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer,
+		count?: number,
+		color?: [number, number, number],
+		wrapX?: boolean,
+		wrapY?: boolean,
+		closeLoop?: boolean,
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+drawLayerAsVectorField(
+	params: {
+		data: DataLayer,
+		program?: GPUProgram,
+		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer,
+		vectorSpacing?: number,
+		vectorScale?: number,
+		color?: [number, number, number],
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+
+drawLayerMagnitude(
+	params: {
+		data: DataLayer,
+		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		output?: DataLayer,
+		scale?: number,
+		color?: [number, number, number],
+		shouldBlendAlpha?: boolean,
+	},
+): void;
+```
+
+Threejs specific methods:
+
+```js
+attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: THREE.Texture) void;
+resetThreeState(): void;
+```
+
+You are in charge of deallocating WebGLCompute instances when you are done:
+
+```js
+glcompute.dispose();
+```
 
 
 ## DataLayer
@@ -160,9 +413,8 @@ To initialize a GPUProgram:
 const gpuProgram = glcompute.initProgram({
 	// Give the GPUProgram a name (used for error logging).
 	name: string,
-	// Pass in a fragment shader as a WebGLShader or source string.
-	// Source string is preferred.
-	fragmentShader: string | WebGLShader,
+	// Pass in a fragment shader as a source string (or array of source strings).
+	fragmentShader: string | string[],
 	// Array of uniform names, values, and types for fragment shader.
 	// These can also be set or changed later with GPUProgram.setUniform().
 	uniforms?: {
@@ -173,7 +425,6 @@ const gpuProgram = glcompute.initProgram({
 	// Key-value pairs of #define variables to use in fragment shader compilation.
 	// Values must be passed in as strings.
 	// These can be changed later with GPUProgram.recompile();
-	// This option is not available if a pre-compiled fragment shader is passed to initProgram().
 	defines?: {
 		[key: string]: string,
 	},

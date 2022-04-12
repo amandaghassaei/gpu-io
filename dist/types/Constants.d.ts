@@ -40,21 +40,7 @@ export declare const INT_3D_UNIFORM = "3i";
 export declare const INT_4D_UNIFORM = "3i";
 export declare type UniformType = typeof FLOAT | typeof INT | typeof BOOL;
 export declare type UniformInternalType = typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof FLOAT_4D_UNIFORM | typeof INT_1D_UNIFORM | typeof INT_2D_UNIFORM | typeof INT_3D_UNIFORM | typeof INT_4D_UNIFORM;
-export declare type UniformValue = boolean | number | [
-    number
-] | [
-    number,
-    number
-] | [
-    number,
-    number,
-    number
-] | [
-    number,
-    number,
-    number,
-    number
-];
+export declare type UniformValue = boolean | number | number[];
 export declare type Uniform = {
     location: {
         [key: string]: WebGLUniformLocation;
