@@ -1,9 +1,9 @@
 #version 300 es
-@import ../common/precision;
-@import ../common/utils;
+@include "../common/precision.glsl"
+@include "../common/utils.glsl"
 
 // Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl
-int float a_internal_index; // Index of point.
+in float a_internal_index; // Index of point.
 
 uniform sampler2D u_internal_vectors; // Texture lookup with vector data.
 uniform vec2 u_internal_dimensions;

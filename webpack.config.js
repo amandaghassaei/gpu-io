@@ -34,8 +34,19 @@ module.exports = {
 			},
 			{
 				test: /\.glsl$/,
-				loader: 'webpack-glsl-loader',
-				exclude: /node_modules/,
+				use: {
+					loader: 'webpack-glsl-minify',
+					options: {
+					  output: 'source',
+					//   esModule: false,
+					  stripVersion: false,
+					//   preserveDefines: false,
+					//   preserveUniforms: false,
+					//   preserveVariables: false,
+					  disableMangle: true,
+					//   includesOnly: false,
+					}
+				  }
 			},
 		],
 	},

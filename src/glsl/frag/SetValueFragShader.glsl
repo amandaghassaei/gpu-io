@@ -1,5 +1,5 @@
 #version 300 es
-@import ../common/precision;
+@include "../common/precision.glsl"
 
 #ifdef FLOAT
 uniform vec4 u_value;

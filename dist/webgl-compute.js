@@ -3916,7 +3916,7 @@ var utils = __webpack_require__(404);
 var utils_1 = __webpack_require__(593);
 var float16_1 = __webpack_require__(501);
 var Checks_1 = __webpack_require__(627);
-var defaultVertexShaderSource = __webpack_require__(726);
+var defaultVertexShaderSource = __webpack_require__(288);
 var WebGLCompute = /** @class */ (function () {
     function WebGLCompute(params, 
     // Optionally pass in an error callback in case we want to handle errors related to webgl support.
@@ -3929,14 +3929,14 @@ var WebGLCompute = /** @class */ (function () {
         this._circlePositionsBuffer = {};
         // Programs for copying data (these are needed for rendering partial screen geometries).
         this.copyPrograms = {
-            src: __webpack_require__(255),
+            src: __webpack_require__(158),
         };
         // Other util programs.
         this.setValuePrograms = {
-            src: __webpack_require__(690),
+            src: __webpack_require__(148),
         };
         this.vectorMagnitudePrograms = {
-            src: __webpack_require__(130),
+            src: __webpack_require__(723),
         };
         // Vertex shaders are shared across all GPUProgram instances.
         this._vertexShaders = (_a = {},
@@ -3963,16 +3963,16 @@ var WebGLCompute = /** @class */ (function () {
                 },
             },
             _a[Constants_1.SEGMENT_PROGRAM_NAME] = {
-                src: __webpack_require__(680),
+                src: __webpack_require__(974),
             },
             _a[Constants_1.DATA_LAYER_POINTS_PROGRAM_NAME] = {
-                src: __webpack_require__(262),
+                src: __webpack_require__(18),
             },
             _a[Constants_1.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME] = {
-                src: __webpack_require__(396),
+                src: __webpack_require__(7),
             },
             _a[Constants_1.DATA_LAYER_LINES_PROGRAM_NAME] = {
-                src: __webpack_require__(656),
+                src: __webpack_require__(587),
             },
             _a);
         this.verboseLogging = false;
@@ -4063,10 +4063,11 @@ var WebGLCompute = /** @class */ (function () {
     WebGLCompute.prototype.preprocessShader = function (shaderSource) {
         // Convert to glsl1.
         // Get rid of version declaration.
-        shaderSource = shaderSource.replace('#version 300 es\n', '');
+        console.log(shaderSource);
+        shaderSource = shaderSource.replace('#version 300 es', '');
         // Remove unnecessary precision declarations.
-        shaderSource = shaderSource.replace(/precision \w+ isampler2D;*\n/g, '');
-        shaderSource = shaderSource.replace(/precision \w+ usampler2D;*\n/g, '');
+        shaderSource = shaderSource.replace(/precision \w+ isampler2D;/g, '');
+        shaderSource = shaderSource.replace(/precision \w+ usampler2D;/g, '');
         // Convert types.
         shaderSource = shaderSource.replace(/uvec2/g, 'vec2');
         shaderSource = shaderSource.replace(/uvec3/g, 'vec3');
@@ -4087,9 +4088,10 @@ var WebGLCompute = /** @class */ (function () {
         // Convert to glsl1.
         shaderSource = this.preprocessShader(shaderSource);
         // Convert in to varying.
-        shaderSource = shaderSource.replace(/\nin\s+/g, '\nvarying ');
+        shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
+        shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
         // Convert out to gl_FragColor.
-        shaderSource = shaderSource.replace(/out \w+ out_fragOut;\n/g, '');
+        shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
         shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
         return shaderSource;
     };
@@ -4100,9 +4102,11 @@ var WebGLCompute = /** @class */ (function () {
         // Convert to glsl1.
         shaderSource = this.preprocessShader(shaderSource);
         // Convert in to attribute.
-        shaderSource = shaderSource.replace(/\nin\s+/g, '\nattribute ');
+        shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
+        shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
         // Convert out to varying.
-        shaderSource = shaderSource.replace(/\nout\s+/g, '\nvarying ');
+        shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
+        shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
         return shaderSource;
     };
     WebGLCompute.prototype.glslKeyForType = function (type) {
@@ -4173,7 +4177,7 @@ var WebGLCompute = /** @class */ (function () {
             if (this._wrappedLineColorProgram === undefined) {
                 var program = this.initProgram({
                     name: 'wrappedLineColor',
-                    fragmentShader: this._preprocessFragShader(__webpack_require__(127)),
+                    fragmentShader: this._preprocessFragShader(__webpack_require__(598)),
                 });
                 this._wrappedLineColorProgram = program;
             }
@@ -5653,66 +5657,66 @@ function convertDefinesToString(defines) {
 
 /***/ }),
 
-/***/ 255:
+/***/ 158:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 v_UV;\n\n#ifdef FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef INT\nuniform isampler2D u_state;\n#endif\n#ifdef UINT\nuniform usampler2D u_state;\n#endif\n\n#ifdef FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef INT\nout ivec4 out_fragOut;\n#endif\n#ifdef UINT\nout uvec4 out_fragOut;\n#endif\n\nvoid main() {\n\tout_fragOut = texture(u_state, v_UV);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 v_UV;\n#ifdef FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef INT\nuniform isampler2D u_state;\n#endif\n#ifdef UINT\nuniform usampler2D u_state;\n#endif\n#ifdef FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef INT\nout ivec4 out_fragOut;\n#endif\n#ifdef UINT\nout uvec4 out_fragOut;\n#endif\nvoid main(){out_fragOut=A(u_state,v_UV);}"
 
 /***/ }),
 
-/***/ 690:
+/***/ 148:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\n#ifdef FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef INT\nuniform ivec4 u_value;\n#endif\n#ifdef UINT\nuniform uvec4 u_value;\n#endif\n\n#ifdef FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef INT\nout ivec4 out_fragOut;\n#endif\n#ifdef UINT\nout uvec4 out_fragOut;\n#endif\n\nvoid main() {\n\tout_fragOut = u_value;\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;\n#ifdef FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef INT\nuniform ivec4 u_value;\n#endif\n#ifdef UINT\nuniform uvec4 u_value;\n#endif\n#ifdef FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef INT\nout ivec4 out_fragOut;\n#endif\n#ifdef UINT\nout uvec4 out_fragOut;\n#endif\nvoid main(){out_fragOut=u_value;}"
 
 /***/ }),
 
-/***/ 130:
+/***/ 723:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\n// Fragment shader that draws the magnitude of a DataLayer as a color.\n\nin vec2 v_UV;\n\nuniform vec3 u_color;\nuniform float u_scale;\n#ifdef FLOAT\nuniform sampler2D u_internal_data;\n#endif\n#ifdef INT\nuniform isampler2D u_internal_data;\n#endif\n#ifdef UINT\nuniform usampler2D u_internal_data;\n#endif\n\nout vec4 out_fragOut;\n\nvoid main() {\n\tuvec4 value = texture(u_internal_data, v_UV);\n\tfloat mag = length(value);\n\tout_fragOut = vec4(mag * u_scale * u_color, 1);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 v_UV;uniform vec3 u_color;uniform float u_scale;\n#ifdef FLOAT\nuniform sampler2D u_internal_data;\n#endif\n#ifdef INT\nuniform isampler2D u_internal_data;\n#endif\n#ifdef UINT\nuniform usampler2D u_internal_data;\n#endif\nout vec4 out_fragOut;void main(){uvec4 A=B(u_internal_data,v_UV);float C=length(A);out_fragOut=vec4(C*u_scale*u_color,1);}"
 
 /***/ }),
 
-/***/ 127:
+/***/ 598:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 v_lineWrapping;\n\nuniform vec4 u_value;\n\nout vec4 out_fragOut;\n\nvoid main() {\n\t// Check if this line has wrapped.\n\tif ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {\n\t\t// Render nothing.\n\t\tdiscard;\n\t\treturn;\n\t}\n\tout_fragOut = vec4(u_value);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragOut;void main(){if((v_lineWrapping.x!=0.&&v_lineWrapping.x!=1.)||(v_lineWrapping.y!=0.&&v_lineWrapping.y!=1.)){discard;return;}out_fragOut=vec4(u_value);}"
 
 /***/ }),
 
-/***/ 656:
+/***/ 587:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nin float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_positions; // Texture lookup with position data.\nuniform vec2 u_internal_positionsDimensions;\nuniform vec2 u_internal_scale;\n// TODO: remove branching, do these as defines and make separate vert shaders.\nuniform bool u_internal_positionWithAccumulation;\nuniform bool u_internal_wrapX;\nuniform bool u_internal_wrapY;\n\nout vec2 v_UV;\nout vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.\nout float v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\tvec2 particleUV = vec2(\n\t\tmodI(a_internal_index, u_internal_positionsDimensions.x),\n\t\tfloor(floor(a_internal_index + 0.5) / u_internal_positionsDimensions.x)\n\t) / u_internal_positionsDimensions;\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t// We have packed a 2D displacement with the position.\n\tvec4 positionData = texture2D(u_internal_positions, particleUV);\n\t// position = first two components plus last two components (optional accumulation buffer).\n\tvec2 positionAbsolute = positionData.rg;\n\tif (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;\n\tv_UV = positionAbsolute * u_internal_scale;\n\n\t// Wrap if needed.\n\tv_lineWrapping = vec2(0.0);\n\tif (u_internal_wrapX) {\n\t\tif (v_UV.x < 0.0) {\n\t\t\tv_UV.x += 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t} else if (v_UV.x > 1.0) {\n\t\t\tv_UV.x -= 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t}\n\t}\n\tif (u_internal_wrapY) {\n\t\tif (v_UV.y < 0.0) {\n\t\t\tv_UV.y += 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t} else if (v_UV.y > 1.0) {\n\t\t\tv_UV.y -= 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t}\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;v_lineWrapping=vec2(0.);if(u_internal_wrapX){if(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}}if(u_internal_wrapY){if(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(H,0,1);}"
 
 /***/ }),
 
-/***/ 262:
+/***/ 18:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nin float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_positions; // Texture lookup with position data.\nuniform vec2 u_internal_positionsDimensions;\nuniform vec2 u_internal_scale;\nuniform float u_internal_pointSize;\nuniform bool u_internal_positionWithAccumulation;\nuniform bool u_internal_wrapX;\nuniform bool u_internal_wrapY;\n\nout vec2 v_UV;\nout float v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\tvec2 particleUV = vec2(\n\t\tmodI(a_internal_index, u_internal_positionsDimensions.x),\n\t\tfloor(floor(a_internal_index + 0.5) / u_internal_positionsDimensions.x)\n\t) / u_internal_positionsDimensions;\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t// We have packed a 2D displacement with the position.\n\tvec4 positionData = texture2D(u_internal_positions, particleUV);\n\t// position = first two components plus last two components (optional accumulation buffer).\n\tvec2 positionAbsolute = positionData.rg;\n\tif (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;\n\tv_UV = positionAbsolute * u_internal_scale;\n\n\t// Wrap if needed.\n\tif (u_internal_wrapX) {\n\t\tif (v_UV.x < 0.0) v_UV.x += 1.0;\n\t\tif (v_UV.x > 1.0) v_UV.x -= 1.0;\n\t}\n\tif (u_internal_wrapY) {\n\t\tif (v_UV.y < 0.0) v_UV.y += 1.0;\n\t\tif (v_UV.y > 1.0) v_UV.y -= 1.0;\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_PointSize = u_internal_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_PointSize=u_internal_pointSize;gl_Position=vec4(H,0,1);}"
 
 /***/ }),
 
-/***/ 396:
+/***/ 7:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl\nint float a_internal_index; // Index of point.\n\nuniform sampler2D u_internal_vectors; // Texture lookup with vector data.\nuniform vec2 u_internal_dimensions;\nuniform vec2 u_internal_scale;\n\nout vec2 v_UV;\nout float v_index;\n\nvoid main() {\n\t// Divide index by 2.\n\tfloat index = floor((a_internal_index + 0.5) / 2.0);\n\t// Calculate a uv based on the vertex index attribute.\n\tv_UV = vec2(\n\t\tmodI(index, u_internal_dimensions.x),\n\t\tfloor(floor(index + 0.5) / u_internal_dimensions.x)\n\t) / u_internal_dimensions;\n\n\t// Add vector displacement if needed.\n\tif (modI(a_internal_index, 2.0) > 0.0) {\n\t\t// Lookup vectorData at current UV.\n\t\tvec2 vectorData = texture2D(u_internal_vectors, v_UV).xy;\n\t\tv_UV += vectorData * u_internal_scale;\n\t}\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_UV * 2.0 - 1.0;\n\n\tv_index = a_internal_index;\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_vectors;uniform vec2 u_internal_dimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out float v_index;void main(){float E=floor((a_internal_index+0.5)/2.);v_UV=vec2(A(E,u_internal_dimensions.x),floor(floor(E+0.5)/u_internal_dimensions.x))/u_internal_dimensions;if(A(a_internal_index,2.)>0.){vec2 F=texture2D(u_internal_vectors,v_UV).xy;v_UV+=F*u_internal_scale;}vec2 G=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(G,0,1);}"
 
 /***/ }),
 
-/***/ 726:
+/***/ 288:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 a_internal_position;\n#ifdef UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\n\nuniform vec2 u_internal_scale;\nuniform vec2 u_internal_translation;\n\nout vec2 v_UV;\nout vec2 v_UV_local;\n#ifdef NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\n\nvoid main() {\n\t// Optional varyings.\n\t#ifdef UV_ATTRIBUTE\n\tv_UV_local = a_internal_uv;\n\t#else\n\tv_UV_local = a_internal_position;\n\t#endif\n\t#ifdef NORMAL_ATTRIBUTE\n\tv_normal = a_internal_normal;\n\t#endif\n\n\t// Apply transformations.\n\tvec2 position = u_internal_scale * a_internal_position + u_internal_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_UV = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 a_internal_position;\n#ifdef UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=a_internal_position;\n#endif\n#ifdef NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 A=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(A+1.);gl_Position=vec4(A,0,1);}"
 
 /***/ }),
 
-/***/ 680:
+/***/ 974:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n// These precision definitions are applied to all internal\n// vertex and fragment shaders in this library.\nprecision highp int;\nprecision highp float;\nprecision lowp sampler2D;\nprecision lowp isampler2D;\nprecision lowp usampler2D;\n\nin vec2 a_internal_position;\n\nuniform float u_internal_halfThickness;\nuniform vec2 u_internal_scale;\nuniform float u_internal_length;\nuniform float u_internal_rotation;\nuniform vec2 u_internal_translation;\n\nout vec2 v_UV_local;\nout vec2 v_UV;\n\nmat2 rotate2d(float _angle){\n\treturn mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));\n}\n\nvoid main() {\n\t// Calculate UV coordinates of current rendered object.\n\tv_UV_local = 0.5 * (a_internal_position + 1.0);\n\n\tvec2 position = a_internal_position;\n\n\t// Apply thickness / radius.\n\tposition *= u_internal_halfThickness;\n\n\t// Stretch center of shape to form a round-capped line segment.\n\tif (position.x < 0.0) {\n\t\tposition.x -= u_internal_length / 2.0;\n\t\tv_UV_local.x = 0.0; // Set entire cap UV.x to 0.\n\t} else if (position.x > 0.0) {\n\t\tposition.x += u_internal_length / 2.0;\n\t\tv_UV_local.x = 1.0; // Set entire cap UV.x to 1.\n\t}\n\n\t// Apply transformations.\n\tposition = u_internal_scale * (rotate2d(-u_internal_rotation) * position) + u_internal_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_UV = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}"
+module.exports = "#version 300 es\nprecision highp int;precision highp float;precision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 a_internal_position;uniform float u_internal_halfThickness;uniform vec2 u_internal_scale;uniform float u_internal_length;uniform float u_internal_rotation;uniform vec2 u_internal_translation;out vec2 v_UV_local;out vec2 v_UV;mat2 A(float B){return mat2(cos(B),-sin(B),sin(B),cos(B));}void main(){v_UV_local=0.5*(a_internal_position+1.);vec2 C=a_internal_position;C*=u_internal_halfThickness;if(C.x<0.){C.x-=u_internal_length/2.;v_UV_local.x=0.;}else if(C.x>0.){C.x+=u_internal_length/2.;v_UV_local.x=1.;}C=u_internal_scale*(A(-u_internal_rotation)*C)+u_internal_translation;v_UV=0.5*(C+1.);gl_Position=vec4(C,0,1);}"
 
 /***/ })
 

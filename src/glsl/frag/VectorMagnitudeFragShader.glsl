@@ -1,5 +1,5 @@
 #version 300 es
-@import ../common/precision;
+@include "../common/precision.glsl"
 
 // Fragment shader that draws the magnitude of a DataLayer as a color.
 

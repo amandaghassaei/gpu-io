@@ -1,5 +1,5 @@
 #version 300 es
-@import ../common/precision;
+@include "../common/precision.glsl"
 
 in vec2 a_internal_position;
 

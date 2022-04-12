@@ -295,10 +295,11 @@ export class WebGLCompute {
 	private preprocessShader(shaderSource: string) {
 		// Convert to glsl1.
 		// Get rid of version declaration.
-		shaderSource = shaderSource.replace('#version 300 es\n', '');
+		console.log(shaderSource);
+		shaderSource = shaderSource.replace('#version 300 es', '');
 		// Remove unnecessary precision declarations.
-		shaderSource = shaderSource.replace(/precision \w+ isampler2D;*\n/g, '');
-		shaderSource = shaderSource.replace(/precision \w+ usampler2D;*\n/g, '');
+		shaderSource = shaderSource.replace(/precision \w+ isampler2D;/g, '');
+		shaderSource = shaderSource.replace(/precision \w+ usampler2D;/g, '');
 		// Convert types.
 		shaderSource = shaderSource.replace(/uvec2/g, 'vec2');
 		shaderSource = shaderSource.replace(/uvec3/g, 'vec3');
@@ -319,9 +320,10 @@ export class WebGLCompute {
 		// Convert to glsl1.
 		shaderSource = this.preprocessShader(shaderSource);
 		// Convert in to varying.
-		shaderSource = shaderSource.replace(/\nin\s+/g, '\nvarying ');
+		shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
+		shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
 		// Convert out to gl_FragColor.
-		shaderSource = shaderSource.replace(/out \w+ out_fragOut;\n/g, '');
+		shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
 		shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
 		return shaderSource;
 	}
@@ -332,9 +334,11 @@ export class WebGLCompute {
 		// Convert to glsl1.
 		shaderSource = this.preprocessShader(shaderSource);
 		// Convert in to attribute.
-		shaderSource = shaderSource.replace(/\nin\s+/g, '\nattribute ');
+		shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
+		shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
 		// Convert out to varying.
-		shaderSource = shaderSource.replace(/\nout\s+/g, '\nvarying ');
+		shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
+		shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
 		return shaderSource;
 	}
 
