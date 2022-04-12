@@ -530,7 +530,7 @@ export class WebGLCompute {
 		return new DataLayer(this, params);
 	};
 
-	cloneDataLayer(dataLayer: DataLayer) {
+	cloneDataLayer(dataLayer: DataLayer, name?: string) {
 		let dimensions: number | [number, number] = 0;
 		try {
 			dimensions = dataLayer.length;
@@ -542,7 +542,7 @@ export class WebGLCompute {
 		const array = dataLayer.writable ? undefined : this.getValues(dataLayer);
 
 		const clone = this.initDataLayer({
-			name: `${dataLayer.name}-clone`,
+			name: name || `${dataLayer.name}-clone`,
 			dimensions,
 			type: dataLayer.type,
 			numComponents: dataLayer.numComponents,
@@ -876,7 +876,7 @@ export class WebGLCompute {
 			return;
 		}
 
-		const glProgram = program.defaultProgram!;
+		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, true, input, output);
@@ -913,7 +913,7 @@ export class WebGLCompute {
 			return;
 		}
 
-		const glProgram = program.defaultProgram!;
+		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
@@ -970,7 +970,7 @@ export class WebGLCompute {
 			return;
 		}
 
-		const glProgram = program.defaultProgram!;
+		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
@@ -1008,7 +1008,7 @@ export class WebGLCompute {
 			return;
 		}
 
-		const glProgram = program.defaultProgram!;
+		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
@@ -1053,7 +1053,7 @@ export class WebGLCompute {
 			return;
 		}
 
-		const glProgram = program.segmentProgram!;
+		const glProgram = program._segmentProgram!;
 
 		// Do setup - this must come first.
 		this.drawSetup(glProgram, false, input, output);
@@ -1260,8 +1260,8 @@ export class WebGLCompute {
 		}
 
 		const glProgram = (uvs ?
-			(normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
-			(normals ? program.defaultProgramWithNormal : program.defaultProgram)
+			(normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
+			(normals ? program._defaultProgramWithNormal : program._defaultProgram)
 		)!;
 
 		// Do setup - this must come first.
@@ -1312,8 +1312,8 @@ export class WebGLCompute {
 		}
 
 		const glProgram = (uvs ?
-			(normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
-			(normals ? program.defaultProgramWithNormal : program.defaultProgram)
+			(normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
+			(normals ? program._defaultProgramWithNormal : program._defaultProgram)
 		)!;
 
 		// Do setup - this must come first.
@@ -1369,8 +1369,8 @@ export class WebGLCompute {
 		}
 		
 		const glProgram = (uvs ?
-			(normals ? program.defaultProgramWithUVNormal : program.defaultProgramWithUV) :
-			(normals ? program.defaultProgramWithNormal : program.defaultProgram)
+			(normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
+			(normals ? program._defaultProgramWithNormal : program._defaultProgram)
 		)!;
 
 		// Do setup - this must come first.
@@ -1457,7 +1457,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default of red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program.dataLayerPointsProgram!;
+		const glProgram = program._dataLayerPointsProgram!;
 
 		// Add positions to end of input if needed.
 		const input = this.addLayerToInputs(positions, params.input);
@@ -1530,7 +1530,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program.dataLayerLinesProgram!;
+		const glProgram = program._dataLayerLinesProgram!;
 
 		// Add positionLayer to end of input if needed.
 		const input = this.addLayerToInputs(positions, params.input);
@@ -1622,7 +1622,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program.dataLayerVectorFieldProgram!;
+		const glProgram = program._dataLayerVectorFieldProgram!;
 
 		// Add data to end of input if needed.
 		const input = this.addLayerToInputs(data, params.input);
@@ -1679,7 +1679,7 @@ export class WebGLCompute {
 		program.setUniform('u_scale', scale, FLOAT);
 		program.setUniform('u_internal_numDimensions', data.numComponents, INT);
 
-		const glProgram = program.defaultProgram!;
+		const glProgram = program._defaultProgram!;
 
 		// Add data to end of input if needed.
 		const input = this.addLayerToInputs(data, params.input);

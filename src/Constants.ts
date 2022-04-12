@@ -59,13 +59,7 @@ export type UniformInternalType =
 	typeof INT_2D_UNIFORM |
 	typeof INT_3D_UNIFORM |
 	typeof INT_4D_UNIFORM;
-export type UniformValue = 
-	boolean |
-	number |
-	[number] |
-	[number, number] |
-	[number, number, number] |
-	[number, number, number, number];
+export type UniformValue = boolean | number | number[];
 export type Uniform = { 
 	location: { [key: string]: WebGLUniformLocation },
 	type: UniformInternalType,

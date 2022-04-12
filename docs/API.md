@@ -1,3 +1,8 @@
+## WebGLCompute
+
+
+
+
 ## DataLayer
 
 DataLayers store state – they can be used as inputs and outputs in [GPUPrograms](#gpuprogram).
@@ -118,8 +123,8 @@ clear(applyToAllBuffers = false): void;
 setFromArray(array: TypedArray | number[], applyToAllBuffers = false): void;
 
 // Make a deep copy of this DataLayer.
-// New DataLayer will have name: `${dataLayer.name}-clone`.
-clone(): DataLayer;
+// Unless specified, new DataLayer will have name: `${dataLayer.name}-clone`.
+clone(name?: string): DataLayer;
 
 // Resize DataLayer.  This operation will clear all existing state, so you can optionally pass in initialization array.
 // Otherwise, new memory is allocated but not initialized.
@@ -152,13 +157,46 @@ GPUProgram are programs that can be applied to [DataLayers](#datalayer).
 To initialize a GPUProgram:
 
 ```js
-
-
+const gpuProgram = glcompute.initProgram({
+	// Give the GPUProgram a name (used for error logging).
+	name: string,
+	// Pass in a fragment shader as a WebGLShader or source string.
+	// Source string is preferred.
+	fragmentShader: string | WebGLShader,
+	// Array of uniform names, values, and types for fragment shader.
+	// These can also be set or changed later with GPUProgram.setUniform().
+	uniforms?: {
+		name: string,
+		value: boolean | number | number[],
+		type: BOOL | FLOAT | INT,
+	}[],
+	// Key-value pairs of #define variables to use in fragment shader compilation.
+	// Values must be passed in as strings.
+	// These can be changed later with GPUProgram.recompile();
+	// This option is not available if a pre-compiled fragment shader is passed to initProgram().
+	defines?: {
+		[key: string]: string,
+	},
+});
 ```
 
 GPUProgram properties:
 
 ```js
+readonly name: string;
+```
+
+GPUProgram methods:
+
+```js
+// Recompile with new compile-time variables.
+// Passed in defines will merge with those previously declared for this GPUProgram.
+// If no change in defines, this will do nothing.
+recompile(defines: { [key: string]: string }): void;
+
+// Set or change fragment shader uniform.
+// If uniform has already been set, no need to pass in type.
+setUniform(name: string, value: UniformValue, type?: UniformType): void;
 ```
 
 You are in charge of deallocating GUPrograms when you are done with them:

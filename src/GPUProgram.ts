@@ -33,7 +33,7 @@ import {
 	DATA_LAYER_LINES_PROGRAM_NAME,
 } from './Constants';
 import {
-	compileShader, insertDefinesAfterVersionDeclaration,
+	compileShader,
 } from './utils';
 
 export class GPUProgram {
@@ -84,7 +84,7 @@ export class GPUProgram {
 				fragmentShader :
 				(fragmentShader as string[]).join('\n');
 			this.fragmentShaderSource = sourceString;
-			this.recompile(defines);
+			this.recompile(defines || this.defines);
 		} else {
 			this.fragmentShader = fragmentShader as WebGLShader;
 		}
@@ -97,21 +97,19 @@ export class GPUProgram {
 		}
 	}
 
-	recompile(defines?: CompileTimeVars) {
+	recompile(defines: CompileTimeVars) {
 		const { glcompute, name, fragmentShaderSource } = this;
 		const { gl, errorCallback, verboseLogging } = glcompute;
 
 		// Update this.defines if needed.
 		// Passed in defines param may only be a partial list.
 		let definesNeedUpdate = false;
-		if (defines) {
-			const keys = Object.keys(defines);
-			for (let i = 0; i < keys.length; i++) {
-				const key = keys[i];
-				if (this.defines[key] !== defines[key]) {
-					definesNeedUpdate = true;
-					this.defines[key] = defines[key];
-				}
+		const keys = Object.keys(defines);
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
+			if (this.defines[key] !== defines[key]) {
+				definesNeedUpdate = true;
+				this.defines[key] = defines[key];
 			}
 		}
 		
@@ -194,39 +192,33 @@ export class GPUProgram {
 		return program;
 	}
 
-	get defaultProgram() {
+	// These getters are used internally.
+	get _defaultProgram() {
 		return this.getProgramWithName(DEFAULT_PROGRAM_NAME);
 	}
-
-	get defaultProgramWithUV() {
+	get _defaultProgramWithUV() {
 		return this.getProgramWithName(DEFAULT_W_UV_PROGRAM_NAME);
 	}
-
-	get defaultProgramWithNormal() {
+	get _defaultProgramWithNormal() {
 		return this.getProgramWithName(DEFAULT_W_NORMAL_PROGRAM_NAME);
 	}
-
-	get defaultProgramWithUVNormal() {
+	get _defaultProgramWithUVNormal() {
 		return this.getProgramWithName(DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
 	}
-
-	get segmentProgram() {
+	get _segmentProgram() {
 		return this.getProgramWithName(SEGMENT_PROGRAM_NAME);
 	}
-
-	get dataLayerPointsProgram() {
+	get _dataLayerPointsProgram() {
 		return this.getProgramWithName(DATA_LAYER_POINTS_PROGRAM_NAME);
 	}
-
-	get dataLayerVectorFieldProgram() {
+	get _dataLayerVectorFieldProgram() {
 		return this.getProgramWithName(DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME);
 	}
-
-	get dataLayerLinesProgram() {
+	get _dataLayerLinesProgram() {
 		return this.getProgramWithName(DATA_LAYER_LINES_PROGRAM_NAME);
 	}
 
-	private static uniformInternalTypeForValue(
+	private uniformInternalTypeForValue(
 		value: UniformValue,
 		type: UniformType,
 	) {
@@ -370,9 +362,15 @@ Error code: ${gl.getError()}.`);
 		const { programs, uniforms, glcompute } = this;
 		const { verboseLogging } = glcompute;
 
+		// Check that length of value is correct.
+		if (isArray(value)) {
+			const length = (value as number[]).length;
+			if (length > 4) throw new Error(`Invalid uniform value: [${(value as number[]).join(', ')}] passed to GPUProgram "${this.name}, uniforms must be of type number[] with length <= 4, number, or boolean."`)
+		}
+
 		let currentType = uniforms[name]?.type;
 		if (type) {
-			const internalType = GPUProgram.uniformInternalTypeForValue(value, type);
+			const internalType = this.uniformInternalTypeForValue(value, type);
 			if (currentType === undefined) currentType = internalType;
 			else {
 				// console.warn(`Don't need to pass in type to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
@@ -415,7 +413,7 @@ Error code: ${gl.getError()}.`);
 		value: UniformValue,
 		type: UniformType,
 	) {
-		const internalType = GPUProgram.uniformInternalTypeForValue(value, type);
+		const internalType = this.uniformInternalTypeForValue(value, type);
 		if (program === undefined) {
 			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
 		}

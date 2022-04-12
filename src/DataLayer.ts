@@ -1223,8 +1223,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		delete this.glcompute;
 	}
 
-	clone() {
+	clone(name?: string) {
 		// Make a deep copy.
-		return this.glcompute.cloneDataLayer(this);
+		return this.glcompute.cloneDataLayer(this, name);
 	}
 }
