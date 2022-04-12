@@ -10,14 +10,14 @@ export function compileShader(
 	programName: string,
 	defines?: CompileTimeVars,
 ) {
-	const { gl, errorCallback } = glcompute;
+	const { gl, _errorCallback } = glcompute;
 	if (defines) {
 		shaderSource = insertDefinesAfterVersionDeclaration(glcompute, shaderSource, defines);
 	}
 	// Create the shader object
 	const shader = gl.createShader(shaderType);
 	if (!shader) {
-		errorCallback('Unable to init gl shader.');
+		_errorCallback('Unable to init gl shader.');
 		return null;
 	}
 
@@ -31,7 +31,7 @@ export function compileShader(
 	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!success) {
 		// Something went wrong during compilation - print the error.
-		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
+		_errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
 			 shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}

@@ -4,13 +4,13 @@ export declare class GPUProgram {
     private readonly glcompute;
     readonly name: string;
     private fragmentShader;
-    private readonly fragmentShaderSource?;
+    private readonly fragmentShaderSource;
     private defines;
     private readonly uniforms;
     private programs;
     constructor(glcompute: WebGLCompute, params: {
         name: string;
-        fragmentShader: string | string[] | WebGLShader;
+        fragmentShader: string | string[];
         uniforms?: {
             name: string;
             value: UniformValue;

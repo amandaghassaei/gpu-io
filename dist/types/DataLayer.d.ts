@@ -13,7 +13,7 @@ export declare class DataLayer {
     private _bufferIndex;
     readonly numBuffers: number;
     private readonly buffers;
-    private _length?;
+    _length?: number;
     private _width;
     private _height;
     readonly glInternalFormat: number;

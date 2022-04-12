@@ -1,3 +1,4 @@
+import { saveAs } from 'file-saver';
 import { DataLayer } from './DataLayer';
 import { DataLayerArray, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap, UniformType, UniformValue, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback } from './Constants';
 import { GPUProgram } from './GPUProgram';
@@ -8,7 +9,7 @@ export declare class WebGLCompute {
     private width;
     private height;
     private errorState;
-    readonly errorCallback: ErrorCallback;
+    readonly _errorCallback: ErrorCallback;
     private renderer?;
     private readonly maxNumTextures;
     private _quadPositionsBuffer?;
@@ -31,7 +32,7 @@ export declare class WebGLCompute {
         };
     };
     verboseLogging: boolean;
-    static initWithThreeRenderer(renderer: WebGLRenderer, params: {
+    static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
         glslVersion?: GLSLVersion;
         verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback): WebGLCompute;
@@ -50,8 +51,8 @@ export declare class WebGLCompute {
     _preprocessFragShader(shaderSource: string): string;
     _preprocessVertShader(shaderSource: string): string;
     private glslKeyForType;
-    setValueProgramForType(type: DataLayerType): GPUProgram;
-    copyProgramForType(type: DataLayerType): GPUProgram;
+    _setValueProgramForType(type: DataLayerType): GPUProgram;
+    private copyProgramForType;
     private get wrappedLineColorProgram();
     private vectorMagnitudeProgramForType;
     isWebGL2(): boolean;
@@ -59,18 +60,6 @@ export declare class WebGLCompute {
     private get boundaryPositionsBuffer();
     private getCirclePositionsBuffer;
     private initVertexBuffer;
-    initProgram(params: {
-        name: string;
-        fragmentShader: string | WebGLShader;
-        uniforms?: {
-            name: string;
-            value: UniformValue;
-            type: UniformType;
-        }[];
-        defines?: {
-            [key: string]: string;
-        };
-    }): GPUProgram;
     initDataLayer(params: {
         name: string;
         dimensions: number | [number, number];
@@ -84,7 +73,19 @@ export declare class WebGLCompute {
         numBuffers?: number;
         clearValue?: number | number[];
     }): DataLayer;
-    cloneDataLayer(dataLayer: DataLayer, name?: string): DataLayer;
+    initProgram(params: {
+        name: string;
+        fragmentShader: string | string[];
+        uniforms?: {
+            name: string;
+            value: UniformValue;
+            type: UniformType;
+        }[];
+        defines?: {
+            [key: string]: string;
+        };
+    }): GPUProgram;
+    _cloneDataLayer(dataLayer: DataLayer, name?: string): DataLayer;
     initTexture(params: {
         name: string;
         url: string;
@@ -220,11 +221,9 @@ export declare class WebGLCompute {
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
-    getContext(): WebGLRenderingContext | WebGL2RenderingContext;
     getValues(dataLayer: DataLayer): DataLayerArray;
     private readyToRead;
-    savePNG(dataLayer: DataLayer, filename?: string, dpi?: number): void;
-    reset(): void;
+    savePNG(dataLayer: DataLayer, filename?: string, dpi?: number, callback?: typeof saveAs): void;
     attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;
     resetThreeState(): void;
     dispose(): void;

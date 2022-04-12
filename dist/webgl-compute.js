@@ -2422,7 +2422,7 @@ var DataLayer = /** @class */ (function () {
         this._bufferIndex = 0;
         this.buffers = [];
         var name = params.name, dimensions = params.dimensions, type = params.type, numComponents = params.numComponents, array = params.array;
-        var gl = glcompute.gl, errorCallback = glcompute.errorCallback, glslVersion = glcompute.glslVersion;
+        var gl = glcompute.gl, _errorCallback = glcompute._errorCallback, glslVersion = glcompute.glslVersion;
         // Save params.
         this.glcompute = glcompute;
         this.name = name;
@@ -2479,7 +2479,7 @@ var DataLayer = /** @class */ (function () {
             glslVersion: glslVersion,
             writable: writable,
             name: name,
-            errorCallback: errorCallback,
+            errorCallback: _errorCallback,
         });
         this.internalType = internalType;
         // Set gl texture parameters.
@@ -2490,14 +2490,14 @@ var DataLayer = /** @class */ (function () {
             writable: writable,
             internalType: internalType,
             glslVersion: glslVersion,
-            errorCallback: errorCallback,
+            errorCallback: _errorCallback,
         }), glFormat = _b.glFormat, glInternalFormat = _b.glInternalFormat, glType = _b.glType, glNumChannels = _b.glNumChannels;
         this.glInternalFormat = glInternalFormat;
         this.glFormat = glFormat;
         this.glType = glType;
         this.glNumChannels = glNumChannels;
         // Set internal filtering/wrap types.
-        this.internalFilter = DataLayer.getInternalFilter({ gl: gl, filter: filter, internalType: internalType, name: name, errorCallback: errorCallback });
+        this.internalFilter = DataLayer.getInternalFilter({ gl: gl, filter: filter, internalType: internalType, name: name, errorCallback: _errorCallback });
         this.glFilter = gl[this.internalFilter];
         this.internalWrapS = DataLayer.getInternalWrap({ gl: gl, wrap: wrapS, name: name });
         this.glWrapS = gl[this.internalWrapS];
@@ -3183,13 +3183,13 @@ var DataLayer = /** @class */ (function () {
     };
     DataLayer.prototype.initBuffers = function (array) {
         var _a = this, name = _a.name, numBuffers = _a.numBuffers, glcompute = _a.glcompute, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
-        var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
+        var gl = glcompute.gl, _errorCallback = glcompute._errorCallback;
         var validatedArray = array ? this.validateDataArray(array) : undefined;
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
             if (!texture) {
-                errorCallback("Could not init texture for DataLayer \"" + name + "\": " + gl.getError() + ".");
+                _errorCallback("Could not init texture for DataLayer \"" + name + "\": " + gl.getError() + ".");
                 return;
             }
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -3207,7 +3207,7 @@ var DataLayer = /** @class */ (function () {
                 // Init a framebuffer for this texture so we can write to it.
                 var framebuffer = gl.createFramebuffer();
                 if (!framebuffer) {
-                    errorCallback("Could not init framebuffer for DataLayer \"" + name + "\": " + gl.getError() + ".");
+                    _errorCallback("Could not init framebuffer for DataLayer \"" + name + "\": " + gl.getError() + ".");
                     return;
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -3215,7 +3215,7 @@ var DataLayer = /** @class */ (function () {
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
                 var status_1 = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
                 if (status_1 != gl.FRAMEBUFFER_COMPLETE) {
-                    errorCallback("Invalid status for framebuffer for DataLayer \"" + name + "\": " + status_1 + ".");
+                    _errorCallback("Invalid status for framebuffer for DataLayer \"" + name + "\": " + status_1 + ".");
                 }
                 // Add framebuffer.
                 buffer.framebuffer = framebuffer;
@@ -3338,7 +3338,7 @@ var DataLayer = /** @class */ (function () {
         var startIndex = applyToAllBuffers ? 0 : bufferIndex;
         var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
         if (this.writable) {
-            var program = glcompute.setValueProgramForType(type);
+            var program = glcompute._setValueProgramForType(type);
             program.setUniform('u_value', value);
             for (var i = startIndex; i < endIndex; i++) {
                 // Write clear value to buffers.
@@ -3429,7 +3429,7 @@ var DataLayer = /** @class */ (function () {
     };
     DataLayer.prototype.clone = function (name) {
         // Make a deep copy.
-        return this.glcompute.cloneDataLayer(this, name);
+        return this.glcompute._cloneDataLayer(this, name);
     };
     return DataLayer;
 }());
@@ -3461,16 +3461,11 @@ var GPUProgram = /** @class */ (function () {
         this.glcompute = glcompute;
         this.name = name;
         // Compile fragment shader.
-        if (typeof (fragmentShader) === 'string' || typeof (fragmentShader[0]) === 'string') {
-            var sourceString = typeof (fragmentShader) === 'string' ?
-                fragmentShader :
-                fragmentShader.join('\n');
-            this.fragmentShaderSource = sourceString;
-            this.recompile(defines || this.defines);
-        }
-        else {
-            this.fragmentShader = fragmentShader;
-        }
+        var sourceString = typeof (fragmentShader) === 'string' ?
+            fragmentShader :
+            fragmentShader.join('\n');
+        this.fragmentShaderSource = sourceString;
+        this.recompile(defines || this.defines);
         if (uniforms) {
             for (var i = 0; i < (uniforms === null || uniforms === void 0 ? void 0 : uniforms.length); i++) {
                 var _a = uniforms[i], name_1 = _a.name, value = _a.value, type = _a.type;
@@ -3480,7 +3475,7 @@ var GPUProgram = /** @class */ (function () {
     }
     GPUProgram.prototype.recompile = function (defines) {
         var _a = this, glcompute = _a.glcompute, name = _a.name, fragmentShaderSource = _a.fragmentShaderSource;
-        var gl = glcompute.gl, errorCallback = glcompute.errorCallback, verboseLogging = glcompute.verboseLogging;
+        var gl = glcompute.gl, _errorCallback = glcompute._errorCallback, verboseLogging = glcompute.verboseLogging;
         // Update this.defines if needed.
         // Passed in defines param may only be a partial list.
         var definesNeedUpdate = false;
@@ -3496,26 +3491,22 @@ var GPUProgram = /** @class */ (function () {
             // No need to recompile.
             return;
         }
-        if (!fragmentShaderSource) {
-            // No fragment shader source available.
-            throw new Error("Unable to recompile fragment shader for GPUProgram \"" + name + "\" because fragment shader compiled outside this scope, no source available.");
-        }
         if (verboseLogging)
             console.log("Compiling fragment shader for GPUProgram \"" + name + "\" with defines: " + JSON.stringify(this.defines));
         var shader = utils_1.compileShader(glcompute, fragmentShaderSource, gl.FRAGMENT_SHADER, name, this.defines);
         if (!shader) {
-            errorCallback("Unable to compile fragment shader for GPUProgram \"" + name + "\".");
+            _errorCallback("Unable to compile fragment shader for GPUProgram \"" + name + "\".");
             return;
         }
         this.fragmentShader = shader;
     };
     GPUProgram.prototype.initProgram = function (vertexShader, programName) {
         var _a = this, glcompute = _a.glcompute, fragmentShader = _a.fragmentShader, uniforms = _a.uniforms;
-        var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
+        var gl = glcompute.gl, _errorCallback = glcompute._errorCallback;
         // Create a program.
         var program = gl.createProgram();
         if (!program) {
-            errorCallback("Unable to init gl program, gl.createProgram() has failed.");
+            _errorCallback("Unable to init gl program, gl.createProgram() has failed.");
             return;
         }
         // TODO: check that attachShader worked.
@@ -3527,7 +3518,7 @@ var GPUProgram = /** @class */ (function () {
         var success = gl.getProgramParameter(program, gl.LINK_STATUS);
         if (!success) {
             // Something went wrong with the link.
-            errorCallback("Program \"" + this.name + "\" failed to link: " + gl.getProgramInfoLog(program));
+            _errorCallback("Program \"" + this.name + "\" failed to link: " + gl.getProgramInfoLog(program));
             return;
         }
         // If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
@@ -3544,7 +3535,7 @@ var GPUProgram = /** @class */ (function () {
         if (this.programs[name])
             return this.programs[name];
         var glcompute = this.glcompute;
-        var errorCallback = glcompute.errorCallback, _vertexShaders = glcompute._vertexShaders;
+        var _errorCallback = glcompute._errorCallback, _vertexShaders = glcompute._vertexShaders;
         var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
             var glcompute_1 = this.glcompute;
@@ -3556,14 +3547,14 @@ var GPUProgram = /** @class */ (function () {
             }
             var shader = utils_1.compileShader(glcompute_1, vertexShaderSource, gl.VERTEX_SHADER, this.name, vertexShader.defines);
             if (!shader) {
-                errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + this.name + "\".");
+                _errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + this.name + "\".");
                 return;
             }
             vertexShader.shader = shader;
         }
         var program = this.initProgram(vertexShader.shader, Constants_1.DEFAULT_PROGRAM_NAME);
         if (program === undefined) {
-            errorCallback("Unable to init program \"" + name + "\" for GPUProgram \"" + this.name + "\".");
+            _errorCallback("Unable to init program \"" + name + "\" for GPUProgram \"" + this.name + "\".");
             return;
         }
         this.programs[name] = program;
@@ -3699,7 +3690,7 @@ var GPUProgram = /** @class */ (function () {
     GPUProgram.prototype.setProgramUniform = function (program, programName, name, value, type) {
         var _a;
         var _b = this, glcompute = _b.glcompute, uniforms = _b.uniforms;
-        var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
+        var gl = glcompute.gl, _errorCallback = glcompute._errorCallback;
         // Set active program.
         gl.useProgram(program);
         var location = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.location[programName];
@@ -3707,7 +3698,7 @@ var GPUProgram = /** @class */ (function () {
         if (location === undefined) {
             var _location = gl.getUniformLocation(program, name);
             if (!_location) {
-                errorCallback("Could not init uniform \"" + name + "\" for program \"" + this.name + "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
+                _errorCallback("Could not init uniform \"" + name + "\" for program \"" + this.name + "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
                 return;
             }
             location = _location;
@@ -3816,7 +3807,7 @@ var GPUProgram = /** @class */ (function () {
     };
     GPUProgram.prototype.dispose = function () {
         var _this = this;
-        var _a = this, glcompute = _a.glcompute, fragmentShaderSource = _a.fragmentShaderSource, fragmentShader = _a.fragmentShader, programs = _a.programs;
+        var _a = this, glcompute = _a.glcompute, fragmentShader = _a.fragmentShader, programs = _a.programs;
         var gl = glcompute.gl, verboseLogging = glcompute.verboseLogging;
         if (verboseLogging)
             console.log("Deallocating GPUProgram \"" + this.name + "\".");
@@ -3827,12 +3818,8 @@ var GPUProgram = /** @class */ (function () {
         Object.keys(this.programs).forEach(function (key) {
             delete _this.programs[key];
         });
-        // If the shader was compiled internally, delete it.
-        // From https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/deleteShader
-        // This method has no effect if the shader has already been deleted.
-        if (fragmentShaderSource) {
-            gl.deleteShader(fragmentShader);
-        }
+        // Delete fragment shader.
+        gl.deleteShader(fragmentShader);
         // @ts-ignore
         delete this.fragmentShader;
         // @ts-ignore
@@ -4001,7 +3988,7 @@ var WebGLCompute = /** @class */ (function () {
             this.verboseLogging = params.verboseLogging;
         // Save callback in case we run into an error.
         var self = this;
-        this.errorCallback = function (message) {
+        this._errorCallback = function (message) {
             if (self.errorState) {
                 return;
             }
@@ -4025,7 +4012,7 @@ var WebGLCompute = /** @class */ (function () {
                     || canvas.getContext('experimental-webgl', params.contextOptions);
             }
             if (gl === null) {
-                this.errorCallback('Unable to initialize WebGL context.');
+                this._errorCallback('Unable to initialize WebGL context.');
                 return;
             }
         }
@@ -4041,10 +4028,11 @@ var WebGLCompute = /** @class */ (function () {
         this.renderer = renderer;
         // Save glsl version, default to 1.x.
         var glslVersion = params.glslVersion === undefined ? Constants_1.GLSL1 : params.glslVersion;
-        this.glslVersion = glslVersion;
         if (!utils_1.isWebGL2(gl) && glslVersion === Constants_1.GLSL3) {
-            console.warn('GLSL3.x is incompatible with WebGL1.0 contexts.');
+            console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
+            glslVersion = Constants_1.GLSL1; // Fall back to GLSL1 in these cases.
         }
+        this.glslVersion = glslVersion;
         // GL setup.
         // Disable depth testing globally.
         gl.disable(gl.DEPTH_TEST);
@@ -4091,6 +4079,7 @@ var WebGLCompute = /** @class */ (function () {
         shaderSource = shaderSource.replace(/texture\(/g, 'texture2D(');
         return shaderSource;
     };
+    // Used internally.
     WebGLCompute.prototype._preprocessFragShader = function (shaderSource) {
         var glslVersion = this.glslVersion;
         if (glslVersion === Constants_1.GLSL3)
@@ -4105,6 +4094,7 @@ var WebGLCompute = /** @class */ (function () {
         shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
         return shaderSource;
     };
+    // Used internally.
     WebGLCompute.prototype._preprocessVertShader = function (shaderSource) {
         var glslVersion = this.glslVersion;
         if (glslVersion === Constants_1.GLSL3)
@@ -4138,7 +4128,8 @@ var WebGLCompute = /** @class */ (function () {
                 throw new Error("Invalid type: " + type + " passed to WebGLCompute.copyProgramForType.");
         }
     };
-    WebGLCompute.prototype.setValueProgramForType = function (type) {
+    // Used internally.
+    WebGLCompute.prototype._setValueProgramForType = function (type) {
         var _a;
         var key = this.glslKeyForType(type);
         if (this.setValuePrograms[key] === undefined) {
@@ -4249,10 +4240,10 @@ var WebGLCompute = /** @class */ (function () {
         return this._circlePositionsBuffer[numSegments];
     };
     WebGLCompute.prototype.initVertexBuffer = function (data) {
-        var _a = this, errorCallback = _a.errorCallback, gl = _a.gl;
+        var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl;
         var buffer = gl.createBuffer();
         if (!buffer) {
-            errorCallback('Unable to allocate gl buffer.');
+            _errorCallback('Unable to allocate gl buffer.');
             return;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -4260,17 +4251,6 @@ var WebGLCompute = /** @class */ (function () {
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         return buffer;
     };
-    WebGLCompute.prototype.initProgram = function (params) {
-        // Check params.
-        var validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
-        Object.keys(params).forEach(function (key) {
-            if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key \"" + key + "\" passed to WebGLCompute.initProgram with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
-            }
-        });
-        return new GPUProgram_1.GPUProgram(this, params);
-    };
-    ;
     WebGLCompute.prototype.initDataLayer = function (params) {
         // Check params.
         var validKeys = ['name', 'dimensions', 'type', 'numComponents', 'array', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue'];
@@ -4282,7 +4262,19 @@ var WebGLCompute = /** @class */ (function () {
         return new DataLayer_1.DataLayer(this, params);
     };
     ;
-    WebGLCompute.prototype.cloneDataLayer = function (dataLayer, name) {
+    WebGLCompute.prototype.initProgram = function (params) {
+        // Check params.
+        var validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
+        Object.keys(params).forEach(function (key) {
+            if (validKeys.indexOf(key) < 0) {
+                throw new Error("Invalid key \"" + key + "\" passed to WebGLCompute.initProgram with name \"" + params.name + "\".  Valid keys are " + validKeys.join(', ') + ".");
+            }
+        });
+        return new GPUProgram_1.GPUProgram(this, params);
+    };
+    ;
+    // Used internally, see DataLayer.clone() for public API.
+    WebGLCompute.prototype._cloneDataLayer = function (dataLayer, name) {
         var dimensions = 0;
         try {
             dimensions = dataLayer.length;
@@ -4360,7 +4352,7 @@ var WebGLCompute = /** @class */ (function () {
         if (!Checks_1.isValidTextureType(type)) {
             throw new Error("Invalid type: " + type + " for DataLayer \"" + name + "\", must be " + Constants_1.validTextureTypes.join(', ') + ".");
         }
-        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
+        var _a = this, gl = _a.gl, _errorCallback = _a._errorCallback;
         var texture = gl.createTexture();
         if (texture === null) {
             throw new Error("Unable to init glTexture.");
@@ -4408,7 +4400,7 @@ var WebGLCompute = /** @class */ (function () {
                 params.onLoad(texture);
         };
         image.onerror = function (e) {
-            errorCallback("Error loading image " + name + ": " + e);
+            _errorCallback("Error loading image " + name + ": " + e);
         };
         image.src = url;
         return texture;
@@ -5010,7 +5002,7 @@ var WebGLCompute = /** @class */ (function () {
         }
         var program = params.program;
         if (program === undefined) {
-            program = this.setValueProgramForType(Constants_1.FLOAT);
+            program = this._setValueProgramForType(Constants_1.FLOAT);
             var color = params.color || [1, 0, 0]; // Default of red.
             program.setUniform('u_value', __spreadArrays(color, [1]), Constants_1.FLOAT);
         }
@@ -5061,7 +5053,7 @@ var WebGLCompute = /** @class */ (function () {
         }
         var program = params.program;
         if (program === undefined) {
-            program = params.wrapX || params.wrapY ? this.wrappedLineColorProgram : this.setValueProgramForType(Constants_1.FLOAT);
+            program = params.wrapX || params.wrapY ? this.wrappedLineColorProgram : this._setValueProgramForType(Constants_1.FLOAT);
             ;
             var color = params.color || [1, 0, 0]; // Default to red.
             program.setUniform('u_value', __spreadArrays(color, [1]), Constants_1.FLOAT);
@@ -5138,7 +5130,7 @@ var WebGLCompute = /** @class */ (function () {
         // }
         var program = params.program;
         if (program === undefined) {
-            program = this.setValueProgramForType(Constants_1.FLOAT);
+            program = this._setValueProgramForType(Constants_1.FLOAT);
             ;
             var color = params.color || [1, 0, 0]; // Default to red.
             program.setUniform('u_value', __spreadArrays(color, [1]), Constants_1.FLOAT);
@@ -5198,9 +5190,6 @@ var WebGLCompute = /** @class */ (function () {
         this.setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
-    };
-    WebGLCompute.prototype.getContext = function () {
-        return this.gl;
     };
     WebGLCompute.prototype.getValues = function (dataLayer) {
         var _a = this, gl = _a.gl, glslVersion = _a.glslVersion;
@@ -5297,7 +5286,7 @@ var WebGLCompute = /** @class */ (function () {
             // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
             gl.readPixels(0, 0, width, height, glFormat, glType, values);
             var numComponents = dataLayer.numComponents, type = dataLayer.type;
-            var OUTPUT_LENGTH = width * height * numComponents;
+            var OUTPUT_LENGTH = (dataLayer._length ? dataLayer._length : width * height) * numComponents;
             // Convert uint16 to float32 if needed.
             var handleFloat16Conversion = internalType === Constants_1.HALF_FLOAT && values.constructor === Uint16Array;
             // @ts-ignore
@@ -5337,6 +5326,8 @@ var WebGLCompute = /** @class */ (function () {
                 for (var i = 0, length_1 = width * height; i < length_1; i++) {
                     var index1 = i * glNumChannels;
                     var index2 = i * numComponents;
+                    if (index2 >= OUTPUT_LENGTH)
+                        break;
                     for (var j = 0; j < numComponents; j++) {
                         if (handleFloat16Conversion) {
                             output[index2 + j] = float16_1.getFloat16(view, 2 * (index1 + j), true);
@@ -5361,8 +5352,9 @@ var WebGLCompute = /** @class */ (function () {
         return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
     };
     ;
-    WebGLCompute.prototype.savePNG = function (dataLayer, filename, dpi) {
+    WebGLCompute.prototype.savePNG = function (dataLayer, filename, dpi, callback) {
         if (filename === void 0) { filename = dataLayer.name; }
+        if (callback === void 0) { callback = file_saver_1.saveAs; }
         var values = this.getValues(dataLayer);
         var width = dataLayer.width, height = dataLayer.height;
         var canvas = document.createElement('canvas');
@@ -5382,11 +5374,10 @@ var WebGLCompute = /** @class */ (function () {
                     buffer[4 * indexFlipped + i] = values[dataLayer.numComponents * index + i] * (isFloat ? 255 : 1);
                 }
                 if (dataLayer.numComponents < 4) {
-                    buffer[4 * indexFlipped + 3] = 255;
+                    buffer[4 * indexFlipped + 3] = 255; // Set alpha channel to 255.
                 }
             }
         }
-        // console.log(values, buffer);
         context.putImageData(imageData, 0, 0);
         canvas.toBlob(function (blob) {
             if (!blob) {
@@ -5395,19 +5386,14 @@ var WebGLCompute = /** @class */ (function () {
             }
             if (dpi) {
                 changedpi_1.changeDpiBlob(blob, dpi).then(function (blob) {
-                    file_saver_1.saveAs(blob, filename + ".png");
+                    callback(blob, filename + ".png");
                 });
             }
             else {
-                file_saver_1.saveAs(blob, filename + ".png");
+                callback(blob, filename + ".png");
             }
         }, 'image/png');
     };
-    WebGLCompute.prototype.reset = function () {
-        // TODO: implement this.
-        throw new Error('WebGLCompute.reset() not implemented.');
-    };
-    ;
     WebGLCompute.prototype.attachDataLayerToThreeTexture = function (dataLayer, texture) {
         if (!this.renderer) {
             throw new Error('WebGLCompute was not inited with a renderer.');
@@ -5588,14 +5574,14 @@ var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
 function compileShader(glcompute, shaderSource, shaderType, programName, defines) {
-    var gl = glcompute.gl, errorCallback = glcompute.errorCallback;
+    var gl = glcompute.gl, _errorCallback = glcompute._errorCallback;
     if (defines) {
         shaderSource = insertDefinesAfterVersionDeclaration(glcompute, shaderSource, defines);
     }
     // Create the shader object
     var shader = gl.createShader(shaderType);
     if (!shader) {
-        errorCallback('Unable to init gl shader.');
+        _errorCallback('Unable to init gl shader.');
         return null;
     }
     // Set the shader source code.
@@ -5606,7 +5592,7 @@ function compileShader(glcompute, shaderSource, shaderType, programName, defines
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print the error.
-        errorCallback("Could not compile " + (shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex') + "\n\t\t\t shader for program \"" + programName + "\": " + gl.getShaderInfoLog(shader) + ".");
+        _errorCallback("Could not compile " + (shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex') + "\n\t\t\t shader for program \"" + programName + "\": " + gl.getShaderInfoLog(shader) + ".");
         return null;
     }
     return shader;
