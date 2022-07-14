@@ -4448,8 +4448,7 @@ var WebGLCompute = /** @class */ (function () {
             else {
                 for (var i = 0; i < input.length; i++) {
                     var layer = input[i];
-                    // @ts-ignore
-                    inputTextures.push(layer.getCurrentStateTexture ? layer.currentState : layer);
+                    inputTextures.push(layer.currentState ? layer.currentState : layer);
                 }
             }
         }

@@ -728,8 +728,7 @@ export class WebGLCompute {
 			} else {
 				for (let i = 0; i < (input as (DataLayer | WebGLTexture)[]).length; i++) {
 					const layer = (input as (DataLayer | WebGLTexture)[])[i];
-					// @ts-ignore
-					inputTextures.push((layer as DataLayer).getCurrentStateTexture ? (layer as DataLayer).currentState : layer as WebGLTexture)
+					inputTextures.push((layer as DataLayer).currentState ? (layer as DataLayer).currentState : layer as WebGLTexture)
 				}
 			}
 		}
