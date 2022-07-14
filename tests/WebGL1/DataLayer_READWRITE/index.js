@@ -1,0 +1,3 @@
+const tests = [
+	{ WEBGL_VERSION: WEBGL1, GLSL_VERSION: GLSL1 },
+];

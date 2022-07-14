@@ -1,13 +1,8 @@
 const { setFloat16, getFloat16 } = float16;
 
-const SUCCESS = 'success';
-const ERROR = 'error';
-const WARNING = 'warning';
-const NA = 'NA';
-
 requirejs([
-	'../../dist/webgl-compute',
-	'../deps/micromodal.min',
+	'../../../dist/webgl-compute',
+	'../../deps/micromodal.min',
 ], (
 	{
 		WebGLCompute,
@@ -27,9 +22,6 @@ requirejs([
 	}, MicroModal,
 ) => {
 	MicroModal.init();
-
-	const gl1Canvas = document.createElement('canvas');
-	const gl2Canvas = document.createElement('canvas');
 
 	function offsetProgramForType(type, glslVersion) {
 		if (glslVersion === GLSL1) {
@@ -217,18 +209,6 @@ void main() {
 			let NUM_HALF_FLOAT_INT_EXTREMA = 0;
 			let NUM_FLOAT_INT_EXTREMA = 0;
 
-			const MIN_UNSIGNED_INT = 0;
-			const MIN_BYTE = -(2 ** 7);
-			const MAX_BYTE = 2 ** 8 - 1;
-			const MIN_SHORT = -(2 ** 15);
-			const MAX_SHORT = 2 ** 16 - 1;
-			const MIN_INT = -(2 ** 31);
-			const MAX_INT = 2 ** 31 - 1;
-			const MIN_FLOAT_INT = -16777216;
-			const MAX_FLOAT_INT = 16777216;
-			const MIN_HALF_FLOAT_INT = -2048;
-			const MAX_HALF_FLOAT_INT = -2048;
-
 			switch (TYPE) {
 				case HALF_FLOAT: {
 					input = new Float32Array(DIM_X * DIM_Y * NUM_ELEMENTS);
@@ -295,7 +275,7 @@ void main() {
 						input[0] = MIN_UNSIGNED_INT;
 						input[1] = input[0] + 1;
 						// Maximum values.
-						input[2] = MAX_BYTE;
+						input[2] = MAX_UNSIGNED_BYTE;
 						input[3] = input[2] - 1;
 					} else {
 						// Fill with uint8 data.
@@ -317,7 +297,7 @@ void main() {
 						input[0] = MIN_UNSIGNED_INT;
 						input[1] = input[0] + 1;
 						// Maximum values.
-						input[2] = MAX_SHORT;
+						input[2] = MAX_UNSIGNED_SHORT;
 						input[3] = input[2] - 1;
 						// Check that at least half float values are supported.
 						input[4] = MAX_HALF_FLOAT_INT;
@@ -343,7 +323,7 @@ void main() {
 						input[0] = MIN_UNSIGNED_INT;
 						input[1] = input[0] + 1;
 						// Maximum values.
-						input[2] = MAX_INT;
+						input[2] = MAX_UNSIGNED_INT;
 						input[3] = input[2] - 1;
 						// Check that at least float values are supported.
 						input[4] = MAX_FLOAT_INT;
@@ -612,5 +592,5 @@ void main() {
 		// }
 	}
 
-	makeTable(testArrayWrites);
+	makeTable(testArrayWrites, tests);
 });

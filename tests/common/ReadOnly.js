@@ -1,12 +1,8 @@
 const { setFloat16, getFloat16 } = float16;
 
-const SUCCESS = 'success';
-const ERROR = 'error';
-const WARNING = 'warning';
-
 requirejs([
-	'../../dist/webgl-compute',
-	'../deps/micromodal.min',
+	'../../../dist/webgl-compute',
+	'../../deps/micromodal.min',
 ], (
 	{
 		WebGLCompute,
@@ -100,7 +96,7 @@ void main() {
 		}
 	}
 
-	// General code for testing array writes.
+	// General code for testing array reads.
 	function testArrayReads(options) {
 
 		const { 
@@ -108,10 +104,11 @@ void main() {
 			DIM_X,
 			DIM_Y,
 			NUM_ELEMENTS,
-			GLSL_VERSION,
 			WRAP,
 			FILTER,
 			TEST_EXTREMA,
+			WEBGL_VERSION,
+			GLSL_VERSION,
 		} = options;
 
 		let OFFSET = 0;
@@ -125,34 +122,32 @@ void main() {
 			num_channels: NUM_ELEMENTS,
 			wrap: WRAP,
 			filter: FILTER,
+			webgl_version: WEBGL_VERSION === 'webgl2' ? 'webgl 2' : 'webgl 1',
+			glsl_version: GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3',
 		};
 
-		try {
+		if (FILTER === LINEAR && !(TYPE == FLOAT || TYPE === HALF_FLOAT)) {
+			return {
+				status: NA,
+				log: ['Integer DataLayers do not support LINEAR filtering.'],
+				error: [],
+				config,
+			};
+		}
+
+		// try {
 			const glcompute = new WebGLCompute({
-				canvas: document.createElement('canvas'),
-				antialias: true,
+				canvas: WEBGL_VERSION === WEBGL2 ? gl2Canvas : gl1Canvas,
+				contextID: WEBGL_VERSION,
 				glslVersion: GLSL_VERSION,
 			});
-			config.webgl_version = glcompute.isWebGL2() ? 'WebGL 2' : 'WebGL 1';
-			config.glsl_version = GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3';
+			config.webgl_version = glcompute.isWebGL2() ? 'webgl 2' : 'webgl 1';
 
 			let input;
 			let NUM_EXTREMA = 0;
 			let NUM_TYPE_EXTREMA = 0;
 			let NUM_HALF_FLOAT_INT_EXTREMA = 0;
 			let NUM_FLOAT_INT_EXTREMA = 0;
-
-			const MIN_UNSIGNED_INT = 0;
-			const MIN_BYTE = -(2 ** 7);
-			const MAX_BYTE = 2 ** 8 - 1;
-			const MIN_SHORT = -(2 ** 15);
-			const MAX_SHORT = 2 ** 16 - 1;
-			const MIN_INT = -(2 ** 31);
-			const MAX_INT = 2 ** 31 - 1;
-			const MIN_FLOAT_INT = -16777216;
-			const MAX_FLOAT_INT = 16777216;
-			const MIN_HALF_FLOAT_INT = -2048;
-			const MAX_HALF_FLOAT_INT = -2048;
 
 			switch (TYPE) {
 				case HALF_FLOAT: {
@@ -220,7 +215,7 @@ void main() {
 						input[0] = MIN_UNSIGNED_INT;
 						input[1] = input[0] + 1;
 						// Maximum values.
-						input[2] = MAX_BYTE;
+						input[2] = MAX_UNSIGNED_BYTE;
 						input[3] = input[2] - 1;
 					} else {
 						// Fill with uint8 data.
@@ -242,7 +237,7 @@ void main() {
 						input[0] = MIN_UNSIGNED_INT;
 						input[1] = input[0] + 1;
 						// Maximum values.
-						input[2] = MAX_SHORT;
+						input[2] = MAX_UNSIGNED_SHORT;
 						input[3] = input[2] - 1;
 						// Check that at least half float values are supported.
 						input[4] = MAX_HALF_FLOAT_INT;
@@ -268,7 +263,7 @@ void main() {
 						input[0] = MIN_UNSIGNED_INT;
 						input[1] = input[0] + 1;
 						// Maximum values.
-						input[2] = MAX_INT;
+						input[2] = MAX_UNSIGNED_INT;
 						input[3] = input[2] - 1;
 						// Check that at least float values are supported.
 						input[4] = MAX_FLOAT_INT;
@@ -408,8 +403,6 @@ void main() {
 			});
 			const output = glcompute.getValues(dataLayer);
 
-			glcompute.destroy();
-
 			let status = SUCCESS;
 			const error = [];
 			const log = [];
@@ -518,20 +511,24 @@ void main() {
 				};
 			}
 
+			dataLayer.dispose();
+			offsetProgram.dispose();
+			glcompute.dispose();
+
 			return {
 				status,
 				log,
 				error,
 				config,
 			};
-		} catch (error) {
-			return {
-				status: ERROR,
-				error: [error.message],
-				config,
-			};
-		}
+		// } catch (error) {
+		// 	return {
+		// 		status: ERROR,
+		// 		error: [error.message],
+		// 		config,
+		// 	};
+		// }
 	}
 
-	makeTable(testArrayReads);
+	makeTable(testArrayReads, tests);
 });

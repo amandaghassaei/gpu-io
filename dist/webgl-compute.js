@@ -3775,11 +3775,22 @@ var GPUProgram = /** @class */ (function () {
             uniforms[name] = { type: currentType, location: {}, value: value };
         }
         else {
-            // Update value.
-            // TODO: do a deep check for array values.
-            if (uniforms[name].value === value) {
+            // Deep check is value has changed.
+            if (Checks_1.isArray(value)) {
+                var isChanged = true;
+                for (var i = 0; i < value.length; i++) {
+                    if (uniforms[name].value !== value) {
+                        isChanged = true;
+                        break;
+                    }
+                }
+                if (!isChanged)
+                    return; // No change.
+            }
+            else if (uniforms[name].value === value) {
                 return; // No change.
             }
+            // Update value.
             uniforms[name].value = value;
         }
         if (verboseLogging)

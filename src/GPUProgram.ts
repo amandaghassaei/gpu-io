@@ -380,11 +380,20 @@ Error code: ${gl.getError()}.`);
 			// Init uniform if needed.
 			uniforms[name] = { type: currentType, location: {}, value };
 		} else {
-			// Update value.
-			// TODO: do a deep check for array values.
-			if (uniforms[name].value === value) {
+			// Deep check is value has changed.
+			if (isArray(value)) {
+				let isChanged = true;
+				for (let i = 0; i < (value as number[]).length; i++) {
+					if (uniforms[name].value !== value) {
+						isChanged = true;
+						break;
+					}
+				}
+				if (!isChanged) return; // No change.
+			} else if (uniforms[name].value === value) {
 				return; // No change.
 			}
+			// Update value.
 			uniforms[name].value = value;
 		}
 

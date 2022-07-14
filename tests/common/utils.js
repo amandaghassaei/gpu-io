@@ -15,6 +15,59 @@ const NEAREST = 'NEAREST';
 const REPEAT = 'REPEAT';
 const CLAMP_TO_EDGE = 'CLAMP_TO_EDGE';
 
+document.getElementById('info').innerHTML =  `
+All tests are performed on non-power of 2 textures.<br/>
+In cases where INT types are not available, FLOAT types are used instead, but may be limited in the range of int values they can represent.<br/>
+Click on the test to see more info.<br/>
+"default" is NEAREST filtering with CLAMP_TO_EDGE wrapping.<br/>
+Extrema (min, max, min magnitude, max magnitude) for each type are tested.`;
+
+// Extrema values to test.
+const MIN_UNSIGNED_INT = 0;
+const MIN_BYTE = -(2 ** 7);
+const MAX_BYTE = 2 ** 7 - 1;
+const MAX_UNSIGNED_BYTE = 2 ** 8 - 1;
+const MIN_SHORT = -(2 ** 15);
+const MAX_SHORT = 2 ** 15 - 1;
+const MAX_UNSIGNED_SHORT = 2 ** 16 - 1;
+const MIN_INT = -(2 ** 31);
+const MAX_INT = 2 ** 31 - 1;
+const MAX_UNSIGNED_INT = 2 ** 32 - 1;
+const MIN_FLOAT_INT = -16777216;
+const MAX_FLOAT_INT = 16777216;
+const MIN_HALF_FLOAT_INT = -2048;
+const MAX_HALF_FLOAT_INT = 2048;
+
+const SUCCESS = 'success';
+const ERROR = 'error';
+const WARNING = 'warning';
+const NA = 'NA';
+
+const gl1Canvas = document.createElement('canvas');
+const gl2Canvas = document.createElement('canvas');
+
+function addModal() {
+	const modalHTML = `<div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
+		<div class="modal__overlay" tabindex="-1" data-micromodal-close>
+			<div id="modal-1-container" class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
+				<header class="modal__header">
+					<h2 class="modal__title" id="modal-1-title">
+					</h2>
+					<button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+				</header>
+				<main class="modal__content" id="modal-1-content">
+					<p id="modal-1-config"></p>
+					<p id="modal-1-error"></p>
+				</main>
+			</div>
+		</div>
+	</div>`;
+	const div = document.createElement('div');
+	div.innerHTML = modalHTML;
+	document.getElementsByTagName('body')[0].appendChild(div.children[0]);
+}
+addModal();
+
 function showMoreInfo(e, result) {
 	e.preventDefault();
 	const modal = document.getElementById('modal-1-container');
@@ -107,7 +160,7 @@ function isWebGL2Supported() {
 	return true;
 }
 
-function makeTable(testFunction) {
+function makeTable(testFunction, tests) {
 	// To make things simpler, keep DIM_X * DIMY < 256.
 	const DIM_X = 30;
 	const DIM_Y = 30;
@@ -147,12 +200,7 @@ function makeTable(testFunction) {
 		container.appendChild(makeTitleColumn(rowTitles));
 
 		// Loop through each glsl version.
-		const glslversions = [
-			// { WEBGL_VERSION: WEBGL1, GLSL_VERSION: GLSL1 },
-			{ WEBGL_VERSION: WEBGL2, GLSL_VERSION: GLSL1 },
-			{ WEBGL_VERSION: WEBGL2, GLSL_VERSION: GLSL3 },
-		];
-		glslversions.forEach(({ GLSL_VERSION, WEBGL_VERSION }) => {
+		tests.forEach(({ GLSL_VERSION, WEBGL_VERSION }) => {
 			const outerTable = document.createElement('div');
 			outerTable.className="outerTable"
 			container.appendChild(outerTable);
