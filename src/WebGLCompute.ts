@@ -806,6 +806,7 @@ export class WebGLCompute {
 		}
 
 		// Check if output is same as one of input layers.
+		// TODO: do a better job of checking if input is a texture of same DataLayer as output.
 		if (input && ((input === output) || (isArray(input) && (input as (DataLayer | WebGLTexture)[]).indexOf(output) > -1))) {
 			if (output.numBuffers === 1) {
 				throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
