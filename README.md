@@ -29,7 +29,7 @@ Note: these are stale examples at this point, will be updated soon.
 
 Currently, this library can run in a separate webgl context from threejs with no problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so, though I am still sorting out some lingering WebGL warnings:
 
-```
+```js
 const renderer = new WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff on top
 // of things rendered to the screen from webgl-compute.
@@ -43,7 +43,7 @@ const glcompute = WegGLCompute.initWithThreeRenderer(renderer);
 
 To use the output from a webgl-compute DataLayer to a Threejs Texture:
 
-```
+```js
 const dataLayer = glcompute.initDataLayer({
 	name: 'dataLayer-1',
 	dimensions: [100, 100],
