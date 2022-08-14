@@ -2,7 +2,7 @@
 
 GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of 2D spatially-distributed state (such as 2D physics simulations or cellular automata).  It also includes an interface for performing operations on large 1D arrays of data (via a fragment shader implementation).
 
-This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on most mobile or older browsers.
+This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers.
 
 **This repo is under active development, really only posted here for internal use right now, but will have a more official release soon.  As it stands, the API may (and probably will) change at any moment and many features have not been fully tested.**
 
@@ -101,12 +101,12 @@ You might notice that this library does not use any transform feedback to e.g. h
 - Transform feedback is only supported in WebGL 2.  At the time I first started writing this, WebGL 2 was not supported by mobile Safari.  Though that has changed recently, it will take some time for many people to update (for example, luddites like me who never update their apps), so for now I'd like to support all functionality in this library in WebGL 1.
 - I played around with the idea of using transform feedback if WebGL 2 is available, then falling back to a fragment shader implementation if only WebGL 1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
 
-My current plan is to wait for [WebGPU](https://web.dev/gpu/) to come out, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API (e.g. only allowing up to four channels per texture), so I'd like to get away from it in the long term if possible.
+My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API (e.g. only allowing up to four channels per texture), so I'd like to get away from it in the long term if possible.
 
 ### Precision
 
 By default all internal shaders in this library are inited with:
-````
+```sh
 precision highp int;
 precision highp float;
 precision lowp sampler2D;
