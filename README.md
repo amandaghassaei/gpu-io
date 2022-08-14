@@ -106,7 +106,7 @@ My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially laun
 ### Precision
 
 By default all internal shaders in this library are inited with:
-```sh
+```glsl
 precision highp int;
 precision highp float;
 precision lowp sampler2D;
