@@ -471,8 +471,8 @@ function testArrayReads(options) {
 		
 		let allMismatches = [];
 		for (let i = 0; i < output.length; i++) {
-			if (output[i] !== 1) {
-				allMismatches.push(`expected: ${1}, got: ${output[i]}`);
+			if (output[i] !== input[i]) {
+				allMismatches.push(`expected: ${input[i]}, got: ${output[i]}`);
 			}
 		}
 
