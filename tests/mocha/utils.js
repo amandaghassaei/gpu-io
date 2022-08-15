@@ -95,10 +95,11 @@ in vec2 a_internal_normal;
 
 uniform vec2 u_internal_scale;
 uniform vec2 u_internal_translation;
+
 varying vec2 v_UV;
 varying vec2 v_UV_local;
 #ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
-out vec2 v_normal;
+varying vec2 v_normal;
 #endif
 
 void main() {

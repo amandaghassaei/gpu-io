@@ -5815,21 +5815,18 @@ function convertShadertoGLSL1(shaderSource) {
 function convertFragShaderToGLSL1(shaderSource) {
     shaderSource = convertShadertoGLSL1(shaderSource);
     // Convert in to varying.
-    shaderSource = shaderSource.replace(/^\s*in\s+/g, 'varying '); // Beginning of line.
-    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';\nvarying '); // After semicolon (may not be linebreak).
+    shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
     // Convert out to gl_FragColor.
-    shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
-    shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
+    shaderSource = shaderSource.replace(/\bout \w+ out_fragOut;/g, '');
+    shaderSource = shaderSource.replace(/\bout_fragOut\s+=/, 'gl_FragColor =');
     return shaderSource;
 }
 function convertVertShaderToGLSL1(shaderSource) {
     shaderSource = convertShadertoGLSL1(shaderSource);
     // Convert in to attribute.
-    shaderSource = shaderSource.replace(/^\s*in\s+/, 'attribute '); // Beginning of line.
-    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute '); // After semicolon (may not be linebreak).
+    shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
     // Convert out to varying.
-    shaderSource = shaderSource.replace(/^\s*out\s+/g, 'varying '); // Beginning of line.
-    shaderSource = shaderSource.replace(/;\s*out\s+/g, ';\nvarying '); // After semicolon (may not be linebreak).
+    shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
     return shaderSource;
 }
 function preprocessFragShader(shaderSource, glslVersion) {
