@@ -40,6 +40,8 @@ import {
 	validTextureFormats,
 	validTextureTypes,
 	UINT,
+	GLSLPrecision,
+	PRECISION_HIGH_P,
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -54,6 +56,8 @@ import {
 	isWebGL2,
 	isPowerOf2,
 	initSequentialFloatArray,
+	convertFragShaderToGLSL1,
+	convertVertShaderToGLSL1,
 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
@@ -69,6 +73,8 @@ const defaultVertexShaderSource = require('./glsl/vert/DefaultVertShader.glsl');
 export class GPUComposer {
 	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	readonly glslVersion!: GLSLVersion;
+	readonly intPrecision!: GLSLPrecision;
+	readonly floatPrecision!: GLSLPrecision;
 	// These width and height are the current canvas at full res.
 	private width!: number;
 	private height!: number;
@@ -195,6 +201,8 @@ export class GPUComposer {
 				[key: string]: any,
 			},
 			glslVersion?: GLSLVersion,
+			intPrecision?: GLSLPrecision,
+			floatPrecision?: GLSLPrecision,
 			verboseLogging?: boolean,
 		},
 		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
@@ -264,6 +272,10 @@ export class GPUComposer {
 		}
 		this.glslVersion = glslVersion;
 
+		// Set default int/float precision.
+		this.intPrecision = params.intPrecision || PRECISION_HIGH_P;
+		this.floatPrecision = params.floatPrecision || PRECISION_HIGH_P;
+
 		// GL setup.
 		// Disable depth testing globally.
 		gl.disable(gl.DEPTH_TEST);
@@ -290,55 +302,18 @@ export class GPUComposer {
 		if (this.verboseLogging) console.log(`${this.maxNumTextures} textures max.`);
 	}
 
-	private preprocessShader(shaderSource: string) {
-		// Convert to glsl1.
-		// Get rid of version declaration.
-		shaderSource = shaderSource.replace('#version 300 es', '');
-		// Remove unnecessary precision declarations.
-		shaderSource = shaderSource.replace(/precision \w+ isampler2D;/g, '');
-		shaderSource = shaderSource.replace(/precision \w+ usampler2D;/g, '');
-		// Convert types.
-		shaderSource = shaderSource.replace(/uvec2/g, 'vec2');
-		shaderSource = shaderSource.replace(/uvec3/g, 'vec3');
-		shaderSource = shaderSource.replace(/uvec4/g, 'vec4');
-		shaderSource = shaderSource.replace(/usampler2D/g, 'sampler2D');
-		shaderSource = shaderSource.replace(/ivec2/g, 'vec2');
-		shaderSource = shaderSource.replace(/ivec3/g, 'vec3');
-		shaderSource = shaderSource.replace(/ivec4/g, 'vec4');
-		shaderSource = shaderSource.replace(/isampler2D/g, 'sampler2D');
-		// Convert functions.
-		shaderSource = shaderSource.replace(/texture\(/g, 'texture2D(');
-		return shaderSource;
-	}
-
-	// Used internally.
 	_preprocessFragShader(shaderSource: string) {
 		const { glslVersion } = this;
 		if (glslVersion === GLSL3) return shaderSource;
 		// Convert to glsl1.
-		shaderSource = this.preprocessShader(shaderSource);
-		// Convert in to varying.
-		shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
-		shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
-		// Convert out to gl_FragColor.
-		shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
-		shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
-		return shaderSource;
+		return convertFragShaderToGLSL1(shaderSource);
 	}
 
-	// Used internally.
 	_preprocessVertShader(shaderSource: string) {
 		const { glslVersion } = this;
 		if (glslVersion === GLSL3) return shaderSource;
 		// Convert to glsl1.
-		shaderSource = this.preprocessShader(shaderSource);
-		// Convert in to attribute.
-		shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
-		shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
-		// Convert out to varying.
-		shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
-		shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
-		return shaderSource;
+		return convertVertShaderToGLSL1(shaderSource);
 	}
 
 	private glslKeyForType(type: GPULayerType) {
@@ -360,7 +335,6 @@ export class GPUComposer {
 		}
 	}
 
-	// Used internally.
 	_setValueProgramForType(type: GPULayerType) {
 		const key = this.glslKeyForType(type);
 		if (this.setValuePrograms[key] === undefined) {

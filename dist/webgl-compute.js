@@ -2560,6 +2560,9 @@ var GPUComposer = /** @class */ (function () {
             glslVersion = Constants_1.GLSL1; // Fall back to GLSL1 in these cases.
         }
         this.glslVersion = glslVersion;
+        // Set default int/float precision.
+        this.intPrecision = params.intPrecision || Constants_1.PRECISION_HIGH_P;
+        this.floatPrecision = params.floatPrecision || Constants_1.PRECISION_HIGH_P;
         // GL setup.
         // Disable depth testing globally.
         gl.disable(gl.DEPTH_TEST);
@@ -2586,55 +2589,19 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.initWithThreeRenderer = function (renderer, params, errorCallback) {
         return new GPUComposer(__assign({ canvas: renderer.domElement, context: renderer.getContext() }, params), errorCallback, renderer);
     };
-    GPUComposer.prototype.preprocessShader = function (shaderSource) {
-        // Convert to glsl1.
-        // Get rid of version declaration.
-        shaderSource = shaderSource.replace('#version 300 es', '');
-        // Remove unnecessary precision declarations.
-        shaderSource = shaderSource.replace(/precision \w+ isampler2D;/g, '');
-        shaderSource = shaderSource.replace(/precision \w+ usampler2D;/g, '');
-        // Convert types.
-        shaderSource = shaderSource.replace(/uvec2/g, 'vec2');
-        shaderSource = shaderSource.replace(/uvec3/g, 'vec3');
-        shaderSource = shaderSource.replace(/uvec4/g, 'vec4');
-        shaderSource = shaderSource.replace(/usampler2D/g, 'sampler2D');
-        shaderSource = shaderSource.replace(/ivec2/g, 'vec2');
-        shaderSource = shaderSource.replace(/ivec3/g, 'vec3');
-        shaderSource = shaderSource.replace(/ivec4/g, 'vec4');
-        shaderSource = shaderSource.replace(/isampler2D/g, 'sampler2D');
-        // Convert functions.
-        shaderSource = shaderSource.replace(/texture\(/g, 'texture2D(');
-        return shaderSource;
-    };
-    // Used internally.
     GPUComposer.prototype._preprocessFragShader = function (shaderSource) {
         var glslVersion = this.glslVersion;
         if (glslVersion === Constants_1.GLSL3)
             return shaderSource;
         // Convert to glsl1.
-        shaderSource = this.preprocessShader(shaderSource);
-        // Convert in to varying.
-        shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
-        shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
-        // Convert out to gl_FragColor.
-        shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
-        shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
-        return shaderSource;
+        return utils_1.convertFragShaderToGLSL1(shaderSource);
     };
-    // Used internally.
     GPUComposer.prototype._preprocessVertShader = function (shaderSource) {
         var glslVersion = this.glslVersion;
         if (glslVersion === Constants_1.GLSL3)
             return shaderSource;
         // Convert to glsl1.
-        shaderSource = this.preprocessShader(shaderSource);
-        // Convert in to attribute.
-        shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
-        shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
-        // Convert out to varying.
-        shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
-        shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
-        return shaderSource;
+        return utils_1.convertVertShaderToGLSL1(shaderSource);
     };
     GPUComposer.prototype.glslKeyForType = function (type) {
         if (this.glslVersion === Constants_1.GLSL1)
@@ -2655,7 +2622,6 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("Invalid type: " + type + " passed to GPUComposer.copyProgramForType.");
         }
     };
-    // Used internally.
     GPUComposer.prototype._setValueProgramForType = function (type) {
         var _a;
         var key = this.glslKeyForType(type);
@@ -5578,11 +5544,13 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports.convertVertShaderToGLSL1 = exports.convertFragShaderToGLSL1 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils_1 = __webpack_require__(593);
 Object.defineProperty(exports, "isWebGL2Supported", ({ enumerable: true, get: function () { return utils_1.isWebGL2Supported; } }));
 Object.defineProperty(exports, "getFragmentMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getFragmentMediumpPrecision; } }));
 Object.defineProperty(exports, "getVertexMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getVertexMediumpPrecision; } }));
+Object.defineProperty(exports, "convertFragShaderToGLSL1", ({ enumerable: true, get: function () { return utils_1.convertFragShaderToGLSL1; } }));
+Object.defineProperty(exports, "convertVertShaderToGLSL1", ({ enumerable: true, get: function () { return utils_1.convertVertShaderToGLSL1; } }));
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
 var GPULayer_1 = __webpack_require__(355);
@@ -5600,7 +5568,7 @@ __exportStar(__webpack_require__(738), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.insertDefinesAfterVersionDeclaration = void 0;
+exports.convertVertShaderToGLSL1 = exports.convertFragShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.insertDefinesAfterVersionDeclaration = void 0;
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 function insertDefinesAfterVersionDeclaration(glslVersion, shaderSource, defines) {
@@ -5741,6 +5709,7 @@ function getFragmentMediumpPrecision() {
     return mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
 }
 exports.getFragmentMediumpPrecision = getFragmentMediumpPrecision;
+// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 function getVertexMediumpPrecision() {
     // This entire program is only needed because of a bug in Safari.
     // Safari doesn't correctly report precision from getShaderPrecisionFormat
@@ -5825,6 +5794,31 @@ function convertDefinesToString(defines) {
     }
     return definesSource;
 }
+function convertShaderToGLSL1(shaderSource) {
+    return shaderSource;
+}
+function convertFragShaderToGLSL1(shaderSource) {
+    shaderSource = convertShaderToGLSL1(shaderSource);
+    // Convert in to varying.
+    shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
+    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
+    // Convert out to gl_FragColor.
+    shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
+    shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
+    return shaderSource;
+}
+exports.convertFragShaderToGLSL1 = convertFragShaderToGLSL1;
+function convertVertShaderToGLSL1(shaderSource) {
+    shaderSource = convertShaderToGLSL1(shaderSource);
+    // Convert in to attribute.
+    shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
+    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
+    // Convert out to varying.
+    shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
+    shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
+    return shaderSource;
+}
+exports.convertVertShaderToGLSL1 = convertVertShaderToGLSL1;
 
 
 /***/ }),

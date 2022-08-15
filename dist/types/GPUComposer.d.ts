@@ -1,11 +1,13 @@
 import { saveAs } from 'file-saver';
 import { GPULayer } from './GPULayer';
-import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback } from './Constants';
+import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 export declare class GPUComposer {
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     readonly glslVersion: GLSLVersion;
+    readonly intPrecision: GLSLPrecision;
+    readonly floatPrecision: GLSLPrecision;
     private width;
     private height;
     private errorState;
@@ -45,9 +47,10 @@ export declare class GPUComposer {
             [key: string]: any;
         };
         glslVersion?: GLSLVersion;
+        intPrecision?: GLSLPrecision;
+        floatPrecision?: GLSLPrecision;
         verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
-    private preprocessShader;
     _preprocessFragShader(shaderSource: string): string;
     _preprocessVertShader(shaderSource: string): string;
     private glslKeyForType;

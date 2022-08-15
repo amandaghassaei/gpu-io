@@ -8,3 +8,5 @@ export declare function getFragmentMediumpPrecision(): "mediump" | "highp";
 export declare function getVertexMediumpPrecision(): "mediump" | "highp";
 export declare function isPowerOf2(value: number): boolean;
 export declare function initSequentialFloatArray(length: number): Float32Array;
+export declare function convertFragShaderToGLSL1(shaderSource: string): string;
+export declare function convertVertShaderToGLSL1(shaderSource: string): string;

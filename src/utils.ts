@@ -306,3 +306,29 @@ function convertDefinesToString(defines: CompileTimeVars) {
 	}
 	return definesSource;
 }
+
+function convertShaderToGLSL1(shaderSource: string) {
+	return shaderSource;
+}
+
+export function convertFragShaderToGLSL1(shaderSource: string) {
+	shaderSource = convertShaderToGLSL1(shaderSource);
+	// Convert in to varying.
+	shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
+	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
+	// Convert out to gl_FragColor.
+	shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
+	shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
+	return shaderSource;
+}
+
+export function convertVertShaderToGLSL1(shaderSource: string) {
+	shaderSource = convertShaderToGLSL1(shaderSource);
+	// Convert in to attribute.
+	shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
+	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
+	// Convert out to varying.
+	shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
+	shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
+	return shaderSource;
+}
