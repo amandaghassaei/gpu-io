@@ -2471,20 +2471,20 @@ var GPUComposer = /** @class */ (function () {
             _a[Constants_1.DEFAULT_W_UV_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
                 defines: {
-                    'UV_ATTRIBUTE': '1',
+                    'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
                 },
             },
             _a[Constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
                 defines: {
-                    'NORMAL_ATTRIBUTE': '1',
+                    'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
                 },
             },
             _a[Constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
                 defines: {
-                    'UV_ATTRIBUTE': '1',
-                    'NORMAL_ATTRIBUTE': '1',
+                    'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
+                    'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
                 },
             },
             _a[Constants_1.SEGMENT_PROGRAM_NAME] = {
@@ -2553,8 +2553,8 @@ var GPUComposer = /** @class */ (function () {
         }
         this.gl = gl;
         this.renderer = renderer;
-        // Save glsl version, default to 1.x.
-        var glslVersion = params.glslVersion === undefined ? Constants_1.GLSL1 : params.glslVersion;
+        // Save glsl version, default to 3 if using webgl2 context.
+        var glslVersion = params.glslVersion === undefined ? (utils_1.isWebGL2(gl) ? Constants_1.GLSL3 : Constants_1.GLSL1) : params.glslVersion;
         if (!utils_1.isWebGL2(gl) && glslVersion === Constants_1.GLSL3) {
             console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
             glslVersion = Constants_1.GLSL1; // Fall back to GLSL1 in these cases.
@@ -2587,21 +2587,7 @@ var GPUComposer = /** @class */ (function () {
             console.log(this.maxNumTextures + " textures max.");
     }
     GPUComposer.initWithThreeRenderer = function (renderer, params, errorCallback) {
-        return new GPUComposer(__assign({ canvas: renderer.domElement, context: renderer.getContext() }, params), errorCallback, renderer);
-    };
-    GPUComposer.prototype._preprocessFragShader = function (shaderSource) {
-        var glslVersion = this.glslVersion;
-        if (glslVersion === Constants_1.GLSL3)
-            return shaderSource;
-        // Convert to glsl1.
-        return utils_1.convertFragShaderToGLSL1(shaderSource);
-    };
-    GPUComposer.prototype._preprocessVertShader = function (shaderSource) {
-        var glslVersion = this.glslVersion;
-        if (glslVersion === Constants_1.GLSL3)
-            return shaderSource;
-        // Convert to glsl1.
-        return utils_1.convertVertShaderToGLSL1(shaderSource);
+        return new GPUComposer(__assign(__assign({}, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? Constants_1.GLSL3 : Constants_1.GLSL1, floatPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P }), errorCallback, renderer);
     };
     GPUComposer.prototype.glslKeyForType = function (type) {
         if (this.glslVersion === Constants_1.GLSL1)
@@ -2628,7 +2614,7 @@ var GPUComposer = /** @class */ (function () {
         if (this.setValuePrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "setValue-" + key,
-                fragmentShader: this._preprocessFragShader(this.setValuePrograms.src),
+                fragmentShader: this.setValuePrograms.src,
                 uniforms: [
                     {
                         name: 'u_value',
@@ -2637,7 +2623,7 @@ var GPUComposer = /** @class */ (function () {
                     },
                 ],
                 defines: (_a = {},
-                    _a[key] = '1',
+                    _a["WEBGLCOMPUTE_" + key] = '1',
                     _a),
             });
             this.setValuePrograms[key] = program;
@@ -2650,7 +2636,7 @@ var GPUComposer = /** @class */ (function () {
         if (this.copyPrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "copy-" + key,
-                fragmentShader: this._preprocessFragShader(this.copyPrograms.src),
+                fragmentShader: this.copyPrograms.src,
                 uniforms: [
                     {
                         name: 'u_state',
@@ -2659,7 +2645,7 @@ var GPUComposer = /** @class */ (function () {
                     },
                 ],
                 defines: (_a = {},
-                    _a[key] = '1',
+                    _a["WEBGLCOMPUTE_" + key] = '1',
                     _a),
             });
             this.copyPrograms[key] = program;
@@ -2671,7 +2657,7 @@ var GPUComposer = /** @class */ (function () {
             if (this._wrappedLineColorProgram === undefined) {
                 var program = new GPUProgram_1.GPUProgram(this, {
                     name: 'wrappedLineColor',
-                    fragmentShader: this._preprocessFragShader(__webpack_require__(598)),
+                    fragmentShader: __webpack_require__(598),
                 });
                 this._wrappedLineColorProgram = program;
             }
@@ -2686,9 +2672,9 @@ var GPUComposer = /** @class */ (function () {
         if (this.vectorMagnitudePrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "vectorMagnitude-" + key,
-                fragmentShader: this._preprocessFragShader(this.vectorMagnitudePrograms.src),
+                fragmentShader: this.vectorMagnitudePrograms.src,
                 defines: (_a = {},
-                    _a[key] = '1',
+                    _a["WEBGLCOMPUTE_" + key] = '1',
                     _a),
             });
             this.vectorMagnitudePrograms[key] = program;
@@ -5049,10 +5035,10 @@ var GPUProgram = /** @class */ (function () {
         this.composer = composer;
         this.name = name;
         // Compile fragment shader.
-        var sourceString = typeof (fragmentShader) === 'string' ?
+        var fragmentShaderSource = typeof (fragmentShader) === 'string' ?
             fragmentShader :
             fragmentShader.join('\n');
-        this.fragmentShaderSource = sourceString;
+        this.fragmentShaderSource = utils_1.preprocessFragShader(fragmentShaderSource, composer.glslVersion);
         this.recompile(defines || this.defines);
         if (uniforms) {
             for (var i = 0; i < uniforms.length; i++) {
@@ -5063,7 +5049,7 @@ var GPUProgram = /** @class */ (function () {
     }
     GPUProgram.prototype.recompile = function (defines) {
         var _a = this, composer = _a.composer, name = _a.name, fragmentShaderSource = _a.fragmentShaderSource;
-        var gl = composer.gl, _errorCallback = composer._errorCallback, verboseLogging = composer.verboseLogging, glslVersion = composer.glslVersion;
+        var gl = composer.gl, _errorCallback = composer._errorCallback, verboseLogging = composer.verboseLogging, glslVersion = composer.glslVersion, floatPrecision = composer.floatPrecision, intPrecision = composer.intPrecision;
         // Update this.defines if needed.
         // Passed in defines param may only be a partial list.
         var definesNeedUpdate = false;
@@ -5081,7 +5067,7 @@ var GPUProgram = /** @class */ (function () {
         }
         if (verboseLogging)
             console.log("Compiling fragment shader for GPUProgram \"" + name + "\" with defines: " + JSON.stringify(this.defines));
-        var shader = utils_1.compileShader(gl, glslVersion, fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, this.defines);
+        var shader = utils_1.compileShader(gl, glslVersion, intPrecision, floatPrecision, fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, this.defines);
         if (!shader) {
             _errorCallback("Unable to compile fragment shader for GPUProgram \"" + name + "\".");
             return;
@@ -5094,17 +5080,17 @@ var GPUProgram = /** @class */ (function () {
             return this.programs[name];
         // Otherwise, we need to compile a new program on the fly.
         var _a = this, composer = _a.composer, uniforms = _a.uniforms, fragmentShader = _a.fragmentShader;
-        var _errorCallback = composer._errorCallback, _vertexShaders = composer._vertexShaders, gl = composer.gl, glslVersion = composer.glslVersion;
+        var _errorCallback = composer._errorCallback, _vertexShaders = composer._vertexShaders, gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision;
         var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
             var composer_1 = this.composer;
             var gl_1 = composer_1.gl;
             // Init a vertex shader.
-            var vertexShaderSource = composer_1._preprocessVertShader(vertexShader.src);
-            if (vertexShaderSource === '') {
+            if (vertexShader.src === '') {
                 throw new Error("No source for vertex shader " + this.name + " : " + name);
             }
-            var shader = utils_1.compileShader(gl_1, glslVersion, vertexShaderSource, gl_1.VERTEX_SHADER, this.name, _errorCallback, vertexShader.defines);
+            var vertexShaderSource = utils_1.preprocessVertShader(vertexShader.src, glslVersion);
+            var shader = utils_1.compileShader(gl_1, glslVersion, intPrecision, floatPrecision, vertexShaderSource, gl_1.VERTEX_SHADER, this.name, _errorCallback, vertexShader.defines);
             if (!shader) {
                 _errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + this.name + "\".");
                 return;
@@ -5544,13 +5530,11 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.convertVertShaderToGLSL1 = exports.convertFragShaderToGLSL1 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils_1 = __webpack_require__(593);
 Object.defineProperty(exports, "isWebGL2Supported", ({ enumerable: true, get: function () { return utils_1.isWebGL2Supported; } }));
 Object.defineProperty(exports, "getFragmentMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getFragmentMediumpPrecision; } }));
 Object.defineProperty(exports, "getVertexMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getVertexMediumpPrecision; } }));
-Object.defineProperty(exports, "convertFragShaderToGLSL1", ({ enumerable: true, get: function () { return utils_1.convertFragShaderToGLSL1; } }));
-Object.defineProperty(exports, "convertVertShaderToGLSL1", ({ enumerable: true, get: function () { return utils_1.convertVertShaderToGLSL1; } }));
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
 var GPULayer_1 = __webpack_require__(355);
@@ -5568,28 +5552,24 @@ __exportStar(__webpack_require__(738), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.convertVertShaderToGLSL1 = exports.convertFragShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.insertDefinesAfterVersionDeclaration = void 0;
+exports.preprocessVertShader = exports.preprocessFragShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.insertHeader = void 0;
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
-function insertDefinesAfterVersionDeclaration(glslVersion, shaderSource, defines) {
-    var definesSource = convertDefinesToString(defines);
-    if (glslVersion === Constants_1.GLSL1) {
-        // GLSL version 1.
-        shaderSource = definesSource + "\n" + shaderSource;
-    }
-    else {
-        // GLSL version 3.
-        // Defines should come after version declaration.
-        shaderSource = shaderSource.replace('\n', "\n" + definesSource + "\n");
-    }
+var precisionSource = __webpack_require__(937);
+function insertHeader(glslVersion, intPrecision, floatPrecision, shaderSource, defines) {
+    var versionSource = glslVersion === Constants_1.GLSL3 ? "#version " + Constants_1.GLSL3 + "\n" : '';
+    var definesSource = defines ? convertDefinesToString(defines) : '';
+    var precisionDefines = convertDefinesToString({
+        WEBGLCOMPUTE_INT_PRECISION: intPrecision === Constants_1.PRECISION_HIGH_P ? '2' : (intPrecision === Constants_1.PRECISION_MEDIUM_P ? '1' : '0'),
+        WEBGLCOMPUTE_FLOAT_PRECISION: floatPrecision === Constants_1.PRECISION_HIGH_P ? '2' : (floatPrecision === Constants_1.PRECISION_MEDIUM_P ? '1' : '0'),
+    });
+    shaderSource = "" + versionSource + definesSource + precisionDefines + precisionSource + "\n" + shaderSource;
     return shaderSource;
 }
-exports.insertDefinesAfterVersionDeclaration = insertDefinesAfterVersionDeclaration;
+exports.insertHeader = insertHeader;
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
-function compileShader(gl, glslVersion, shaderSource, shaderType, programName, _errorCallback, defines) {
-    if (defines) {
-        shaderSource = insertDefinesAfterVersionDeclaration(glslVersion, shaderSource, defines);
-    }
+function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, _errorCallback, defines) {
+    shaderSource = insertHeader(glslVersion, intPrecision, floatPrecision, shaderSource, defines);
     // Create the shader object
     var shader = gl.createShader(shaderType);
     if (!shader) {
@@ -5659,11 +5639,11 @@ function getFragmentMediumpPrecision() {
     if (!gl) {
         throw new Error("Unable to init webgl context.");
     }
-    var vs = compileShader(gl, Constants_1.GLSL1, "\nattribute vec4 position;  // needed because of another bug in Safari\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
+    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
     if (!vs) {
         throw new Error("Unable to init vertex shader.");
     }
-    var fs = compileShader(gl, Constants_1.GLSL1, "\nprecision mediump float;\nuniform mediump vec3 v;\nvoid main() {\n\tgl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
+    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nuniform mediump vec3 v;\nvoid main() {\n\tgl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
     if (!fs) {
         throw new Error("Unable to init fragment shader.");
     }
@@ -5723,11 +5703,11 @@ function getVertexMediumpPrecision() {
     if (!gl) {
         throw new Error("Unable to init webgl context.");
     }
-    var vs = compileShader(gl, Constants_1.GLSL1, "\nattribute vec4 position;  // needed because of another bug in Safari\nuniform mediump vec3 v;\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n\tv_result = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nuniform mediump vec3 v;\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n\tv_result = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
     if (!vs) {
         throw new Error("Unable to init vertex shader.");
     }
-    var fs = compileShader(gl, Constants_1.GLSL1, "\nprecision mediump float;\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_FragColor = v_result;\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_FragColor = v_result;\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
     if (!fs) {
         throw new Error("Unable to init fragment shader.");
     }
@@ -5794,11 +5774,20 @@ function convertDefinesToString(defines) {
     }
     return definesSource;
 }
+function preprocessShader(shaderSource) {
+    // TODO: finish this.
+    // Strip out any version declares and error.
+    // Strip out any precision declares and error.
+    return shaderSource;
+}
 function convertShaderToGLSL1(shaderSource) {
+    // TODO: finish this.
     return shaderSource;
 }
 function convertFragShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
+    // Adding a newline at the beginning of source makes the regex work better.
+    shaderSource = "\n" + shaderSource;
     // Convert in to varying.
     shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
     shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
@@ -5807,9 +5796,10 @@ function convertFragShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
     return shaderSource;
 }
-exports.convertFragShaderToGLSL1 = convertFragShaderToGLSL1;
 function convertVertShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
+    // Adding a newline at the beginning of source makes the regex work better.
+    shaderSource = "\n" + shaderSource;
     // Convert in to attribute.
     shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
     shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
@@ -5818,71 +5808,93 @@ function convertVertShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
     return shaderSource;
 }
-exports.convertVertShaderToGLSL1 = convertVertShaderToGLSL1;
+function preprocessFragShader(shaderSource, glslVersion) {
+    shaderSource = preprocessShader(shaderSource);
+    if (glslVersion === Constants_1.GLSL3) {
+        return shaderSource;
+    }
+    return convertFragShaderToGLSL1(shaderSource);
+}
+exports.preprocessFragShader = preprocessFragShader;
+function preprocessVertShader(shaderSource, glslVersion) {
+    shaderSource = preprocessShader(shaderSource);
+    if (glslVersion === Constants_1.GLSL3) {
+        return shaderSource;
+    }
+    return convertVertShaderToGLSL1(shaderSource);
+}
+exports.preprocessVertShader = preprocessVertShader;
 
+
+/***/ }),
+
+/***/ 937:
+/***/ ((module) => {
+
+module.exports = "#if (WEBGLCOMPUTE_INT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp int;\n#else\nprecision mediump int;\n#endif\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 1)\nprecision mediump int;\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 0)\nprecision lowp int;\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)\nprecision mediump float;\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)\nprecision lowp float;\n#endif\nprecision lowp sampler2D;\n#if (__VERSION__ == 300)\nprecision lowp isampler2D;precision lowp usampler2D;\n#endif\n"
 
 /***/ }),
 
 /***/ 158:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 v_UV;\n#ifdef FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef INT\nuniform isampler2D u_state;\n#endif\n#ifdef UINT\nuniform usampler2D u_state;\n#endif\n#ifdef FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef INT\nout ivec4 out_fragOut;\n#endif\n#ifdef UINT\nout uvec4 out_fragOut;\n#endif\nvoid main(){out_fragOut=A(u_state,v_UV);}"
+module.exports = "in vec2 v_UV;\n#ifdef WEBGLCOMPUTE_FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nuniform isampler2D u_state;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nuniform usampler2D u_state;\n#endif\n#ifdef WEBGLCOMPUTE_FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nout ivec4 out_fragOut;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nout uvec4 out_fragOut;\n#endif\nvoid main(){out_fragOut=A(u_state,v_UV);}"
 
 /***/ }),
 
 /***/ 148:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;\n#ifdef FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef INT\nuniform ivec4 u_value;\n#endif\n#ifdef UINT\nuniform uvec4 u_value;\n#endif\n#ifdef FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef INT\nout ivec4 out_fragOut;\n#endif\n#ifdef UINT\nout uvec4 out_fragOut;\n#endif\nvoid main(){out_fragOut=u_value;}"
+module.exports = "#ifdef WEBGLCOMPUTE_FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nuniform ivec4 u_value;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nuniform uvec4 u_value;\n#endif\n#ifdef WEBGLCOMPUTE_FLOAT\nout vec4 out_fragOut;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nout ivec4 out_fragOut;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nout uvec4 out_fragOut;\n#endif\nvoid main(){out_fragOut=u_value;}"
 
 /***/ }),
 
 /***/ 723:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 v_UV;uniform vec3 u_color;uniform float u_scale;\n#ifdef FLOAT\nuniform sampler2D u_internal_data;\n#endif\n#ifdef INT\nuniform isampler2D u_internal_data;\n#endif\n#ifdef UINT\nuniform usampler2D u_internal_data;\n#endif\nout vec4 out_fragOut;void main(){uvec4 A=B(u_internal_data,v_UV);float C=length(A);out_fragOut=vec4(C*u_scale*u_color,1);}"
+module.exports = "in vec2 v_UV;uniform vec3 u_color;uniform float u_scale;\n#ifdef WEBGLCOMPUTE_FLOAT\nuniform sampler2D u_internal_data;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nuniform isampler2D u_internal_data;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nuniform usampler2D u_internal_data;\n#endif\nout vec4 out_fragOut;void main(){uvec4 A=B(u_internal_data,v_UV);float C=length(A);out_fragOut=vec4(C*u_scale*u_color,1);}"
 
 /***/ }),
 
 /***/ 598:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragOut;void main(){if((v_lineWrapping.x!=0.&&v_lineWrapping.x!=1.)||(v_lineWrapping.y!=0.&&v_lineWrapping.y!=1.)){discard;return;}out_fragOut=vec4(u_value);}"
+module.exports = "in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragOut;void main(){if((v_lineWrapping.x!=0.&&v_lineWrapping.x!=1.)||(v_lineWrapping.y!=0.&&v_lineWrapping.y!=1.)){discard;return;}out_fragOut=vec4(u_value);}"
 
 /***/ }),
 
 /***/ 288:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 a_internal_position;\n#ifdef UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=a_internal_position;\n#endif\n#ifdef NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 A=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(A+1.);gl_Position=vec4(A,0,1);}"
+module.exports = "in vec2 a_internal_position;\n#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=a_internal_position;\n#endif\n#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 A=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(A+1.);gl_Position=vec4(A,0,1);}"
 
 /***/ }),
 
 /***/ 629:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;v_lineWrapping=vec2(0.);if(u_internal_wrapX){if(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}}if(u_internal_wrapY){if(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(H,0,1);}"
+module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;v_lineWrapping=vec2(0.);if(u_internal_wrapX){if(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}}if(u_internal_wrapY){if(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(H,0,1);}"
 
 /***/ }),
 
 /***/ 62:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_PointSize=u_internal_pointSize;gl_Position=vec4(H,0,1);}"
+module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_PointSize=u_internal_pointSize;gl_Position=vec4(H,0,1);}"
 
 /***/ }),
 
 /***/ 430:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_vectors;uniform vec2 u_internal_dimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out float v_index;void main(){float E=floor((a_internal_index+0.5)/2.);v_UV=vec2(A(E,u_internal_dimensions.x),floor(floor(E+0.5)/u_internal_dimensions.x))/u_internal_dimensions;if(A(a_internal_index,2.)>0.){vec2 F=texture2D(u_internal_vectors,v_UV).xy;v_UV+=F*u_internal_scale;}vec2 G=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(G,0,1);}"
+module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_vectors;uniform vec2 u_internal_dimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out float v_index;void main(){float E=floor((a_internal_index+0.5)/2.);v_UV=vec2(A(E,u_internal_dimensions.x),floor(floor(E+0.5)/u_internal_dimensions.x))/u_internal_dimensions;if(A(a_internal_index,2.)>0.){vec2 F=texture2D(u_internal_vectors,v_UV).xy;v_UV+=F*u_internal_scale;}vec2 G=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(G,0,1);}"
 
 /***/ }),
 
 /***/ 974:
 /***/ ((module) => {
 
-module.exports = "#version 300 es\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp int;\n#else\nprecision mediump float;precision mediump int;\n#endif\nprecision lowp sampler2D;precision lowp isampler2D;precision lowp usampler2D;in vec2 a_internal_position;uniform float u_internal_halfThickness;uniform vec2 u_internal_scale;uniform float u_internal_length;uniform float u_internal_rotation;uniform vec2 u_internal_translation;out vec2 v_UV_local;out vec2 v_UV;mat2 A(float B){return mat2(cos(B),-sin(B),sin(B),cos(B));}void main(){v_UV_local=0.5*(a_internal_position+1.);vec2 C=a_internal_position;C*=u_internal_halfThickness;if(C.x<0.){C.x-=u_internal_length/2.;v_UV_local.x=0.;}else if(C.x>0.){C.x+=u_internal_length/2.;v_UV_local.x=1.;}C=u_internal_scale*(A(-u_internal_rotation)*C)+u_internal_translation;v_UV=0.5*(C+1.);gl_Position=vec4(C,0,1);}"
+module.exports = "in vec2 a_internal_position;uniform float u_internal_halfThickness;uniform vec2 u_internal_scale;uniform float u_internal_length;uniform float u_internal_rotation;uniform vec2 u_internal_translation;out vec2 v_UV_local;out vec2 v_UV;mat2 A(float B){return mat2(cos(B),-sin(B),sin(B),cos(B));}void main(){v_UV_local=0.5*(a_internal_position+1.);vec2 C=a_internal_position;C*=u_internal_halfThickness;if(C.x<0.){C.x-=u_internal_length/2.;v_UV_local.x=0.;}else if(C.x>0.){C.x+=u_internal_length/2.;v_UV_local.x=1.;}C=u_internal_scale*(A(-u_internal_rotation)*C)+u_internal_translation;v_UV=0.5*(C+1.);gl_Position=vec4(C,0,1);}"
 
 /***/ })
 

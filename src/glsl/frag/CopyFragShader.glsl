@@ -1,25 +1,22 @@
-#version 300 es
-@include "../common/precision.glsl"
-
 in vec2 v_UV;
 
-#ifdef FLOAT
+#ifdef WEBGLCOMPUTE_FLOAT
 uniform sampler2D u_state;
 #endif
-#ifdef INT
+#ifdef WEBGLCOMPUTE_INT
 uniform isampler2D u_state;
 #endif
-#ifdef UINT
+#ifdef WEBGLCOMPUTE_UINT
 uniform usampler2D u_state;
 #endif
 
-#ifdef FLOAT
+#ifdef WEBGLCOMPUTE_FLOAT
 out vec4 out_fragOut;
 #endif
-#ifdef INT
+#ifdef WEBGLCOMPUTE_INT
 out ivec4 out_fragOut;
 #endif
-#ifdef UINT
+#ifdef WEBGLCOMPUTE_UINT
 out uvec4 out_fragOut;
 #endif
 

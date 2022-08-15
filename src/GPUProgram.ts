@@ -21,6 +21,7 @@ import {
 	UniformType,
 	UniformInternalType,
 	UniformValue,
+	GLSL1,
 	CompileTimeVars,
 	PROGRAM_NAME_INTERNAL,
 	DEFAULT_PROGRAM_NAME,
@@ -33,7 +34,10 @@ import {
 	DATA_LAYER_LINES_PROGRAM_NAME,
 } from './Constants';
 import {
-	compileShader, initGLProgram,
+	compileShader,
+	preprocessFragShader,
+	preprocessVertShader,
+	initGLProgram,
 } from './utils';
 
 export class GPUProgram {
@@ -106,10 +110,10 @@ export class GPUProgram {
 		this.name = name;
 
 		// Compile fragment shader.
-		let sourceString = typeof(fragmentShader) === 'string' ?
+		const fragmentShaderSource = typeof(fragmentShader) === 'string' ?
 			fragmentShader :
 			(fragmentShader as string[]).join('\n');
-		this.fragmentShaderSource = sourceString;
+		this.fragmentShaderSource = preprocessFragShader(fragmentShaderSource, composer.glslVersion);
 		this.recompile(defines || this.defines);
 
 		if (uniforms) {
@@ -122,7 +126,14 @@ export class GPUProgram {
 
 	recompile(defines: CompileTimeVars) {
 		const { composer, name, fragmentShaderSource } = this;
-		const { gl, _errorCallback, verboseLogging, glslVersion } = composer;
+		const {
+			gl,
+			_errorCallback,
+			verboseLogging,
+			glslVersion,
+			floatPrecision,
+			intPrecision,
+		} = composer;
 
 		// Update this.defines if needed.
 		// Passed in defines param may only be a partial list.
@@ -145,6 +156,8 @@ export class GPUProgram {
 		const shader = compileShader(
 			gl,
 			glslVersion,
+			intPrecision,
+			floatPrecision,
 			fragmentShaderSource,
 			gl.FRAGMENT_SHADER,
 			name,
@@ -163,19 +176,28 @@ export class GPUProgram {
 		if (this.programs[name]) return this.programs[name];
 		// Otherwise, we need to compile a new program on the fly.
 		const { composer, uniforms, fragmentShader } = this;
-		const { _errorCallback, _vertexShaders, gl, glslVersion } = composer;
+		const {
+			_errorCallback,
+			_vertexShaders,
+			gl,
+			glslVersion,
+			intPrecision,
+			floatPrecision,
+		} = composer;
 		const vertexShader = _vertexShaders[name];
 		if (vertexShader.shader === undefined) {
 			const { composer } = this;
 			const { gl } = composer;
 			// Init a vertex shader.
-			let vertexShaderSource = composer._preprocessVertShader(vertexShader.src);
-			if (vertexShaderSource === '') {
-				throw new Error(`No source for vertex shader ${this.name} : ${name}`)
+			if (vertexShader.src === '') {
+				throw new Error(`No source for vertex shader ${this.name} : ${name}`);
 			}
+			const vertexShaderSource = preprocessVertShader(vertexShader.src, glslVersion);
 			const shader = compileShader(
 				gl,
 				glslVersion,
+				intPrecision,
+				floatPrecision,
 				vertexShaderSource,
 				gl.VERTEX_SHADER,
 				this.name,

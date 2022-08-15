@@ -56,8 +56,6 @@ import {
 	isWebGL2,
 	isPowerOf2,
 	initSequentialFloatArray,
-	convertFragShaderToGLSL1,
-	convertVertShaderToGLSL1,
 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
@@ -140,20 +138,20 @@ export class GPUComposer {
 		[DEFAULT_W_UV_PROGRAM_NAME]: {
 			src: defaultVertexShaderSource,
 			defines: {
-				'UV_ATTRIBUTE': '1',
+				'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
 			},
 		},
 		[DEFAULT_W_NORMAL_PROGRAM_NAME]: {
 			src: defaultVertexShaderSource,
 			defines: {
-				'NORMAL_ATTRIBUTE': '1',
+				'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
 			},
 		},
 		[DEFAULT_W_UV_NORMAL_PROGRAM_NAME]: {
 			src: defaultVertexShaderSource,
 			defines: {
-				'UV_ATTRIBUTE': '1',
-				'NORMAL_ATTRIBUTE': '1',
+				'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
+				'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
 			},
 		},
 		[SEGMENT_PROGRAM_NAME]: {
@@ -175,16 +173,18 @@ export class GPUComposer {
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
 		params?: {
-			glslVersion?: GLSLVersion,
-			verboseLogging?: boolean
+			verboseLogging?: boolean,
 		},
 		errorCallback?: ErrorCallback,
 	) {
 		return new GPUComposer(
 			{
+				...params,
 				canvas: renderer.domElement,
 				context: renderer.getContext(),
-				...params,
+				glslVersion: renderer.capabilities.isWebGL2 ? GLSL3 : GLSL1,
+				floatPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
+				intPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
 			},
 			errorCallback,
 			renderer,
@@ -264,8 +264,8 @@ export class GPUComposer {
 		this.gl = gl;
 		this.renderer = renderer;
 
-		// Save glsl version, default to 1.x.
-		let glslVersion = params.glslVersion === undefined ? GLSL1 : params.glslVersion;
+		// Save glsl version, default to 3 if using webgl2 context.
+		let glslVersion = params.glslVersion === undefined ? (isWebGL2(gl) ? GLSL3 : GLSL1) : params.glslVersion;
 		if (!isWebGL2(gl) && glslVersion === GLSL3) {
 			console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
 			glslVersion = GLSL1; // Fall back to GLSL1 in these cases.
@@ -302,20 +302,6 @@ export class GPUComposer {
 		if (this.verboseLogging) console.log(`${this.maxNumTextures} textures max.`);
 	}
 
-	_preprocessFragShader(shaderSource: string) {
-		const { glslVersion } = this;
-		if (glslVersion === GLSL3) return shaderSource;
-		// Convert to glsl1.
-		return convertFragShaderToGLSL1(shaderSource);
-	}
-
-	_preprocessVertShader(shaderSource: string) {
-		const { glslVersion } = this;
-		if (glslVersion === GLSL3) return shaderSource;
-		// Convert to glsl1.
-		return convertVertShaderToGLSL1(shaderSource);
-	}
-
 	private glslKeyForType(type: GPULayerType) {
 		if (this.glslVersion === GLSL1) return FLOAT;
 		switch (type) {
@@ -340,7 +326,7 @@ export class GPUComposer {
 		if (this.setValuePrograms[key] === undefined) {
 			const program = new GPUProgram(this, {
 				name: `setValue-${key}`,
-				fragmentShader: this._preprocessFragShader(this.setValuePrograms.src),
+				fragmentShader: this.setValuePrograms.src,
 				uniforms: [
 					{
 						name: 'u_value',
@@ -349,7 +335,7 @@ export class GPUComposer {
 					},
 				],
 				defines: {
-					[key]: '1',
+					[`WEBGLCOMPUTE_${key}`]: '1',
 				},
 			});
 			this.setValuePrograms[key] = program;
@@ -362,7 +348,7 @@ export class GPUComposer {
 		if (this.copyPrograms[key] === undefined) {
 			const program = new GPUProgram(this, {
 				name: `copy-${key}`,
-				fragmentShader: this._preprocessFragShader(this.copyPrograms.src),
+				fragmentShader: this.copyPrograms.src,
 				uniforms: [
 					{
 						name: 'u_state',
@@ -371,7 +357,7 @@ export class GPUComposer {
 					},
 				],
 				defines: {
-					[key]: '1',
+					[`WEBGLCOMPUTE_${key}`]: '1',
 				},
 			});
 			this.copyPrograms[key] = program;
@@ -383,7 +369,7 @@ export class GPUComposer {
 		if (this._wrappedLineColorProgram === undefined) {
 			const program = new GPUProgram(this, {
 				name: 'wrappedLineColor',
-				fragmentShader: this._preprocessFragShader(require('./glsl/frag/WrappedLineColorFragShader.glsl')),
+				fragmentShader: require('./glsl/frag/WrappedLineColorFragShader.glsl'),
 			});
 			this._wrappedLineColorProgram = program;
 		}
@@ -395,9 +381,9 @@ export class GPUComposer {
 		if (this.vectorMagnitudePrograms[key] === undefined) {
 			const program = new GPUProgram(this, {
 				name: `vectorMagnitude-${key}`,
-				fragmentShader: this._preprocessFragShader(this.vectorMagnitudePrograms.src),
+				fragmentShader: this.vectorMagnitudePrograms.src,
 				defines: {
-					[key]: '1',
+					[`WEBGLCOMPUTE_${key}`]: '1',
 				},
 			});
 			this.vectorMagnitudePrograms[key] = program;

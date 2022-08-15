@@ -1,6 +1,3 @@
-#version 300 es
-@include "../common/precision.glsl"
-
 in vec2 v_lineWrapping;
 
 uniform vec4 u_value;

@@ -1,19 +1,16 @@
-#version 300 es
-@include "../common/precision.glsl"
-
 // Fragment shader that draws the magnitude of a GPULayer as a color.
 
 in vec2 v_UV;
 
 uniform vec3 u_color;
 uniform float u_scale;
-#ifdef FLOAT
+#ifdef WEBGLCOMPUTE_FLOAT
 uniform sampler2D u_internal_data;
 #endif
-#ifdef INT
+#ifdef WEBGLCOMPUTE_INT
 uniform isampler2D u_internal_data;
 #endif
-#ifdef UINT
+#ifdef WEBGLCOMPUTE_UINT
 uniform usampler2D u_internal_data;
 #endif
 

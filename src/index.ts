@@ -2,8 +2,6 @@ import {
 	isWebGL2Supported,
 	getFragmentMediumpPrecision,
 	getVertexMediumpPrecision,
-	convertFragShaderToGLSL1,
-	convertVertShaderToGLSL1,
 } from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
@@ -17,6 +15,4 @@ export {
 	isWebGL2Supported,
 	getFragmentMediumpPrecision,
 	getVertexMediumpPrecision,
-	convertFragShaderToGLSL1,
-	convertVertShaderToGLSL1,
 };

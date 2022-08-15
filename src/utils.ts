@@ -1,19 +1,30 @@
 import { isString } from './Checks';
-import { CompileTimeVars, ErrorCallback, GLSL1, GLSLVersion, PRECISION_HIGH_P, PRECISION_MEDIUM_P } from './Constants';
+import {
+	CompileTimeVars,
+	ErrorCallback,
+	GLSL1,
+	GLSL3,
+	GLSLPrecision,
+	GLSLVersion,
+	PRECISION_HIGH_P,
+	PRECISION_MEDIUM_P,
+} from './Constants';
+const precisionSource = require('./glsl/common/precision.glsl');
 
-export function insertDefinesAfterVersionDeclaration(
+export function insertHeader(
 	glslVersion: GLSLVersion,
+	intPrecision: GLSLPrecision,
+	floatPrecision: GLSLPrecision,
 	shaderSource: string,
-	defines: CompileTimeVars) {
-		const definesSource = convertDefinesToString(defines);
-		if (glslVersion === GLSL1) {
-			// GLSL version 1.
-			shaderSource = `${definesSource}\n${shaderSource}`
-		} else {
-			// GLSL version 3.
-			// Defines should come after version declaration.
-			shaderSource = shaderSource.replace('\n', `\n${definesSource}\n`);
-		}
+	defines?: CompileTimeVars,
+) {
+		const versionSource = glslVersion === GLSL3 ? `#version ${GLSL3}\n` : '';
+		const definesSource = defines ? convertDefinesToString(defines) : '';
+		const precisionDefines = convertDefinesToString({
+			WEBGLCOMPUTE_INT_PRECISION: intPrecision === PRECISION_HIGH_P ? '2' : (intPrecision === PRECISION_MEDIUM_P ? '1' : '0'),
+			WEBGLCOMPUTE_FLOAT_PRECISION: floatPrecision === PRECISION_HIGH_P ? '2' : (floatPrecision === PRECISION_MEDIUM_P ? '1' : '0'),
+		});
+		shaderSource = `${versionSource}${definesSource}${precisionDefines}${precisionSource}\n${shaderSource}`
 		return shaderSource;
 }
 
@@ -21,15 +32,21 @@ export function insertDefinesAfterVersionDeclaration(
 export function compileShader(
 	gl: WebGLRenderingContext | WebGL2RenderingContext,
 	glslVersion: GLSLVersion,
+	intPrecision: GLSLPrecision,
+	floatPrecision: GLSLPrecision,
 	shaderSource: string,
 	shaderType: number,
 	programName: string,
 	_errorCallback: ErrorCallback,
 	defines?: CompileTimeVars,
 ) {
-	if (defines) {
-		shaderSource = insertDefinesAfterVersionDeclaration(glslVersion, shaderSource, defines);
-	}
+	shaderSource = insertHeader(
+		glslVersion,
+		intPrecision,
+		floatPrecision,
+		shaderSource,
+		defines,
+	);
 	// Create the shader object
 	const shader = gl.createShader(shaderType);
 	if (!shader) {
@@ -112,7 +129,7 @@ export function getFragmentMediumpPrecision() {
 		throw new Error(`Unable to init webgl context.`);
 	}
 
-	const vs = compileShader(gl, GLSL1, `
+	const vs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P,`
 attribute vec4 position;  // needed because of another bug in Safari
 void main() {
 	gl_Position = position;
@@ -123,8 +140,7 @@ void main() {
 		throw new Error(`Unable to init vertex shader.`);
 	}
 
-	const fs = compileShader(gl, GLSL1, `
-precision mediump float;
+	const fs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P, `
 uniform mediump vec3 v;
 void main() {
 	gl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);
@@ -206,7 +222,7 @@ export function getVertexMediumpPrecision() {
 		throw new Error(`Unable to init webgl context.`);
 	}
 
-	const vs = compileShader(gl, GLSL1, `
+	const vs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P, `
 attribute vec4 position;  // needed because of another bug in Safari
 uniform mediump vec3 v;
 varying mediump vec4 v_result;
@@ -220,8 +236,7 @@ void main() {
 		throw new Error(`Unable to init vertex shader.`);
 	}
 
-	const fs = compileShader(gl, GLSL1, `
-precision mediump float;
+	const fs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P, `
 varying mediump vec4 v_result;
 void main() {
 	gl_FragColor = v_result;
@@ -307,12 +322,22 @@ function convertDefinesToString(defines: CompileTimeVars) {
 	return definesSource;
 }
 
-function convertShaderToGLSL1(shaderSource: string) {
+function preprocessShader(shaderSource: string) {
+	// TODO: finish this.
+	// Strip out any version declares and error.
+	// Strip out any precision declares and error.
 	return shaderSource;
 }
 
-export function convertFragShaderToGLSL1(shaderSource: string) {
+function convertShaderToGLSL1(shaderSource: string) {
+	// TODO: finish this.
+	return shaderSource;
+}
+
+function convertFragShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
+	// Adding a newline at the beginning of source makes the regex work better.
+	shaderSource = `\n${shaderSource}`;
 	// Convert in to varying.
 	shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
 	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
@@ -322,8 +347,10 @@ export function convertFragShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
-export function convertVertShaderToGLSL1(shaderSource: string) {
+function convertVertShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
+	// Adding a newline at the beginning of source makes the regex work better.
+	shaderSource = `\n${shaderSource}`;
 	// Convert in to attribute.
 	shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
 	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
@@ -331,4 +358,20 @@ export function convertVertShaderToGLSL1(shaderSource: string) {
 	shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
 	shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
 	return shaderSource;
+}
+
+export function preprocessFragShader(shaderSource: string, glslVersion: GLSLVersion) {
+	shaderSource = preprocessShader(shaderSource);
+	if (glslVersion === GLSL3) {
+		return shaderSource;
+	}
+	return convertFragShaderToGLSL1(shaderSource);
+}
+
+export function preprocessVertShader(shaderSource: string, glslVersion: GLSLVersion) {
+	shaderSource = preprocessShader(shaderSource);
+	if (glslVersion === GLSL3) {
+		return shaderSource;
+	}
+	return convertVertShaderToGLSL1(shaderSource);
 }

@@ -128,7 +128,7 @@ My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially laun
 
 ### Precision
 
-By default all shaders in this library are inited with highp precision floats and ints, but fallback to mediump if not available:
+By default all shaders in this library are inited with highp precision floats and ints, but fallback to mediump if not available (this is the same convention used by Threejs):
 ```glsl
 #ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp float;
@@ -138,12 +138,27 @@ By default all shaders in this library are inited with highp precision floats an
   precision mediump int;
 #endif
 precision lowp sampler2D;
-precision lowp isampler2D;
-precision lowp usampler2D;
+#if (__VERSION__ == 300)
+  precision lowp isampler2D;
+  precision lowp usampler2D;
+#endif
 ```
 
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
-TODO: add this.
+```js
+import {
+	GPUComposer,
+	PRECISION_LOW_P,
+	PRECISION_MEDIUM_P,
+	PRECISION_HIGH_P,
+} from 'webgl-compute';
+
+const composer = new GPUComposer({
+	canvas: document.getElementById('webgl-canvas'),
+	intPrecision: PRECISION_MEDIUM_P,
+	floatPrecision: PRECISION_MEDIUM_P,
+});
+```
 
 I've also included the following helper functions to test the precision of mediump on your device:
 

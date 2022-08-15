@@ -1,5 +1,3 @@
-#version 300 es
-@include "../common/precision.glsl"
 @include "../common/utils.glsl"
 
 // Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl

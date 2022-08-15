@@ -27,8 +27,6 @@ MicroModal.init();
 function offsetProgramForType(type, glslVersion) {
 	if (glslVersion === GLSL1) {
 		return `
-precision highp float;
-
 varying vec2 v_UV;
 
 uniform sampler2D u_state;
@@ -41,10 +39,7 @@ void main() {
 	switch (type) {
 		case HALF_FLOAT:
 		case FLOAT:
-			return `#version 300 es
-precision highp float;
-precision lowp sampler2D;
-
+			return `
 in vec2 v_UV;
 
 uniform sampler2D u_state;
@@ -58,11 +53,7 @@ void main() {
 		case UNSIGNED_BYTE:
 		case UNSIGNED_SHORT:
 		case UNSIGNED_INT:
-			return `#version 300 es
-precision highp float;
-precision highp int;
-precision lowp usampler2D;
-
+			return `
 in vec2 v_UV;
 
 uniform usampler2D u_state;
@@ -76,11 +67,7 @@ void main() {
 		case BYTE:
 		case SHORT:
 		case INT:
-			return `#version 300 es
-precision highp float;
-precision highp int;
-precision lowp isampler2D;
-
+			return `
 in vec2 v_UV;
 
 uniform isampler2D u_state;

@@ -1,6 +1,3 @@
-#version 300 es
-@include "../common/precision.glsl"
-
 in vec2 a_internal_position;
 
 uniform float u_internal_halfThickness;

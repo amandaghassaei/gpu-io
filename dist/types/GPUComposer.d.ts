@@ -35,7 +35,6 @@ export declare class GPUComposer {
     };
     verboseLogging: boolean;
     static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
-        glslVersion?: GLSLVersion;
         verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback): GPUComposer;
     constructor(params: {
@@ -51,8 +50,6 @@ export declare class GPUComposer {
         floatPrecision?: GLSLPrecision;
         verboseLogging?: boolean;
     }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
-    _preprocessFragShader(shaderSource: string): string;
-    _preprocessVertShader(shaderSource: string): string;
     private glslKeyForType;
     _setValueProgramForType(type: GPULayerType): GPUProgram;
     private copyProgramForType;
