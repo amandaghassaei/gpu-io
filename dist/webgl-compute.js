@@ -5530,7 +5530,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils_1 = __webpack_require__(593);
 Object.defineProperty(exports, "isWebGL2Supported", ({ enumerable: true, get: function () { return utils_1.isWebGL2Supported; } }));
 Object.defineProperty(exports, "getFragmentMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getFragmentMediumpPrecision; } }));
@@ -5541,6 +5541,14 @@ var GPULayer_1 = __webpack_require__(355);
 Object.defineProperty(exports, "GPULayer", ({ enumerable: true, get: function () { return GPULayer_1.GPULayer; } }));
 var GPUProgram_1 = __webpack_require__(664);
 Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function () { return GPUProgram_1.GPUProgram; } }));
+var _testing = {
+    makeShaderHeader: utils_1.makeShaderHeader,
+    preprocessFragShader: utils_1.preprocessFragShader,
+    preprocessVertShader: utils_1.preprocessVertShader,
+    isPowerOf2: utils_1.isPowerOf2,
+    initSequentialFloatArray: utils_1.initSequentialFloatArray,
+};
+exports._testing = _testing;
 __exportStar(__webpack_require__(738), exports);
 
 
@@ -5552,24 +5560,43 @@ __exportStar(__webpack_require__(738), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.preprocessVertShader = exports.preprocessFragShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.insertHeader = void 0;
+exports.preprocessVertShader = exports.preprocessFragShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var precisionSource = __webpack_require__(937);
-function insertHeader(glslVersion, intPrecision, floatPrecision, shaderSource, defines) {
+function intForPrecision(precision) {
+    if (precision === Constants_1.PRECISION_HIGH_P)
+        return 2;
+    if (precision === Constants_1.PRECISION_MEDIUM_P)
+        return 1;
+    return 0;
+}
+function convertDefinesToString(defines) {
+    var definesSource = '';
+    var keys = Object.keys(defines);
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        // Check that define is passed in as a string.
+        if (!Checks_1.isString(key) || !Checks_1.isString(defines[key])) {
+            throw new Error("GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [" + typeof key + " : " + typeof defines[key] + "].");
+        }
+        definesSource += "#define " + key + " " + defines[key] + "\n";
+    }
+    return definesSource;
+}
+function makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines) {
     var versionSource = glslVersion === Constants_1.GLSL3 ? "#version " + Constants_1.GLSL3 + "\n" : '';
     var definesSource = defines ? convertDefinesToString(defines) : '';
-    var precisionDefines = convertDefinesToString({
-        WEBGLCOMPUTE_INT_PRECISION: intPrecision === Constants_1.PRECISION_HIGH_P ? '2' : (intPrecision === Constants_1.PRECISION_MEDIUM_P ? '1' : '0'),
-        WEBGLCOMPUTE_FLOAT_PRECISION: floatPrecision === Constants_1.PRECISION_HIGH_P ? '2' : (floatPrecision === Constants_1.PRECISION_MEDIUM_P ? '1' : '0'),
+    var precisionDefinesSource = convertDefinesToString({
+        WEBGLCOMPUTE_INT_PRECISION: "" + intForPrecision(intPrecision),
+        WEBGLCOMPUTE_FLOAT_PRECISION: "" + intForPrecision(floatPrecision),
     });
-    shaderSource = "" + versionSource + definesSource + precisionDefines + precisionSource + "\n" + shaderSource;
-    return shaderSource;
+    return "" + versionSource + definesSource + precisionDefinesSource + precisionSource + "\n";
 }
-exports.insertHeader = insertHeader;
+exports.makeShaderHeader = makeShaderHeader;
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
 function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, _errorCallback, defines) {
-    shaderSource = insertHeader(glslVersion, intPrecision, floatPrecision, shaderSource, defines);
+    shaderSource = "" + makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines) + shaderSource;
     // Create the shader object
     var shader = gl.createShader(shaderType);
     if (!shader) {
@@ -5750,7 +5777,7 @@ function getVertexMediumpPrecision() {
 exports.getVertexMediumpPrecision = getVertexMediumpPrecision;
 function isPowerOf2(value) {
     // Use bitwise operation to evaluate this.
-    return (value & (value - 1)) == 0;
+    return value > 0 && (value & (value - 1)) == 0;
 }
 exports.isPowerOf2 = isPowerOf2;
 function initSequentialFloatArray(length) {
@@ -5761,51 +5788,38 @@ function initSequentialFloatArray(length) {
     return array;
 }
 exports.initSequentialFloatArray = initSequentialFloatArray;
-function convertDefinesToString(defines) {
-    var definesSource = '';
-    var keys = Object.keys(defines);
-    for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
-        // Check that define is passed in as a string.
-        if (!Checks_1.isString(key) || !Checks_1.isString(defines[key])) {
-            throw new Error("GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [" + typeof key + " : " + typeof defines[key] + "].");
-        }
-        definesSource += "#define " + key + " " + defines[key] + "\n";
-    }
-    return definesSource;
-}
 function preprocessShader(shaderSource) {
-    // TODO: finish this.
-    // Strip out any version declares and error.
-    // Strip out any precision declares and error.
-    return shaderSource;
-}
-function convertShaderToGLSL1(shaderSource) {
-    // TODO: finish this.
+    // Strip out any version numbers.
+    // https://github.com/Jam3/glsl-version-regex
+    var origSrc = shaderSource.slice();
+    shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+[a-zA-Z]+)?)\s*/, '');
+    if (shaderSource !== origSrc) {
+        console.warn('WebGLCompute expects shader source that does not contain #version definitions, removing...');
+    }
+    // Strip out any precision declarations.
+    origSrc = shaderSource.slice();
+    shaderSource = shaderSource.replace(/\s*precision\s+[(highp)(mediump)(lowp)]+\s+[a-zA-Z0-9]+\s*;/g, '');
+    if (shaderSource !== origSrc) {
+        console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
+    }
     return shaderSource;
 }
 function convertFragShaderToGLSL1(shaderSource) {
-    shaderSource = convertShaderToGLSL1(shaderSource);
-    // Adding a newline at the beginning of source makes the regex work better.
-    shaderSource = "\n" + shaderSource;
     // Convert in to varying.
-    shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
-    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
+    shaderSource = shaderSource.replace(/^\s*in\s+/g, 'varying '); // Beginning of line.
+    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';\nvarying '); // After semicolon (may not be linebreak).
     // Convert out to gl_FragColor.
     shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
     shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
     return shaderSource;
 }
 function convertVertShaderToGLSL1(shaderSource) {
-    shaderSource = convertShaderToGLSL1(shaderSource);
-    // Adding a newline at the beginning of source makes the regex work better.
-    shaderSource = "\n" + shaderSource;
     // Convert in to attribute.
-    shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
-    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
+    shaderSource = shaderSource.replace(/^\s*in\s+/, 'attribute '); // Beginning of line.
+    shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute '); // After semicolon (may not be linebreak).
     // Convert out to varying.
-    shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
-    shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
+    shaderSource = shaderSource.replace(/^\s*out\s+/g, 'varying '); // Beginning of line.
+    shaderSource = shaderSource.replace(/;\s*out\s+/g, ';\nvarying '); // After semicolon (may not be linebreak).
     return shaderSource;
 }
 function preprocessFragShader(shaderSource, glslVersion) {

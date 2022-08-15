@@ -11,21 +11,39 @@ import {
 } from './Constants';
 const precisionSource = require('./glsl/common/precision.glsl');
 
-export function insertHeader(
+function intForPrecision(precision: GLSLPrecision) {
+	if (precision === PRECISION_HIGH_P) return 2;
+	if (precision === PRECISION_MEDIUM_P) return 1;
+	return 0;
+}
+
+function convertDefinesToString(defines: CompileTimeVars) {
+	let definesSource = '';
+	const keys = Object.keys(defines);
+	for (let i = 0; i < keys.length; i++) {
+		const key = keys[i];
+		// Check that define is passed in as a string.
+		if (!isString(key) || !isString(defines[key])) {
+			throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}].`)
+		}
+		definesSource += `#define ${key} ${defines[key]}\n`;
+	}
+	return definesSource;
+}
+
+export function makeShaderHeader(
 	glslVersion: GLSLVersion,
 	intPrecision: GLSLPrecision,
 	floatPrecision: GLSLPrecision,
-	shaderSource: string,
 	defines?: CompileTimeVars,
 ) {
-		const versionSource = glslVersion === GLSL3 ? `#version ${GLSL3}\n` : '';
-		const definesSource = defines ? convertDefinesToString(defines) : '';
-		const precisionDefines = convertDefinesToString({
-			WEBGLCOMPUTE_INT_PRECISION: intPrecision === PRECISION_HIGH_P ? '2' : (intPrecision === PRECISION_MEDIUM_P ? '1' : '0'),
-			WEBGLCOMPUTE_FLOAT_PRECISION: floatPrecision === PRECISION_HIGH_P ? '2' : (floatPrecision === PRECISION_MEDIUM_P ? '1' : '0'),
-		});
-		shaderSource = `${versionSource}${definesSource}${precisionDefines}${precisionSource}\n${shaderSource}`
-		return shaderSource;
+	const versionSource = glslVersion === GLSL3 ? `#version ${GLSL3}\n` : '';
+	const definesSource = defines ? convertDefinesToString(defines) : '';
+	const precisionDefinesSource = convertDefinesToString({
+		WEBGLCOMPUTE_INT_PRECISION: `${intForPrecision(intPrecision)}`,
+		WEBGLCOMPUTE_FLOAT_PRECISION: `${intForPrecision(floatPrecision)}`,
+	});
+	return `${versionSource}${definesSource}${precisionDefinesSource}${precisionSource}\n`;
 }
 
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
@@ -40,13 +58,12 @@ export function compileShader(
 	_errorCallback: ErrorCallback,
 	defines?: CompileTimeVars,
 ) {
-	shaderSource = insertHeader(
+	shaderSource = `${makeShaderHeader(
 		glslVersion,
 		intPrecision,
 		floatPrecision,
-		shaderSource,
 		defines,
-	);
+	)}${shaderSource}`;
 	// Create the shader object
 	const shader = gl.createShader(shaderType);
 	if (!shader) {
@@ -297,7 +314,7 @@ void main() {
 
 export function isPowerOf2(value: number) {
 	// Use bitwise operation to evaluate this.
-	return (value & (value - 1)) == 0;
+	return value > 0 && (value & (value - 1)) == 0;
 }
 
 export function initSequentialFloatArray(length: number) {
@@ -308,39 +325,27 @@ export function initSequentialFloatArray(length: number) {
 	return array;
 }
 
-function convertDefinesToString(defines: CompileTimeVars) {
-	let definesSource = '';
-	const keys = Object.keys(defines);
-	for (let i = 0; i < keys.length; i++) {
-		const key = keys[i];
-		// Check that define is passed in as a string.
-		if (!isString(key) || !isString(defines[key])) {
-			throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}].`)
-		}
-		definesSource += `#define ${key} ${defines[key]}\n`;
-	}
-	return definesSource;
-}
-
 function preprocessShader(shaderSource: string) {
-	// TODO: finish this.
-	// Strip out any version declares and error.
-	// Strip out any precision declares and error.
-	return shaderSource;
-}
-
-function convertShaderToGLSL1(shaderSource: string) {
-	// TODO: finish this.
+	// Strip out any version numbers.
+	// https://github.com/Jam3/glsl-version-regex
+	let origSrc = shaderSource.slice();
+	shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+[a-zA-Z]+)?)\s*/, '');
+	if (shaderSource !== origSrc) {
+		console.warn('WebGLCompute expects shader source that does not contain #version definitions, removing...');
+	}
+	// Strip out any precision declarations.
+	origSrc = shaderSource.slice();
+	shaderSource = shaderSource.replace(/\s*precision\s+[(highp)(mediump)(lowp)]+\s+[a-zA-Z0-9]+\s*;/g, '');
+	if (shaderSource !== origSrc) {
+		console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
+	}
 	return shaderSource;
 }
 
 function convertFragShaderToGLSL1(shaderSource: string) {
-	shaderSource = convertShaderToGLSL1(shaderSource);
-	// Adding a newline at the beginning of source makes the regex work better.
-	shaderSource = `\n${shaderSource}`;
 	// Convert in to varying.
-	shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nvarying ');
-	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';varying ');
+	shaderSource = shaderSource.replace(/^\s*in\s+/g, 'varying '); // Beginning of line.
+	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';\nvarying '); // After semicolon (may not be linebreak).
 	// Convert out to gl_FragColor.
 	shaderSource = shaderSource.replace(/out \w+ out_fragOut;/g, '');
 	shaderSource = shaderSource.replace(/out_fragOut\s+=/, 'gl_FragColor =');
@@ -348,15 +353,12 @@ function convertFragShaderToGLSL1(shaderSource: string) {
 }
 
 function convertVertShaderToGLSL1(shaderSource: string) {
-	shaderSource = convertShaderToGLSL1(shaderSource);
-	// Adding a newline at the beginning of source makes the regex work better.
-	shaderSource = `\n${shaderSource}`;
 	// Convert in to attribute.
-	shaderSource = shaderSource.replace(/\n\s*in\s+/g, '\nattribute ');
-	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute ');
+	shaderSource = shaderSource.replace(/^\s*in\s+/, 'attribute '); // Beginning of line.
+	shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute '); // After semicolon (may not be linebreak).
 	// Convert out to varying.
-	shaderSource = shaderSource.replace(/\n\s*out\s+/g, '\nvarying ');
-	shaderSource = shaderSource.replace(/;\s*out\s+/g, ';varying ');
+	shaderSource = shaderSource.replace(/^\s*out\s+/g, 'varying '); // Beginning of line.
+	shaderSource = shaderSource.replace(/;\s*out\s+/g, ';\nvarying '); // After semicolon (may not be linebreak).
 	return shaderSource;
 }
 
