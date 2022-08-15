@@ -8,15 +8,35 @@ This library supports rendering directly to the screen.  It also has some built-
 
 
 ## Use
- 
- To install:
+
+
+### Install via npm
 
 `npm install github:amandaghassaei/webgl-compute`
 
-Because this repo is under active development, you may also want to include a specific commit in your install:
+(Because this repo is under active development, you may also want to include a specific commit in your install):
 
 `npm install github:amandaghassaei/webgl-compute#d6c75dd`
 
+And import into your project:
+
+```js
+import { GPUComposer, GPULayer, GPUProgram } from 'webgl-compute';
+```
+
+## Import into HTML
+
+*OR* you can add [webgl-compute.js](./dist/webgl-compute.js) to your html directly:
+
+```html
+<script src="webgl-compute.js"></script>
+```
+
+WebGLCompute will be accessible globally.
+
+```js
+const { GPUComposer, GPULayer, GPUProgram } = WebGLCompute;
+```
 
 ## Examples
 
@@ -30,7 +50,10 @@ Note: these are stale examples at this point, will be updated soon.
 Currently, this library can run in a separate webgl context from threejs with no problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so, though I am still sorting out some lingering WebGL warnings:
 
 ```js
-const renderer = new WebGLRenderer();
+import THREE from 'three';
+import * as WebGLCompute from 'webgl-compute';
+
+const renderer = new THREE.WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff on top
 // of things rendered to the screen from webgl-compute.
 renderer.autoClear = false;
@@ -38,14 +61,14 @@ renderer.autoClear = false;
 const gl = renderer.getContext();
 const canvas = renderer.domElement;
 
-const glcompute = WegGLCompute.initWithThreeRenderer(renderer);
+const composer = WebGLCompute.GPUComposer.initWithThreeRenderer(renderer);
 ```
 
-To use the output from a webgl-compute DataLayer to a Threejs Texture:
+To use the output from a webgl-compute GPULayer to a Threejs Texture:
 
 ```js
-const dataLayer = glcompute.initDataLayer({
-	name: 'dataLayer-1',
+const layer1 = new WebGLCompute.GPULayer({
+	name: 'layer-1',
 	dimensions: [100, 100],
 	type: 'uint8',
 	numComponents: 1,
@@ -56,7 +79,7 @@ const dataLayer = glcompute.initDataLayer({
 	numBuffers: 1,
 });
 
-const texture = new Texture(
+const texture = new THREE.Texture(
 	renderer.domElement,
 	undefined,
 	ClampToEdgeWrapping,
@@ -67,16 +90,16 @@ const texture = new Texture(
 	UnsignedByteType,
 );
 // Link webgl texture to threejs object.
-glcompute.attachDataLayerToThreeTexture(dataLayer, texture);
+composer.attachGPULayerToThreeTexture(layer1, texture);
 
-const mesh = new Mesh(
+const mesh = new THREE.Mesh(
 	new PlaneBufferGeometry(1, 1),
 	new MeshBasicMaterial({
 		map: offsetTextureThree,
 	}),
 );
 
-// Updates to dataLayer will propagate to mesh map without any additional needsUpdate flags.
+// Updates to layer1 will propagate to mesh map without any additional needsUpdate flags.
 ```
 
 More info about using webgl-compute to update mesh positions data is coming soon.

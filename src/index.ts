@@ -1,12 +1,16 @@
-import { inDevMode, isWebGL2Supported } from './utils';
-import { WebGLCompute } from './WebGLCompute';
-
-if (inDevMode()) {
-	console.log('Running in development mode.');
-}
+import {
+	isWebGL2Supported,
+	getMediumpPrecision,
+} from './utils';
+import { GPUComposer } from './GPUComposer';
+import { GPULayer } from './GPULayer';
+import { GPUProgram } from './GPUProgram';
 
 export * from './Constants';
 export {
-	WebGLCompute,
+	GPUComposer,
+	GPULayer,
+	GPUProgram,
 	isWebGL2Supported,
+	getMediumpPrecision,
 };

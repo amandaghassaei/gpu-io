@@ -1,11 +1,11 @@
-import { DataLayerType } from './Constants';
+import { GPULayerType } from './Constants';
 export declare function isValidDataType(type: string): boolean;
 export declare function isValidFilter(type: string): boolean;
 export declare function isValidWrap(type: string): boolean;
 export declare function isValidTextureFormat(type: string): boolean;
 export declare function isValidTextureType(type: string): boolean;
-export declare function isValidClearValue(clearValue: number | number[], numComponents: number, type: DataLayerType): boolean;
-export declare function isNumberOfType(value: any, type: DataLayerType): boolean;
+export declare function isValidClearValue(clearValue: number | number[], numComponents: number, type: GPULayerType): boolean;
+export declare function isNumberOfType(value: any, type: GPULayerType): boolean;
 export declare function isNumber(value: any): boolean;
 export declare function isInteger(value: any): boolean;
 export declare function isPositiveInteger(value: any): boolean;

@@ -1,9 +1,9 @@
 import { saveAs } from 'file-saver';
-import { DataLayer } from './DataLayer';
-import { DataLayerArray, DataLayerFilter, DataLayerNumComponents, DataLayerType, DataLayerWrap, UniformType, UniformValue, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback } from './Constants';
+import { GPULayer } from './GPULayer';
+import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback } from './Constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
-export declare class WebGLCompute {
+export declare class GPUComposer {
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     readonly glslVersion: GLSLVersion;
     private width;
@@ -35,7 +35,7 @@ export declare class WebGLCompute {
     static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
         glslVersion?: GLSLVersion;
         verboseLogging?: boolean;
-    }, errorCallback?: ErrorCallback): WebGLCompute;
+    }, errorCallback?: ErrorCallback): GPUComposer;
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
@@ -51,7 +51,7 @@ export declare class WebGLCompute {
     _preprocessFragShader(shaderSource: string): string;
     _preprocessVertShader(shaderSource: string): string;
     private glslKeyForType;
-    _setValueProgramForType(type: DataLayerType): GPUProgram;
+    _setValueProgramForType(type: GPULayerType): GPUProgram;
     private copyProgramForType;
     private get wrappedLineColorProgram();
     private vectorMagnitudeProgramForType;
@@ -60,38 +60,13 @@ export declare class WebGLCompute {
     private get boundaryPositionsBuffer();
     private getCirclePositionsBuffer;
     private initVertexBuffer;
-    initDataLayer(params: {
-        name: string;
-        dimensions: number | [number, number];
-        type: DataLayerType;
-        numComponents: DataLayerNumComponents;
-        array?: DataLayerArray | number[];
-        filter?: DataLayerFilter;
-        wrapS?: DataLayerWrap;
-        wrapT?: DataLayerWrap;
-        writable?: boolean;
-        numBuffers?: number;
-        clearValue?: number | number[];
-    }): DataLayer;
-    initProgram(params: {
-        name: string;
-        fragmentShader: string | string[];
-        uniforms?: {
-            name: string;
-            value: UniformValue;
-            type: UniformType;
-        }[];
-        defines?: {
-            [key: string]: string;
-        };
-    }): GPUProgram;
-    _cloneDataLayer(dataLayer: DataLayer, name?: string): DataLayer;
+    _cloneGPULayer(gpuLayer: GPULayer, name?: string): GPULayer;
     initTexture(params: {
         name: string;
         url: string;
-        filter?: DataLayerFilter;
-        wrapS?: DataLayerWrap;
-        wrapT?: DataLayerWrap;
+        filter?: GPULayerFilter;
+        wrapS?: GPULayerWrap;
+        wrapT?: GPULayerWrap;
         format?: TextureFormat;
         type?: TextureType;
         onLoad?: (texture: WebGLTexture) => void;
@@ -108,29 +83,29 @@ export declare class WebGLCompute {
     private setVertexAttribute;
     step(params: {
         program: GPUProgram;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         shouldBlendAlpha?: boolean;
     }): void;
     stepBoundary(params: {
         program: GPUProgram;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
         shouldBlendAlpha?: boolean;
     }): void;
     stepNonBoundary(params: {
         program: GPUProgram;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         shouldBlendAlpha?: boolean;
     }): void;
     stepCircle(params: {
         program: GPUProgram;
         position: [number, number];
         radius: number;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         numSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
@@ -139,8 +114,8 @@ export declare class WebGLCompute {
         position1: [number, number];
         position2: [number, number];
         thickness: number;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         endCaps?: boolean;
         numCapSegments?: number;
         shouldBlendAlpha?: boolean;
@@ -149,8 +124,8 @@ export declare class WebGLCompute {
         program: GPUProgram;
         positions: [number, number][];
         thickness: number;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         closeLoop?: boolean;
         includeUVs?: boolean;
         includeNormals?: boolean;
@@ -161,8 +136,8 @@ export declare class WebGLCompute {
         positions: Float32Array;
         normals?: Float32Array;
         uvs?: Float32Array;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         count?: number;
         shouldBlendAlpha?: boolean;
     }): void;
@@ -172,17 +147,17 @@ export declare class WebGLCompute {
         indices?: Uint16Array | Uint32Array | Int16Array | Int32Array;
         normals?: Float32Array;
         uvs?: Float32Array;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         count?: number;
         closeLoop?: boolean;
         shouldBlendAlpha?: boolean;
     }): void;
     drawLayerAsPoints(params: {
-        positions: DataLayer;
+        positions: GPULayer;
         program?: GPUProgram;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         pointSize?: number;
         count?: number;
         color?: [number, number, number];
@@ -191,11 +166,11 @@ export declare class WebGLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     drawLayerAsLines(params: {
-        positions: DataLayer;
+        positions: GPULayer;
         indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array;
         program?: GPUProgram;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         count?: number;
         color?: [number, number, number];
         wrapX?: boolean;
@@ -204,27 +179,27 @@ export declare class WebGLCompute {
         shouldBlendAlpha?: boolean;
     }): void;
     drawLayerAsVectorField(params: {
-        data: DataLayer;
+        data: GPULayer;
         program?: GPUProgram;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         vectorSpacing?: number;
         vectorScale?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
     drawLayerMagnitude(params: {
-        data: DataLayer;
-        input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture;
-        output?: DataLayer;
+        data: GPULayer;
+        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        output?: GPULayer;
         scale?: number;
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
-    getValues(dataLayer: DataLayer): DataLayerArray;
+    getValues(GPULayer: GPULayer): GPULayerArray;
     private readyToRead;
-    savePNG(dataLayer: DataLayer, filename?: string, dpi?: number, callback?: typeof saveAs): void;
-    attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture): void;
+    savePNG(GPULayer: GPULayer, filename?: string, dpi?: number, callback?: typeof saveAs): void;
+    attachGPULayerToThreeTexture(GPULayer: GPULayer, texture: Texture): void;
     resetThreeState(): void;
     dispose(): void;
 }

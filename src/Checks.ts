@@ -4,7 +4,7 @@ import {
 	validWraps,
 	validTextureFormats,
 	validTextureTypes,
-	DataLayerType,
+	GPULayerType,
 	HALF_FLOAT,
 	FLOAT,
 	BYTE,
@@ -35,7 +35,7 @@ export function isValidTextureType(type: string) {
 	return validTextureTypes.indexOf(type) > -1;
 }
 
-export function isValidClearValue(clearValue: number | number[], numComponents: number, type: DataLayerType) {
+export function isValidClearValue(clearValue: number | number[], numComponents: number, type: GPULayerType) {
 	if (isArray(clearValue)) {
 		// Length of clearValue must match numComponents.
 		if ((clearValue as number[]).length !== numComponents) {
@@ -54,7 +54,7 @@ export function isValidClearValue(clearValue: number | number[], numComponents: 
 	return true;
 }
 
-export function isNumberOfType(value: any, type: DataLayerType) {
+export function isNumberOfType(value: any, type: GPULayerType) {
 	switch (type) {
 		case HALF_FLOAT:
 		case FLOAT:

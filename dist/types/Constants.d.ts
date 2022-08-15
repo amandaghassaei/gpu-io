@@ -14,15 +14,15 @@ export declare const REPEAT = "REPEAT";
 export declare const CLAMP_TO_EDGE = "CLAMP_TO_EDGE";
 export declare const RGB = "RGB";
 export declare const RGBA = "RGBA";
-export declare type DataLayerArray = Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
-export declare const validArrayTypes: (Float32ArrayConstructor | Uint8ArrayConstructor | Int8ArrayConstructor | Uint16ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor | ArrayConstructor)[];
-export declare type DataLayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
+export declare type GPULayerArray = Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
+export declare const validArrayTypes: (Uint8ArrayConstructor | Float32ArrayConstructor | Int8ArrayConstructor | Uint16ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor | ArrayConstructor)[];
+export declare type GPULayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
 export declare const validDataTypes: string[];
-export declare type DataLayerNumComponents = 1 | 2 | 3 | 4;
-export declare type DataLayerFilter = typeof LINEAR | typeof NEAREST;
+export declare type GPULayerNumComponents = 1 | 2 | 3 | 4;
+export declare type GPULayerFilter = typeof LINEAR | typeof NEAREST;
 export declare const validFilters: string[];
 export declare const validWraps: string[];
-export declare type DataLayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;
+export declare type GPULayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;
 export declare type TextureFormat = typeof RGB | typeof RGBA;
 export declare const validTextureFormats: string[];
 export declare type TextureType = typeof UNSIGNED_BYTE;
@@ -30,6 +30,10 @@ export declare const validTextureTypes: string[];
 export declare const GLSL3 = "300 es";
 export declare const GLSL1 = "100";
 export declare type GLSLVersion = typeof GLSL1 | typeof GLSL3;
+export declare const PRECISION_LOW_P = "lowp";
+export declare const PRECISION_MEDIUM_P = "mediump";
+export declare const PRECISION_HIGH_P = "highp";
+export declare type GLSLPrecision = typeof PRECISION_LOW_P | typeof PRECISION_MEDIUM_P | typeof PRECISION_HIGH_P;
 export declare const FLOAT_1D_UNIFORM = "1f";
 export declare const FLOAT_2D_UNIFORM = "2f";
 export declare const FLOAT_3D_UNIFORM = "3f";
@@ -60,7 +64,7 @@ export declare type PROGRAM_NAME_INTERNAL = typeof DEFAULT_PROGRAM_NAME | typeof
 export declare type CompileTimeVars = {
     [key: string]: string;
 };
-export declare type DataLayerBuffer = {
+export declare type GPULayerBuffer = {
     texture: WebGLTexture;
     framebuffer?: WebGLFramebuffer;
 };

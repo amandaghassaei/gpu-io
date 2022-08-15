@@ -1,4 +1,6 @@
-import { isWebGL2Supported } from './utils';
-import { WebGLCompute } from './WebGLCompute';
+import { isWebGL2Supported, getMediumpPrecision } from './utils';
+import { GPUComposer } from './GPUComposer';
+import { GPULayer } from './GPULayer';
+import { GPUProgram } from './GPUProgram';
 export * from './Constants';
-export { WebGLCompute, isWebGL2Supported, };
+export { GPUComposer, GPULayer, GPUProgram, isWebGL2Supported, getMediumpPrecision, };

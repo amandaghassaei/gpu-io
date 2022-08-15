@@ -1,4 +1,4 @@
-import { WebGLCompute } from './WebGLCompute';
+import { GPUComposer } from './GPUComposer';
 import {
 	isArray,
 	isBoolean,
@@ -33,31 +33,38 @@ import {
 	DATA_LAYER_LINES_PROGRAM_NAME,
 } from './Constants';
 import {
-	compileShader,
+	compileShader, initGLProgram,
 } from './utils';
 
 export class GPUProgram {
-	// Keep a reference to WebGLCompute.
-	private readonly glcompute: WebGLCompute;
+	// Keep a reference to GPUComposer.
+	private readonly composer: GPUComposer;
 
-	readonly name: string; // Name of DataLayer, used for error logging.
+	// Name of GPUProgram, used for error logging.
+	readonly name: string;
 
-	private fragmentShader!: WebGLShader; // Compiled fragment shader.
-
+	// Compiled fragment shader.
+	private fragmentShader!: WebGLShader;
 	// Source code for fragment shader.
 	// Hold onto this in case we need to recompile with different #defines.
 	private readonly fragmentShaderSource: string;
-	
-	private defines: CompileTimeVars = {}; // #define variables for fragment shader program.
-	private readonly uniforms: { [ key: string]: Uniform } = {}; // Uniform locations, values, and types.
+	// #define variables for fragment shader program.
+	private defines: CompileTimeVars = {};
+	// Uniform locations, values, and types.
+	private readonly uniforms: { [ key: string]: Uniform } = {};
 
-	// Store WebGLPrograms programs - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
+	// Store WebGLProgram's - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
 	// Each combination of vertex + fragment shader requires a separate WebGLProgram.
-	// These programs are compiled as needed.
+	// These programs are compiled on the fly as needed.
 	private programs: {[key in PROGRAM_NAME_INTERNAL]?: WebGLProgram } = {};
 
+	/**
+     * Create a GPUProgram.
+     * @param {GPUComposer} composer - The current GPUComposer instance.
+     * @param {Object} params - GPUProgram parameters.
+     */
 	constructor(
-		glcompute: WebGLCompute,
+		composer: GPUComposer,
 		params: {
 			name: string,
 			// We may want to pass in an array of shader string sources, if split across several files.
@@ -70,12 +77,32 @@ export class GPUProgram {
 			// We'll allow some compile-time variables to be passed in as #define to the preprocessor for the fragment shader.
 			defines?: CompileTimeVars,
 		},
-		
 	) {
-		const { name, fragmentShader, uniforms, defines } = params;
+		// Check constructor parameters.
+		const { name } = (params || {});
+		if (!composer) {
+			throw new Error(`Error initing GPUProgram "${name}": must pass GPUComposer instance to GPUProgram(composer, params).`);
+		}
+		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
+		const requiredKeys = ['name', 'fragmentShader'];
+		const keys = Object.keys(params);
+		keys.forEach(key => {
+			if (validKeys.indexOf(key) < 0) {
+				throw new Error(`Invalid params key "${key}" passed to GPUProgram(composer, params) with name "${name}".  Valid keys are ${validKeys.join(', ')}.`);
+			}
+		});
+		// Check for required keys.
+		requiredKeys.forEach(key => {
+			if (keys.indexOf(key) < 0) {
+				throw new Error(`Required params key "${key}" was not passed to GPUProgram(composer, params) with name "${name}".`);
+			}
+		});
+
+		const { fragmentShader, uniforms, defines } = params;
+		
 
 		// Save arguments.
-		this.glcompute = glcompute;
+		this.composer = composer;
 		this.name = name;
 
 		// Compile fragment shader.
@@ -86,7 +113,7 @@ export class GPUProgram {
 		this.recompile(defines || this.defines);
 
 		if (uniforms) {
-			for (let i = 0; i < uniforms?.length; i++) {
+			for (let i = 0; i < uniforms.length; i++) {
 				const { name, value, type } = uniforms[i];
 				this.setUniform(name, value, type);
 			}
@@ -94,8 +121,8 @@ export class GPUProgram {
 	}
 
 	recompile(defines: CompileTimeVars) {
-		const { glcompute, name, fragmentShaderSource } = this;
-		const { gl, _errorCallback, verboseLogging } = glcompute;
+		const { composer, name, fragmentShaderSource } = this;
+		const { gl, _errorCallback, verboseLogging, glslVersion } = composer;
 
 		// Update this.defines if needed.
 		// Passed in defines param may only be a partial list.
@@ -115,7 +142,15 @@ export class GPUProgram {
 		}
 
 		if (verboseLogging) console.log(`Compiling fragment shader for GPUProgram "${name}" with defines: ${JSON.stringify(this.defines)}`);
-		const shader = compileShader(glcompute, fragmentShaderSource, gl.FRAGMENT_SHADER, name, this.defines);
+		const shader = compileShader(
+			gl,
+			glslVersion,
+			fragmentShaderSource,
+			gl.FRAGMENT_SHADER,
+			name,
+			_errorCallback,
+			this.defines,
+		);
 		if (!shader) {
 			_errorCallback(`Unable to compile fragment shader for GPUProgram "${name}".`);
 			return;
@@ -123,63 +158,51 @@ export class GPUProgram {
 		this.fragmentShader = shader;
 	}
 
-	private initProgram(vertexShader: WebGLShader, programName: PROGRAM_NAME_INTERNAL) {
-		const { glcompute, fragmentShader, uniforms } = this;
-		const { gl, _errorCallback} = glcompute;
-		// Create a program.
-		const program = gl.createProgram();
-		if (!program) {
-			_errorCallback(`Unable to init gl program, gl.createProgram() has failed.`);
-			return;
-		}
-		// TODO: check that attachShader worked.
-		gl.attachShader(program, fragmentShader);
-		gl.attachShader(program, vertexShader);
-		// Link the program.
-		gl.linkProgram(program);
-		// Check if it linked.
-		const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-		if (!success) {
-			// Something went wrong with the link.
-			_errorCallback(`Program "${this.name}" failed to link: ${gl.getProgramInfoLog(program)}`);
-			return;
-		}
-		// If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
-		const uniformNames = Object.keys(uniforms);
-		for (let i = 0; i < uniformNames.length; i++) {
-			const uniformName = uniformNames[i];
-			const uniform = uniforms[uniformName];
-			const { value, type } = uniform;
-			this.setProgramUniform(program, programName, uniformName, value, type);
-		}
-		return program;
-	}
-
 	private getProgramWithName(name: PROGRAM_NAME_INTERNAL) {
+		// Check if we've already compiled program.
 		if (this.programs[name]) return this.programs[name];
-		const { glcompute } = this;
-		const { _errorCallback, _vertexShaders } = glcompute;
+		// Otherwise, we need to compile a new program on the fly.
+		const { composer, uniforms, fragmentShader } = this;
+		const { _errorCallback, _vertexShaders, gl, glslVersion } = composer;
 		const vertexShader = _vertexShaders[name];
 		if (vertexShader.shader === undefined) {
-			const { glcompute } = this;
-			const { gl } = glcompute;
+			const { composer } = this;
+			const { gl } = composer;
 			// Init a vertex shader.
-			let vertexShaderSource = glcompute._preprocessVertShader(vertexShader.src);
+			let vertexShaderSource = composer._preprocessVertShader(vertexShader.src);
 			if (vertexShaderSource === '') {
 				throw new Error(`No source for vertex shader ${this.name} : ${name}`)
 			}
-			const shader = compileShader(glcompute, vertexShaderSource, gl.VERTEX_SHADER, this.name, vertexShader.defines);
+			const shader = compileShader(
+				gl,
+				glslVersion,
+				vertexShaderSource,
+				gl.VERTEX_SHADER,
+				this.name,
+				_errorCallback,
+				vertexShader.defines,
+			);
 			if (!shader) {
 				_errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${this.name}".`);
 				return;
 			}
 			vertexShader.shader = shader;
 		}
-		const program = this.initProgram(vertexShader.shader, DEFAULT_PROGRAM_NAME);
+		const program = initGLProgram(gl, fragmentShader, vertexShader.shader, this.name, _errorCallback);
 		if (program === undefined) {
 			_errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
 			return;
 		}
+
+		// If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
+		const uniformNames = Object.keys(uniforms);
+		for (let i = 0; i < uniformNames.length; i++) {
+			const uniformName = uniformNames[i];
+			const uniform = uniforms[uniformName];
+			const { value, type } = uniform;
+			this.setProgramUniform(program, name, uniformName, value, type);
+		}
+
 		this.programs[name] = program;
 		return program;
 	}
@@ -200,13 +223,13 @@ export class GPUProgram {
 	get _segmentProgram() {
 		return this.getProgramWithName(SEGMENT_PROGRAM_NAME);
 	}
-	get _dataLayerPointsProgram() {
+	get _GPULayerPointsProgram() {
 		return this.getProgramWithName(DATA_LAYER_POINTS_PROGRAM_NAME);
 	}
-	get _dataLayerVectorFieldProgram() {
+	get _GPULayerVectorFieldProgram() {
 		return this.getProgramWithName(DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME);
 	}
-	get _dataLayerLinesProgram() {
+	get _GPULayerLinesProgram() {
 		return this.getProgramWithName(DATA_LAYER_LINES_PROGRAM_NAME);
 	}
 
@@ -286,8 +309,8 @@ export class GPUProgram {
 		value: UniformValue,
 		type: UniformInternalType,
 	) {
-		const { glcompute, uniforms } = this;
-		const { gl, _errorCallback } = glcompute;
+		const { composer, uniforms } = this;
+		const { gl, _errorCallback } = composer;
 		// Set active program.
 		gl.useProgram(program);
 
@@ -351,8 +374,8 @@ Error code: ${gl.getError()}.`);
 		value: UniformValue,
 		type?: UniformType,
 	) {
-		const { programs, uniforms, glcompute } = this;
-		const { verboseLogging } = glcompute;
+		const { programs, uniforms, composer } = this;
+		const { verboseLogging } = composer;
 
 		// Check that length of value is correct.
 		if (isArray(value)) {
@@ -426,8 +449,8 @@ Error code: ${gl.getError()}.`);
 	}
 
 	dispose() {
-		const { glcompute, fragmentShader, programs } = this;
-		const { gl, verboseLogging } = glcompute;
+		const { composer, fragmentShader, programs } = this;
+		const { gl, verboseLogging } = composer;
 
 		if (verboseLogging) console.log(`Deallocating GPUProgram "${this.name}".`);
 
@@ -444,7 +467,18 @@ Error code: ${gl.getError()}.`);
 		// @ts-ignore
 		delete this.fragmentShader;
 
+		// Delete all references.
 		// @ts-ignore
-		delete this.glcompute;
+		delete this.composer;
+		// @ts-ignore
+		delete this.name;
+		// @ts-ignore
+		delete this.fragmentShaderSource;
+		// @ts-ignore
+		delete this.defines;
+		// @ts-ignore
+		delete this.uniforms;
+		// @ts-ignore
+		delete this.programs;
 	}
 }

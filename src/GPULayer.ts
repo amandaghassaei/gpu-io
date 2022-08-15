@@ -1,5 +1,5 @@
 import { setFloat16 } from '@petamoriken/float16';
-import { WebGLCompute } from '.';
+import { GPUComposer } from '.';
 import {
 	isNumber,
 	isPositiveInteger,
@@ -20,15 +20,15 @@ import {
 	NEAREST,
 	LINEAR,
 	CLAMP_TO_EDGE,
-	DataLayerArray,
-	DataLayerFilter,
-	DataLayerNumComponents,
-	DataLayerType,
-	DataLayerWrap,
+	GPULayerArray,
+	GPULayerFilter,
+	GPULayerNumComponents,
+	GPULayerType,
+	GPULayerWrap,
 	GLSLVersion,
 	GLSL3,
 	GLSL1,
-	DataLayerBuffer,
+	GPULayerBuffer,
 	ErrorCallback,
 	validArrayTypes,
 	validFilters,
@@ -44,35 +44,34 @@ import {
 	OES_TEXTURE_HAlF_FLOAT_LINEAR,
 } from './extensions';
 import {
-	inDevMode,
 	isWebGL2,
 } from './utils';
 
-export class DataLayer {
-	// Keep a reference to WebGLCompute.
-	private readonly glcompute: WebGLCompute;
+export class GPULayer {
+	// Keep a reference to GPUComposer.
+	private readonly composer: GPUComposer;
 
-	readonly name: string; // Name of DataLayer, used for error logging.
-	readonly type: DataLayerType; // Input type passed in during setup.
-	readonly numComponents: DataLayerNumComponents; // Number of RGBA channels to use for this DataLayer.
-	readonly filter: DataLayerFilter; // Interpolation filter for pixel read operations.
-	readonly wrapS: DataLayerWrap; // Input wrap type passed in during setup.
-	readonly wrapT: DataLayerWrap; // Input wrap type passed in during setup.
+	readonly name: string; // Name of GPULayer, used for error logging.
+	readonly type: GPULayerType; // Input type passed in during setup.
+	readonly numComponents: GPULayerNumComponents; // Number of RGBA channels to use for this GPULayer.
+	readonly filter: GPULayerFilter; // Interpolation filter for pixel read operations.
+	readonly wrapS: GPULayerWrap; // Input wrap type passed in during setup.
+	readonly wrapT: GPULayerWrap; // Input wrap type passed in during setup.
 	readonly writable: boolean;
 	private _clearValue!: number | number[]; // Value to set when clear() is called.
 
-	// Each DataLayer may contain a number of buffers to store different instances of the state.
+	// Each GPULayer may contain a number of buffers to store different instances of the state.
 	// e.g [currentState, previousState]
 	private _bufferIndex = 0;
 	readonly numBuffers;
-	private readonly buffers: DataLayerBuffer[] = [];
+	private readonly buffers: GPULayerBuffer[] = [];
 
 	// Texture sizes.
-	_length?: number; // This is only used for 1D data layers, _length is used internally, access with DataLayer.length.
-	private _width: number; // Access with DataLayer.width.
-	private _height: number; // Access with DataLayer.height.
+	_length?: number; // This is only used for 1D data layers, _length is used internally, access with GPULayer.length.
+	private _width: number; // Access with GPULayer.width.
+	private _height: number; // Access with GPULayer.height.
 
-	// DataLayer settings.
+	// GPULayer settings.
 	// Due to variable browser support of WebGL features, "internal" variables may be different
 	// from the parameter originally passed in.  These variables are set so that they match the original
 	// parameter as best as possible, but fragment shader polyfills may be required.
@@ -81,51 +80,72 @@ export class DataLayer {
 	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texParameter
 	readonly glInternalFormat: number;
 	readonly glFormat: number;
-	// DataLayer.internalType corresponds to DataLayer.glType, may be different from DataLayer.type.
-	readonly internalType: DataLayerType; 
+	// GPULayer.internalType corresponds to GPULayer.glType, may be different from GPULayer.type.
+	readonly internalType: GPULayerType; 
 	readonly glType: number;
-	// Internally, DataLayer.glNumChannels may represent a larger number of channels than DataLayer.numComponents.
+	// Internally, GPULayer.glNumChannels may represent a larger number of channels than GPULayer.numComponents.
 	// For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
 	readonly glNumChannels: number;
-	// DataLayer.internalFilter corresponds to DataLayer.glFilter, may be different from DataLayer.filter.
-	readonly internalFilter: DataLayerFilter;
+	// GPULayer.internalFilter corresponds to GPULayer.glFilter, may be different from GPULayer.filter.
+	readonly internalFilter: GPULayerFilter;
 	readonly glFilter: number;
-	// DataLayer.internalWrapS corresponds to DataLayer.glWrapS, may be different from DataLayer.wrapS.
-	readonly internalWrapS: DataLayerWrap;
+	// GPULayer.internalWrapS corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapS.
+	readonly internalWrapS: GPULayerWrap;
 	readonly glWrapS: number;
-	// DataLayer.internalWrapT corresponds to DataLayer.glWrapS, may be different from DataLayer.wrapT.
-	readonly internalWrapT: DataLayerWrap;
+	// GPULayer.internalWrapT corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapT.
+	readonly internalWrapT: GPULayerWrap;
 	readonly glWrapT: number;
 	
 	// Optimizations so that "copying" can happen without draw calls.
 	private textureOverrides?: (WebGLTexture | undefined)[];
 
 	constructor(
-		glcompute: WebGLCompute,
+		composer: GPUComposer,
 		params: {
 			name: string,
 			dimensions: number | [number, number],
-			type: DataLayerType,
-			numComponents: DataLayerNumComponents,
-			array?: DataLayerArray | number[],
-			filter?: DataLayerFilter,
-			wrapS?: DataLayerWrap,
-			wrapT?: DataLayerWrap,
+			type: GPULayerType,
+			numComponents: GPULayerNumComponents,
+			array?: GPULayerArray | number[],
+			filter?: GPULayerFilter,
+			wrapS?: GPULayerWrap,
+			wrapT?: GPULayerWrap,
 			writable?: boolean,
 			numBuffers?: number,
 			clearValue?: number | number[],
 		},
 	) {
-		const { name, dimensions, type, numComponents, array } = params;
-		const { gl, _errorCallback, glslVersion } = glcompute;
+		// Check constructor parameters.
+		const { name } = (params || {});
+		if (!composer) {
+			throw new Error(`Error initing GPULayer "${name}": must pass GPUComposer instance to GPULayer(composer, params).`);
+		}
+		// Check params.
+		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'array', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue'];
+		const requiredKeys = ['name', 'dimensions', 'type', 'numComponents'];
+		const keys = Object.keys(params);
+		keys.forEach(key => {
+			if (validKeys.indexOf(key) < 0) {
+				throw new Error(`Invalid params key "${key}" passed to GPULayer(composer, params) with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+			}
+		});
+		// Check for required keys.
+		requiredKeys.forEach(key => {
+			if (keys.indexOf(key) < 0) {
+				throw new Error(`Required params key "${key}" was not passed to GPUProgram(composer, params) with name "${name}".`);
+			}
+		});
+
+		const { dimensions, type, numComponents, array } = params;
+		const { gl, _errorCallback, glslVersion } = composer;
 
 		// Save params.
-		this.glcompute = glcompute;
+		this.composer = composer;
 		this.name = name;
 
 		// numComponents must be between 1 and 4.
 		if (!isPositiveInteger(numComponents) || numComponents > 4) {
-			throw new Error(`Invalid numComponents: ${numComponents} for DataLayer "${name}".`);
+			throw new Error(`Invalid numComponents: ${numComponents} for GPULayer "${name}".`);
 		}
 		this.numComponents = numComponents;
 
@@ -134,14 +154,14 @@ export class DataLayer {
 		this.writable = writable;
 
 		// Set dimensions, may be 1D or 2D.
-		const { length, width, height } = DataLayer.calcSize(dimensions, name);
+		const { length, width, height } = GPULayer.calcSize(dimensions, name, composer.verboseLogging);
 		this._length = length;
 		if (!isPositiveInteger(width)) {
-			throw new Error(`Invalid width: ${width} for DataLayer "${name}".`);
+			throw new Error(`Invalid width: ${width} for GPULayer "${name}".`);
 		}
 		this._width = width;
 		if (!isPositiveInteger(height)) {
-			throw new Error(`Invalid length: ${height} for DataLayer "${name}".`);
+			throw new Error(`Invalid length: ${height} for GPULayer "${name}".`);
 		}
 		this._height = height;
 
@@ -150,32 +170,32 @@ export class DataLayer {
 		const defaultFilter = length ? NEAREST : ((type === FLOAT || type == HALF_FLOAT) ? LINEAR : NEAREST);
 		const filter = params.filter !== undefined ? params.filter : defaultFilter;
 		if (!isValidFilter(filter)) {
-			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be one of [${validFilters.join(', ')}].`);
+			throw new Error(`Invalid filter: ${filter} for GPULayer "${name}", must be one of [${validFilters.join(', ')}].`);
 		}
 		// Don't allow LINEAR filtering on integer types, it is not supported.
 		if (filter === LINEAR && !(type === FLOAT || type == HALF_FLOAT)) {
-			throw new Error(`LINEAR filtering is not supported on integer types, please use NEAREST filtering for DataLayer "${name}" with type: ${type}.`);
+			throw new Error(`LINEAR filtering is not supported on integer types, please use NEAREST filtering for GPULayer "${name}" with type: ${type}.`);
 		}
 		this.filter = filter;
 
 		// Get wrap types, default to clamp to edge.
 		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
 		if (!isValidWrap(wrapS)) {
-			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be one of [${validWraps.join(', ')}].`);
+			throw new Error(`Invalid wrapS: ${wrapS} for GPULayer "${name}", must be one of [${validWraps.join(', ')}].`);
 		}
 		this.wrapS = wrapS;
 		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
 		if (!isValidWrap(wrapT)) {
-			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be one of [${validWraps.join(', ')}].`);
+			throw new Error(`Invalid wrapT: ${wrapT} for GPULayer "${name}", must be one of [${validWraps.join(', ')}].`);
 		}
 		this.wrapT = wrapT;
 
 		// Set data type.
 		if (!isValidDataType(type)) {
-			throw new Error(`Invalid type: ${type} for DataLayer "${name}", must be one of [${validDataTypes.join(', ')}].`);
+			throw new Error(`Invalid type: ${type} for GPULayer "${name}", must be one of [${validDataTypes.join(', ')}].`);
 		}
 		this.type = type;
-		const internalType = DataLayer.getInternalType({
+		const internalType = GPULayer.getInternalType({
 			gl,
 			type,
 			glslVersion,
@@ -190,7 +210,7 @@ export class DataLayer {
 			glInternalFormat,
 			glType,
 			glNumChannels,
-		} = DataLayer.getGLTextureParameters({
+		} = GPULayer.getGLTextureParameters({
 			gl,
 			name,
 			numComponents,
@@ -205,17 +225,17 @@ export class DataLayer {
 		this.glNumChannels = glNumChannels;
 
 		// Set internal filtering/wrap types.
-		this.internalFilter = DataLayer.getInternalFilter({ gl, filter, internalType, name, errorCallback: _errorCallback });
+		this.internalFilter = GPULayer.getInternalFilter({ gl, filter, internalType, name, errorCallback: _errorCallback });
 		this.glFilter = gl[this.internalFilter];
-		this.internalWrapS = DataLayer.getInternalWrap({ gl, wrap: wrapS, name });
+		this.internalWrapS = GPULayer.getInternalWrap({ gl, wrap: wrapS, name });
 		this.glWrapS = gl[this.internalWrapS];
-		this.internalWrapT = DataLayer.getInternalWrap({ gl, wrap: wrapT, name });
+		this.internalWrapT = GPULayer.getInternalWrap({ gl, wrap: wrapT, name });
 		this.glWrapT = gl[this.internalWrapT];
 
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
 		if (!isPositiveInteger(numBuffers)) {
-			throw new Error(`Invalid numBuffers: ${numBuffers} for DataLayer "${name}", must be positive integer.`);
+			throw new Error(`Invalid numBuffers: ${numBuffers} for GPULayer "${name}", must be positive integer.`);
 		}
 		this.numBuffers = numBuffers;
 
@@ -227,11 +247,11 @@ export class DataLayer {
 		this.initBuffers(array);
 	}
 
-	private static calcSize(size: number | [number, number], name: string) {
+	private static calcSize(size: number | [number, number], name: string, verboseLogging: boolean) {
 		let length, width, height;
 		if (!isNaN(size as number)) {
 			if (!isPositiveInteger(size)) {
-				throw new Error(`Invalid length: ${size} for DataLayer "${name}", must be positive integer.`);
+				throw new Error(`Invalid length: ${size} for GPULayer "${name}", must be positive integer.`);
 			}
 			length = size as number;
 			// Calc power of two width and height for length.
@@ -243,17 +263,17 @@ export class DataLayer {
 			}
 			width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
 			height = Math.pow(2, Math.floor(exp/2));
-			if (inDevMode()) {
-				console.log(`Using [${width}, ${height}] for 1D array of length ${size} in DataLayer "${name}".`);
+			if (verboseLogging) {
+				console.log(`Using [${width}, ${height}] for 1D array of length ${size} in GPULayer "${name}".`);
 			}
 		} else {
 			width = (size as [number, number])[0];
 			if (!isPositiveInteger(width)) {
-				throw new Error(`Invalid width: ${width} for DataLayer "${name}", must be positive integer.`);
+				throw new Error(`Invalid width: ${width} for GPULayer "${name}", must be positive integer.`);
 			}
 			height = (size as [number, number])[1];
 			if (!isPositiveInteger(height)) {
-				throw new Error(`Invalid height: ${height} for DataLayer "${name}", must be positive integer.`);
+				throw new Error(`Invalid height: ${height} for GPULayer "${name}", must be positive integer.`);
 			}
 		}
 		return { width, height, length };
@@ -262,7 +282,7 @@ export class DataLayer {
 	private static getInternalWrap(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
-			wrap: DataLayerWrap,
+			wrap: GPULayerWrap,
 			name: string,
 		},
 	) {
@@ -285,7 +305,7 @@ export class DataLayer {
 			// It maybe non-power-of-2 and have incompatible texture filtering or is not
 			// 'texture complete', or it is a float/half-float type with linear filtering and
 			// without the relevant float/half-float linear extension enabled."
-			console.warn(`Falling back to CLAMP_TO_EDGE wrapping for DataLayer "${name}" for WebGL 1.`);
+			console.warn(`Falling back to CLAMP_TO_EDGE wrapping for GPULayer "${name}" for WebGL 1.`);
 			return CLAMP_TO_EDGE;
 		}
 		return wrap;
@@ -294,8 +314,8 @@ export class DataLayer {
 	private static getInternalFilter(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
-			filter: DataLayerFilter,
-			internalType: DataLayerType,
+			filter: GPULayerFilter,
+			internalType: GPULayerType,
 			name: string,
 			errorCallback: ErrorCallback,
 		},
@@ -312,14 +332,14 @@ export class DataLayer {
 			const extension = getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true)
 				|| getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
-				console.warn(`Falling back to NEAREST filter for DataLayer "${name}".`);
+				console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = NEAREST;
 			}
 		} if (internalType === FLOAT) {
 			const extension = getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
 			if (!extension) {
-				console.warn(`Falling back to NEAREST filter for DataLayer "${name}".`);
+				console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 				//TODO: add a fallback that does this filtering in the frag shader?.
 				filter = NEAREST;
 			}
@@ -330,7 +350,7 @@ export class DataLayer {
 	private static getInternalType(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
-			type: DataLayerType,
+			type: GPULayerType,
 			glslVersion: GLSLVersion,
 			writable: boolean,
 			name: string,
@@ -341,7 +361,7 @@ export class DataLayer {
 		const { type } = params;
 		let internalType = type;
 		// Check if int types are supported.
-		const intCast = DataLayer.shouldCastIntTypeAsFloat(params);
+		const intCast = GPULayer.shouldCastIntTypeAsFloat(params);
 		if (intCast) {
 			if (internalType === UNSIGNED_BYTE || internalType === BYTE) {
 				// Integers between 0 and 2048 can be exactly represented by half float (and also between −2048 and 0)
@@ -350,7 +370,7 @@ export class DataLayer {
 				// Integers between 0 and 16777216 can be exactly represented by float32 (also applies for negative integers between −16777216 and 0)
 				// This is sufficient for UNSIGNED_SHORT and SHORT types.
 				// Large UNSIGNED_INT and INT cannot be represented by FLOAT type.
-				console.warn(`Falling back ${internalType} type to FLOAT type for glsl1.x support for DataLayer "${name}".
+				console.warn(`Falling back ${internalType} type to FLOAT type for glsl1.x support for GPULayer "${name}".
 Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on mobile UNSIGNED_INT, INT, UNSIGNED_SHORT, and SHORT with absolute value > 2,048 may not be supported.`);
 				internalType = FLOAT;
 			}
@@ -360,7 +380,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			if (internalType === FLOAT) {
 				const extension = getExtension(gl, OES_TEXTURE_FLOAT, errorCallback, true);
 				if (!extension) {
-					console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for DataLayer "${name}".`);
+					console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
 				}
 				// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
@@ -370,9 +390,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				// To check if this is supported, you have to call the WebGL
 				// checkFramebufferStatus() function.
 				if (writable) {
-					const valid = DataLayer.testFramebufferWrite({ gl, type: internalType, glslVersion });
+					const valid = GPULayer.testFramebufferWrite({ gl, type: internalType, glslVersion });
 					if (!valid && internalType !== HALF_FLOAT) {
-						console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for DataLayer "${name}".`);
+						console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 						internalType = HALF_FLOAT;
 					}
 				}
@@ -382,7 +402,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback);
 				// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 				if (writable) {
-					const valid = DataLayer.testFramebufferWrite({ gl, type: internalType, glslVersion });
+					const valid = GPULayer.testFramebufferWrite({ gl, type: internalType, glslVersion });
 					if (!valid) {
 						errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 					}
@@ -400,7 +420,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	private static shouldCastIntTypeAsFloat(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
-			type: DataLayerType,
+			type: GPULayerType,
 			glslVersion: GLSLVersion,
 		}
 	) {
@@ -419,8 +439,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
 			name: string,
-			numComponents: DataLayerNumComponents,
-			internalType: DataLayerType,
+			numComponents: GPULayerNumComponents,
+			internalType: GPULayerType,
 			writable: boolean,
 			glslVersion: GLSLVersion,
 			errorCallback: ErrorCallback,
@@ -458,7 +478,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 						glFormat = gl.RGBA;
 						break;
 					default:
-						throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+						throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 				}
 			} else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
 				switch (glNumChannels) {
@@ -485,7 +505,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 						glNumChannels = 4;
 						break;
 					default:
-						throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+						throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 				}
 			} else {
 				// This case will only be hit by GLSL 3.
@@ -504,7 +524,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 						glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
 						break;
 					default:
-						throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+						throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 				}
 			}
 			switch (internalType) {
@@ -524,7 +544,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16F;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 					}
 					break;
 				case FLOAT:
@@ -543,7 +563,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32F;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 					}
 					break;
 				case UNSIGNED_BYTE:
@@ -565,7 +585,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 								glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
 								break;
 							default:
-								throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+								throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 						}
 					}
 					break;
@@ -585,7 +605,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8I;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 					}
 					break;
 				case SHORT:
@@ -604,7 +624,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16I;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 					}
 					break;
 				case UNSIGNED_SHORT:
@@ -623,7 +643,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA16UI;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 					}
 					break;
 				case INT:
@@ -642,7 +662,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32I;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 					}
 					break;
 				case UNSIGNED_INT:
@@ -661,11 +681,11 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA32UI;
 							break;
 						default:
-							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for DataLayer "${name}".`);
+							throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 					}
 					break;
 				default:
-					throw new Error(`Unsupported type: ${internalType} for DataLayer "${name}".`);
+					throw new Error(`Unsupported type: ${internalType} for GPULayer "${name}".`);
 			}
 		} else {
 			switch (numComponents) {
@@ -700,7 +720,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 					glNumChannels = 4;
 					break;
 				default:
-					throw new Error(`Unsupported numComponents: ${numComponents} for DataLayer "${name}".`);
+					throw new Error(`Unsupported numComponents: ${numComponents} for GPULayer "${name}".`);
 			}
 			switch (internalType) {
 				case FLOAT:
@@ -714,7 +734,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 					break;
 				// No other types are supported in glsl1.x
 				default:
-					throw new Error(`Unsupported type: ${internalType} in WebGL 1.0 for DataLayer "${name}".`);
+					throw new Error(`Unsupported type: ${internalType} in WebGL 1.0 for GPULayer "${name}".`);
 			}
 		}
 
@@ -724,10 +744,10 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			if (glType === undefined) missingParams.push('glType');
 			if (glFormat === undefined) missingParams.push('glFormat');
 			if (glInternalFormat === undefined) missingParams.push('glInternalFormat');
-			throw new Error(`Invalid type: ${internalType} for numComponents: ${numComponents}, unable to init parameter${missingParams.length > 1 ? 's' : ''} ${missingParams.join(', ')} for DataLayer "${name}".`);
+			throw new Error(`Invalid type: ${internalType} for numComponents: ${numComponents}, unable to init parameter${missingParams.length > 1 ? 's' : ''} ${missingParams.join(', ')} for GPULayer "${name}".`);
 		}
 		if (glNumChannels === undefined || numComponents < 1 || numComponents > 4 || glNumChannels < numComponents) {
-			throw new Error(`Invalid numChannels: ${glNumChannels} for numComponents: ${numComponents} for DataLayer "${name}".`);
+			throw new Error(`Invalid numChannels: ${glNumChannels} for numComponents: ${numComponents} for GPULayer "${name}".`);
 		}
 
 		return {
@@ -741,7 +761,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	private static testFramebufferWrite(
 		params: {
 			gl: WebGLRenderingContext | WebGL2RenderingContext,
-			type: DataLayerType,
+			type: GPULayerType,
 			glslVersion: GLSLVersion,
 		},
 	) {
@@ -757,7 +777,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		const wrapT = gl[CLAMP_TO_EDGE];
 		const filter = gl[NEAREST];
 		// Use non-power of two dimensions to check for more universal support.
-		// (In case size of DataLayer is changed at a later point).
+		// (In case size of GPULayer is changed at a later point).
 		const width = 100;
 		const height = 100;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapS);
@@ -765,7 +785,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
-		const { glInternalFormat, glFormat, glType } = DataLayer.getGLTextureParameters({
+		const { glInternalFormat, glFormat, glType } = GPULayer.getGLTextureParameters({
 			gl,
 			name: 'testFramebufferWrite',
 			numComponents: 1,
@@ -801,17 +821,17 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		return this._bufferIndex;
 	}
 
-	saveCurrentStateToDataLayer(layer: DataLayer) {
+	saveCurrentStateToGPULayer(layer: GPULayer) {
 		// A method for saving a copy of the current state without a draw call.
 		// Draw calls are expensive, this optimization helps.
 		if (this.numBuffers < 2) {
-			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer "${this.name}" with less than 2 buffers.`);
+			throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" with less than 2 buffers.`);
 		}
 		if (!this.writable) {
-			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on read-only DataLayer "${this.name}".`);
+			throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on read-only GPULayer "${this.name}".`);
 		}
 		if (layer.writable) {
-			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer "${this.name}" using writable DataLayer "${layer.name}".`)
+			throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" using writable GPULayer "${layer.name}".`)
 		}
 		// Check that texture params are the same.
 		if (layer.glWrapS !== this.glWrapS || layer.glWrapT !== this.glWrapT ||
@@ -821,7 +841,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			layer.glNumChannels !== this.glNumChannels || layer.numComponents !== this.numComponents ||
 			layer.glType !== this.glType || layer.type !== this.type ||
 			layer.glFormat !== this.glFormat || layer.glInternalFormat !== this.glInternalFormat) {
-				throw new Error(`Incompatible texture params between DataLayers "${layer.name}" and "${this.name}".`);
+				throw new Error(`Incompatible texture params between GPULayers "${layer.name}" and "${this.name}".`);
 		}
 
 		// If we have not already inited overrides array, do so now.
@@ -834,7 +854,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 		// Check if we already have an override in place.
 		if (this.textureOverrides[this.bufferIndex]) {
-			throw new Error(`Can't call DataLayer.saveCurrentStateToDataLayer on DataLayer "${this.name}", this DataLayer has not written new state since last call to DataLayer.saveCurrentStateToDataLayer.`);
+			throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}", this GPULayer has not written new state since last call to GPULayer.saveCurrentStateToGPULayer.`);
 		}
 		const { currentState } = this;
 		this.textureOverrides[this.bufferIndex] = currentState;
@@ -843,9 +863,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		layer._setCurrentStateTexture(currentState);
 
 		// Bind swapped texture to framebuffer.
-		const { gl } = this.glcompute;
+		const { gl } = this.composer;
 		const { framebuffer, texture } = this.buffers[this.bufferIndex];
-		if (!framebuffer) throw new Error(`No framebuffer for writable DataLayer "${this.name}".`);
+		if (!framebuffer) throw new Error(`No framebuffer for writable GPULayer "${this.name}".`);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
@@ -856,12 +876,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	// This is used internally.
 	_setCurrentStateTexture(texture: WebGLTexture) {
 		if (this.writable) {
-			throw new Error(`Can't call DataLayer._setCurrentStateTexture on writable texture "${this.name}".`);
+			throw new Error(`Can't call GPULayer._setCurrentStateTexture on writable texture "${this.name}".`);
 		}
 		this.buffers[this.bufferIndex].texture = texture;
 	}
 
-	private static initArrayForInternalType(internalType: DataLayerType, length: number) {
+	private static initArrayForInternalType(internalType: GPULayerType, length: number) {
 		switch (internalType) {
 			case HALF_FLOAT:
 				return new Uint16Array(length);
@@ -884,14 +904,14 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		}
 	}
 
-	private validateDataArray(array: DataLayerArray | number[]) {
+	private validateDataArray(array: GPULayerArray | number[]) {
 		const { numComponents, glNumChannels, type, internalType, width, height } = this;
 		const length = this._length;
 
 		// Check that data is correct length (user error).
 		if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
 			if (!length || (length &&  array.length !== length * numComponents)) { // Of the correct length for 1D array.
-				throw new Error(`Invalid data length: ${array.length} for DataLayer "${this.name}" of ${length ? `length ${length} and ` : ''}dimensions: [${width}, ${height}] and numComponents: ${numComponents}.`);
+				throw new Error(`Invalid data length: ${array.length} for GPULayer "${this.name}" of ${length ? `length ${length} and ` : ''}dimensions: [${width}, ${height}] and numComponents: ${numComponents}.`);
 			}
 		}
 
@@ -924,7 +944,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				shouldTypeCast = internalType !== INT;
 				break;
 			default:
-				throw new Error(`Invalid array type: ${array.constructor.name} for DataLayer "${this.name}", please use one of [${validArrayTypes.map(constructor => constructor.name).join(', ')}].`);
+				throw new Error(`Invalid array type: ${array.constructor.name} for GPULayer "${this.name}", please use one of [${validArrayTypes.map(constructor => constructor.name).join(', ')}].`);
 		}
 
 		const imageSize = width * height * glNumChannels;
@@ -935,9 +955,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		// We have to handle the case of Float16 specially by converting data to Uint16Array.
 		const handleFloat16 = internalType === HALF_FLOAT;
 		
-		let validatedArray = array as DataLayerArray;
+		let validatedArray = array as GPULayerArray;
 		if (shouldTypeCast || incorrectSize || handleFloat16) {
-			validatedArray = DataLayer.initArrayForInternalType(internalType, imageSize);
+			validatedArray = GPULayer.initArrayForInternalType(internalType, imageSize);
 			// Fill new data array with old data.
 			const view = handleFloat16 ? new DataView(validatedArray.buffer) : null;
 			for (let i = 0, _len = array.length / numComponents; i < _len; i++) {
@@ -957,12 +977,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	private initBuffers(
-		array?: DataLayerArray | number[],
+		array?: GPULayerArray | number[],
 	) {
 		const {
 			name,
 			numBuffers,
-			glcompute,
+			composer,
 			glInternalFormat,
 			glFormat,
 			glType,
@@ -973,7 +993,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			width,
 			height,
 		} = this;
-		const { gl, _errorCallback } = glcompute;
+		const { gl, _errorCallback } = composer;
 
 		const validatedArray = array ? this.validateDataArray(array) : undefined;
 
@@ -981,7 +1001,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		for (let i = 0; i < numBuffers; i++) {
 			const texture = gl.createTexture();
 			if (!texture) {
-				_errorCallback(`Could not init texture for DataLayer "${name}": ${gl.getError()}.`);
+				_errorCallback(`Could not init texture for GPULayer "${name}": ${gl.getError()}.`);
 				return;
 			}
 			gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -995,7 +1015,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 			gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, validatedArray ? validatedArray : null);
 			
-			const buffer: DataLayerBuffer = {
+			const buffer: GPULayerBuffer = {
 				texture,
 			};
 
@@ -1003,7 +1023,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				// Init a framebuffer for this texture so we can write to it.
 				const framebuffer = gl.createFramebuffer();
 				if (!framebuffer) {
-					_errorCallback(`Could not init framebuffer for DataLayer "${name}": ${gl.getError()}.`);
+					_errorCallback(`Could not init framebuffer for GPULayer "${name}": ${gl.getError()}.`);
 					return;
 				}
 				gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -1012,7 +1032,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 				const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 				if(status != gl.FRAMEBUFFER_COMPLETE){
-					_errorCallback(`Invalid status for framebuffer for DataLayer "${name}": ${status}.`);
+					_errorCallback(`Invalid status for framebuffer for GPULayer "${name}": ${status}.`);
 				}
 
 				// Add framebuffer.
@@ -1029,7 +1049,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 	getStateAtIndex(index: number) {
 		if (index < 0 || index >= this.numBuffers) {
-			throw new Error(`Invalid buffer index: ${index} for DataLayer "${this.name}" with ${this.numBuffers} buffer${this.numBuffers > 1 ? 's' : ''}.`)
+			throw new Error(`Invalid buffer index: ${index} for GPULayer "${this.name}" with ${this.numBuffers} buffer${this.numBuffers > 1 ? 's' : ''}.`)
 		}
 		if (this.textureOverrides && this.textureOverrides[index]) return this.textureOverrides[index]!;
 		return this.buffers[index].texture;
@@ -1041,7 +1061,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 	get lastState() {
 		if (this.numBuffers === 1) {
-			throw new Error(`Cannot access lastState on DataLayer "${this.name}" with only one buffer.`);
+			throw new Error(`Cannot access lastState on GPULayer "${this.name}" with only one buffer.`);
 		}
 		return this.getStateAtIndex((this.bufferIndex - 1 + this.numBuffers) % this.numBuffers);
 	}
@@ -1069,17 +1089,17 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 	// This is used internally.
 	_bindOutputBuffer() {
-		const { gl } = this.glcompute;
+		const { gl } = this.composer;
 		const { framebuffer } = this.buffers[this.bufferIndex];
 		if (!framebuffer) {
-			throw new Error(`DataLayer "${this.name}" is not writable.`);
+			throw new Error(`GPULayer "${this.name}" is not writable.`);
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
 
-	setFromArray(array: DataLayerArray | number[], applyToAllBuffers = false) {
-		const { glcompute, glInternalFormat, glFormat, glType, numBuffers, width, height, bufferIndex } = this;
-		const { gl } = glcompute;
+	setFromArray(array: GPULayerArray | number[], applyToAllBuffers = false) {
+		const { composer, glInternalFormat, glFormat, glType, numBuffers, width, height, bufferIndex } = this;
+		const { gl } = composer;
 		const validatedArray = this.validateDataArray(array);
 		// TODO: check that this is working.
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
@@ -1095,12 +1115,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 	resize(
 		dimensions: number | [number, number],
-		array?: DataLayerArray | number[],
+		array?: GPULayerArray | number[],
 	) {
-		const { name, glcompute } = this;
-		const { verboseLogging } = glcompute;
-		if (verboseLogging) console.log(`Resizing DataLayer "${name}" to ${JSON.stringify(dimensions)}.`);
-		const { length, width, height } = DataLayer.calcSize(dimensions, name);
+		const { name, composer } = this;
+		const { verboseLogging } = composer;
+		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
+		const { length, width, height } = GPULayer.calcSize(dimensions, name, verboseLogging);
 		this._length = length;
 		this._width = width;
 		this._height = height;
@@ -1115,15 +1135,15 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	set clearValue(clearValue: number | number[]) {
 		const { numComponents, type } = this;
 		if (!isValidClearValue(clearValue, numComponents, type)) {
-			throw new Error(`Invalid clearValue: ${JSON.stringify(clearValue)} for DataLayer "${this.name}", expected ${type} or array of ${type} of length ${numComponents}.`);
+			throw new Error(`Invalid clearValue: ${JSON.stringify(clearValue)} for GPULayer "${this.name}", expected ${type} or array of ${type} of length ${numComponents}.`);
 		}
 		this._clearValue = clearValue;
 	}
 
 	clear(applyToAllBuffers = false) {
-		const { name, glcompute, clearValue, numBuffers, bufferIndex, type } = this;
-		const { verboseLogging } = glcompute;
-		if (verboseLogging) console.log(`Clearing DataLayer "${name}".`);
+		const { name, composer, clearValue, numBuffers, bufferIndex, type } = this;
+		const { verboseLogging } = composer;
+		if (verboseLogging) console.log(`Clearing GPULayer "${name}".`);
 
 		const value: number[] = [];
 		if (isNumber(clearValue)) {
@@ -1138,11 +1158,11 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
 		if (this.writable) {
-			const program = glcompute._setValueProgramForType(type);
+			const program = composer._setValueProgramForType(type);
 			program.setUniform('u_value', value as [number, number, number, number]);
 			for (let i = startIndex; i < endIndex; i++) {
 				// Write clear value to buffers.
-				glcompute.step({
+				composer.step({
 					program,
 					output: this,
 				});
@@ -1153,9 +1173,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				width, height, glNumChannels, internalType,
 				glInternalFormat, glFormat, glType,
 			} = this;
-			const { gl } = glcompute;
+			const { gl } = composer;
 			const fillLength = this._length ? this._length : width * height;
-			const array = DataLayer.initArrayForInternalType(internalType, width * height * glNumChannels);
+			const array = GPULayer.initArrayForInternalType(internalType, width * height * glNumChannels);
 			const float16View = internalType === HALF_FLOAT ? new DataView(array.buffer) : null;
 			for (let j = 0; j < fillLength; j++) {
 				for (let k = 0; k < glNumChannels; k++) {
@@ -1188,14 +1208,14 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 	get length() {
 		if (!this._length) {
-			throw new Error(`Cannot access length on 2D DataLayer "${this.name}".`);
+			throw new Error(`Cannot access length on 2D GPULayer "${this.name}".`);
 		}
 		return this._length;
 	}
 
 	private destroyBuffers() {
-		const { glcompute, buffers } = this;
-		const { gl } = glcompute;
+		const { composer, buffers } = this;
+		const { gl } = composer;
 		buffers.forEach(buffer => {
 			const { framebuffer, texture } = buffer;
 			gl.deleteTexture(texture);
@@ -1208,23 +1228,23 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		});
 		buffers.length = 0;
 
-		// These are technically owned by another DataLayer,
+		// These are technically owned by another GPULayer,
 		// so we are not responsible for deleting them from gl context.
 		delete this.textureOverrides;
 	}
 
 	dispose() {
-		const { name, glcompute } = this;
-		const { verboseLogging } = glcompute;
-		if (verboseLogging) console.log(`Deallocating DataLayer "${name}".`);
+		const { name, composer } = this;
+		const { verboseLogging } = composer;
+		if (verboseLogging) console.log(`Deallocating GPULayer "${name}".`);
 	
 		this.destroyBuffers();
 		// @ts-ignore
-		delete this.glcompute;
+		delete this.composer;
 	}
 
 	clone(name?: string) {
 		// Make a deep copy.
-		return this.glcompute._cloneDataLayer(this, name);
+		return this.composer._cloneGPULayer(this, name);
 	}
 }

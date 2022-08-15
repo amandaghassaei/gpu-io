@@ -1,13 +1,12 @@
 import { saveAs } from 'file-saver';
 // @ts-ignore
 import { changeDpiBlob } from 'changedpi';
-import { DataLayer } from './DataLayer';
+import { GPULayer } from './GPULayer';
 import {
-	DataLayerArray,
-	DataLayerFilter,
-	DataLayerNumComponents,
-	DataLayerType,
-	DataLayerWrap,
+	GPULayerArray,
+	GPULayerFilter,
+	GPULayerType,
+	GPULayerWrap,
 	FLOAT,
 	HALF_FLOAT,
 	UNSIGNED_BYTE,
@@ -16,8 +15,6 @@ import {
 	SHORT,
 	UNSIGNED_INT,
 	INT,
-	UniformType,
-	UniformValue,
 	GLSLVersion,
 	GLSL1,
 	GLSL3,
@@ -57,7 +54,6 @@ import {
 	isWebGL2,
 	isPowerOf2,
 	initSequentialFloatArray,
-	inDevMode,
 } from './utils';
 import { getFloat16 } from '@petamoriken/float16';
 import {
@@ -70,7 +66,7 @@ import {
 } from './Checks';
 const defaultVertexShaderSource = require('./glsl/vert/DefaultVertShader.glsl');
 
-export class WebGLCompute {
+export class GPUComposer {
 	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	readonly glslVersion!: GLSLVersion;
 	// These width and height are the current canvas at full res.
@@ -158,13 +154,13 @@ export class WebGLCompute {
 			src: require('./glsl/vert/SegmentVertShader.glsl'),
 		},
 		[DATA_LAYER_POINTS_PROGRAM_NAME]: {
-			src: require('./glsl/vert/DataLayerPointsVertShader.glsl'),
+			src: require('./glsl/vert/GPULayerPointsVertShader.glsl'),
 		},
 		[DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
-			src: require('./glsl/vert/DataLayerVectorFieldVertShader.glsl'),
+			src: require('./glsl/vert/GPULayerVectorFieldVertShader.glsl'),
 		},
 		[DATA_LAYER_LINES_PROGRAM_NAME]: {
-			src: require('./glsl/vert/DataLayerLinesVertShader.glsl'),
+			src: require('./glsl/vert/GPULayerLinesVertShader.glsl'),
 		},
 	};
 
@@ -178,7 +174,7 @@ export class WebGLCompute {
 		},
 		errorCallback?: ErrorCallback,
 	) {
-		return new WebGLCompute(
+		return new GPUComposer(
 			{
 				canvas: renderer.domElement,
 				context: renderer.getContext(),
@@ -210,12 +206,12 @@ export class WebGLCompute {
 		const validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to WebGLCompute.constructor.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key "${key}" passed to GPUComposer.constructor.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 
 		if (!params.canvas) {
-			throw new Error(`Must init WebGLCompute with a canvas.`);
+			throw new Error(`Must init GPUComposer with a "canvas" parameter.`);
 		}
 
 		if (params.verboseLogging !== undefined) this.verboseLogging = params.verboseLogging;
@@ -253,9 +249,9 @@ export class WebGLCompute {
 			}
 		}
 		if (isWebGL2(gl)) {
-			if (inDevMode()) console.log('Using WebGL 2.0 context.');
+			if (this.verboseLogging) console.log('Using WebGL 2.0 context.');
 		} else {
-			if (inDevMode()) console.log('Using WebGL 1.0 context.');
+			if (this.verboseLogging) console.log('Using WebGL 1.0 context.');
 		}
 		this.gl = gl;
 		this.renderer = renderer;
@@ -291,7 +287,7 @@ export class WebGLCompute {
 
 		// Log number of textures available.
 		this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
-		if (inDevMode()) console.log(`${this.maxNumTextures} textures max.`);
+		if (this.verboseLogging) console.log(`${this.maxNumTextures} textures max.`);
 	}
 
 	private preprocessShader(shaderSource: string) {
@@ -345,7 +341,7 @@ export class WebGLCompute {
 		return shaderSource;
 	}
 
-	private glslKeyForType(type: DataLayerType) {
+	private glslKeyForType(type: GPULayerType) {
 		if (this.glslVersion === GLSL1) return FLOAT;
 		switch (type) {
 			case HALF_FLOAT:
@@ -360,15 +356,15 @@ export class WebGLCompute {
 			case INT:
 				return INT;
 			default:
-				throw new Error(`Invalid type: ${type} passed to WebGLCompute.copyProgramForType.`);
+				throw new Error(`Invalid type: ${type} passed to GPUComposer.copyProgramForType.`);
 		}
 	}
 
 	// Used internally.
-	_setValueProgramForType(type: DataLayerType) {
+	_setValueProgramForType(type: GPULayerType) {
 		const key = this.glslKeyForType(type);
 		if (this.setValuePrograms[key] === undefined) {
-			const program = this.initProgram({
+			const program = new GPUProgram(this, {
 				name: `setValue-${key}`,
 				fragmentShader: this._preprocessFragShader(this.setValuePrograms.src),
 				uniforms: [
@@ -387,10 +383,10 @@ export class WebGLCompute {
 		return this.setValuePrograms[key]!;
 	}
 
-	private copyProgramForType(type: DataLayerType) {
+	private copyProgramForType(type: GPULayerType) {
 		const key = this.glslKeyForType(type);
 		if (this.copyPrograms[key] === undefined) {
-			const program = this.initProgram({
+			const program = new GPUProgram(this, {
 				name: `copy-${key}`,
 				fragmentShader: this._preprocessFragShader(this.copyPrograms.src),
 				uniforms: [
@@ -411,7 +407,7 @@ export class WebGLCompute {
 
 	private get wrappedLineColorProgram() {
 		if (this._wrappedLineColorProgram === undefined) {
-			const program = this.initProgram({
+			const program = new GPUProgram(this, {
 				name: 'wrappedLineColor',
 				fragmentShader: this._preprocessFragShader(require('./glsl/frag/WrappedLineColorFragShader.glsl')),
 			});
@@ -420,10 +416,10 @@ export class WebGLCompute {
 		return this._wrappedLineColorProgram;
 	}
 
-	private vectorMagnitudeProgramForType(type: DataLayerType) {
+	private vectorMagnitudeProgramForType(type: GPULayerType) {
 		const key = this.glslKeyForType(type);
 		if (this.vectorMagnitudePrograms[key] === undefined) {
-			const program = this.initProgram({
+			const program = new GPUProgram(this, {
 				name: `vectorMagnitude-${key}`,
 				fragmentShader: this._preprocessFragShader(this.vectorMagnitudePrograms.src),
 				defines: {
@@ -486,92 +482,43 @@ export class WebGLCompute {
 		return buffer;
 	}
 
-	initDataLayer(
-		params: {
-			name: string,
-			dimensions: number | [number, number],
-			type: DataLayerType,
-			numComponents: DataLayerNumComponents,
-			array?: DataLayerArray | number[],
-			filter?: DataLayerFilter,
-			wrapS?: DataLayerWrap,
-			wrapT?: DataLayerWrap,
-			writable?: boolean,
-			numBuffers?: number,
-			clearValue?: number | number[],
-		},
-	) {
-		// Check params.
-		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'array', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue'];
-		Object.keys(params).forEach(key => {
-			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initDataLayer with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
-			}
-		});
-		return new DataLayer(this, params);
-	};
-
-	initProgram(
-		params: {
-			name: string,
-			fragmentShader: string | string[],
-			uniforms?: {
-				name: string,
-				value: UniformValue,
-				type: UniformType,
-			}[],
-			defines?: {
-				[key : string]: string,
-			},
-		},
-	) {
-		// Check params.
-		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
-		Object.keys(params).forEach(key => {
-			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initProgram with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
-			}
-		});
-		return new GPUProgram(this, params);
-	};
-
-	// Used internally, see DataLayer.clone() for public API.
-	_cloneDataLayer(dataLayer: DataLayer, name?: string) {
+	// Used internally, see GPULayer.clone() for public API.
+	_cloneGPULayer(gpuLayer: GPULayer, name?: string) {
 		let dimensions: number | [number, number] = 0;
 		try {
-			dimensions = dataLayer.length;
+			dimensions = gpuLayer.length;
 		} catch {
-			dimensions = [dataLayer.width, dataLayer.height];
+			dimensions = [gpuLayer.width, gpuLayer.height];
 		}
 
 		// If read only, get state by reading to GPU.
-		const array = dataLayer.writable ? undefined : this.getValues(dataLayer);
+		const array = gpuLayer.writable ? undefined : this.getValues(gpuLayer);
 
-		const clone = this.initDataLayer({
-			name: name || `${dataLayer.name}-clone`,
+		const clone = new GPULayer(this, {
+			name: name || `${gpuLayer.name}-clone`,
 			dimensions,
-			type: dataLayer.type,
-			numComponents: dataLayer.numComponents,
+			type: gpuLayer.type,
+			numComponents: gpuLayer.numComponents,
 			array,
-			filter: dataLayer.filter,
-			wrapS: dataLayer.wrapS,
-			wrapT: dataLayer.wrapT,
-			writable: dataLayer.writable,
-			numBuffers: dataLayer.numBuffers,
+			filter: gpuLayer.filter,
+			wrapS: gpuLayer.wrapS,
+			wrapT: gpuLayer.wrapT,
+			writable: gpuLayer.writable,
+			numBuffers: gpuLayer.numBuffers,
 		});
 
 		// If writable, copy current state with a draw call.
-		if (dataLayer.writable) {
-			for (let i = 0; i < dataLayer.numBuffers - 1; i++) {
+		if (gpuLayer.writable) {
+			for (let i = 0; i < gpuLayer.numBuffers - 1; i++) {
 				this.step({
-					program: this.copyProgramForType(dataLayer.type),
-					input: dataLayer.getStateAtIndex((dataLayer.bufferIndex + i + 1) % dataLayer.numBuffers),
+					program: this.copyProgramForType(gpuLayer.type),
+					input: gpuLayer.getStateAtIndex((gpuLayer.bufferIndex + i + 1) % gpuLayer.numBuffers),
 					output: clone,
 				});
 			}
 			this.step({
-				program: this.copyProgramForType(dataLayer.type),
-				input: dataLayer.currentState,
+				program: this.copyProgramForType(gpuLayer.type),
+				input: gpuLayer.currentState,
 				output: clone,
 			});
 		}
@@ -582,9 +529,9 @@ export class WebGLCompute {
 		params: {
 			name: string,
 			url: string,
-			filter?: DataLayerFilter,
-			wrapS?: DataLayerWrap,
-			wrapT?: DataLayerWrap,
+			filter?: GPULayerFilter,
+			wrapS?: GPULayerWrap,
+			wrapT?: GPULayerWrap,
 			format?: TextureFormat,
 			type?: TextureType,
 			onLoad?: (texture: WebGLTexture) => void,
@@ -594,43 +541,43 @@ export class WebGLCompute {
 		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to WebGLCompute.initTexture with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key "${key}" passed to GPUComposer.initTexture with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
 		const { url, name } = params;
 		if (!isString(url)) {
-			throw new Error(`Expected WebGLCompute.initTexture params to have url of type string, got ${url} of type ${typeof url}.`)
+			throw new Error(`Expected GPUComposer.initTexture params to have url of type string, got ${url} of type ${typeof url}.`)
 		}
 		if (!isString(name)) {
-			throw new Error(`Expected WebGLCompute.initTexture params to have name of type string, got ${name} of type ${typeof name}.`)
+			throw new Error(`Expected GPUComposer.initTexture params to have name of type string, got ${name} of type ${typeof name}.`)
 		}
 
 		// Get filter type, default to nearest.
 		const filter = params.filter !== undefined ? params.filter : NEAREST;
 		if (!isValidFilter(filter)) {
-			throw new Error(`Invalid filter: ${filter} for DataLayer "${name}", must be ${validFilters.join(', ')}.`);
+			throw new Error(`Invalid filter: ${filter} for GPULayer "${name}", must be ${validFilters.join(', ')}.`);
 		}
 
 		// Get wrap types, default to clamp to edge.
 		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
 		if (!isValidWrap(wrapS)) {
-			throw new Error(`Invalid wrapS: ${wrapS} for DataLayer "${name}", must be ${validWraps.join(', ')}.`);
+			throw new Error(`Invalid wrapS: ${wrapS} for GPULayer "${name}", must be ${validWraps.join(', ')}.`);
 		}
 		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
 		if (!isValidWrap(wrapT)) {
-			throw new Error(`Invalid wrapT: ${wrapT} for DataLayer "${name}", must be ${validWraps.join(', ')}.`);
+			throw new Error(`Invalid wrapT: ${wrapT} for GPULayer "${name}", must be ${validWraps.join(', ')}.`);
 		}
 
 		// Get image format type, default to rgba.
 		const format = params.format !== undefined ? params.format : RGBA;
 		if (!isValidTextureFormat(format)) {
-			throw new Error(`Invalid format: ${format} for DataLayer "${name}", must be ${validTextureFormats.join(', ')}.`);
+			throw new Error(`Invalid format: ${format} for GPULayer "${name}", must be ${validTextureFormats.join(', ')}.`);
 		}
 
 		// Get image data type, default to unsigned byte.
 		const type = params.type !== undefined ? params.type : UNSIGNED_BYTE;
 		if (!isValidTextureType(type)) {
-			throw new Error(`Invalid type: ${type} for DataLayer "${name}", must be ${validTextureTypes.join(', ')}.`);
+			throw new Error(`Invalid type: ${type} for GPULayer "${name}", must be ${validTextureTypes.join(', ')}.`);
 		}
 
 		const { gl, _errorCallback } = this;
@@ -706,8 +653,8 @@ export class WebGLCompute {
 	private drawSetup(
 		program: WebGLProgram,
 		fullscreenRender: boolean,
-		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-		output?: DataLayer,
+		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+		output?: GPULayer,
 	) {
 		const { gl } = this;
 		// Check if we are in an error state.
@@ -723,12 +670,12 @@ export class WebGLCompute {
 		if (input) {
 			if (input.constructor === WebGLTexture) {
 				inputTextures.push(input as WebGLTexture);
-			} else if (input.constructor === DataLayer) {
-				inputTextures.push((input as DataLayer).currentState);
+			} else if (input.constructor === GPULayer) {
+				inputTextures.push((input as GPULayer).currentState);
 			} else {
-				for (let i = 0; i < (input as (DataLayer | WebGLTexture)[]).length; i++) {
-					const layer = (input as (DataLayer | WebGLTexture)[])[i];
-					inputTextures.push((layer as DataLayer).currentState ? (layer as DataLayer).currentState : layer as WebGLTexture)
+				for (let i = 0; i < (input as (GPULayer | WebGLTexture)[]).length; i++) {
+					const layer = (input as (GPULayer | WebGLTexture)[])[i];
+					inputTextures.push((layer as GPULayer).currentState ? (layer as GPULayer).currentState : layer as WebGLTexture)
 				}
 			}
 		}
@@ -756,30 +703,30 @@ export class WebGLCompute {
 	}
 
 	private addLayerToInputs(
-		layer: DataLayer,
-		input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
+		layer: GPULayer,
+		input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
 	) {
 		// Add layer to end of input if needed.
 		let _inputLayers = input;
 		if (isArray(_inputLayers)) {
-			const index = (_inputLayers as (DataLayer | WebGLTexture)[]).indexOf(layer);
+			const index = (_inputLayers as (GPULayer | WebGLTexture)[]).indexOf(layer);
 			if (index < 0) {
-				(_inputLayers as (DataLayer | WebGLTexture)[]).push(layer);
+				(_inputLayers as (GPULayer | WebGLTexture)[]).push(layer);
 			} 
 		} else {
 			if (_inputLayers !== layer) {
 				const previous = _inputLayers;
 				_inputLayers = [];
-				if (previous) (_inputLayers as (DataLayer | WebGLTexture)[]).push(previous);
-				(_inputLayers as (DataLayer | WebGLTexture)[]).push(layer);
+				if (previous) (_inputLayers as (GPULayer | WebGLTexture)[]).push(previous);
+				(_inputLayers as (GPULayer | WebGLTexture)[]).push(layer);
 			} else {
 				_inputLayers = [_inputLayers];
 			}
 		}
-		return _inputLayers as (DataLayer | WebGLTexture)[];
+		return _inputLayers as (GPULayer | WebGLTexture)[];
 	}
 
-	private passThroughLayerDataFromInputToOutput(state: DataLayer) {
+	private passThroughLayerDataFromInputToOutput(state: GPULayer) {
 		// TODO: figure out the fastest way to copy a texture.
 		const copyProgram = this.copyProgramForType(state.internalType);
 		this.step({
@@ -791,8 +738,8 @@ export class WebGLCompute {
 
 	private setOutputLayer(
 		fullscreenRender: boolean,
-		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-		output?: DataLayer, // Undefined renders to screen.
+		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+		output?: GPULayer, // Undefined renders to screen.
 	) {
 		const { gl } = this;
 
@@ -806,8 +753,8 @@ export class WebGLCompute {
 		}
 
 		// Check if output is same as one of input layers.
-		// TODO: do a better job of checking if input is a texture of same DataLayer as output.
-		if (input && ((input === output) || (isArray(input) && (input as (DataLayer | WebGLTexture)[]).indexOf(output) > -1))) {
+		// TODO: do a better job of checking if input is a texture of same GPULayer as output.
+		if (input && ((input === output) || (isArray(input) && (input as (GPULayer | WebGLTexture)[]).indexOf(output) > -1))) {
 			if (output.numBuffers === 1) {
 				throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
 			}
@@ -869,8 +816,8 @@ export class WebGLCompute {
 	step(
 		params: {
 			program: GPUProgram,
-			input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer, // Undefined renders to screen.
+			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer, // Undefined renders to screen.
 			shouldBlendAlpha?: boolean,
 		},
 	) {
@@ -903,8 +850,8 @@ export class WebGLCompute {
 	stepBoundary(
 		params: {
 			program: GPUProgram,
-			input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer, // Undefined renders to screen.
+			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer, // Undefined renders to screen.
 			singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
 			shouldBlendAlpha?: boolean,
 		},
@@ -961,8 +908,8 @@ export class WebGLCompute {
 	stepNonBoundary(
 		params: {
 			program: GPUProgram,
-			input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer, // Undefined renders to screen.
+			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer, // Undefined renders to screen.
 			shouldBlendAlpha?: boolean,
 		},
 	) {
@@ -1000,8 +947,8 @@ export class WebGLCompute {
 			program: GPUProgram,
 			position: [number, number], // Position is in units of pixels.
 			radius: number, // Radius is in units of pixels.
-			input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer, // Undefined renders to screen.
+			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer, // Undefined renders to screen.
 			numSegments?: number,
 			shouldBlendAlpha?: boolean,
 		},
@@ -1024,7 +971,7 @@ export class WebGLCompute {
 		program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
 		const numSegments = params.numSegments ? params.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 3) {
-			throw new Error(`numSegments for WebGLCompute.stepCircle must be greater than 2, got ${numSegments}.`);
+			throw new Error(`numSegments for GPUComposer.stepCircle must be greater than 2, got ${numSegments}.`);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
 		this.setPositionAttribute(glProgram, program.name);
@@ -1042,8 +989,8 @@ export class WebGLCompute {
 			position1: [number, number], // Position is in units of pixels.
 			position2: [number, number], // Position is in units of pixels.
 			thickness: number, // Thickness is in units of pixels.
-			input?:  (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer, // Undefined renders to screen.
+			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer, // Undefined renders to screen.
 			endCaps?: boolean,
 			numCapSegments?: number,
 			shouldBlendAlpha?: boolean,
@@ -1079,7 +1026,7 @@ export class WebGLCompute {
 		const numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (params.endCaps) {
 			if (numSegments < 6 || numSegments % 6 !== 0) {
-				throw new Error(`numSegments for WebGLCompute.stepSegment must be divisible by 6, got ${numSegments}.`);
+				throw new Error(`numSegments for GPUComposer.stepSegment must be divisible by 6, got ${numSegments}.`);
 			}
 			// Have to subtract a small offset from length.
 			program._setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
@@ -1108,8 +1055,8 @@ export class WebGLCompute {
 			program: GPUProgram,
 			positions: [number, number][],
 			thickness: number, // Thickness of line is in units of pixels.
-			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer, // Undefined renders to screen.
+			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer, // Undefined renders to screen.
 			closeLoop?: boolean,
 			includeUVs?: boolean,
 			includeNormals?: boolean,
@@ -1302,8 +1249,8 @@ export class WebGLCompute {
 			positions: Float32Array,
 			normals?: Float32Array,
 			uvs?: Float32Array,
-			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer, // Undefined renders to screen.
+			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer, // Undefined renders to screen.
 			count?: number,
 			shouldBlendAlpha?: boolean,
 		},
@@ -1356,8 +1303,8 @@ export class WebGLCompute {
 		indices?: Uint16Array | Uint32Array | Int16Array | Int32Array,
 		normals?: Float32Array,
 		uvs?: Float32Array,
-		input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-		output?: DataLayer, // Undefined renders to screen.
+		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+		output?: GPULayer, // Undefined renders to screen.
 		count?: number,
 		closeLoop?: boolean,
 		shouldBlendAlpha?: boolean,
@@ -1371,7 +1318,7 @@ export class WebGLCompute {
 		}
 		// Check that params are valid.
 		if (params.closeLoop && indices) {
-			throw new Error(`WebGLCompute.stepLines() can't be called with closeLoop == true and indices.`);
+			throw new Error(`GPUComposer.stepLines() can't be called with closeLoop == true and indices.`);
 		}
 		
 		const glProgram = (uvs ?
@@ -1427,10 +1374,10 @@ export class WebGLCompute {
 
 	drawLayerAsPoints(
 		params: {
-			positions: DataLayer, // Positions in units of pixels.
+			positions: GPULayer, // Positions in units of pixels.
 			program?: GPUProgram,
-			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer,
+			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer,
 			pointSize?: number,
 			count?: number,
 			color?: [number, number, number],
@@ -1449,12 +1396,12 @@ export class WebGLCompute {
 
 		// Check that numPoints is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
-			throw new Error(`WebGLCompute.drawPoints() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positions.name}" with ${positions.numComponents} components.`)
+			throw new Error(`GPUComposer.drawPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer "${positions.name}" with ${positions.numComponents} components.`)
 		}
 		const { length } = positions;
 		const count = params.count || length;
 		if (count > length) {
-			throw new Error(`Invalid count ${count} for position DataLayer of length ${length}.`);
+			throw new Error(`Invalid count ${count} for position GPULayer of length ${length}.`);
 		}
 
 		let program = params.program;
@@ -1463,7 +1410,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default of red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._dataLayerPointsProgram!;
+		const glProgram = program._GPULayerPointsProgram!;
 
 		// Add positions to end of input if needed.
 		const input = this.addLayerToInputs(positions, params.input);
@@ -1500,11 +1447,11 @@ export class WebGLCompute {
 
 	drawLayerAsLines(
 		params: {
-			positions: DataLayer,
+			positions: GPULayer,
 			indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
 			program?: GPUProgram,
-			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer,
+			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer,
 			count?: number,
 			color?: [number, number, number],
 			wrapX?: boolean,
@@ -1523,11 +1470,11 @@ export class WebGLCompute {
 
 		// Check that positions is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
-			throw new Error(`WebGLCompute.drawLayerAsLines() must be passed a position DataLayer with either 2 or 4 components, got position DataLayer "${positions.name}" with ${positions.numComponents} components.`)
+			throw new Error(`GPUComposer.drawLayerAsLines() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer "${positions.name}" with ${positions.numComponents} components.`)
 		}
 		// Check that params are valid.
 		if (params.closeLoop && params.indices) {
-			throw new Error(`WebGLCompute.drawLayerAsLines() can't be called with closeLoop == true and indices.`);
+			throw new Error(`GPUComposer.drawLayerAsLines() can't be called with closeLoop == true and indices.`);
 		}
 
 		let program = params.program;
@@ -1536,7 +1483,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._dataLayerLinesProgram!;
+		const glProgram = program._GPULayerLinesProgram!;
 
 		// Add positionLayer to end of input if needed.
 		const input = this.addLayerToInputs(positions, params.input);
@@ -1566,7 +1513,7 @@ export class WebGLCompute {
 				for (let i = 0; i < count; i++) {
 					floatArray[i] = indices[i];
 				}
-				console.warn(`Converting indices array of type ${indices.constructor} to Float32Array in WebGLCompute.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required.`);
+				console.warn(`Converting indices array of type ${indices.constructor} to Float32Array in GPUComposer.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required.`);
 			} else {
 				floatArray = indices as Float32Array;
 			}
@@ -1594,10 +1541,10 @@ export class WebGLCompute {
 
 	drawLayerAsVectorField(
 		params: {
-			data: DataLayer,
+			data: GPULayer,
 			program?: GPUProgram,
-			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer,
+			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer,
 			vectorSpacing?: number,
 			vectorScale?: number,
 			color?: [number, number, number],
@@ -1614,12 +1561,12 @@ export class WebGLCompute {
 
 		// Check that field is valid.
 		if (data.numComponents !== 2) {
-			throw new Error(`WebGLCompute.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${data.name}" with ${data.numComponents} components.`)
+			throw new Error(`GPUComposer.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${data.name}" with ${data.numComponents} components.`)
 		}
 		// Check aspect ratio.
 		// const dimensions = [vectorLayer.width, vectorLayer.height];
 		// if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.01) {
-		// 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector DataLayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
+		// 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector GPULayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
 		// }
 
 		let program = params.program;
@@ -1628,7 +1575,7 @@ export class WebGLCompute {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._dataLayerVectorFieldProgram!;
+		const glProgram = program._GPULayerVectorFieldProgram!;
 
 		// Add data to end of input if needed.
 		const input = this.addLayerToInputs(data, params.input);
@@ -1662,9 +1609,9 @@ export class WebGLCompute {
 
 	drawLayerMagnitude(
 		params: {
-			data: DataLayer,
-			input?: (DataLayer | WebGLTexture)[] | DataLayer | WebGLTexture,
-			output?: DataLayer,
+			data: GPULayer,
+			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			output?: GPULayer,
 			scale?: number,
 			color?: [number, number, number],
 			shouldBlendAlpha?: boolean,
@@ -1705,14 +1652,14 @@ export class WebGLCompute {
 		gl.disable(gl.BLEND);
 	}
 
-	getValues(dataLayer: DataLayer) {
+	getValues(GPULayer: GPULayer) {
 		const { gl, glslVersion } = this;
 
-		// In case dataLayer was not the last output written to.
-		dataLayer._bindOutputBuffer();
+		// In case GPULayer was not the last output written to.
+		GPULayer._bindOutputBuffer();
 
-		const { width, height } = dataLayer;
-		let { glNumChannels, glType, glFormat, internalType } = dataLayer;
+		const { width, height } = GPULayer;
+		let { glNumChannels, glType, glFormat, internalType } = GPULayer;
 		let values;
 		switch (internalType) {
 			case HALF_FLOAT:
@@ -1801,17 +1748,17 @@ export class WebGLCompute {
 		if (this.readyToRead()) {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
 			gl.readPixels(0, 0, width, height, glFormat, glType, values);
-			const { numComponents, type } = dataLayer;
-			const OUTPUT_LENGTH = (dataLayer._length ? dataLayer._length : width * height) * numComponents;
+			const { numComponents, type } = GPULayer;
+			const OUTPUT_LENGTH = (GPULayer._length ? GPULayer._length : width * height) * numComponents;
 
 			// Convert uint16 to float32 if needed.
 			const handleFloat16Conversion = internalType === HALF_FLOAT && values.constructor === Uint16Array;
 			// @ts-ignore
 			const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
 
-			let output: DataLayerArray = values;
+			let output: GPULayerArray = values;
 			
-			// We may use a different internal type than the assigned type of the DataLayer.
+			// We may use a different internal type than the assigned type of the GPULayer.
 			if (internalType !== type) {
 				switch (type) {
 					case HALF_FLOAT:
@@ -1871,9 +1818,9 @@ export class WebGLCompute {
 		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
 	};
 
-	savePNG(dataLayer: DataLayer, filename = dataLayer.name, dpi?: number, callback = saveAs) {
-		const values = this.getValues(dataLayer);
-		const { width, height } = dataLayer;
+	savePNG(GPULayer: GPULayer, filename = GPULayer.name, dpi?: number, callback = saveAs) {
+		const values = this.getValues(GPULayer);
+		const { width, height } = GPULayer;
 
 		const canvas = document.createElement('canvas');
 		canvas.width = width;
@@ -1882,16 +1829,16 @@ export class WebGLCompute {
 		const imageData = context.getImageData(0, 0, width, height);
 		const buffer = imageData.data;
 		// TODO: this isn't working for UNSIGNED_BYTE types?
-		const isFloat = dataLayer.type === FLOAT || dataLayer.type === HALF_FLOAT;
+		const isFloat = GPULayer.type === FLOAT || GPULayer.type === HALF_FLOAT;
 		// Have to flip the y axis since PNGs are written top to bottom.
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				const index = y * width + x;
 				const indexFlipped = (height - 1 - y) * width + x;
-				for (let i = 0; i < dataLayer.numComponents; i++) {
-					buffer[4 * indexFlipped + i] = values[dataLayer.numComponents * index + i] * (isFloat ? 255 : 1);
+				for (let i = 0; i < GPULayer.numComponents; i++) {
+					buffer[4 * indexFlipped + i] = values[GPULayer.numComponents * index + i] * (isFloat ? 255 : 1);
 				}
-				if (dataLayer.numComponents < 4) {
+				if (GPULayer.numComponents < 4) {
 					buffer[4 * indexFlipped + 3] = 255; // Set alpha channel to 255.
 				}
 			}
@@ -1914,23 +1861,23 @@ export class WebGLCompute {
 		}, 'image/png');
 	}
 
-	attachDataLayerToThreeTexture(dataLayer: DataLayer, texture: Texture) {
+	attachGPULayerToThreeTexture(GPULayer: GPULayer, texture: Texture) {
 		if (!this.renderer) {
-			throw new Error('WebGLCompute was not inited with a renderer.');
+			throw new Error('GPUComposer was not inited with a renderer.');
 		}
 		// Link webgl texture to threejs object.
 		// This is not officially supported.
-		if (dataLayer.numBuffers > 1) {
-			throw new Error(`DataLayer "${dataLayer.name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a DataLayer with one buffer.`);
+		if (GPULayer.numBuffers > 1) {
+			throw new Error(`GPULayer "${GPULayer.name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
 		}
 		const offsetTextureProperties = this.renderer.properties.get(texture);
-		offsetTextureProperties.__webglTexture = dataLayer.currentState;
+		offsetTextureProperties.__webglTexture = GPULayer.currentState;
 		offsetTextureProperties.__webglInit = true;
 	}
 
 	resetThreeState() {
 		if (!this.renderer) {
-			throw new Error('WebGLCompute was not inited with a renderer.');
+			throw new Error('GPUComposer was not inited with a renderer.');
 		}
 		const { gl } = this;
 		// Reset viewport.
@@ -1949,7 +1896,7 @@ export class WebGLCompute {
 			copyPrograms, setValuePrograms, vectorMagnitudePrograms,
 		} = this;
 
-		if (verboseLogging) console.log(`Deallocating WebGLCompute.`);
+		if (verboseLogging) console.log(`Deallocating GPUComposer.`);
 
 		// TODO: delete buffers.
 

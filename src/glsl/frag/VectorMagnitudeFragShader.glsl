@@ -1,7 +1,7 @@
 #version 300 es
 @include "../common/precision.glsl"
 
-// Fragment shader that draws the magnitude of a DataLayer as a color.
+// Fragment shader that draws the magnitude of a GPULayer as a color.
 
 in vec2 v_UV;
 
