@@ -30,6 +30,14 @@ describe('utils', function () {
 	// jsdom({
 	// 	url: 'https://example.org/',
 	// });
+	// describe('compileShader', () => {
+	// }),
+	// describe('initGLProgram', () => {
+	// }),
+	// describe('isWebGL2', () => {
+	// }),
+	// describe('isWebGL2Supported', () => {
+	// }),
 	// describe('getFragmentMediumpPrecision', () => {
 	// 	it('should return valid response', () => {
 	// 		assert.equal([PRECISION_HIGH_P, PRECISION_MEDIUM_P].indexOf(getFragmentMediumpPrecision() > -1), true);
@@ -139,10 +147,10 @@ void main() {
 uniform sampler2D u_state;
 #endif
 #ifdef WEBGLCOMPUTE_INT
-uniform isampler2D u_state;
+uniform sampler2D u_state;
 #endif
 #ifdef WEBGLCOMPUTE_UINT
-uniform usampler2D u_state;
+uniform sampler2D u_state;
 #endif
 
 #ifdef WEBGLCOMPUTE_FLOAT

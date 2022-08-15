@@ -5798,13 +5798,22 @@ function preprocessShader(shaderSource) {
     }
     // Strip out any precision declarations.
     origSrc = shaderSource.slice();
-    shaderSource = shaderSource.replace(/\s*precision\s+[(highp)(mediump)(lowp)]+\s+[a-zA-Z0-9]+\s*;/g, '');
+    shaderSource = shaderSource.replace(/\s*precision\s+((highp)|(mediump)|(lowp))\s+[a-zA-Z0-9]+\s*;/g, '');
     if (shaderSource !== origSrc) {
         console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
     }
     return shaderSource;
 }
+function convertShadertoGLSL1(shaderSource) {
+    // TODO: there are probably more to add here.
+    shaderSource = shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
+    shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
+    shaderSource = shaderSource.replace(/((\bivec3\b)|(\buvec3\b))/g, 'vec3');
+    shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
+    return shaderSource;
+}
 function convertFragShaderToGLSL1(shaderSource) {
+    shaderSource = convertShadertoGLSL1(shaderSource);
     // Convert in to varying.
     shaderSource = shaderSource.replace(/^\s*in\s+/g, 'varying '); // Beginning of line.
     shaderSource = shaderSource.replace(/;\s*in\s+/g, ';\nvarying '); // After semicolon (may not be linebreak).
@@ -5814,6 +5823,7 @@ function convertFragShaderToGLSL1(shaderSource) {
     return shaderSource;
 }
 function convertVertShaderToGLSL1(shaderSource) {
+    shaderSource = convertShadertoGLSL1(shaderSource);
     // Convert in to attribute.
     shaderSource = shaderSource.replace(/^\s*in\s+/, 'attribute '); // Beginning of line.
     shaderSource = shaderSource.replace(/;\s*in\s+/g, ';attribute '); // After semicolon (may not be linebreak).
