@@ -97,7 +97,7 @@ export function isWebGL2Supported() {
 }
 
 // From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
-export function getMediumpPrecision() {
+export function getFragmentMediumpPrecision() {
 	// This entire program is only needed because of a bug in Safari.
 	// Safari doesn't correctly report precision from getShaderPrecisionFormat
 	// at least as of April 2020
@@ -118,7 +118,7 @@ void main() {
 	gl_Position = position;
 	gl_PointSize = 1.0;
 }
-	`, gl.VERTEX_SHADER, 'mediumpPrecisionTest', errorCallback);
+	`, gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
 	if (!vs) {
 		throw new Error(`Unable to init vertex shader.`);
 	}
@@ -129,12 +129,12 @@ uniform mediump vec3 v;
 void main() {
 	gl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);
 }
-	`, gl.FRAGMENT_SHADER, 'mediumpPrecisionTest', errorCallback);
+	`, gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
 	if (!fs) {
 		throw new Error(`Unable to init fragment shader.`);
 	}
 
-	const program = initGLProgram(gl, fs, vs, 'mediumpPrecisionTest', errorCallback);
+	const program = initGLProgram(gl, fs, vs, 'mediumpPrecisionFragmentTest', errorCallback);
 	if (!program) {
 		throw new Error(`Unable to init WebGLProgram.`);
 	}
@@ -184,6 +184,97 @@ void main() {
 	gl.deleteShader(fs);
 	gl.deleteBuffer(buffer);
 	// GL context and canvas will be garbage collected.
+
+	const mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
+	return mediumpPrecision ? PRECISION_MEDIUM_P : PRECISION_HIGH_P;
+}
+
+// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+export function getVertexMediumpPrecision() {
+	// This entire program is only needed because of a bug in Safari.
+	// Safari doesn't correctly report precision from getShaderPrecisionFormat
+	// at least as of April 2020
+	// see: https://bugs.webkit.org/show_bug.cgi?id=211013
+
+	const errorCallback = (msg: string) => { throw new Error(msg); };
+
+	// Get A WebGL context
+	/** @type {HTMLCanvasElement} */
+	const canvas = document.createElement("canvas");
+	const gl = canvas.getContext("webgl");
+	if (!gl) {
+		throw new Error(`Unable to init webgl context.`);
+	}
+
+	const vs = compileShader(gl, GLSL1, `
+attribute vec4 position;  // needed because of another bug in Safari
+uniform mediump vec3 v;
+varying mediump vec4 v_result;
+void main() {
+	gl_Position = position;
+	gl_PointSize = 1.0;
+	v_result = vec4(normalize(v) * 0.5 + 0.5, 1);
+}
+	`, gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+	if (!vs) {
+		throw new Error(`Unable to init vertex shader.`);
+	}
+
+	const fs = compileShader(gl, GLSL1, `
+precision mediump float;
+varying mediump vec4 v_result;
+void main() {
+	gl_FragColor = v_result;
+}
+	`, gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+	if (!fs) {
+		throw new Error(`Unable to init fragment shader.`);
+	}
+
+	const program = initGLProgram(gl, fs, vs, 'mediumpPrecisionVertexTest', errorCallback);
+	if (!program) {
+		throw new Error(`Unable to init WebGLProgram.`);
+	}
+	const positionLocation = gl.getAttribLocation(program, 'position');
+	const vLocation = gl.getUniformLocation(program, 'v');
+
+	// create a buffer and setup an attribute
+	// We wouldn't need this except for a bug in Safari.
+	// See https://webglfundamentals.org/webgl/lessons/webgl-smallest-programs.html
+	// and https://bugs.webkit.org/show_bug.cgi?id=197592
+	{
+		gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+		gl.bufferData(gl.ARRAY_BUFFER, 1, gl.STATIC_DRAW);
+		gl.enableVertexAttribArray(positionLocation);
+		gl.vertexAttribPointer(
+		positionLocation,
+		1,                // pull 1 value per vertex shader iteration from buffer
+		gl.UNSIGNED_BYTE, // type of data in buffer,
+		false,            // don't normalize
+		0,                // bytes to advance per iteration (0 = compute from size and type)
+		0,                // offset into buffer
+		);
+	}
+
+	gl.viewport(0, 0, 1, 1);
+	gl.useProgram(program);
+
+	// we're going to compute the normalize vector of
+	// (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
+	// which should be impossible on mediump
+	const value = 2 ** 31 - 1;
+	const input = Math.sqrt(value);
+	const expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
+
+	gl.uniform3f(vLocation, input, input, input);
+	gl.drawArrays(
+		gl.POINTS,
+		0, // offset
+		1, // number of vertices to process
+	);
+
+	const pixel = new Uint8Array(4);
+	gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
 
 	const mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
 	return mediumpPrecision ? PRECISION_MEDIUM_P : PRECISION_HIGH_P;

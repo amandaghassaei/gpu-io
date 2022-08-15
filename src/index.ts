@@ -1,6 +1,7 @@
 import {
 	isWebGL2Supported,
-	getMediumpPrecision,
+	getFragmentMediumpPrecision,
+	getVertexMediumpPrecision,
 } from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
@@ -12,5 +13,6 @@ export {
 	GPULayer,
 	GPUProgram,
 	isWebGL2Supported,
-	getMediumpPrecision,
+	getFragmentMediumpPrecision,
+	getVertexMediumpPrecision,
 };
