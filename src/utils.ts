@@ -414,7 +414,7 @@ function preprocessShader(shaderSource: string) {
 	return shaderSource;
 }
 
-function convertShadertoGLSL1(shaderSource: string) {
+function convertShaderToGLSL1(shaderSource: string) {
 	// TODO: there are probably more to add here.
 	shaderSource = shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
 	shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
@@ -423,8 +423,17 @@ function convertShadertoGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
+function convertVertShaderToGLSL1(shaderSource: string) {
+	shaderSource = convertShaderToGLSL1(shaderSource);
+	// Convert in to attribute.
+	shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
+	// Convert out to varying.
+	shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
+	return shaderSource;
+}
+
 function convertFragShaderToGLSL1(shaderSource: string) {
-	shaderSource = convertShadertoGLSL1(shaderSource);
+	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to varying.
 	shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
 	// Convert out to gl_FragColor.
@@ -433,27 +442,28 @@ function convertFragShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
-function convertVertShaderToGLSL1(shaderSource: string) {
-	shaderSource = convertShadertoGLSL1(shaderSource);
-	// Convert in to attribute.
-	shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
-	// Convert out to varying.
-	shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
-	return shaderSource;
-}
-
-export function preprocessFragShader(shaderSource: string, glslVersion: GLSLVersion) {
-	shaderSource = preprocessShader(shaderSource);
-	if (glslVersion === GLSL3) {
-		return shaderSource;
-	}
-	return convertFragShaderToGLSL1(shaderSource);
-}
-
 export function preprocessVertShader(shaderSource: string, glslVersion: GLSLVersion) {
 	shaderSource = preprocessShader(shaderSource);
+	// Check if highp supported in vertex shaders.
+	if (!isHighpSupportedInVertexShader()) {
+		// Replace all highp with mediump.
+		shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
+	}
 	if (glslVersion === GLSL3) {
 		return shaderSource;
 	}
 	return convertVertShaderToGLSL1(shaderSource);
+}
+
+export function preprocessFragShader(shaderSource: string, glslVersion: GLSLVersion) {
+	shaderSource = preprocessShader(shaderSource);
+	// Check if highp supported in fragment shaders.
+	if (!isHighpSupportedInFragmentShader()) {
+		// Replace all highp with mediump.
+		shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
+	}
+	if (glslVersion === GLSL3) {
+		return shaderSource;
+	}
+	return convertFragShaderToGLSL1(shaderSource);
 }

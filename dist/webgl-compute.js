@@ -5562,7 +5562,7 @@ __exportStar(__webpack_require__(738), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.preprocessVertShader = exports.preprocessFragShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
+exports.preprocessFragShader = exports.preprocessVertShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var precisionSource = __webpack_require__(937);
@@ -5843,7 +5843,7 @@ function preprocessShader(shaderSource) {
     }
     return shaderSource;
 }
-function convertShadertoGLSL1(shaderSource) {
+function convertShaderToGLSL1(shaderSource) {
     // TODO: there are probably more to add here.
     shaderSource = shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
     shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
@@ -5852,7 +5852,7 @@ function convertShadertoGLSL1(shaderSource) {
     return shaderSource;
 }
 function convertFragShaderToGLSL1(shaderSource) {
-    shaderSource = convertShadertoGLSL1(shaderSource);
+    shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to varying.
     shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
     // Convert out to gl_FragColor.
@@ -5861,29 +5861,39 @@ function convertFragShaderToGLSL1(shaderSource) {
     return shaderSource;
 }
 function convertVertShaderToGLSL1(shaderSource) {
-    shaderSource = convertShadertoGLSL1(shaderSource);
+    shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to attribute.
     shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
     // Convert out to varying.
     shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
     return shaderSource;
 }
-function preprocessFragShader(shaderSource, glslVersion) {
-    shaderSource = preprocessShader(shaderSource);
-    if (glslVersion === Constants_1.GLSL3) {
-        return shaderSource;
-    }
-    return convertFragShaderToGLSL1(shaderSource);
-}
-exports.preprocessFragShader = preprocessFragShader;
 function preprocessVertShader(shaderSource, glslVersion) {
     shaderSource = preprocessShader(shaderSource);
+    // Check if highp supported in vertex shaders.
+    if (!isHighpSupportedInVertexShader()) {
+        // Replace all highp with mediump.
+        shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
+    }
     if (glslVersion === Constants_1.GLSL3) {
         return shaderSource;
     }
     return convertVertShaderToGLSL1(shaderSource);
 }
 exports.preprocessVertShader = preprocessVertShader;
+function preprocessFragShader(shaderSource, glslVersion) {
+    shaderSource = preprocessShader(shaderSource);
+    // Check if highp supported in fragment shaders.
+    if (!isHighpSupportedInFragmentShader()) {
+        // Replace all highp with mediump.
+        shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
+    }
+    if (glslVersion === Constants_1.GLSL3) {
+        return shaderSource;
+    }
+    return convertFragShaderToGLSL1(shaderSource);
+}
+exports.preprocessFragShader = preprocessFragShader;
 
 
 /***/ }),

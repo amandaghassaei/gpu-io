@@ -10,5 +10,5 @@ export declare function getVertexShaderMediumpPrecision(): "highp" | "mediump";
 export declare function getFragmentShaderMediumpPrecision(): "highp" | "mediump";
 export declare function isPowerOf2(value: number): boolean;
 export declare function initSequentialFloatArray(length: number): Float32Array;
-export declare function preprocessFragShader(shaderSource: string, glslVersion: GLSLVersion): string;
 export declare function preprocessVertShader(shaderSource: string, glslVersion: GLSLVersion): string;
+export declare function preprocessFragShader(shaderSource: string, glslVersion: GLSLVersion): string;
