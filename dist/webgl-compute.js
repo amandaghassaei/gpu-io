@@ -5566,6 +5566,14 @@ exports.preprocessVertShader = exports.preprocessFragShader = exports.initSequen
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var precisionSource = __webpack_require__(937);
+// Memoize results.
+var results = {
+    webgl2: undefined,
+    highpVertex: undefined,
+    highpFragment: undefined,
+    mediumpVertexPrecision: undefined,
+    mediumpFragmentPrecision: undefined,
+};
 function intForPrecision(precision) {
     if (precision === Constants_1.PRECISION_HIGH_P)
         return 2;
@@ -5647,19 +5655,15 @@ function isWebGL2(gl) {
 }
 exports.isWebGL2 = isWebGL2;
 function isWebGL2Supported() {
-    var gl = document.createElement('canvas').getContext('webgl2');
-    if (!gl) {
-        return false;
+    if (results.webgl2 === undefined) {
+        var gl = document.createElement('canvas').getContext('webgl2');
+        // GL context and canvas will be garbage collected.
+        results.webgl2 = !!gl;
+        return true;
     }
-    // GL context and canvas will be garbage collected.
-    return true;
+    return results.webgl2;
 }
 exports.isWebGL2Supported = isWebGL2Supported;
-// Memoize results.
-var highpSupported = {
-    vertex: undefined,
-    fragment: undefined,
-};
 function isHighpSupported(vsSource, fsSource) {
     // This is supposed to be relatively easy. You call gl.getShaderPrecisionFormat, you pass in the shader type,
     // VERTEX_SHADER or FRAGMENT_SHADER and you pass in one of LOW_FLOAT, MEDIUM_FLOAT, HIGH_FLOAT, LOW_INT, MEDIUM_INT, HIGH_INT,
@@ -5686,19 +5690,19 @@ function isHighpSupported(vsSource, fsSource) {
     return true;
 }
 function isHighpSupportedInVertexShader() {
-    if (highpSupported.vertex === undefined) {
+    if (results.highpVertex === undefined) {
         var vertexSupport = isHighpSupported('void main() { highp float test = 0.524; gl_Position = vec4(test, test, 0, 1); }', 'void main() { gl_FragColor = vec4(0); }');
-        highpSupported.vertex = vertexSupport;
+        results.highpVertex = vertexSupport;
     }
-    return highpSupported.vertex;
+    return results.highpVertex;
 }
 exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
 function isHighpSupportedInFragmentShader() {
-    if (highpSupported.fragment === undefined) {
+    if (results.highpFragment === undefined) {
         var fragmentSupport = isHighpSupported('void main() { gl_Position = vec4(0.5, 0.5, 0, 1); }', 'void main() { highp float test = 1.35; gl_FragColor = vec4(test); }');
-        highpSupported.fragment = fragmentSupport;
+        results.highpFragment = fragmentSupport;
     }
-    return highpSupported.fragment;
+    return results.highpFragment;
 }
 exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
 function test1PxCalc(name, gl, fs, vs, addUniforms) {
@@ -5737,71 +5741,77 @@ function test1PxCalc(name, gl, fs, vs, addUniforms) {
 }
 // From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 function getVertexShaderMediumpPrecision() {
-    // This entire program is only needed because of a bug in Safari.
-    // Safari doesn't correctly report precision from getShaderPrecisionFormat
-    // at least as of April 2020
-    // see: https://bugs.webkit.org/show_bug.cgi?id=211013
-    // Get A WebGL context
-    /** @type {HTMLCanvasElement} */
-    var canvas = document.createElement("canvas");
-    var gl = canvas.getContext("webgl");
-    if (!gl) {
-        throw new Error("Unable to init webgl context.");
+    if (results.mediumpVertexPrecision === undefined) {
+        // This entire program is only needed because of a bug in Safari.
+        // Safari doesn't correctly report precision from getShaderPrecisionFormat
+        // at least as of April 2020
+        // see: https://bugs.webkit.org/show_bug.cgi?id=211013
+        // Get A WebGL context
+        /** @type {HTMLCanvasElement} */
+        var canvas = document.createElement("canvas");
+        var gl_1 = canvas.getContext("webgl");
+        if (!gl_1) {
+            throw new Error("Unable to init webgl context.");
+        }
+        var vs = compileShader(gl_1, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\n\tattribute vec4 position;  // needed because of another bug in Safari\n\tuniform mediump vec3 v;\n\tvarying mediump vec4 v_result;\n\tvoid main() {\n\t\tgl_Position = position;\n\t\tgl_PointSize = 1.0;\n\t\tv_result = vec4(normalize(v) * 0.5 + 0.5, 1);\n\t}\n\t\t", gl_1.VERTEX_SHADER, 'mediumpPrecisionVertexTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+        if (!vs) {
+            throw new Error("Unable to init vertex shader.");
+        }
+        var fs = compileShader(gl_1, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\n\tvarying mediump vec4 v_result;\n\tvoid main() {\n\t\tgl_FragColor = v_result;\n\t}\n\t\t", gl_1.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+        if (!fs) {
+            throw new Error("Unable to init fragment shader.");
+        }
+        // we're going to compute the normalize vector of
+        // (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
+        // which should be impossible on mediump
+        var value = Math.pow(2, 31) - 1;
+        var input_1 = Math.sqrt(value);
+        var expected = ((input_1 / Math.sqrt(input_1 * input_1 * 3)) * 0.5 + 0.5) * 255 | 0;
+        var pixel = test1PxCalc('mediumpPrecisionVertexTest', gl_1, fs, vs, function (program) {
+            var vLocation = gl_1.getUniformLocation(program, 'v');
+            gl_1.uniform3f(vLocation, input_1, input_1, input_1);
+        });
+        var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
+        results.mediumpVertexPrecision = mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
     }
-    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nuniform mediump vec3 v;\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n\tv_result = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', Constants_1.DEFAULT_ERROR_CALLBACK);
-    if (!vs) {
-        throw new Error("Unable to init vertex shader.");
-    }
-    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_FragColor = v_result;\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', Constants_1.DEFAULT_ERROR_CALLBACK);
-    if (!fs) {
-        throw new Error("Unable to init fragment shader.");
-    }
-    // we're going to compute the normalize vector of
-    // (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
-    // which should be impossible on mediump
-    var value = Math.pow(2, 31) - 1;
-    var input = Math.sqrt(value);
-    var expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
-    var pixel = test1PxCalc('mediumpPrecisionVertexTest', gl, fs, vs, function (program) {
-        var vLocation = gl.getUniformLocation(program, 'v');
-        gl.uniform3f(vLocation, input, input, input);
-    });
-    var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
-    return mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
+    return results.mediumpVertexPrecision;
 }
 exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
 // From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 function getFragmentShaderMediumpPrecision() {
-    // This entire program is only needed because of a bug in Safari.
-    // Safari doesn't correctly report precision from getShaderPrecisionFormat
-    // at least as of April 2020
-    // see: https://bugs.webkit.org/show_bug.cgi?id=211013
-    // Get A WebGL context
-    var canvas = document.createElement("canvas");
-    var gl = canvas.getContext("webgl");
-    if (!gl) {
-        throw new Error("Unable to init webgl context.");
+    if (results.mediumpFragmentPrecision === undefined) {
+        // This entire program is only needed because of a bug in Safari.
+        // Safari doesn't correctly report precision from getShaderPrecisionFormat
+        // at least as of April 2020
+        // see: https://bugs.webkit.org/show_bug.cgi?id=211013
+        // Get A WebGL context
+        var canvas = document.createElement("canvas");
+        var gl_2 = canvas.getContext("webgl");
+        if (!gl_2) {
+            throw new Error("Unable to init webgl context.");
+        }
+        var vs = compileShader(gl_2, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\n\tattribute vec4 position;  // needed because of another bug in Safari\n\tvoid main() {\n\t\tgl_Position = position;\n\t\tgl_PointSize = 1.0;\n\t}\n\t\t", gl_2.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+        if (!vs) {
+            throw new Error("Unable to init vertex shader.");
+        }
+        var fs = compileShader(gl_2, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\n\tuniform mediump vec3 v;\n\tvoid main() {\n\t\tgl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);\n\t}\n\t\t", gl_2.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+        if (!fs) {
+            throw new Error("Unable to init fragment shader.");
+        }
+        // we're going to compute the normalize vector of
+        // (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
+        // which should be impossible on mediump
+        var value = Math.pow(2, 31) - 1;
+        var input_2 = Math.sqrt(value);
+        var expected = ((input_2 / Math.sqrt(input_2 * input_2 * 3)) * 0.5 + 0.5) * 255 | 0;
+        var pixel = test1PxCalc('mediumpPrecisionFragmentTest', gl_2, fs, vs, function (program) {
+            var vLocation = gl_2.getUniformLocation(program, 'v');
+            gl_2.uniform3f(vLocation, input_2, input_2, input_2);
+        });
+        var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
+        results.mediumpFragmentPrecision = mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
     }
-    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
-    if (!vs) {
-        throw new Error("Unable to init vertex shader.");
-    }
-    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nuniform mediump vec3 v;\nvoid main() {\n\tgl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
-    if (!fs) {
-        throw new Error("Unable to init fragment shader.");
-    }
-    // we're going to compute the normalize vector of
-    // (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
-    // which should be impossible on mediump
-    var value = Math.pow(2, 31) - 1;
-    var input = Math.sqrt(value);
-    var expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
-    var pixel = test1PxCalc('mediumpPrecisionFragmentTest', gl, fs, vs, function (program) {
-        var vLocation = gl.getUniformLocation(program, 'v');
-        gl.uniform3f(vLocation, input, input, input);
-    });
-    var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
-    return mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
+    return results.mediumpFragmentPrecision;
 }
 exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 function isPowerOf2(value) {
