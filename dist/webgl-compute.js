@@ -5038,7 +5038,7 @@ var GPUProgram = /** @class */ (function () {
         var fragmentShaderSource = typeof (fragmentShader) === 'string' ?
             fragmentShader :
             fragmentShader.join('\n');
-        this.fragmentShaderSource = utils_1.preprocessFragShader(fragmentShaderSource, composer.glslVersion);
+        this.fragmentShaderSource = utils_1.preprocessFragShader(fragmentShaderSource, composer.glslVersion, composer.verboseLogging);
         this.recompile(defines || this.defines);
         if (uniforms) {
             for (var i = 0; i < uniforms.length; i++) {
@@ -5080,7 +5080,7 @@ var GPUProgram = /** @class */ (function () {
             return this.programs[name];
         // Otherwise, we need to compile a new program on the fly.
         var _a = this, composer = _a.composer, uniforms = _a.uniforms, fragmentShader = _a.fragmentShader;
-        var _errorCallback = composer._errorCallback, _vertexShaders = composer._vertexShaders, gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision;
+        var _errorCallback = composer._errorCallback, _vertexShaders = composer._vertexShaders, gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision, verboseLogging = composer.verboseLogging;
         var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
             var composer_1 = this.composer;
@@ -5089,7 +5089,7 @@ var GPUProgram = /** @class */ (function () {
             if (vertexShader.src === '') {
                 throw new Error("No source for vertex shader " + this.name + " : " + name);
             }
-            var vertexShaderSource = utils_1.preprocessVertShader(vertexShader.src, glslVersion);
+            var vertexShaderSource = utils_1.preprocessVertShader(vertexShader.src, glslVersion, verboseLogging);
             var shader = utils_1.compileShader(gl_1, glslVersion, intPrecision, floatPrecision, vertexShaderSource, gl_1.VERTEX_SHADER, this.name, _errorCallback, vertexShader.defines);
             if (!shader) {
                 _errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + this.name + "\".");
@@ -5851,6 +5851,14 @@ function convertShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
     return shaderSource;
 }
+function convertVertShaderToGLSL1(shaderSource) {
+    shaderSource = convertShaderToGLSL1(shaderSource);
+    // Convert in to attribute.
+    shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
+    // Convert out to varying.
+    shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
+    return shaderSource;
+}
 function convertFragShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to varying.
@@ -5860,18 +5868,13 @@ function convertFragShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/\bout_fragOut\s+=/, 'gl_FragColor =');
     return shaderSource;
 }
-function convertVertShaderToGLSL1(shaderSource) {
-    shaderSource = convertShaderToGLSL1(shaderSource);
-    // Convert in to attribute.
-    shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
-    // Convert out to varying.
-    shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
-    return shaderSource;
-}
-function preprocessVertShader(shaderSource, glslVersion) {
+function preprocessVertShader(shaderSource, glslVersion, verboseLogging) {
     shaderSource = preprocessShader(shaderSource);
     // Check if highp supported in vertex shaders.
     if (!isHighpSupportedInVertexShader()) {
+        if (verboseLogging) {
+            console.warn('highp not supported in vertex shader, falling back to mediump.');
+        }
         // Replace all highp with mediump.
         shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
     }
@@ -5881,10 +5884,13 @@ function preprocessVertShader(shaderSource, glslVersion) {
     return convertVertShaderToGLSL1(shaderSource);
 }
 exports.preprocessVertShader = preprocessVertShader;
-function preprocessFragShader(shaderSource, glslVersion) {
+function preprocessFragShader(shaderSource, glslVersion, verboseLogging) {
     shaderSource = preprocessShader(shaderSource);
     // Check if highp supported in fragment shaders.
     if (!isHighpSupportedInFragmentShader()) {
+        if (verboseLogging) {
+            console.warn('highp not supported in fragment shader, falling back to mediump.');
+        }
         // Replace all highp with mediump.
         shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
     }
