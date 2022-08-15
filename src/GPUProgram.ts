@@ -35,8 +35,8 @@ import {
 } from './Constants';
 import {
 	compileShader,
-	preprocessFragShader,
-	preprocessVertShader,
+	preprocessFragmentShader,
+	preprocessVertexShader,
 	initGLProgram,
 } from './utils';
 
@@ -113,7 +113,7 @@ export class GPUProgram {
 		const fragmentShaderSource = typeof(fragmentShader) === 'string' ?
 			fragmentShader :
 			(fragmentShader as string[]).join('\n');
-		this.fragmentShaderSource = preprocessFragShader(
+		this.fragmentShaderSource = preprocessFragmentShader(
 			fragmentShaderSource, composer.glslVersion, composer.verboseLogging,
 		);
 		this.recompile(defines || this.defines);
@@ -195,7 +195,7 @@ export class GPUProgram {
 			if (vertexShader.src === '') {
 				throw new Error(`No source for vertex shader ${this.name} : ${name}`);
 			}
-			const vertexShaderSource = preprocessVertShader(vertexShader.src, glslVersion, verboseLogging);
+			const vertexShaderSource = preprocessVertexShader(vertexShader.src, glslVersion, verboseLogging);
 			const shader = compileShader(
 				gl,
 				glslVersion,

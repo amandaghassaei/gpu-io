@@ -5,8 +5,8 @@ const {
 	GLSL3,
 	PRECISION_HIGH_P,
 	PRECISION_MEDIUM_P,
-	getVertexMediumpPrecision,
-	getFragmentMediumpPrecision
+	getVertexShaderMediumpPrecision,
+	getFragmentShaderMediumpPrecision
 } = require('../../');
 const {
 	makeShaderHeader,

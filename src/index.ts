@@ -4,8 +4,8 @@ import {
 	isHighpSupportedInFragmentShader,
 	getVertexShaderMediumpPrecision,
 	getFragmentShaderMediumpPrecision,
-	preprocessFragShader,
-	preprocessVertShader,
+	preprocessFragmentShader,
+	preprocessVertexShader,
 	makeShaderHeader,
 	isPowerOf2,
 	initSequentialFloatArray,
@@ -16,8 +16,8 @@ import { GPUProgram } from './GPUProgram';
 
 const _testing = {
 	makeShaderHeader,
-	preprocessFragShader,
-	preprocessVertShader,
+	preprocessVertexShader,
+	preprocessFragmentShader,
 	isPowerOf2,
 	initSequentialFloatArray,
 }

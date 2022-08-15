@@ -1900,5 +1900,7 @@ export class GPUComposer {
 		delete this.renderer;
 		// @ts-ignore
 		delete this.gl;
+
+		// GL context will be garbage collected by webgl.
 	}
 }

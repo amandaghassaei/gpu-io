@@ -423,7 +423,7 @@ function convertShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
-function convertVertShaderToGLSL1(shaderSource: string) {
+function convertVertexShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to attribute.
 	shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
@@ -432,7 +432,7 @@ function convertVertShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
-function convertFragShaderToGLSL1(shaderSource: string) {
+function convertFragmentShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to varying.
 	shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
@@ -442,7 +442,7 @@ function convertFragShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
-export function preprocessVertShader(shaderSource: string, glslVersion: GLSLVersion, verboseLogging: boolean) {
+export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion, verboseLogging: boolean) {
 	shaderSource = preprocessShader(shaderSource);
 	// Check if highp supported in vertex shaders.
 	if (!isHighpSupportedInVertexShader()) {
@@ -455,10 +455,10 @@ export function preprocessVertShader(shaderSource: string, glslVersion: GLSLVers
 	if (glslVersion === GLSL3) {
 		return shaderSource;
 	}
-	return convertVertShaderToGLSL1(shaderSource);
+	return convertVertexShaderToGLSL1(shaderSource);
 }
 
-export function preprocessFragShader(shaderSource: string, glslVersion: GLSLVersion, verboseLogging: boolean) {
+export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, verboseLogging: boolean) {
 	shaderSource = preprocessShader(shaderSource);
 	// Check if highp supported in fragment shaders.
 	if (!isHighpSupportedInFragmentShader()) {
@@ -471,5 +471,5 @@ export function preprocessFragShader(shaderSource: string, glslVersion: GLSLVers
 	if (glslVersion === GLSL3) {
 		return shaderSource;
 	}
-	return convertFragShaderToGLSL1(shaderSource);
+	return convertFragmentShaderToGLSL1(shaderSource);
 }
