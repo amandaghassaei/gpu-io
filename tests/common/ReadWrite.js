@@ -1,9 +1,25 @@
 const { setFloat16, getFloat16 } = float16;
 
 const {
+	HALF_FLOAT,
+	FLOAT,
+	UNSIGNED_BYTE,
+	BYTE,
+	UNSIGNED_SHORT,
+	SHORT,
+	UNSIGNED_INT,
+	INT,
+	GLSL3,
+	GLSL1,
+	WEBGL1,
+	WEBGL2,
+	LINEAR,
+	NEAREST,
+	REPEAT,
+	CLAMP_TO_EDGE,
 	GPULayer,
 	GPUProgram,
-	GPUComposer
+	GPUComposer,
 } = WebGLCompute;
 
 MicroModal.init();

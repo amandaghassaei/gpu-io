@@ -1,3 +1,3 @@
 const tests = [
-	{ WEBGL_VERSION: WEBGL1, GLSL_VERSION: GLSL1 },
+	{ WEBGL_VERSION: WebGLCompute.WEBGL1, GLSL_VERSION: WebGLCompute.GLSL1 },
 ];
