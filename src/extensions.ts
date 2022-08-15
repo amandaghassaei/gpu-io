@@ -1,3 +1,5 @@
+import { ErrorCallback } from './Constants';
+
 const extensions: { [key: string]: any } = {};
 
 // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float
@@ -26,7 +28,7 @@ export const EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 export function getExtension(
 	gl: WebGLRenderingContext | WebGL2RenderingContext,
 	extensionName: string,
-	errorCallback: (message: string) => void,
+	errorCallback: ErrorCallback,
 	optional = false,
 ) {
 	// Check if we've already loaded the extension.

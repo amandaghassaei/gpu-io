@@ -1,7 +1,9 @@
 import {
 	isWebGL2Supported,
-	getFragmentMediumpPrecision,
-	getVertexMediumpPrecision,
+	isHighpSupportedInVertexShader,
+	isHighpSupportedInFragmentShader,
+	getVertexShaderMediumpPrecision,
+	getFragmentShaderMediumpPrecision,
 	preprocessFragShader,
 	preprocessVertShader,
 	makeShaderHeader,
@@ -26,7 +28,9 @@ export {
 	GPULayer,
 	GPUProgram,
 	isWebGL2Supported,
-	getFragmentMediumpPrecision,
-	getVertexMediumpPrecision,
+	isHighpSupportedInVertexShader,
+	isHighpSupportedInFragmentShader,
+	getVertexShaderMediumpPrecision,
+	getFragmentShaderMediumpPrecision,
 	_testing,
 };

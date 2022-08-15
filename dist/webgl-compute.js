@@ -2354,7 +2354,7 @@ exports.isBoolean = isBoolean;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.DATA_LAYER_LINES_PROGRAM_NAME = exports.DATA_LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.DATA_LAYER_LINES_PROGRAM_NAME = exports.DATA_LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.HALF_FLOAT = 'HALF_FLOAT';
 exports.FLOAT = 'FLOAT';
 exports.UNSIGNED_BYTE = 'UNSIGNED_BYTE';
@@ -2401,6 +2401,7 @@ exports.SEGMENT_PROGRAM_NAME = 'SEGMENT';
 exports.DATA_LAYER_POINTS_PROGRAM_NAME = 'DATA_LAYER_POINTS';
 exports.DATA_LAYER_LINES_PROGRAM_NAME = 'DATA_LAYER_LINES';
 exports.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = 'DATA_LAYER_VECTOR_FIELD';
+exports.DEFAULT_ERROR_CALLBACK = function (msg) { throw new Error(msg); };
 exports.DEFAULT_CIRCLE_NUM_SEGMENTS = 18; // Must be divisible by 6 to work with stepSegment().
 
 
@@ -2443,12 +2444,8 @@ var float16_1 = __webpack_require__(501);
 var Checks_1 = __webpack_require__(627);
 var defaultVertexShaderSource = __webpack_require__(288);
 var GPUComposer = /** @class */ (function () {
-    function GPUComposer(params, 
-    // Optionally pass in an error callback in case we want to handle errors related to webgl support.
-    // e.g. throw up a modal telling user this will not work on their device.
-    errorCallback, renderer) {
+    function GPUComposer(params) {
         var _a;
-        if (errorCallback === void 0) { errorCallback = function (message) { throw new Error(message); }; }
         this.errorState = false;
         // Store multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
@@ -2502,12 +2499,13 @@ var GPUComposer = /** @class */ (function () {
             _a);
         this.verboseLogging = false;
         // Check params.
-        var validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging'];
+        var validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging', 'errorCallback'];
         Object.keys(params).forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
                 throw new Error("Invalid key \"" + key + "\" passed to GPUComposer.constructor.  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
+        // TODO: test required keys.
         if (!params.canvas) {
             throw new Error("Must init GPUComposer with a \"canvas\" parameter.");
         }
@@ -2520,7 +2518,7 @@ var GPUComposer = /** @class */ (function () {
                 return;
             }
             self.errorState = true;
-            errorCallback(message);
+            params.errorCallback ? params.errorCallback(message) : Constants_1.DEFAULT_ERROR_CALLBACK(message);
         };
         var canvas = params.canvas;
         var gl = params.context;
@@ -2552,7 +2550,6 @@ var GPUComposer = /** @class */ (function () {
                 console.log('Using WebGL 1.0 context.');
         }
         this.gl = gl;
-        this.renderer = renderer;
         // Save glsl version, default to 3 if using webgl2 context.
         var glslVersion = params.glslVersion === undefined ? (utils_1.isWebGL2(gl) ? Constants_1.GLSL3 : Constants_1.GLSL1) : params.glslVersion;
         if (!utils_1.isWebGL2(gl) && glslVersion === Constants_1.GLSL3) {
@@ -2586,8 +2583,11 @@ var GPUComposer = /** @class */ (function () {
         if (this.verboseLogging)
             console.log(this.maxNumTextures + " textures max.");
     }
-    GPUComposer.initWithThreeRenderer = function (renderer, params, errorCallback) {
-        return new GPUComposer(__assign(__assign({}, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? Constants_1.GLSL3 : Constants_1.GLSL1, floatPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P }), errorCallback, renderer);
+    GPUComposer.initWithThreeRenderer = function (renderer, params) {
+        var composer = new GPUComposer(__assign(__assign({}, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? Constants_1.GLSL3 : Constants_1.GLSL1, floatPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P }));
+        // Attach renderer.
+        composer.renderer = renderer;
+        return composer;
     };
     GPUComposer.prototype.glslKeyForType = function (type) {
         if (this.glslVersion === Constants_1.GLSL1)
@@ -5530,11 +5530,13 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils_1 = __webpack_require__(593);
 Object.defineProperty(exports, "isWebGL2Supported", ({ enumerable: true, get: function () { return utils_1.isWebGL2Supported; } }));
-Object.defineProperty(exports, "getFragmentMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getFragmentMediumpPrecision; } }));
-Object.defineProperty(exports, "getVertexMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getVertexMediumpPrecision; } }));
+Object.defineProperty(exports, "isHighpSupportedInVertexShader", ({ enumerable: true, get: function () { return utils_1.isHighpSupportedInVertexShader; } }));
+Object.defineProperty(exports, "isHighpSupportedInFragmentShader", ({ enumerable: true, get: function () { return utils_1.isHighpSupportedInFragmentShader; } }));
+Object.defineProperty(exports, "getVertexShaderMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getVertexShaderMediumpPrecision; } }));
+Object.defineProperty(exports, "getFragmentShaderMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getFragmentShaderMediumpPrecision; } }));
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
 var GPULayer_1 = __webpack_require__(355);
@@ -5560,7 +5562,7 @@ __exportStar(__webpack_require__(738), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.preprocessVertShader = exports.preprocessFragShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getVertexMediumpPrecision = exports.getFragmentMediumpPrecision = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
+exports.preprocessVertShader = exports.preprocessFragShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var precisionSource = __webpack_require__(937);
@@ -5653,33 +5655,58 @@ function isWebGL2Supported() {
     return true;
 }
 exports.isWebGL2Supported = isWebGL2Supported;
-// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
-function getFragmentMediumpPrecision() {
-    // This entire program is only needed because of a bug in Safari.
-    // Safari doesn't correctly report precision from getShaderPrecisionFormat
-    // at least as of April 2020
-    // see: https://bugs.webkit.org/show_bug.cgi?id=211013
-    var errorCallback = function (msg) { throw new Error(msg); };
-    // Get A WebGL context
-    var canvas = document.createElement("canvas");
-    var gl = canvas.getContext("webgl");
+// Memoize results.
+var highpSupported = {
+    vertex: undefined,
+    fragment: undefined,
+};
+function isHighpSupported(vsSource, fsSource) {
+    // This is supposed to be relatively easy. You call gl.getShaderPrecisionFormat, you pass in the shader type,
+    // VERTEX_SHADER or FRAGMENT_SHADER and you pass in one of LOW_FLOAT, MEDIUM_FLOAT, HIGH_FLOAT, LOW_INT, MEDIUM_INT, HIGH_INT,
+    // and it returns the precision info.
+    // Unfortunately Safari has a bug here which means checking this way will fail on iPhone, at least as of April 2020.
+    // https://webglfundamentals.org/webgl/webgl-precision-lowp-mediump-highp.html
+    var gl = document.createElement('canvas').getContext('webgl');
     if (!gl) {
         throw new Error("Unable to init webgl context.");
     }
-    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
-    if (!vs) {
-        throw new Error("Unable to init vertex shader.");
+    try {
+        var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_HIGH_P, Constants_1.PRECISION_HIGH_P, vsSource, gl.VERTEX_SHADER, 'highpFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+        var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_HIGH_P, Constants_1.PRECISION_HIGH_P, fsSource, gl.FRAGMENT_SHADER, 'highpFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+        var program = initGLProgram(gl, fs, vs, 'highpFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+        // Deallocate everything.
+        gl.deleteProgram(program);
+        gl.deleteShader(vs);
+        gl.deleteShader(fs);
+        // GL context and canvas will be garbage collected.
     }
-    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nuniform mediump vec3 v;\nvoid main() {\n\tgl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
-    if (!fs) {
-        throw new Error("Unable to init fragment shader.");
+    catch (_a) {
+        return false;
     }
-    var program = initGLProgram(gl, fs, vs, 'mediumpPrecisionFragmentTest', errorCallback);
+    return true;
+}
+function isHighpSupportedInVertexShader() {
+    if (highpSupported.vertex === undefined) {
+        var vertexSupport = isHighpSupported('void main() { highp float test = 0.524; gl_Position = vec4(test, test, 0, 1); }', 'void main() { gl_FragColor = vec4(0); }');
+        highpSupported.vertex = vertexSupport;
+    }
+    return highpSupported.vertex;
+}
+exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
+function isHighpSupportedInFragmentShader() {
+    if (highpSupported.fragment === undefined) {
+        var fragmentSupport = isHighpSupported('void main() { gl_Position = vec4(0.5, 0.5, 0, 1); }', 'void main() { highp float test = 1.35; gl_FragColor = vec4(test); }');
+        highpSupported.fragment = fragmentSupport;
+    }
+    return highpSupported.fragment;
+}
+exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
+function test1PxCalc(name, gl, fs, vs, addUniforms) {
+    var program = initGLProgram(gl, fs, vs, name, Constants_1.DEFAULT_ERROR_CALLBACK);
     if (!program) {
         throw new Error("Unable to init WebGLProgram.");
     }
     var positionLocation = gl.getAttribLocation(program, 'position');
-    var vLocation = gl.getUniformLocation(program, 'v');
     // create a buffer and setup an attribute
     // We wouldn't need this except for a bug in Safari.
     // See https://webglfundamentals.org/webgl/lessons/webgl-smallest-programs.html
@@ -5695,13 +5722,7 @@ function getFragmentMediumpPrecision() {
     0);
     gl.viewport(0, 0, 1, 1);
     gl.useProgram(program);
-    // we're going to compute the normalize vector of
-    // (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
-    // which should be impossible on mediump
-    var value = Math.pow(2, 31) - 1;
-    var input = Math.sqrt(value);
-    var expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
-    gl.uniform3f(vLocation, input, input, input);
+    addUniforms(program);
     gl.drawArrays(gl.POINTS, 0, // offset
     1);
     var pixel = new Uint8Array(4);
@@ -5712,17 +5733,14 @@ function getFragmentMediumpPrecision() {
     gl.deleteShader(fs);
     gl.deleteBuffer(buffer);
     // GL context and canvas will be garbage collected.
-    var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
-    return mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
+    return pixel;
 }
-exports.getFragmentMediumpPrecision = getFragmentMediumpPrecision;
 // From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
-function getVertexMediumpPrecision() {
+function getVertexShaderMediumpPrecision() {
     // This entire program is only needed because of a bug in Safari.
     // Safari doesn't correctly report precision from getShaderPrecisionFormat
     // at least as of April 2020
     // see: https://bugs.webkit.org/show_bug.cgi?id=211013
-    var errorCallback = function (msg) { throw new Error(msg); };
     // Get A WebGL context
     /** @type {HTMLCanvasElement} */
     var canvas = document.createElement("canvas");
@@ -5730,56 +5748,62 @@ function getVertexMediumpPrecision() {
     if (!gl) {
         throw new Error("Unable to init webgl context.");
     }
-    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nuniform mediump vec3 v;\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n\tv_result = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nuniform mediump vec3 v;\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n\tv_result = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', Constants_1.DEFAULT_ERROR_CALLBACK);
     if (!vs) {
         throw new Error("Unable to init vertex shader.");
     }
-    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_FragColor = v_result;\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nvarying mediump vec4 v_result;\nvoid main() {\n\tgl_FragColor = v_result;\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', Constants_1.DEFAULT_ERROR_CALLBACK);
     if (!fs) {
         throw new Error("Unable to init fragment shader.");
     }
-    var program = initGLProgram(gl, fs, vs, 'mediumpPrecisionVertexTest', errorCallback);
-    if (!program) {
-        throw new Error("Unable to init WebGLProgram.");
-    }
-    var positionLocation = gl.getAttribLocation(program, 'position');
-    var vLocation = gl.getUniformLocation(program, 'v');
-    // create a buffer and setup an attribute
-    // We wouldn't need this except for a bug in Safari.
-    // See https://webglfundamentals.org/webgl/lessons/webgl-smallest-programs.html
-    // and https://bugs.webkit.org/show_bug.cgi?id=197592
-    var buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 1, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 1, // pull 1 value per vertex shader iteration from buffer
-    gl.UNSIGNED_BYTE, // type of data in buffer,
-    false, // don't normalize
-    0, // bytes to advance per iteration (0 = compute from size and type)
-    0);
-    gl.viewport(0, 0, 1, 1);
-    gl.useProgram(program);
     // we're going to compute the normalize vector of
     // (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
     // which should be impossible on mediump
     var value = Math.pow(2, 31) - 1;
     var input = Math.sqrt(value);
     var expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
-    gl.uniform3f(vLocation, input, input, input);
-    gl.drawArrays(gl.POINTS, 0, // offset
-    1);
-    var pixel = new Uint8Array(4);
-    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-    // Deallocate everything.
-    gl.deleteProgram(program);
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-    gl.deleteBuffer(buffer);
-    // GL context and canvas will be garbage collected.
+    var pixel = test1PxCalc('mediumpPrecisionVertexTest', gl, fs, vs, function (program) {
+        var vLocation = gl.getUniformLocation(program, 'v');
+        gl.uniform3f(vLocation, input, input, input);
+    });
     var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
     return mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
 }
-exports.getVertexMediumpPrecision = getVertexMediumpPrecision;
+exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
+// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+function getFragmentShaderMediumpPrecision() {
+    // This entire program is only needed because of a bug in Safari.
+    // Safari doesn't correctly report precision from getShaderPrecisionFormat
+    // at least as of April 2020
+    // see: https://bugs.webkit.org/show_bug.cgi?id=211013
+    // Get A WebGL context
+    var canvas = document.createElement("canvas");
+    var gl = canvas.getContext("webgl");
+    if (!gl) {
+        throw new Error("Unable to init webgl context.");
+    }
+    var vs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nattribute vec4 position;  // needed because of another bug in Safari\nvoid main() {\n\tgl_Position = position;\n\tgl_PointSize = 1.0;\n}\n\t", gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+    if (!vs) {
+        throw new Error("Unable to init vertex shader.");
+    }
+    var fs = compileShader(gl, Constants_1.GLSL1, Constants_1.PRECISION_MEDIUM_P, Constants_1.PRECISION_MEDIUM_P, "\nuniform mediump vec3 v;\nvoid main() {\n\tgl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);\n}\n\t", gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', Constants_1.DEFAULT_ERROR_CALLBACK);
+    if (!fs) {
+        throw new Error("Unable to init fragment shader.");
+    }
+    // we're going to compute the normalize vector of
+    // (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
+    // which should be impossible on mediump
+    var value = Math.pow(2, 31) - 1;
+    var input = Math.sqrt(value);
+    var expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
+    var pixel = test1PxCalc('mediumpPrecisionFragmentTest', gl, fs, vs, function (program) {
+        var vLocation = gl.getUniformLocation(program, 'v');
+        gl.uniform3f(vLocation, input, input, input);
+    });
+    var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
+    return mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
+}
+exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 function isPowerOf2(value) {
     // Use bitwise operation to evaluate this.
     return value > 0 && (value & (value - 1)) == 0;

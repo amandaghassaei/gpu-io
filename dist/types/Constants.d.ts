@@ -69,4 +69,5 @@ export declare type GPULayerBuffer = {
     framebuffer?: WebGLFramebuffer;
 };
 export declare type ErrorCallback = (message: string) => void;
+export declare const DEFAULT_ERROR_CALLBACK: (msg: string) => never;
 export declare const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;

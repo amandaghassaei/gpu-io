@@ -38,14 +38,18 @@ describe('utils', function () {
 	// }),
 	// describe('isWebGL2Supported', () => {
 	// }),
-	// describe('getFragmentMediumpPrecision', () => {
-	// 	it('should return valid response', () => {
-	// 		assert.equal([PRECISION_HIGH_P, PRECISION_MEDIUM_P].indexOf(getFragmentMediumpPrecision() > -1), true);
-	// 	});
+	// describe('isHighpSupportedInVertexShader', () => {
+	// }),
+	// describe('isHighpSupportedInFragmentShader', () => {
 	// }),
 	// describe('getVertexMediumpPrecision', () => {
 	// 	it('should return valid response', () => {
 	// 		assert.equal([PRECISION_HIGH_P, PRECISION_MEDIUM_P].indexOf(getVertexMediumpPrecision() > -1), true);
+	// 	});
+	// }),
+	// describe('getFragmentMediumpPrecision', () => {
+	// 	it('should return valid response', () => {
+	// 		assert.equal([PRECISION_HIGH_P, PRECISION_MEDIUM_P].indexOf(getFragmentMediumpPrecision() > -1), true);
 	// 	});
 	// }),
 	describe('isPowerOf2', () => {

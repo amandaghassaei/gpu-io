@@ -1,6 +1,7 @@
 import { isString } from './Checks';
 import {
 	CompileTimeVars,
+	DEFAULT_ERROR_CALLBACK,
 	ErrorCallback,
 	GLSL1,
 	GLSL3,
@@ -130,49 +131,89 @@ export function isWebGL2Supported() {
 	return true;
 }
 
-// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
-export function getFragmentMediumpPrecision() {
-	// This entire program is only needed because of a bug in Safari.
-	// Safari doesn't correctly report precision from getShaderPrecisionFormat
-	// at least as of April 2020
-	// see: https://bugs.webkit.org/show_bug.cgi?id=211013
+// Memoize results.
+const highpSupported = {
+	vertex: undefined as  undefined | boolean,
+	fragment: undefined as undefined | boolean,
+}
 
-	const errorCallback = (msg: string) => { throw new Error(msg); };
-
-	// Get A WebGL context
-	const canvas = document.createElement("canvas");
-	const gl = canvas.getContext("webgl");
+function isHighpSupported(vsSource: string, fsSource: string) {
+	// This is supposed to be relatively easy. You call gl.getShaderPrecisionFormat, you pass in the shader type,
+	// VERTEX_SHADER or FRAGMENT_SHADER and you pass in one of LOW_FLOAT, MEDIUM_FLOAT, HIGH_FLOAT, LOW_INT, MEDIUM_INT, HIGH_INT,
+	// and it returns the precision info.
+	// Unfortunately Safari has a bug here which means checking this way will fail on iPhone, at least as of April 2020.
+	// https://webglfundamentals.org/webgl/webgl-precision-lowp-mediump-highp.html
+	const gl = document.createElement('canvas').getContext('webgl');
 	if (!gl) {
 		throw new Error(`Unable to init webgl context.`);
 	}
-
-	const vs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P,`
-attribute vec4 position;  // needed because of another bug in Safari
-void main() {
-	gl_Position = position;
-	gl_PointSize = 1.0;
-}
-	`, gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
-	if (!vs) {
-		throw new Error(`Unable to init vertex shader.`);
+	try {
+		const vs = compileShader(
+			gl,
+			GLSL1,
+			PRECISION_HIGH_P,
+			PRECISION_HIGH_P,
+			vsSource,
+			gl.VERTEX_SHADER,
+			'highpFragmentTest',
+			DEFAULT_ERROR_CALLBACK,
+		)!;
+		const fs = compileShader(
+			gl,
+			GLSL1,
+			PRECISION_HIGH_P,
+			PRECISION_HIGH_P,
+			fsSource,
+			gl.FRAGMENT_SHADER,
+			'highpFragmentTest',
+			DEFAULT_ERROR_CALLBACK,
+		)!;
+		const program = initGLProgram(gl, fs, vs, 'highpFragmentTest', DEFAULT_ERROR_CALLBACK)!;
+		// Deallocate everything.
+		gl.deleteProgram(program);
+		gl.deleteShader(vs);
+		gl.deleteShader(fs);
+		// GL context and canvas will be garbage collected.
+	} catch {
+		return false;
 	}
-
-	const fs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P, `
-uniform mediump vec3 v;
-void main() {
-	gl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);
+	return true;
 }
-	`, gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', errorCallback);
-	if (!fs) {
-		throw new Error(`Unable to init fragment shader.`);
-	}
 
-	const program = initGLProgram(gl, fs, vs, 'mediumpPrecisionFragmentTest', errorCallback);
+export function isHighpSupportedInVertexShader() {
+	if (highpSupported.vertex === undefined) {
+		const vertexSupport = isHighpSupported(
+			'void main() { highp float test = 0.524; gl_Position = vec4(test, test, 0, 1); }',
+			'void main() { gl_FragColor = vec4(0); }',
+		);
+		highpSupported.vertex = vertexSupport;
+	}
+	return highpSupported.vertex;
+}
+
+export function isHighpSupportedInFragmentShader() {
+	if (highpSupported.fragment === undefined) {
+		const fragmentSupport = isHighpSupported(
+			'void main() { gl_Position = vec4(0.5, 0.5, 0, 1); }',
+			'void main() { highp float test = 1.35; gl_FragColor = vec4(test); }',
+		);
+		highpSupported.fragment = fragmentSupport;
+	}
+	return highpSupported.fragment;
+}
+
+function test1PxCalc(
+	name: string,
+	gl: WebGL2RenderingContext | WebGLRenderingContext,
+	fs: WebGLShader,
+	vs: WebGLShader,
+	addUniforms: (program: WebGLProgram) => void,
+) {
+	const program = initGLProgram(gl, fs, vs, name, DEFAULT_ERROR_CALLBACK);
 	if (!program) {
 		throw new Error(`Unable to init WebGLProgram.`);
 	}
 	const positionLocation = gl.getAttribLocation(program, 'position');
-	const vLocation = gl.getUniformLocation(program, 'v');
 
 	// create a buffer and setup an attribute
 	// We wouldn't need this except for a bug in Safari.
@@ -194,14 +235,8 @@ void main() {
 	gl.viewport(0, 0, 1, 1);
 	gl.useProgram(program);
 
-	// we're going to compute the normalize vector of
-	// (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
-	// which should be impossible on mediump
-	const value = 2 ** 31 - 1;
-	const input = Math.sqrt(value);
-	const expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
-
-	gl.uniform3f(vLocation, input, input, input);
+	addUniforms(program);
+	
 	gl.drawArrays(
 		gl.POINTS,
 		0, // offset
@@ -218,18 +253,15 @@ void main() {
 	gl.deleteBuffer(buffer);
 	// GL context and canvas will be garbage collected.
 
-	const mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
-	return mediumpPrecision ? PRECISION_MEDIUM_P : PRECISION_HIGH_P;
+	return pixel;
 }
 
 // From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
-export function getVertexMediumpPrecision() {
+export function getVertexShaderMediumpPrecision() {
 	// This entire program is only needed because of a bug in Safari.
 	// Safari doesn't correctly report precision from getShaderPrecisionFormat
 	// at least as of April 2020
 	// see: https://bugs.webkit.org/show_bug.cgi?id=211013
-
-	const errorCallback = (msg: string) => { throw new Error(msg); };
 
 	// Get A WebGL context
 	/** @type {HTMLCanvasElement} */
@@ -248,7 +280,7 @@ void main() {
 	gl_PointSize = 1.0;
 	v_result = vec4(normalize(v) * 0.5 + 0.5, 1);
 }
-	`, gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+	`, gl.VERTEX_SHADER, 'mediumpPrecisionVertexTest', DEFAULT_ERROR_CALLBACK);
 	if (!vs) {
 		throw new Error(`Unable to init vertex shader.`);
 	}
@@ -258,37 +290,10 @@ varying mediump vec4 v_result;
 void main() {
 	gl_FragColor = v_result;
 }
-	`, gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', errorCallback);
+	`, gl.FRAGMENT_SHADER, 'mediumpPrecisionVertexTest', DEFAULT_ERROR_CALLBACK);
 	if (!fs) {
 		throw new Error(`Unable to init fragment shader.`);
 	}
-
-	const program = initGLProgram(gl, fs, vs, 'mediumpPrecisionVertexTest', errorCallback);
-	if (!program) {
-		throw new Error(`Unable to init WebGLProgram.`);
-	}
-	const positionLocation = gl.getAttribLocation(program, 'position');
-	const vLocation = gl.getUniformLocation(program, 'v');
-
-	// create a buffer and setup an attribute
-	// We wouldn't need this except for a bug in Safari.
-	// See https://webglfundamentals.org/webgl/lessons/webgl-smallest-programs.html
-	// and https://bugs.webkit.org/show_bug.cgi?id=197592
-	const buffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-	gl.bufferData(gl.ARRAY_BUFFER, 1, gl.STATIC_DRAW);
-	gl.enableVertexAttribArray(positionLocation);
-	gl.vertexAttribPointer(
-		positionLocation,
-		1,                // pull 1 value per vertex shader iteration from buffer
-		gl.UNSIGNED_BYTE, // type of data in buffer,
-		false,            // don't normalize
-		0,                // bytes to advance per iteration (0 = compute from size and type)
-		0,                // offset into buffer
-	);
-
-	gl.viewport(0, 0, 1, 1);
-	gl.useProgram(program);
 
 	// we're going to compute the normalize vector of
 	// (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
@@ -297,22 +302,73 @@ void main() {
 	const input = Math.sqrt(value);
 	const expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
 
-	gl.uniform3f(vLocation, input, input, input);
-	gl.drawArrays(
-		gl.POINTS,
-		0, // offset
-		1, // number of vertices to process
+	const pixel = test1PxCalc(
+		'mediumpPrecisionVertexTest',
+		gl,
+		fs,
+		vs,
+		 (program: WebGLProgram) => {
+			const vLocation = gl.getUniformLocation(program, 'v');
+			gl.uniform3f(vLocation, input, input, input);
+		},
 	);
 
-	const pixel = new Uint8Array(4);
-	gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+	const mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
+	return mediumpPrecision ? PRECISION_MEDIUM_P : PRECISION_HIGH_P;
+}
 
-	// Deallocate everything.
-	gl.deleteProgram(program);
-	gl.deleteShader(vs);
-	gl.deleteShader(fs);
-	gl.deleteBuffer(buffer);
-	// GL context and canvas will be garbage collected.
+// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+export function getFragmentShaderMediumpPrecision() {
+	// This entire program is only needed because of a bug in Safari.
+	// Safari doesn't correctly report precision from getShaderPrecisionFormat
+	// at least as of April 2020
+	// see: https://bugs.webkit.org/show_bug.cgi?id=211013
+
+	// Get A WebGL context
+	const canvas = document.createElement("canvas");
+	const gl = canvas.getContext("webgl");
+	if (!gl) {
+		throw new Error(`Unable to init webgl context.`);
+	}
+
+	const vs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P,`
+attribute vec4 position;  // needed because of another bug in Safari
+void main() {
+	gl_Position = position;
+	gl_PointSize = 1.0;
+}
+	`, gl.VERTEX_SHADER, 'mediumpPrecisionFragmentTest', DEFAULT_ERROR_CALLBACK);
+	if (!vs) {
+		throw new Error(`Unable to init vertex shader.`);
+	}
+
+	const fs = compileShader(gl, GLSL1, PRECISION_MEDIUM_P, PRECISION_MEDIUM_P, `
+uniform mediump vec3 v;
+void main() {
+	gl_FragColor = vec4(normalize(v) * 0.5 + 0.5, 1);
+}
+	`, gl.FRAGMENT_SHADER, 'mediumpPrecisionFragmentTest', DEFAULT_ERROR_CALLBACK);
+	if (!fs) {
+		throw new Error(`Unable to init fragment shader.`);
+	}
+
+	// we're going to compute the normalize vector of
+	// (sqrt(2^31-1), sqrt(2^31-1), sqrt(2^31-1))
+	// which should be impossible on mediump
+	const value = 2 ** 31 - 1;
+	const input = Math.sqrt(value);
+	const expected = ((input / Math.sqrt(input * input * 3)) * 0.5 + 0.5) * 255 | 0;
+
+	const pixel = test1PxCalc(
+		'mediumpPrecisionFragmentTest',
+		gl,
+		fs,
+		vs,
+		 (program: WebGLProgram) => {
+			const vLocation = gl.getUniformLocation(program, 'v');
+			gl.uniform3f(vLocation, input, input, input);
+		},
+	);
 
 	const mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
 	return mediumpPrecision ? PRECISION_MEDIUM_P : PRECISION_HIGH_P;

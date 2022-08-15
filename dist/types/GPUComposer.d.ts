@@ -36,7 +36,8 @@ export declare class GPUComposer {
     verboseLogging: boolean;
     static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
         verboseLogging?: boolean;
-    }, errorCallback?: ErrorCallback): GPUComposer;
+        errorCallback?: ErrorCallback;
+    }): GPUComposer;
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
@@ -49,7 +50,8 @@ export declare class GPUComposer {
         intPrecision?: GLSLPrecision;
         floatPrecision?: GLSLPrecision;
         verboseLogging?: boolean;
-    }, errorCallback?: ErrorCallback, renderer?: WebGLRenderer);
+        errorCallback?: ErrorCallback;
+    });
     private glslKeyForType;
     _setValueProgramForType(type: GPULayerType): GPUProgram;
     private copyProgramForType;

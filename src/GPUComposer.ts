@@ -42,6 +42,7 @@ import {
 	UINT,
 	GLSLPrecision,
 	PRECISION_HIGH_P,
+	DEFAULT_ERROR_CALLBACK,
 } from './Constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -174,10 +175,10 @@ export class GPUComposer {
 		renderer: WebGLRenderer,
 		params?: {
 			verboseLogging?: boolean,
+			errorCallback?: ErrorCallback,
 		},
-		errorCallback?: ErrorCallback,
 	) {
-		return new GPUComposer(
+		const composer = new GPUComposer(
 			{
 				...params,
 				canvas: renderer.domElement,
@@ -186,9 +187,10 @@ export class GPUComposer {
 				floatPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
 				intPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
 			},
-			errorCallback,
-			renderer,
 		);
+		// Attach renderer.
+		composer.renderer = renderer;
+		return composer;
 	}
 
 	constructor(
@@ -204,19 +206,19 @@ export class GPUComposer {
 			intPrecision?: GLSLPrecision,
 			floatPrecision?: GLSLPrecision,
 			verboseLogging?: boolean,
+			// Optionally pass in an error callback in case we want to handle errors related to webgl support.
+			// e.g. throw up a modal telling user this will not work on their device.
+			errorCallback?: ErrorCallback,
 		},
-		// Optionally pass in an error callback in case we want to handle errors related to webgl support.
-		// e.g. throw up a modal telling user this will not work on their device.
-		errorCallback: ErrorCallback = (message: string) => { throw new Error(message) },
-		renderer?: WebGLRenderer,
 	) {
 		// Check params.
-		const validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging'];
+		const validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging', 'errorCallback'];
 		Object.keys(params).forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
 				throw new Error(`Invalid key "${key}" passed to GPUComposer.constructor.  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
+		// TODO: test required keys.
 
 		if (!params.canvas) {
 			throw new Error(`Must init GPUComposer with a "canvas" parameter.`);
@@ -231,7 +233,7 @@ export class GPUComposer {
 				return;
 			}
 			self.errorState = true;
-			errorCallback(message);
+			params.errorCallback ? params.errorCallback(message) : DEFAULT_ERROR_CALLBACK(message);
 		}
 
 		const { canvas } = params;
@@ -262,7 +264,6 @@ export class GPUComposer {
 			if (this.verboseLogging) console.log('Using WebGL 1.0 context.');
 		}
 		this.gl = gl;
-		this.renderer = renderer;
 
 		// Save glsl version, default to 3 if using webgl2 context.
 		let glslVersion = params.glslVersion === undefined ? (isWebGL2(gl) ? GLSL3 : GLSL1) : params.glslVersion;

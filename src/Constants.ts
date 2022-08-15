@@ -99,5 +99,6 @@ export type GPULayerBuffer = {
 }
 
 export type ErrorCallback = (message: string) => void;
+export const DEFAULT_ERROR_CALLBACK = (msg: string) => { throw new Error(msg); };
 
 export const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;// Must be divisible by 6 to work with stepSegment().

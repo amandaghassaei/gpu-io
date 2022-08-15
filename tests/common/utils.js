@@ -37,14 +37,18 @@ const MAX_HALF_FLOAT_INT = 2048;
 		NEAREST,
 		REPEAT,
 		CLAMP_TO_EDGE,
-		getFragmentMediumpPrecision,
-		getVertexMediumpPrecision,
+		getVertexShaderMediumpPrecision,
+		getFragmentShaderMediumpPrecision,
+		isHighpSupportedInVertexShader,
+		isHighpSupportedInFragmentShader
 	} = WebGLCompute;
 
 	document.getElementById('info').innerHTML =  `
 	WebGL2 Supported: ${isWebGL2Supported()}<br/>
-	Fragment shader mediump precision handled as: ${getFragmentMediumpPrecision()}<br/>
-	Vertex shader mediump precision handled as: ${getVertexMediumpPrecision()}<br/>
+	Vertex shader mediump precision handled as: ${getVertexShaderMediumpPrecision()}<br/>
+	Fragment shader mediump precision handled as: ${getFragmentShaderMediumpPrecision()}<br/>
+	Vertex shader supports highp precision: ${isHighpSupportedInVertexShader()}<br/>
+	Fragment shader supports highp precision: ${isHighpSupportedInFragmentShader()}<br/>
 	<br/>
 	All tests are performed on non-power of 2 textures.<br/>
 	In cases where INT types are not available, FLOAT types are used instead, but may be limited in the range of int values they can represent.<br/>

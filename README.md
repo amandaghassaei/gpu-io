@@ -128,7 +128,7 @@ My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially laun
 
 ### Precision
 
-By default all shaders in this library are inited with highp precision floats and ints, but fallback to mediump if not available (this is the same convention used by Threejs):
+By default all shaders in this library are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs):
 ```glsl
 #ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp float;
@@ -160,19 +160,27 @@ const composer = new GPUComposer({
 });
 ```
 
-I've also included the following helper functions to test the precision of mediump on your device:
+**Note: even if highp is specified in your shader code, this library will convert to mediump if the current browser does not support highp (the alternative would be to throw an error).**
+
+I've also included the following helper functions to test the precision of mediump on your device and determine whether highp is supported:
 
 ```js
 const {
-	getFragmentMediumpPrecision,
-	getVertexMediumpPrecision,
+	isHighpSupportedInVertexShader,
+	isHighpSupportedInFragmentShader,
+	getVertexShaderMediumpPrecision,
+	getFragmentShaderMediumpPrecision,
 } = WebGLCompute;
 
-// Prints 'highp' or 'mediump' depending on returned precision of mediump.
+// Prints 'highp' or 'mediump' depending on returned precision of mediump (16+bit or 32+bit).
 // On many devices (esp desktop) mediump defaults to 32bit.
 // See https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html for more info.
-console.log(getFragmentMediumpPrecision());
-console.log(getVertexMediumpPrecision());
+console.log(getVertexShaderMediumpPrecision());
+console.log(getFragmentShaderMediumpPrecision());
+
+// Print true or false depending on highp support of browser/device.
+console.log(isHighpSupportedInVertexShader());
+console.log(isHighpSupportedInFragmentShader());
 ```
 
 
