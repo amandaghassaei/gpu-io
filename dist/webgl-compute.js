@@ -5748,16 +5748,15 @@ function getVertexMediumpPrecision() {
     // We wouldn't need this except for a bug in Safari.
     // See https://webglfundamentals.org/webgl/lessons/webgl-smallest-programs.html
     // and https://bugs.webkit.org/show_bug.cgi?id=197592
-    {
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-        gl.bufferData(gl.ARRAY_BUFFER, 1, gl.STATIC_DRAW);
-        gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation, 1, // pull 1 value per vertex shader iteration from buffer
-        gl.UNSIGNED_BYTE, // type of data in buffer,
-        false, // don't normalize
-        0, // bytes to advance per iteration (0 = compute from size and type)
-        0);
-    }
+    var buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, 1, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 1, // pull 1 value per vertex shader iteration from buffer
+    gl.UNSIGNED_BYTE, // type of data in buffer,
+    false, // don't normalize
+    0, // bytes to advance per iteration (0 = compute from size and type)
+    0);
     gl.viewport(0, 0, 1, 1);
     gl.useProgram(program);
     // we're going to compute the normalize vector of
@@ -5771,6 +5770,12 @@ function getVertexMediumpPrecision() {
     1);
     var pixel = new Uint8Array(4);
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    // Deallocate everything.
+    gl.deleteProgram(program);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    gl.deleteBuffer(buffer);
+    // GL context and canvas will be garbage collected.
     var mediumpPrecision = Math.abs(pixel[0] - expected) > 16;
     return mediumpPrecision ? Constants_1.PRECISION_MEDIUM_P : Constants_1.PRECISION_HIGH_P;
 }
