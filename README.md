@@ -51,10 +51,7 @@ Currently, this library can run in a separate webgl context from threejs with no
 
 ```js
 import THREE from 'three';
-import WebGLCompute, {
-	GPUComposer,
-	GPULayer,
-} from 'webgl-compute';
+import WebGLCompute, { GPUComposer GPULayer } from 'webgl-compute';
 
 const renderer = new THREE.WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff on top
