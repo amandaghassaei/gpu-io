@@ -21,7 +21,6 @@ import {
 	UniformType,
 	UniformInternalType,
 	UniformValue,
-	GLSL1,
 	CompileTimeVars,
 	PROGRAM_NAME_INTERNAL,
 	DEFAULT_PROGRAM_NAME,

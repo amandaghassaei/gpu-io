@@ -83,67 +83,6 @@ void main() {
 	}
 }
 
-function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wrap, offset) {
-	if (offset === 0) return input;
-
-	const expected = input.slice();
-
-	if (filter === NEAREST) offset = Math.round(offset);
-
-	function wrapIndex(x, y, el) {
-		if (wrap === REPEAT) {
-			x = (x + dimX) % dimX;
-			y = (y + dimY) % dimY;
-		} else if (wrap === CLAMP_TO_EDGE) {
-			if (x < 0) x = 0;
-			if (y < 0) y = 0;
-			if (x >= dimX) x = dimX - 1;
-			if (y >= dimY) y = dimY - 1;
-		}
-		return (y * dimX + x) * numElements + el;
-	}
-
-	function bilinearInterp(x, y, el) {
-		// Bilinear interpolation.
-		const minX = Math.floor(x);
-		const minY = Math.floor(y);
-		const maxX = Math.ceil(x);
-		const maxY = Math.ceil(y);
-		const indexMinMin = wrapIndex(minX, minY, el);
-		const indexMinMax = wrapIndex(minX, maxY, el);
-		const indexMaxMin = wrapIndex(maxX, minY, el);
-		const indexMaxMax = wrapIndex(maxX, maxY, el);
-		const valMinMin = input[indexMinMin];
-		const valMinMax = input[indexMinMax];
-		const valMaxMin = input[indexMaxMin];
-		const valMaxMax = input[indexMaxMax];
-		const t1 = x - minX;
-		const t2 = y - minY;
-		const valMin = t2 * valMinMax + (1 - t2) * valMinMin;
-		const valMax = t2 * valMaxMax + (1 - t2) * valMaxMin;
-		return t1 * valMax + (1 - t1) * valMin;
-	}
-
-	for (let el = 0; el < numElements; el++) {
-		for (let _y = 0; _y < dimY; _y++) {
-			for (let _x = 0; _x < dimX; _x++) {
-				const x = _x + offset;
-				const y = _y + offset;
-				expected[wrapIndex(_x, _y, el)] = bilinearInterp(x, y, el);
-			}
-		}
-	}
-	if (type === HALF_FLOAT) {
-		const uint16Array = new Uint16Array(1);
-		const view = new DataView(uint16Array.buffer);
-		for (let i = 0; i < expected.length; i++) {
-			setFloat16(view, 0,  expected[i], true);
-			expected[i] = getFloat16(view, 0, true);
-		}
-	}
-	return expected;
-}
-
 // General code for testing array writes.
 function testArrayWrites(options) {
 	const { 
@@ -490,7 +429,7 @@ function testArrayWrites(options) {
 				(!extremaSupported && !typeMismatch) // Extrema should be supported if using correct internal type.
 			) {
 				status = ERROR;
-				extremaError.push(`Type extrema not supported:\n${allMismatches.join('\n')}.`);
+				extremaError.push(`Type extrema not supported.`);
 			}
 
 			// Check int support.

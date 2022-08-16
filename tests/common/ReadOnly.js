@@ -352,8 +352,20 @@ function testArrayReads(options) {
 				throw new Error(`Invalid type ${TYPE}.`);
 		}
 
-		const layer = new GPULayer(composer, {
-			name: `test-${TYPE}`,
+		const inputLayer = new GPULayer(composer, {
+			name: `test-${TYPE}-input`,
+			dimensions: [DIM_X, DIM_Y],
+			type: TYPE,
+			numComponents: NUM_ELEMENTS,
+			array: input,
+			filter: FILTER,
+			wrapS: WRAP,
+			wrapT: WRAP,
+			writable: false,
+			numBuffers: 1,
+		});
+		const outputLayer = new GPULayer(composer, {
+			name: `test-${TYPE}-output`,
 			dimensions: [DIM_X, DIM_Y],
 			type: TYPE,
 			numComponents: NUM_ELEMENTS,
@@ -362,7 +374,7 @@ function testArrayReads(options) {
 			wrapS: WRAP,
 			wrapT: WRAP,
 			writable: true,
-			numBuffers: 2,
+			numBuffers: 1,
 		});
 
 		const offsetProgram = new GPUProgram(composer, {
@@ -385,23 +397,23 @@ function testArrayReads(options) {
 
 		composer.step({
 			program: offsetProgram,
-			input: layer,
-			output: layer,
+			input: inputLayer,
+			output: outputLayer,
 		});
-		const output = composer.getValues(layer);
+		const output = composer.getValues(outputLayer);
 
 		let status = SUCCESS;
 		const error = [];
 		const log = [];
-		const typeMismatch =  TYPE !== layer.internalType;
+		const typeMismatch =  TYPE !== inputLayer.internalType;
 		if (typeMismatch) {
-			log.push(`Unsupported type ${TYPE} for the current configuration, using type ${layer.internalType} internally.`);
+			log.push(`Unsupported type ${TYPE} for the current configuration, using type ${inputLayer.internalType} internally.`);
 		}
-		if (WRAP !== layer.internalWrapS || WRAP !== layer.internalWrapT) {
-			error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${layer.internalWrapS}, ${layer.internalWrapT}] internally.`);
+		if (WRAP !== inputLayer.internalWrapS || WRAP !== inputLayer.internalWrapT) {
+			error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${inputLayer.internalWrapS}, ${inputLayer.internalWrapT}] internally.`);
 		}
-		if (composer.gl[FILTER] !== layer.glFilter) {
-			const filter = layer.glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;
+		if (composer.gl[FILTER] !== inputLayer.glFilter) {
+			const filter = inputLayer.glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;
 			error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally.`);
 		}
 
@@ -425,11 +437,11 @@ function testArrayReads(options) {
 			const extremaSupported = typeExtremaSupported && floatExtremaSupported && halfFloatExtremaSupported;
 			if (
 				!halfFloatExtremaSupported || // Half float extrema should always be supported.
-				(!floatExtremaSupported && layer.internalType !== HALF_FLOAT) || // Float extrema should always be supported unless using half float type.
+				(!floatExtremaSupported && inputLayer.internalType !== HALF_FLOAT) || // Float extrema should always be supported unless using half float type.
 				(!extremaSupported && !typeMismatch) // Extrema should be supported if using correct internal type.
 			) {
 				status = ERROR;
-				extremaError.push(`Type extrema not supported:\n${allMismatches.join('\n')}.`);
+				extremaError.push(`Type extrema not supported.`);
 			}
 
 			// Check int support.
@@ -440,12 +452,12 @@ function testArrayReads(options) {
 			) {
 				let min = MIN_HALF_FLOAT_INT;
 				let max = MAX_HALF_FLOAT_INT;
-				if (layer.internalType === FLOAT) {
+				if (inputLayer.internalType === FLOAT) {
 					min = MIN_FLOAT_INT;
 					max = MAX_FLOAT_INT;
 				}
 				status = WARNING;
-				extremaWarning.push(`Internal data type ${layer.internalType} supports integers in range ${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")}.  Current type ${TYPE} contains integers in range ${input[0].toLocaleString("en-US")} to ${input[2].toLocaleString("en-US")}.`);
+				extremaWarning.push(`Internal data type ${inputLayer.internalType} supports integers in range ${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")}.  Current type ${TYPE} contains integers in range ${input[0].toLocaleString("en-US")} to ${input[2].toLocaleString("en-US")}.`);
 			}
 			return {
 				status,
@@ -468,11 +480,25 @@ function testArrayReads(options) {
 				config,
 			};
 		}
+
+		// Compare expected values and output.
+		const expected = calculateExpectedValue(DIM_X, DIM_Y, NUM_ELEMENTS, input, TYPE, FILTER, WRAP, OFFSET);
+		if (expected.length !== output.length) {
+			status = ERROR;
+			error.push(`Invalid output array: expected length ${expected.length}, got length ${output.length}.`);
+			return {
+				status,
+				log,
+				error,
+				config,
+			};
+		}
 		
 		let allMismatches = [];
+		console.log(NUM_ELEMENTS, TYPE, output.length);
 		for (let i = 0; i < output.length; i++) {
-			if (output[i] !== input[i]) {
-				allMismatches.push(`expected: ${input[i]}, got: ${output[i]}`);
+			if (expected[i] !== output[i]) {
+				allMismatches.push(`expected: ${expected[i]}, got: ${output[i]}`);
 			}
 		}
 
@@ -498,7 +524,8 @@ function testArrayReads(options) {
 			};
 		}
 
-		layer.dispose();
+		inputLayer.dispose();
+		outputLayer	.dispose();
 		offsetProgram.dispose();
 		composer.dispose();
 
