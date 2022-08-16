@@ -58,6 +58,7 @@ export declare class GPULayer {
     get currentState(): WebGLTexture;
     get lastState(): WebGLTexture;
     _usingTextureOverrideForCurrentBuffer(): WebGLTexture | undefined;
+    incrementBufferIndex(): void;
     _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
     _bindOutputBuffer(): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;

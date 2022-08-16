@@ -24,18 +24,7 @@ const {
 
 MicroModal.init();
 
-function offsetProgramForType(type, glslVersion) {
-	if (glslVersion === GLSL1) {
-		return `
-varying vec2 v_UV;
-
-uniform sampler2D u_state;
-uniform vec2 u_offset;
-
-void main() {
-	gl_FragColor = texture2D(u_state, v_UV + u_offset);
-}`;
-	}
+function offsetProgramForType(type) {
 	switch (type) {
 		case HALF_FLOAT:
 		case FLOAT:
@@ -45,10 +34,10 @@ in vec2 v_UV;
 uniform sampler2D u_state;
 uniform vec2 u_offset;
 
-out vec4 out_fragColor;
+out vec4 out_fragOut;
 
 void main() {
-	out_fragColor = texture(u_state, v_UV + u_offset);
+	out_fragOut = texture(u_state, v_UV + u_offset);
 }`;
 		case UNSIGNED_BYTE:
 		case UNSIGNED_SHORT:
@@ -59,10 +48,10 @@ in vec2 v_UV;
 uniform usampler2D u_state;
 uniform vec2 u_offset;
 
-out uvec4 out_fragColor;
+out uvec4 out_fragOut;
 
 void main() {
-	out_fragColor = texture(u_state, v_UV + u_offset);
+	out_fragOut = texture(u_state, v_UV + u_offset);
 }`;
 		case BYTE:
 		case SHORT:
@@ -73,10 +62,43 @@ in vec2 v_UV;
 uniform isampler2D u_state;
 uniform vec2 u_offset;
 
-out ivec4 out_fragColor;
+out ivec4 out_fragOut;
 
 void main() {
-	out_fragColor = texture(u_state, v_UV + u_offset);
+	out_fragOut = texture(u_state, v_UV + u_offset);
+}`;
+		default:
+			throw new Error(`Invalid type: ${type}.`);
+	}
+}
+
+function zeroProgramForType(type) {
+	switch (type) {
+		case HALF_FLOAT:
+		case FLOAT:
+			return `
+out vec4 out_fragOut;
+
+void main() {
+	out_fragOut = vec4(0);
+}`;
+		case UNSIGNED_BYTE:
+		case UNSIGNED_SHORT:
+		case UNSIGNED_INT:
+			return `
+out uvec4 out_fragOut;
+
+void main() {
+	out_fragOut = uvec4(0);
+}`;
+		case BYTE:
+		case SHORT:
+		case INT:
+			return `
+out ivec4 out_fragOut;
+
+void main() {
+	out_fragOut = ivec4(0);
 }`;
 		default:
 			throw new Error(`Invalid type: ${type}.`);
@@ -367,7 +389,7 @@ function testArrayWrites(options) {
 
 		const offsetProgram = new GPUProgram(composer, {
 			name: 'offset',
-			fragmentShader: offsetProgramForType(TYPE, GLSL_VERSION),
+			fragmentShader: offsetProgramForType(TYPE),
 			uniforms: [
 					{
 						name: 'u_state',
@@ -382,7 +404,19 @@ function testArrayWrites(options) {
 				],
 			},
 		);
+		const zeroProgram = new GPUProgram(composer, {
+			name: 'zero',
+			fragmentShader: zeroProgramForType(TYPE),
+			},
+		);
 
+		// Zero out first buffer.
+		composer.step({
+			program: zeroProgram,
+			output: layer,
+		});
+		layer.incrementBufferIndex();
+		// Copy second buffer to first buffer.
 		composer.step({
 			program: offsetProgram,
 			input: layer,

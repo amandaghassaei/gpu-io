@@ -198,7 +198,7 @@ export declare class GPUComposer {
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
-    getValues(GPULayer: GPULayer): GPULayerArray;
+    getValues(gpuLayer: GPULayer): GPULayerArray;
     private readyToRead;
     savePNG(GPULayer: GPULayer, filename?: string, dpi?: number, callback?: typeof saveAs): void;
     attachGPULayerToThreeTexture(GPULayer: GPULayer, texture: Texture): void;

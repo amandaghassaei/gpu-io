@@ -219,7 +219,6 @@ const MAX_HALF_FLOAT_INT = 2048;
 				outerTableTitle.innerHTML = `GLSL v${GLSL_VERSION === GLSL3 ? '3' : '1'}`;
 				outerTable.appendChild(outerTableTitle);
 
-
 				// Loop through various settings.
 				const extremaResults = [];
 				for (let NUM_ELEMENTS = 1; NUM_ELEMENTS <= 4; NUM_ELEMENTS++) {

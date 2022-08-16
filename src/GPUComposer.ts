@@ -1613,14 +1613,14 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	getValues(GPULayer: GPULayer) {
+	getValues(gpuLayer: GPULayer) {
 		const { gl, glslVersion } = this;
 
 		// In case GPULayer was not the last output written to.
-		GPULayer._bindOutputBuffer();
+		gpuLayer._bindOutputBuffer();
 
-		const { width, height } = GPULayer;
-		let { glNumChannels, glType, glFormat, internalType } = GPULayer;
+		const { width, height } = gpuLayer;
+		let { glNumChannels, glType, glFormat, internalType } = gpuLayer;
 		let values;
 		switch (internalType) {
 			case HALF_FLOAT:
@@ -1709,8 +1709,8 @@ export class GPUComposer {
 		if (this.readyToRead()) {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
 			gl.readPixels(0, 0, width, height, glFormat, glType, values);
-			const { numComponents, type } = GPULayer;
-			const OUTPUT_LENGTH = (GPULayer._length ? GPULayer._length : width * height) * numComponents;
+			const { numComponents, type } = gpuLayer;
+			const OUTPUT_LENGTH = (gpuLayer._length ? gpuLayer._length : width * height) * numComponents;
 
 			// Convert uint16 to float32 if needed.
 			const handleFloat16Conversion = internalType === HALF_FLOAT && values.constructor === Uint16Array;

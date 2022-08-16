@@ -24,18 +24,7 @@ const {
 
 MicroModal.init();
 
-function offsetProgramForType(type, glslVersion) {
-	if (glslVersion === GLSL1) {
-		return `
-varying vec2 v_UV;
-
-uniform sampler2D u_state;
-uniform vec2 u_offset;
-
-void main() {
-	gl_FragColor = texture2D(u_state, v_UV + u_offset);
-}`;
-	}
+function offsetProgramForType(type) {
 	switch (type) {
 		case HALF_FLOAT:
 		case FLOAT:
@@ -45,10 +34,10 @@ in vec2 v_UV;
 uniform sampler2D u_state;
 uniform vec2 u_offset;
 
-out vec4 out_fragColor;
+out vec4 out_fragOut;
 
 void main() {
-	out_fragColor = texture(u_state, v_UV + u_offset);
+	out_fragOut = texture(u_state, v_UV + u_offset);
 }`;
 		case UNSIGNED_BYTE:
 		case UNSIGNED_SHORT:
@@ -59,10 +48,10 @@ in vec2 v_UV;
 uniform usampler2D u_state;
 uniform vec2 u_offset;
 
-out uvec4 out_fragColor;
+out uvec4 out_fragOut;
 
 void main() {
-	out_fragColor = texture(u_state, v_UV + u_offset);
+	out_fragOut = texture(u_state, v_UV + u_offset);
 }`;
 		case BYTE:
 		case SHORT:
@@ -73,10 +62,10 @@ in vec2 v_UV;
 uniform isampler2D u_state;
 uniform vec2 u_offset;
 
-out ivec4 out_fragColor;
+out ivec4 out_fragOut;
 
 void main() {
-	out_fragColor = texture(u_state, v_UV + u_offset);
+	out_fragOut = texture(u_state, v_UV + u_offset);
 }`;
 		default:
 			throw new Error(`Invalid type: ${type}.`);
@@ -103,7 +92,7 @@ function testArrayReads(options) {
 	if (FILTER !== NEAREST) OFFSET = 0.75;
 
 	const config = {
-		readwrite: true,
+		readwrite: false,
 		type: TYPE,
 		dimensions: `[${DIM_X}, ${DIM_Y}]`,
 		num_channels: NUM_ELEMENTS,
@@ -369,7 +358,6 @@ function testArrayReads(options) {
 			dimensions: [DIM_X, DIM_Y],
 			type: TYPE,
 			numComponents: NUM_ELEMENTS,
-			array: input,
 			filter: FILTER,
 			wrapS: WRAP,
 			wrapT: WRAP,
@@ -379,7 +367,7 @@ function testArrayReads(options) {
 
 		const offsetProgram = new GPUProgram(composer, {
 			name: 'offset',
-			fragmentShader: offsetProgramForType(TYPE, GLSL_VERSION),
+			fragmentShader: offsetProgramForType(TYPE),
 			uniforms: [
 					{
 						name: 'u_state',
@@ -495,7 +483,6 @@ function testArrayReads(options) {
 		}
 		
 		let allMismatches = [];
-		console.log(NUM_ELEMENTS, TYPE, output.length);
 		for (let i = 0; i < output.length; i++) {
 			if (expected[i] !== output[i]) {
 				allMismatches.push(`expected: ${expected[i]}, got: ${output[i]}`);

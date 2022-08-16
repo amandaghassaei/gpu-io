@@ -3648,12 +3648,12 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
-    GPUComposer.prototype.getValues = function (GPULayer) {
+    GPUComposer.prototype.getValues = function (gpuLayer) {
         var _a = this, gl = _a.gl, glslVersion = _a.glslVersion;
         // In case GPULayer was not the last output written to.
-        GPULayer._bindOutputBuffer();
-        var width = GPULayer.width, height = GPULayer.height;
-        var glNumChannels = GPULayer.glNumChannels, glType = GPULayer.glType, glFormat = GPULayer.glFormat, internalType = GPULayer.internalType;
+        gpuLayer._bindOutputBuffer();
+        var width = gpuLayer.width, height = gpuLayer.height;
+        var glNumChannels = gpuLayer.glNumChannels, glType = gpuLayer.glType, glFormat = gpuLayer.glFormat, internalType = gpuLayer.internalType;
         var values;
         switch (internalType) {
             case Constants_1.HALF_FLOAT:
@@ -3742,8 +3742,8 @@ var GPUComposer = /** @class */ (function () {
         if (this.readyToRead()) {
             // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
             gl.readPixels(0, 0, width, height, glFormat, glType, values);
-            var numComponents = GPULayer.numComponents, type = GPULayer.type;
-            var OUTPUT_LENGTH = (GPULayer._length ? GPULayer._length : width * height) * numComponents;
+            var numComponents = gpuLayer.numComponents, type = gpuLayer.type;
+            var OUTPUT_LENGTH = (gpuLayer._length ? gpuLayer._length : width * height) * numComponents;
             // Convert uint16 to float32 if needed.
             var handleFloat16Conversion = internalType === Constants_1.HALF_FLOAT && values.constructor === Uint16Array;
             // @ts-ignore
@@ -3923,6 +3923,7 @@ var GPUComposer = /** @class */ (function () {
         delete this.renderer;
         // @ts-ignore
         delete this.gl;
+        // GL context will be garbage collected by webgl.
     };
     return GPUComposer;
 }());
@@ -4251,21 +4252,15 @@ var GPULayer = /** @class */ (function () {
                 }
             }
             else if (glslVersion === Constants_1.GLSL1 && internalType === Constants_1.UNSIGNED_BYTE) {
+                // Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+                if (writable) {
+                    // For read only UNSIGNED_BYTE textures in GLSL 1, use RGBA.
+                    glNumChannels = 4;
+                }
+                // For read only UNSIGNED_BYTE textures in GLSL 1, use RGB/RGBA.
                 switch (glNumChannels) {
-                    // For read only UNSIGNED_BYTE textures in GLSL 1, use gl.ALPHA and gl.LUMINANCE_ALPHA.
-                    // Otherwise use RGB/RGBA.
                     case 1:
-                        if (!writable) {
-                            glFormat = gl.ALPHA;
-                            break;
-                        }
-                    // Purposely falling to next case here.
                     case 2:
-                        if (!writable) {
-                            glFormat = gl.LUMINANCE_ALPHA;
-                            break;
-                        }
-                    // Purposely falling to next case here.
                     case 3:
                         glFormat = gl.RGB;
                         glNumChannels = 3;
@@ -4461,27 +4456,15 @@ var GPULayer = /** @class */ (function () {
             }
         }
         else {
+            // Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+            if (writable) {
+                // For read only textures in WebGL 1, use RGBA.
+                glNumChannels = 4;
+            }
+            // For read only textures in WebGL 1, use RGB/RGBA.
             switch (numComponents) {
-                // For read only textures WebGL 1, use gl.ALPHA and gl.LUMINANCE_ALPHA.
-                // Otherwise use RGB/RGBA.
                 case 1:
-                    if (!writable) {
-                        glFormat = gl.ALPHA;
-                        // TODO: check these:
-                        glInternalFormat = gl.ALPHA;
-                        glNumChannels = 1;
-                        break;
-                    }
-                // Purposely falling to next case here.
                 case 2:
-                    if (!writable) {
-                        glFormat = gl.LUMINANCE_ALPHA;
-                        // TODO: check these:
-                        glInternalFormat = gl.LUMINANCE_ALPHA;
-                        glNumChannels = 2;
-                        break;
-                    }
-                // Purposely falling to next case here.
                 case 3:
                     glFormat = gl.RGB;
                     glInternalFormat = gl.RGB;
@@ -4663,7 +4646,7 @@ var GPULayer = /** @class */ (function () {
         }
     };
     GPULayer.prototype.validateDataArray = function (array) {
-        var _a = this, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, type = _a.type, internalType = _a.internalType, width = _a.width, height = _a.height;
+        var _a = this, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, internalType = _a.internalType, width = _a.width, height = _a.height;
         var length = this._length;
         // Check that data is correct length (user error).
         if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
@@ -4804,11 +4787,14 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype._usingTextureOverrideForCurrentBuffer = function () {
         return this.textureOverrides && this.textureOverrides[this.bufferIndex];
     };
+    GPULayer.prototype.incrementBufferIndex = function () {
+        // Increment bufferIndex.
+        this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+    };
     // This is used internally.
     GPULayer.prototype._bindOutputBufferForWrite = function (incrementBufferIndex) {
         if (incrementBufferIndex) {
-            // Increment bufferIndex.
-            this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+            this.incrementBufferIndex();
         }
         this._bindOutputBuffer();
         // We are going to do a data write, if we have overrides enabled, we can remove them.
@@ -5038,7 +5024,7 @@ var GPUProgram = /** @class */ (function () {
         var fragmentShaderSource = typeof (fragmentShader) === 'string' ?
             fragmentShader :
             fragmentShader.join('\n');
-        this.fragmentShaderSource = utils_1.preprocessFragShader(fragmentShaderSource, composer.glslVersion, composer.verboseLogging);
+        this.fragmentShaderSource = utils_1.preprocessFragmentShader(fragmentShaderSource, composer.glslVersion);
         this.recompile(defines || this.defines);
         if (uniforms) {
             for (var i = 0; i < uniforms.length; i++) {
@@ -5080,7 +5066,7 @@ var GPUProgram = /** @class */ (function () {
             return this.programs[name];
         // Otherwise, we need to compile a new program on the fly.
         var _a = this, composer = _a.composer, uniforms = _a.uniforms, fragmentShader = _a.fragmentShader;
-        var _errorCallback = composer._errorCallback, _vertexShaders = composer._vertexShaders, gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision, verboseLogging = composer.verboseLogging;
+        var _errorCallback = composer._errorCallback, _vertexShaders = composer._vertexShaders, gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision;
         var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
             var composer_1 = this.composer;
@@ -5089,7 +5075,7 @@ var GPUProgram = /** @class */ (function () {
             if (vertexShader.src === '') {
                 throw new Error("No source for vertex shader " + this.name + " : " + name);
             }
-            var vertexShaderSource = utils_1.preprocessVertShader(vertexShader.src, glslVersion, verboseLogging);
+            var vertexShaderSource = utils_1.preprocessVertexShader(vertexShader.src, glslVersion);
             var shader = utils_1.compileShader(gl_1, glslVersion, intPrecision, floatPrecision, vertexShaderSource, gl_1.VERTEX_SHADER, this.name, _errorCallback, vertexShader.defines);
             if (!shader) {
                 _errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + this.name + "\".");
@@ -5545,8 +5531,8 @@ var GPUProgram_1 = __webpack_require__(664);
 Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function () { return GPUProgram_1.GPUProgram; } }));
 var _testing = {
     makeShaderHeader: utils_1.makeShaderHeader,
-    preprocessFragShader: utils_1.preprocessFragShader,
-    preprocessVertShader: utils_1.preprocessVertShader,
+    preprocessVertexShader: utils_1.preprocessVertexShader,
+    preprocessFragmentShader: utils_1.preprocessFragmentShader,
     isPowerOf2: utils_1.isPowerOf2,
     initSequentialFloatArray: utils_1.initSequentialFloatArray,
 };
@@ -5562,7 +5548,7 @@ __exportStar(__webpack_require__(738), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.preprocessFragShader = exports.preprocessVertShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
+exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
 var Checks_1 = __webpack_require__(627);
 var Constants_1 = __webpack_require__(738);
 var precisionSource = __webpack_require__(937);
@@ -5851,7 +5837,7 @@ function convertShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
     return shaderSource;
 }
-function convertVertShaderToGLSL1(shaderSource) {
+function convertVertexShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to attribute.
     shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
@@ -5859,47 +5845,45 @@ function convertVertShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
     return shaderSource;
 }
-function convertFragShaderToGLSL1(shaderSource) {
+function convertFragmentShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to varying.
     shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
     // Convert out to gl_FragColor.
     shaderSource = shaderSource.replace(/\bout \w+ out_fragOut;/g, '');
     shaderSource = shaderSource.replace(/\bout_fragOut\s+=/, 'gl_FragColor =');
+    // Convert texture to texture2D.
+    shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
     return shaderSource;
 }
-function preprocessVertShader(shaderSource, glslVersion, verboseLogging) {
+function preprocessVertexShader(shaderSource, glslVersion) {
     shaderSource = preprocessShader(shaderSource);
     // Check if highp supported in vertex shaders.
     if (!isHighpSupportedInVertexShader()) {
-        if (verboseLogging) {
-            console.warn('highp not supported in vertex shader, falling back to mediump.');
-        }
+        console.warn('highp not supported in vertex shader, falling back to mediump.');
         // Replace all highp with mediump.
         shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
     }
     if (glslVersion === Constants_1.GLSL3) {
         return shaderSource;
     }
-    return convertVertShaderToGLSL1(shaderSource);
+    return convertVertexShaderToGLSL1(shaderSource);
 }
-exports.preprocessVertShader = preprocessVertShader;
-function preprocessFragShader(shaderSource, glslVersion, verboseLogging) {
+exports.preprocessVertexShader = preprocessVertexShader;
+function preprocessFragmentShader(shaderSource, glslVersion) {
     shaderSource = preprocessShader(shaderSource);
     // Check if highp supported in fragment shaders.
     if (!isHighpSupportedInFragmentShader()) {
-        if (verboseLogging) {
-            console.warn('highp not supported in fragment shader, falling back to mediump.');
-        }
+        console.warn('highp not supported in fragment shader, falling back to mediump.');
         // Replace all highp with mediump.
         shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
     }
     if (glslVersion === Constants_1.GLSL3) {
         return shaderSource;
     }
-    return convertFragShaderToGLSL1(shaderSource);
+    return convertFragmentShaderToGLSL1(shaderSource);
 }
-exports.preprocessFragShader = preprocessFragShader;
+exports.preprocessFragmentShader = preprocessFragmentShader;
 
 
 /***/ }),

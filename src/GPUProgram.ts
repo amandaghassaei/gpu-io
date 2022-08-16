@@ -113,7 +113,7 @@ export class GPUProgram {
 			fragmentShader :
 			(fragmentShader as string[]).join('\n');
 		this.fragmentShaderSource = preprocessFragmentShader(
-			fragmentShaderSource, composer.glslVersion, composer.verboseLogging,
+			fragmentShaderSource, composer.glslVersion,
 		);
 		this.recompile(defines || this.defines);
 
@@ -184,7 +184,6 @@ export class GPUProgram {
 			glslVersion,
 			intPrecision,
 			floatPrecision,
-			verboseLogging,
 		} = composer;
 		const vertexShader = _vertexShaders[name];
 		if (vertexShader.shader === undefined) {
@@ -194,7 +193,7 @@ export class GPUProgram {
 			if (vertexShader.src === '') {
 				throw new Error(`No source for vertex shader ${this.name} : ${name}`);
 			}
-			const vertexShaderSource = preprocessVertexShader(vertexShader.src, glslVersion, verboseLogging);
+			const vertexShaderSource = preprocessVertexShader(vertexShader.src, glslVersion);
 			const shader = compileShader(
 				gl,
 				glslVersion,

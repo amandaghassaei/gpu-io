@@ -1,11 +1,11 @@
-import { isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, preprocessFragShader, preprocessVertShader, makeShaderHeader, isPowerOf2, initSequentialFloatArray } from './utils';
+import { isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, preprocessFragmentShader, preprocessVertexShader, makeShaderHeader, isPowerOf2, initSequentialFloatArray } from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
 declare const _testing: {
     makeShaderHeader: typeof makeShaderHeader;
-    preprocessFragShader: typeof preprocessFragShader;
-    preprocessVertShader: typeof preprocessVertShader;
+    preprocessVertexShader: typeof preprocessVertexShader;
+    preprocessFragmentShader: typeof preprocessFragmentShader;
     isPowerOf2: typeof isPowerOf2;
     initSequentialFloatArray: typeof initSequentialFloatArray;
 };

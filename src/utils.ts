@@ -439,16 +439,16 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 	// Convert out to gl_FragColor.
 	shaderSource = shaderSource.replace(/\bout \w+ out_fragOut;/g, '');
 	shaderSource = shaderSource.replace(/\bout_fragOut\s+=/, 'gl_FragColor =');
+	// Convert texture to texture2D.
+	shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
 	return shaderSource;
 }
 
-export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion, verboseLogging: boolean) {
+export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion) {
 	shaderSource = preprocessShader(shaderSource);
 	// Check if highp supported in vertex shaders.
 	if (!isHighpSupportedInVertexShader()) {
-		if (verboseLogging) {
-			console.warn('highp not supported in vertex shader, falling back to mediump.');
-		}
+		console.warn('highp not supported in vertex shader, falling back to mediump.');
 		// Replace all highp with mediump.
 		shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
 	}
@@ -458,13 +458,11 @@ export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVe
 	return convertVertexShaderToGLSL1(shaderSource);
 }
 
-export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, verboseLogging: boolean) {
+export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion) {
 	shaderSource = preprocessShader(shaderSource);
 	// Check if highp supported in fragment shaders.
 	if (!isHighpSupportedInFragmentShader()) {
-		if (verboseLogging) {
-			console.warn('highp not supported in fragment shader, falling back to mediump.');
-		}
+		console.warn('highp not supported in fragment shader, falling back to mediump.');
 		// Replace all highp with mediump.
 		shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
 	}

@@ -481,21 +481,15 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 						throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 				}
 			} else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
+				// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+				if (writable) {
+					// For read only UNSIGNED_BYTE textures in GLSL 1, use RGBA.
+					glNumChannels = 4;
+				}
+				// For read only UNSIGNED_BYTE textures in GLSL 1, use RGB/RGBA.
 				switch (glNumChannels) {
-					// For read only UNSIGNED_BYTE textures in GLSL 1, use gl.ALPHA and gl.LUMINANCE_ALPHA.
-					// Otherwise use RGB/RGBA.
 					case 1:
-						if (!writable) {
-							glFormat = gl.ALPHA;
-							break;
-						}
-						// Purposely falling to next case here.
 					case 2:
-						if (!writable) {
-							glFormat = gl.LUMINANCE_ALPHA;
-							break;
-						}
-						// Purposely falling to next case here.
 					case 3:
 						glFormat = gl.RGB;
 						glNumChannels = 3;
@@ -688,27 +682,15 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 					throw new Error(`Unsupported type: ${internalType} for GPULayer "${name}".`);
 			}
 		} else {
+			// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+			if (writable) {
+				// For read only textures in WebGL 1, use RGBA.
+				glNumChannels = 4;
+			}
+			// For read only textures in WebGL 1, use RGB/RGBA.
 			switch (numComponents) {
-				// For read only textures WebGL 1, use gl.ALPHA and gl.LUMINANCE_ALPHA.
-				// Otherwise use RGB/RGBA.
 				case 1:
-					if (!writable) {
-						glFormat = gl.ALPHA;
-						// TODO: check these:
-						glInternalFormat = gl.ALPHA;
-						glNumChannels = 1;
-						break;
-					}
-					// Purposely falling to next case here.
 				case 2:
-					if (!writable) {
-						glFormat = gl.LUMINANCE_ALPHA;
-						// TODO: check these:
-						glInternalFormat = gl.LUMINANCE_ALPHA;
-						glNumChannels = 2;
-						break;
-					}
-					// Purposely falling to next case here.
 				case 3:
 					glFormat = gl.RGB;
 					glInternalFormat = gl.RGB;
@@ -905,7 +887,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	private validateDataArray(array: GPULayerArray | number[]) {
-		const { numComponents, glNumChannels, type, internalType, width, height } = this;
+		const { numComponents, glNumChannels, internalType, width, height } = this;
 		const length = this._length;
 
 		// Check that data is correct length (user error).
@@ -1071,13 +1053,17 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		return this.textureOverrides && this.textureOverrides[this.bufferIndex];
 	}
 
+	incrementBufferIndex() {
+		// Increment bufferIndex.
+		this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+	}
+
 	// This is used internally.
 	_bindOutputBufferForWrite(
 		incrementBufferIndex: boolean,
 	) {
 		if (incrementBufferIndex) {
-			// Increment bufferIndex.
-			this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+			this.incrementBufferIndex();
 		}
 		this._bindOutputBuffer();
 
