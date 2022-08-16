@@ -143,7 +143,7 @@ function testArrayWrites(options) {
 		};
 	}
 
-	// try {
+	try {
 		const composer = new GPUComposer({
 			canvas: WEBGL_VERSION === WEBGL2 ? gl2Canvas : gl1Canvas,
 			contextID: WEBGL_VERSION,
@@ -544,13 +544,13 @@ function testArrayWrites(options) {
 			error,
 			config,
 		};
-	// } catch (error) {
-	// 	return {
-	// 		status: ERROR,
-	// 		error: [error.message],
-	// 		config,
-	// 	};
-	// }
+	} catch (error) {
+		return {
+			status: ERROR,
+			error: [error.message],
+			config,
+		};
+	}
 }
 
 makeTable(testArrayWrites, tests);

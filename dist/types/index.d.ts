@@ -65,5 +65,5 @@ declare const WebGLCompute: {
     DEFAULT_CIRCLE_NUM_SEGMENTS: 18;
 };
 export default WebGLCompute;
-export * as Constants from './Constants';
+export * from './Constants';
 export { GPUComposer, GPULayer, GPUProgram, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, _testing, };

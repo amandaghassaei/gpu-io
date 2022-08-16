@@ -40,7 +40,7 @@ const WebGLCompute = {
 // Default export.
 export default WebGLCompute;
 // Named exports.
-export * as Constants from './Constants';
+export * from './Constants';
 export {
 	GPUComposer,
 	GPULayer,
