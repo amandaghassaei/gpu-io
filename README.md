@@ -6,8 +6,16 @@ This library supports rendering directly to the screen.  It also has some built-
 
 **This repo is under active development, really only posted here for internal use right now, but will have a more official release soon.  As it stands, the API may (and probably will) change at any moment and many features have not been fully tested.**
 
+- [Installation](#installation)
+- [Use](#use)
+- [Examples](#examples)
+- [Compatibility with Threejs](#compatibility-with-threejs)
+- [Limitations/Caveats/Notes](#limitationscaveatsnotes)
+- [Acknowledgements](#acknowledgements)
+- [Development](#development)
 
-## Use
+
+## Installation
 
 
 ### Install via npm
@@ -24,7 +32,8 @@ And import into your project:
 import { GPUComposer, GPULayer, GPUProgram } from 'webgl-compute';
 ```
 
-## Import into HTML
+
+### Import into HTML
 
 *OR* you can add [webgl-compute.js](./dist/webgl-compute.js) to your html directly:
 
@@ -37,6 +46,11 @@ WebGLCompute will be accessible globally.
 ```js
 const { GPUComposer, GPULayer, GPUProgram } = WebGLCompute;
 ```
+
+## Use
+
+TODO: finish this.
+
 
 ## Examples
 
@@ -105,16 +119,18 @@ const mesh = new THREE.Mesh(
 More info about using webgl-compute to update mesh positions data is coming soon.
 
 
-## GLSL Version Support
+## Limitations/Caveats/Notes
 
 
-## Limitations
+### Limitations
 
 - This library does not currently allow you to pass in your own vertex shaders.  Currently all computation is happening in user-specified fragment shaders and vertex shaders are managed internally.
-- This library defaults to using GLSL1.0 
-- 
 
-## Other Notes
+
+### GLSL version
+
+This library defaults to using GLSL1.0 TODO: change this.
+
 
 ### Transform Feedback
 
@@ -125,6 +141,7 @@ You might notice that this library does not use any transform feedback to e.g. h
 - I played around with the idea of using transform feedback if WebGL 2 is available, then falling back to a fragment shader implementation if only WebGL 1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
 
 My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API (e.g. only allowing up to four channels per texture), so I'd like to get away from it in the long term if possible.
+
 
 ### Precision
 
@@ -196,6 +213,16 @@ I used a few codebases as reference when writing this, thanks to their authors f
 
 ## Development
 
+Pull requests welcome! I hope this library is useful to others, but realize that I also have some very specific needs that have influenced the direction of this code – so we'll see what happens.  
+
+some specific things that I think could be improved:
+
+- 
+- I'm sure there are some additional tricks that could be used to further speed up some of the underlying GLSL code and polyfills.
+
+
+### Compiling with Webpack
+
 Compiled with [webpack](https://www.npmjs.com/package/webpack).  To build ts files from `src` to js in `dist` run:
 
 ```sh
@@ -204,7 +231,7 @@ npm run build
 ```
 
 
-## Testing
+### Testing
 
 I've included a few html pages for testing various functions of this library in the browser.  An index of these tests is current hosted at [apps.amandaghassaei.com/webgl-compute/tests/](http://apps.amandaghassaei.com/webgl-compute/tests/).
 
