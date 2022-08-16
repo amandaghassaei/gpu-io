@@ -1,5 +1,5 @@
 import { setFloat16 } from '@petamoriken/float16';
-import { GPUComposer } from '.';
+import { GPUComposer } from './GPUComposer';
 import {
 	isNumber,
 	isPositiveInteger,

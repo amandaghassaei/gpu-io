@@ -13,7 +13,9 @@ import {
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
+import * as Constants from './Constants';
 
+// These exports are only used for testing.
 const _testing = {
 	makeShaderHeader,
 	preprocessVertexShader,
@@ -22,7 +24,23 @@ const _testing = {
 	initSequentialFloatArray,
 }
 
-export * from './Constants';
+const WebGLCompute = {
+	...Constants,
+	GPUComposer,
+	GPULayer,
+	GPUProgram,
+	isWebGL2Supported,
+	isHighpSupportedInVertexShader,
+	isHighpSupportedInFragmentShader,
+	getVertexShaderMediumpPrecision,
+	getFragmentShaderMediumpPrecision,
+};
+
+// TODO: there is probably a better way to do this.
+// Default export.
+export default WebGLCompute;
+// Named exports.
+export * as Constants from './Constants';
 export {
 	GPUComposer,
 	GPULayer,
@@ -33,4 +51,4 @@ export {
 	getVertexShaderMediumpPrecision,
 	getFragmentShaderMediumpPrecision,
 	_testing,
-};
+}

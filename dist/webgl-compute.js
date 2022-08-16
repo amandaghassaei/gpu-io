@@ -2500,15 +2500,19 @@ var GPUComposer = /** @class */ (function () {
         this.verboseLogging = false;
         // Check params.
         var validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging', 'errorCallback'];
-        Object.keys(params).forEach(function (key) {
+        var requiredKeys = ['canvas'];
+        var keys = Object.keys(params);
+        keys.forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key \"" + key + "\" passed to GPUComposer.constructor.  Valid keys are " + validKeys.join(', ') + ".");
+                throw new Error("Invalid key \"" + key + "\" passed to new GPUComposer(params).  Valid keys are " + validKeys.join(', ') + ".");
             }
         });
-        // TODO: test required keys.
-        if (!params.canvas) {
-            throw new Error("Must init GPUComposer with a \"canvas\" parameter.");
-        }
+        // Check for required keys.
+        requiredKeys.forEach(function (key) {
+            if (keys.indexOf(key) < 0) {
+                throw new Error("Required params key \"" + key + "\" was not passed to new GPUComposer(params).");
+            }
+        });
         if (params.verboseLogging !== undefined)
             this.verboseLogging = params.verboseLogging;
         // Save callback in case we run into an error.
@@ -2584,7 +2588,7 @@ var GPUComposer = /** @class */ (function () {
             console.log(this.maxNumTextures + " textures max.");
     }
     GPUComposer.initWithThreeRenderer = function (renderer, params) {
-        var composer = new GPUComposer(__assign(__assign({}, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? Constants_1.GLSL3 : Constants_1.GLSL1, floatPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P }));
+        var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || Constants_1.PRECISION_HIGH_P }, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? Constants_1.GLSL3 : Constants_1.GLSL1 }));
         // Attach renderer.
         composer.renderer = renderer;
         return composer;
@@ -5505,18 +5509,19 @@ exports.getExtension = getExtension;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = exports.Constants = void 0;
 var utils_1 = __webpack_require__(593);
 Object.defineProperty(exports, "isWebGL2Supported", ({ enumerable: true, get: function () { return utils_1.isWebGL2Supported; } }));
 Object.defineProperty(exports, "isHighpSupportedInVertexShader", ({ enumerable: true, get: function () { return utils_1.isHighpSupportedInVertexShader; } }));
@@ -5529,6 +5534,8 @@ var GPULayer_1 = __webpack_require__(355);
 Object.defineProperty(exports, "GPULayer", ({ enumerable: true, get: function () { return GPULayer_1.GPULayer; } }));
 var GPUProgram_1 = __webpack_require__(664);
 Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function () { return GPUProgram_1.GPUProgram; } }));
+var Constants = __webpack_require__(738);
+// These exports are only used for testing.
 var _testing = {
     makeShaderHeader: utils_1.makeShaderHeader,
     preprocessVertexShader: utils_1.preprocessVertexShader,
@@ -5537,7 +5544,19 @@ var _testing = {
     initSequentialFloatArray: utils_1.initSequentialFloatArray,
 };
 exports._testing = _testing;
-__exportStar(__webpack_require__(738), exports);
+var WebGLCompute = __assign(__assign({}, Constants), { GPUComposer: GPUComposer_1.GPUComposer,
+    GPULayer: GPULayer_1.GPULayer,
+    GPUProgram: GPUProgram_1.GPUProgram,
+    isWebGL2Supported: utils_1.isWebGL2Supported,
+    isHighpSupportedInVertexShader: utils_1.isHighpSupportedInVertexShader,
+    isHighpSupportedInFragmentShader: utils_1.isHighpSupportedInFragmentShader,
+    getVertexShaderMediumpPrecision: utils_1.getVertexShaderMediumpPrecision,
+    getFragmentShaderMediumpPrecision: utils_1.getFragmentShaderMediumpPrecision });
+// TODO: there is probably a better way to do this.
+// Default export.
+exports.default = WebGLCompute;
+// Named exports.
+exports.Constants = __webpack_require__(738);
 
 
 /***/ }),

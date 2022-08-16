@@ -51,7 +51,10 @@ Currently, this library can run in a separate webgl context from threejs with no
 
 ```js
 import THREE from 'three';
-import * as WebGLCompute from 'webgl-compute';
+import WebGLCompute, {
+	GPUComposer,
+	GPULayer,
+} from 'webgl-compute';
 
 const renderer = new THREE.WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff on top
@@ -61,20 +64,20 @@ renderer.autoClear = false;
 const gl = renderer.getContext();
 const canvas = renderer.domElement;
 
-const composer = WebGLCompute.GPUComposer.initWithThreeRenderer(renderer);
+const composer = GPUComposer.initWithThreeRenderer(renderer);
 ```
 
 To use the output from a webgl-compute GPULayer to a Threejs Texture:
 
 ```js
-const layer1 = new WebGLCompute.GPULayer({
-	name: 'layer-1',
+const layer1 = new GPULayer({
+	name: 'layer1',
 	dimensions: [100, 100],
-	type: 'uint8',
+	type: WebGLCompute.UNSIGNED_BYTE,
 	numComponents: 1,
-	wrapS: 'CLAMP_TO_EDGE',
-	wrapT: 'CLAMP_TO_EDGE',
-	filter: 'NEAREST',
+	wrapS: WebGLCompute.CLAMP_TO_EDGE,
+	wrapT: WebGLCompute.CLAMP_TO_EDGE,
+	filter: WebGLCompute.NEAREST,
 	writable: true,
 	numBuffers: 1,
 });
@@ -82,12 +85,12 @@ const layer1 = new WebGLCompute.GPULayer({
 const texture = new THREE.Texture(
 	renderer.domElement,
 	undefined,
-	ClampToEdgeWrapping,
-	ClampToEdgeWrapping,
-	NearestFilter,
-	NearestFilter,
-	RGBFormat,
-	UnsignedByteType,
+	THREE.ClampToEdgeWrapping,
+	THREE.ClampToEdgeWrapping,
+	THREE.NearestFilter,
+	THREE.NearestFilter,
+	THREE.RGBFormat,
+	THREE.UnsignedByteType,
 );
 // Link webgl texture to threejs object.
 composer.attachGPULayerToThreeTexture(layer1, texture);

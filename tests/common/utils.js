@@ -329,6 +329,16 @@ function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wr
 		return (y * dimX + x) * numElements + el;
 	}
 
+	const uint16Array = new Uint16Array(1);
+	const view = new DataView(uint16Array.buffer);
+	function castPrecision(val) {
+		if (type === HALF_FLOAT) {
+			setFloat16(view, 0,  val, true);
+			return getFloat16(view, 0, true);
+		}
+		return val;
+	}
+
 	function bilinearInterp(x, y, el) {
 		// Bilinear interpolation.
 		const minX = Math.floor(x);
@@ -339,15 +349,16 @@ function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wr
 		const indexMinMax = wrapIndex(minX, maxY, el);
 		const indexMaxMin = wrapIndex(maxX, minY, el);
 		const indexMaxMax = wrapIndex(maxX, maxY, el);
-		const valMinMin = input[indexMinMin];
-		const valMinMax = input[indexMinMax];
-		const valMaxMin = input[indexMaxMin];
-		const valMaxMax = input[indexMaxMax];
+		const valMinMin = castPrecision(input[indexMinMin]);
+		const valMinMax = castPrecision(input[indexMinMax]);
+		const valMaxMin = castPrecision(input[indexMaxMin]);
+		const valMaxMax = castPrecision(input[indexMaxMax]);
+
 		const t1 = x - minX;
 		const t2 = y - minY;
 		const valMin = t2 * valMinMax + (1 - t2) * valMinMin;
 		const valMax = t2 * valMaxMax + (1 - t2) * valMaxMin;
-		return t1 * valMax + (1 - t1) * valMin;
+		return castPrecision((t1 * valMax) + (1 - t1) * valMin);
 	}
 
 	for (let el = 0; el < numElements; el++) {
@@ -359,13 +370,6 @@ function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wr
 			}
 		}
 	}
-	if (type === HALF_FLOAT) {
-		const uint16Array = new Uint16Array(1);
-		const view = new DataView(uint16Array.buffer);
-		for (let i = 0; i < expected.length; i++) {
-			setFloat16(view, 0,  expected[i], true);
-			expected[i] = getFloat16(view, 0, true);
-		}
-	}
+
 	return expected;
 }

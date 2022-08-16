@@ -6,8 +6,8 @@ export declare function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingCont
 export declare function isWebGL2Supported(): boolean;
 export declare function isHighpSupportedInVertexShader(): boolean;
 export declare function isHighpSupportedInFragmentShader(): boolean;
-export declare function getVertexShaderMediumpPrecision(): "highp" | "mediump";
-export declare function getFragmentShaderMediumpPrecision(): "highp" | "mediump";
+export declare function getVertexShaderMediumpPrecision(): "mediump" | "highp";
+export declare function getFragmentShaderMediumpPrecision(): "mediump" | "highp";
 export declare function isPowerOf2(value: number): boolean;
 export declare function initSequentialFloatArray(length: number): Float32Array;
 export declare function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion): string;

@@ -180,12 +180,12 @@ export class GPUComposer {
 	) {
 		const composer = new GPUComposer(
 			{
+				floatPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
+				intPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
 				...params,
 				canvas: renderer.domElement,
 				context: renderer.getContext(),
 				glslVersion: renderer.capabilities.isWebGL2 ? GLSL3 : GLSL1,
-				floatPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
-				intPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
 			},
 		);
 		// Attach renderer.
@@ -213,16 +213,19 @@ export class GPUComposer {
 	) {
 		// Check params.
 		const validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging', 'errorCallback'];
-		Object.keys(params).forEach(key => {
+		const requiredKeys = ['canvas'];
+		const keys = Object.keys(params);
+		keys.forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to GPUComposer.constructor.  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid key "${key}" passed to new GPUComposer(params).  Valid keys are ${validKeys.join(', ')}.`);
 			}
 		});
-		// TODO: test required keys.
-
-		if (!params.canvas) {
-			throw new Error(`Must init GPUComposer with a "canvas" parameter.`);
-		}
+		// Check for required keys.
+		requiredKeys.forEach(key => {
+			if (keys.indexOf(key) < 0) {
+				throw new Error(`Required params key "${key}" was not passed to new GPUComposer(params).`);
+			}
+		});
 
 		if (params.verboseLogging !== undefined) this.verboseLogging = params.verboseLogging;
 

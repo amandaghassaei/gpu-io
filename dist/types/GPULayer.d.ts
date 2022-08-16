@@ -1,4 +1,4 @@
-import { GPUComposer } from '.';
+import { GPUComposer } from './GPUComposer';
 import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap } from './Constants';
 export declare class GPULayer {
     private readonly composer;
