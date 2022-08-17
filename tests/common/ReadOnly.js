@@ -95,7 +95,7 @@ const testArrayReads = (() => {
 			num_channels: NUM_ELEMENTS,
 			wrap: WRAP,
 			filter: FILTER,
-			webgl_version: WEBGL_VERSION === 'webgl2' ? 'webgl 2' : 'webgl 1',
+			webgl_version: WEBGL_VERSION === WEBGL2 ? 'webgl 2' : 'webgl 1',
 			glsl_version: GLSL_VERSION === GLSL1 ? 'glsl 1' : 'glsl 3',
 		};
 

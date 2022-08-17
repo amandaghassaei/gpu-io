@@ -9,6 +9,8 @@ import {
 	GLSLVersion,
 	PRECISION_HIGH_P,
 	PRECISION_MEDIUM_P,
+	WEBGL1,
+	WEBGL2,
 } from './constants';
 const precisionSource = require('./glsl/common/precision.glsl');
 
@@ -133,7 +135,7 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 
 export function isWebGL2Supported() {
 	if (results.webgl2 === undefined) {
-		const gl = document.createElement('canvas').getContext('webgl2');
+		const gl = document.createElement('canvas').getContext(WEBGL2);
 		// GL context and canvas will be garbage collected.
 		results.webgl2 = !!gl;
 		return true;
@@ -147,7 +149,7 @@ function isHighpSupported(vsSource: string, fsSource: string) {
 	// and it returns the precision info.
 	// Unfortunately Safari has a bug here which means checking this way will fail on iPhone, at least as of April 2020.
 	// https://webglfundamentals.org/webgl/webgl-precision-lowp-mediump-highp.html
-	const gl = document.createElement('canvas').getContext('webgl');
+	const gl = document.createElement('canvas').getContext(WEBGL1);
 	if (!gl) {
 		throw new Error(`Unable to init webgl context.`);
 	}

@@ -1,6 +1,6 @@
 import { saveAs } from 'file-saver';
 import { GPULayer } from './GPULayer';
-import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './constants';
+import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 export declare class GPUComposer {
@@ -41,7 +41,7 @@ export declare class GPUComposer {
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
-        contextID?: 'webgl2' | 'webgl' | string;
+        contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | string;
         contextOptions?: {
             antialias?: boolean;
             [key: string]: any;

@@ -39,6 +39,10 @@ export const GLSL3 = '300 es';
 export const GLSL1 = '100';
 export type GLSLVersion = typeof GLSL1 | typeof GLSL3;
 
+export const WEBGL2 = 'webgl2';
+export const WEBGL1 = 'webgl';
+export const EXPERIMENTAL_WEBGL = 'experimental-webgl';
+
 export const PRECISION_LOW_P = 'lowp';
 export const PRECISION_MEDIUM_P = 'mediump';
 export const PRECISION_HIGH_P = 'highp';

@@ -2378,9 +2378,9 @@ var GPUComposer = /** @class */ (function () {
                 }
             }
             if (!gl) {
-                gl = canvas.getContext('webgl2', params.contextOptions)
-                    || canvas.getContext('webgl', params.contextOptions)
-                    || canvas.getContext('experimental-webgl', params.contextOptions);
+                gl = canvas.getContext(constants_1.WEBGL2, params.contextOptions)
+                    || canvas.getContext(constants_1.WEBGL1, params.contextOptions)
+                    || canvas.getContext(constants_1.EXPERIMENTAL_WEBGL, params.contextOptions);
             }
             if (gl === null) {
                 this._errorCallback('Unable to initialize WebGL context.');
@@ -5391,7 +5391,7 @@ exports.isBoolean = isBoolean;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.DATA_LAYER_LINES_PROGRAM_NAME = exports.DATA_LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.DATA_LAYER_LINES_PROGRAM_NAME = exports.DATA_LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.RGBA = exports.RGB = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.HALF_FLOAT = 'HALF_FLOAT';
 exports.FLOAT = 'FLOAT';
 exports.UNSIGNED_BYTE = 'UNSIGNED_BYTE';
@@ -5417,6 +5417,9 @@ exports.validTextureFormats = [exports.RGB, exports.RGBA];
 exports.validTextureTypes = [exports.UNSIGNED_BYTE];
 exports.GLSL3 = '300 es';
 exports.GLSL1 = '100';
+exports.WEBGL2 = 'webgl2';
+exports.WEBGL1 = 'webgl';
+exports.EXPERIMENTAL_WEBGL = 'experimental-webgl';
 exports.PRECISION_LOW_P = 'lowp';
 exports.PRECISION_MEDIUM_P = 'mediump';
 exports.PRECISION_HIGH_P = 'highp';
@@ -5651,7 +5654,7 @@ function isWebGL2(gl) {
 exports.isWebGL2 = isWebGL2;
 function isWebGL2Supported() {
     if (results.webgl2 === undefined) {
-        var gl = document.createElement('canvas').getContext('webgl2');
+        var gl = document.createElement('canvas').getContext(constants_1.WEBGL2);
         // GL context and canvas will be garbage collected.
         results.webgl2 = !!gl;
         return true;
@@ -5665,7 +5668,7 @@ function isHighpSupported(vsSource, fsSource) {
     // and it returns the precision info.
     // Unfortunately Safari has a bug here which means checking this way will fail on iPhone, at least as of April 2020.
     // https://webglfundamentals.org/webgl/webgl-precision-lowp-mediump-highp.html
-    var gl = document.createElement('canvas').getContext('webgl');
+    var gl = document.createElement('canvas').getContext(constants_1.WEBGL1);
     if (!gl) {
         throw new Error("Unable to init webgl context.");
     }

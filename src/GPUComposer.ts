@@ -18,6 +18,9 @@ import {
 	GLSLVersion,
 	GLSL1,
 	GLSL3,
+	WEBGL2,
+	WEBGL1,
+	EXPERIMENTAL_WEBGL,
 	CLAMP_TO_EDGE,
 	TextureFormat,
 	NEAREST,
@@ -197,7 +200,7 @@ export class GPUComposer {
 		params: {
 			canvas: HTMLCanvasElement,
 			context?: WebGLRenderingContext | WebGL2RenderingContext | null,
-			contextID?: 'webgl2' | 'webgl' | string,
+			contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | string,
 			contextOptions?: {
 				antialias?: boolean,
 				[key: string]: any,
@@ -252,9 +255,9 @@ export class GPUComposer {
 				}
 			}
 			if (!gl) {
-				gl = canvas.getContext('webgl2', params.contextOptions)  as WebGL2RenderingContext | null
-					|| canvas.getContext('webgl', params.contextOptions)  as WebGLRenderingContext | null
-					|| canvas.getContext('experimental-webgl', params.contextOptions)  as WebGLRenderingContext | null;
+				gl = canvas.getContext(WEBGL2, params.contextOptions)  as WebGL2RenderingContext | null
+					|| canvas.getContext(WEBGL1, params.contextOptions)  as WebGLRenderingContext | null
+					|| canvas.getContext(EXPERIMENTAL_WEBGL, params.contextOptions)  as WebGLRenderingContext | null;
 			}
 			if (gl === null) {
 				this._errorCallback('Unable to initialize WebGL context.');
