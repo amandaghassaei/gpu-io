@@ -22,8 +22,9 @@ describe('utils', function () {
 				GLSL3,
 				PRECISION_HIGH_P,
 				PRECISION_MEDIUM_P,
-				{ test1: '1' }), `#version 300 es
+				{ test1: '1', test2: '2' }), `#version 300 es
 #define test1 1
+#define test2 2
 #define WEBGLCOMPUTE_INT_PRECISION 2
 #define WEBGLCOMPUTE_FLOAT_PRECISION 1
 #if (WEBGLCOMPUTE_INT_PRECISION == 2)
@@ -61,7 +62,8 @@ precision lowp isampler2D;precision lowp usampler2D;
 				GLSL1,
 				PRECISION_HIGH_P,
 				PRECISION_MEDIUM_P,
-				{ test1: '1' }), `#define test1 1
+				{ test1: '1', test2: '2' }), `#define test1 1
+#define test2 2
 #define WEBGLCOMPUTE_INT_PRECISION 2
 #define WEBGLCOMPUTE_FLOAT_PRECISION 1
 #if (WEBGLCOMPUTE_INT_PRECISION == 2)

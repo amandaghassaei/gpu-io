@@ -136,7 +136,7 @@ describe('utils', function () {
 				webgl2.FRAGMENT_SHADER,
 				'fragment-shader-test',
 				(message) => {console.log(message)},
-				{ 'WEBGLCOMPUTE_INT': '1' },
+				{ WEBGLCOMPUTE_INT: '1' },
 			), 'WebGLShader');
 			assert.typeOf(compileShader(
 				webgl2,
@@ -147,7 +147,7 @@ describe('utils', function () {
 				webgl2.FRAGMENT_SHADER,
 				'fragment-shader-test',
 				(message) => {console.log(message)},
-				{ 'WEBGLCOMPUTE_INT': '1' },
+				{ WEBGLCOMPUTE_INT: '1' },
 			), 'WebGLShader');
 		});
 		it('should compile WebGL1 fragment shaders', () => {
@@ -161,7 +161,7 @@ describe('utils', function () {
 				webgl1.FRAGMENT_SHADER,
 				'fragment-shader-test',
 				(message) => {console.log(message)},
-				{ 'WEBGLCOMPUTE_INT': '1' },
+				{ WEBGLCOMPUTE_INT: '1' },
 			), 'WebGLShader');
 		});
 	});
@@ -187,7 +187,7 @@ describe('utils', function () {
 				webgl2.FRAGMENT_SHADER,
 				'fragment-shader-test',
 				(message) => {console.log(message)},
-				{ 'WEBGLCOMPUTE_INT': '1' },
+				{ WEBGLCOMPUTE_INT: '1' },
 			);
 			assert.typeOf(initGLProgram(
 				webgl2,
@@ -215,7 +215,7 @@ describe('utils', function () {
 				webgl2.FRAGMENT_SHADER,
 				'fragment-shader-test',
 				(message) => {console.log(message)},
-				{ 'WEBGLCOMPUTE_INT': '1' },
+				{ WEBGLCOMPUTE_INT: '1' },
 			);
 			assert.typeOf(initGLProgram(
 				webgl2,
@@ -246,7 +246,7 @@ describe('utils', function () {
 				webgl1.FRAGMENT_SHADER,
 				'fragment-shader-test',
 				(message) => {console.log(message)},
-				{ 'WEBGLCOMPUTE_INT': '1' },
+				{ WEBGLCOMPUTE_INT: '1' },
 			);
 			assert.typeOf(initGLProgram(
 				webgl1,
