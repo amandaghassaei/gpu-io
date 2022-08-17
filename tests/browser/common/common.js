@@ -1,3 +1,5 @@
+const { setFloat16, getFloat16 } = float16;
+
 const gl1Canvas = document.createElement('canvas');
 const gl2Canvas = document.createElement('canvas');
 
@@ -22,27 +24,29 @@ const MAX_FLOAT_INT = 16777216;
 const MIN_HALF_FLOAT_INT = -2048;
 const MAX_HALF_FLOAT_INT = 2048;
 
-{
-	const {
-		HALF_FLOAT,
-		FLOAT,
-		UNSIGNED_BYTE,
-		BYTE,
-		UNSIGNED_SHORT,
-		SHORT,
-		UNSIGNED_INT,
-		INT,
-		GLSL3,
-		LINEAR,
-		NEAREST,
-		REPEAT,
-		CLAMP_TO_EDGE,
-		getVertexShaderMediumpPrecision,
-		getFragmentShaderMediumpPrecision,
-		isHighpSupportedInVertexShader,
-		isHighpSupportedInFragmentShader
-	} = WebGLCompute;
+const {
+	HALF_FLOAT,
+	FLOAT,
+	UNSIGNED_BYTE,
+	BYTE,
+	UNSIGNED_SHORT,
+	SHORT,
+	UNSIGNED_INT,
+	INT,
+	GLSL3,
+	LINEAR,
+	NEAREST,
+	REPEAT,
+	CLAMP_TO_EDGE,
+	getVertexShaderMediumpPrecision,
+	getFragmentShaderMediumpPrecision,
+	isHighpSupportedInVertexShader,
+	isHighpSupportedInFragmentShader
+} = WebGLCompute;
 
+MicroModal.init();
+
+{
 	document.getElementById('info').innerHTML =  `
 	WebGL2 Supported: ${isWebGL2Supported()}<br/>
 	Vertex shader mediump precision handled as: ${getVertexShaderMediumpPrecision()}<br/>
