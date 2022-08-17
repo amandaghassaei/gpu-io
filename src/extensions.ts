@@ -1,4 +1,4 @@
-import { ErrorCallback } from './Constants';
+import { ErrorCallback } from './constants';
 
 const extensions: { [key: string]: any } = {};
 

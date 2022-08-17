@@ -2,7 +2,7 @@ in vec2 v_lineWrapping;
 
 uniform vec4 u_value;
 
-out vec4 out_fragOut;
+out vec4 out_fragColor;
 
 void main() {
 	// Check if this line has wrapped.
@@ -11,5 +11,5 @@ void main() {
 		discard;
 		return;
 	}
-	out_fragOut = vec4(u_value);
+	out_fragColor = vec4(u_value);
 }

@@ -14,10 +14,10 @@ uniform isampler2D u_internal_data;
 uniform usampler2D u_internal_data;
 #endif
 
-out vec4 out_fragOut;
+out vec4 out_fragColor;
 
 void main() {
 	uvec4 value = texture(u_internal_data, v_UV);
 	float mag = length(value);
-	out_fragOut = vec4(mag * u_scale * u_color, 1);
+	out_fragColor = vec4(mag * u_scale * u_color, 1);
 }

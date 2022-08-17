@@ -1,5 +1,5 @@
 import { GPUComposer } from './GPUComposer';
-import { UniformType, UniformValue, CompileTimeVars } from './Constants';
+import { UniformType, UniformValue, CompileTimeVars } from './constants';
 export declare class GPUProgram {
     private readonly composer;
     readonly name: string;

@@ -13,7 +13,7 @@ import {
 	UNSIGNED_BYTE,
 	UNSIGNED_SHORT,
 	UNSIGNED_INT,
-} from './Constants';
+} from './constants';
 
 export function isValidDataType(type: string) {
 	return validDataTypes.indexOf(type) > -1;

@@ -1,4 +1,4 @@
-import { GPULayerType } from './Constants';
+import { GPULayerType } from './constants';
 export declare function isValidDataType(type: string): boolean;
 export declare function isValidFilter(type: string): boolean;
 export declare function isValidWrap(type: string): boolean;

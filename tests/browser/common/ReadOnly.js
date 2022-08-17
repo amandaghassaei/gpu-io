@@ -34,10 +34,10 @@ in vec2 v_UV;
 uniform sampler2D u_state;
 uniform vec2 u_offset;
 
-out vec4 out_fragOut;
+out vec4 out_fragColor;
 
 void main() {
-	out_fragOut = texture(u_state, v_UV + u_offset);
+	out_fragColor = texture(u_state, v_UV + u_offset);
 }`;
 		case UNSIGNED_BYTE:
 		case UNSIGNED_SHORT:
@@ -48,10 +48,10 @@ in vec2 v_UV;
 uniform usampler2D u_state;
 uniform vec2 u_offset;
 
-out uvec4 out_fragOut;
+out uvec4 out_fragColor;
 
 void main() {
-	out_fragOut = texture(u_state, v_UV + u_offset);
+	out_fragColor = texture(u_state, v_UV + u_offset);
 }`;
 		case BYTE:
 		case SHORT:
@@ -62,10 +62,10 @@ in vec2 v_UV;
 uniform isampler2D u_state;
 uniform vec2 u_offset;
 
-out ivec4 out_fragOut;
+out ivec4 out_fragColor;
 
 void main() {
-	out_fragOut = texture(u_state, v_UV + u_offset);
+	out_fragColor = texture(u_state, v_UV + u_offset);
 }`;
 		default:
 			throw new Error(`Invalid type: ${type}.`);

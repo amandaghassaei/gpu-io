@@ -1,4 +1,4 @@
-import { isString } from './Checks';
+import { isString } from './checks';
 import {
 	CompileTimeVars,
 	DEFAULT_ERROR_CALLBACK,
@@ -9,7 +9,7 @@ import {
 	GLSLVersion,
 	PRECISION_HIGH_P,
 	PRECISION_MEDIUM_P,
-} from './Constants';
+} from './constants';
 const precisionSource = require('./glsl/common/precision.glsl');
 
 // Memoize results.
@@ -53,7 +53,7 @@ export function makeShaderHeader(
 		WEBGLCOMPUTE_INT_PRECISION: `${intForPrecision(intPrecision)}`,
 		WEBGLCOMPUTE_FLOAT_PRECISION: `${intForPrecision(floatPrecision)}`,
 	});
-	return `${versionSource}${definesSource}${precisionDefinesSource}${precisionSource}\n`;
+	return `${versionSource}${definesSource}${precisionDefinesSource}${precisionSource}`;
 }
 
 // Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
@@ -420,6 +420,8 @@ function convertShaderToGLSL1(shaderSource: string) {
 	shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
 	shaderSource = shaderSource.replace(/((\bivec3\b)|(\buvec3\b))/g, 'vec3');
 	shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
+	// Convert texture to texture2D.
+	shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
 	return shaderSource;
 }
 
@@ -437,10 +439,8 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 	// Convert in to varying.
 	shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
 	// Convert out to gl_FragColor.
-	shaderSource = shaderSource.replace(/\bout \w+ out_fragOut;/g, '');
-	shaderSource = shaderSource.replace(/\bout_fragOut\s+=/, 'gl_FragColor =');
-	// Convert texture to texture2D.
-	shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
+	shaderSource = shaderSource.replace(/\bout \w+ out_fragColor;/g, '');
+	shaderSource = shaderSource.replace(/\bout_fragColor\s+=/, 'gl_FragColor =');
 	return shaderSource;
 }
 

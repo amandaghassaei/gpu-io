@@ -4,7 +4,7 @@ import {
 	isBoolean,
 	isInteger,
 	isNumber,
-} from './Checks';
+} from './checks';
 import {
 	FLOAT,
 	FLOAT_1D_UNIFORM,
@@ -31,7 +31,7 @@ import {
 	DATA_LAYER_POINTS_PROGRAM_NAME,
 	DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME,
 	DATA_LAYER_LINES_PROGRAM_NAME,
-} from './Constants';
+} from './constants';
 import {
 	compileShader,
 	preprocessFragmentShader,

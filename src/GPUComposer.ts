@@ -43,7 +43,7 @@ import {
 	GLSLPrecision,
 	PRECISION_HIGH_P,
 	DEFAULT_ERROR_CALLBACK,
-} from './Constants';
+} from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
 // Only @types/three is installed as dev dependency.
@@ -66,7 +66,7 @@ import {
 	isValidTextureType,
 	isValidTextureFormat,
 	isValidWrap,
-} from './Checks';
+} from './checks';
 const defaultVertexShaderSource = require('./glsl/vert/DefaultVertShader.glsl');
 
 export class GPUComposer {

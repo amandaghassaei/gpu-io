@@ -1,6 +1,6 @@
 import { saveAs } from 'file-saver';
 import { GPULayer } from './GPULayer';
-import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './Constants';
+import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 export declare class GPUComposer {

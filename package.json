@@ -19,7 +19,7 @@
     "url": "https://github.com/amandaghassaei/webgl-compute.git"
   },
   "scripts": {
-    "test": "mocha 'tests/mocha/*.js'",
+    "test": "mocha tests/js/ & karma start --single-run --browsers ChromeHeadless karma.conf.js",
     "build": "webpack"
   },
   "author": "Amanda Ghassaei",
@@ -27,6 +27,13 @@
   "devDependencies": {
     "@types/file-saver": "^2.0.3",
     "@types/three": "^0.127.1",
+    "chai": "^4.3.6",
+    "karma": "^6.4.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^3.1.1",
+    "karma-firefox-launcher": "^2.1.2",
+    "karma-mocha": "^2.0.1",
+    "karma-safari-launcher": "^1.0.0",
     "mocha": "^10.0.0",
     "ts-loader": "^8.1.0",
     "typescript": "^4.0.5",

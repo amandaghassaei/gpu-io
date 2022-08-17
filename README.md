@@ -65,7 +65,7 @@ Currently, this library can run in a separate webgl context from threejs with no
 
 ```js
 import THREE from 'three';
-import WebGLCompute, { GPUComposer GPULayer } from 'webgl-compute';
+import * as WebGLCompute from 'webgl-compute';
 
 const renderer = new THREE.WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff on top
@@ -75,13 +75,13 @@ renderer.autoClear = false;
 const gl = renderer.getContext();
 const canvas = renderer.domElement;
 
-const composer = GPUComposer.initWithThreeRenderer(renderer);
+const composer = WebGLCompute.GPUComposer.initWithThreeRenderer(renderer);
 ```
 
 To use the output from a webgl-compute GPULayer to a Threejs Texture:
 
 ```js
-const layer1 = new GPULayer({
+const layer1 = new WebGLCompute.GPULayer({
 	name: 'layer1',
 	dimensions: [100, 100],
 	type: WebGLCompute.UNSIGNED_BYTE,
@@ -233,7 +233,13 @@ npm run build
 
 ### Testing
 
-I've included a few html pages for testing various functions of this library in the browser.  An index of these tests is current hosted at [apps.amandaghassaei.com/webgl-compute/tests/](http://apps.amandaghassaei.com/webgl-compute/tests/).
+I'm using mocha + karma + chai + headless Chrome to test the WebGL components of this library, following the setup described in [Automated testing with Headless Chrome](https://developer.chrome.com/blog/headless-karma-mocha-chai/).  Those tests are located in [tests/webgl/](./tests/karma/).  Additionally, I'm using mocha + chai to test the remaining parts of the code that can run in node js, located in [tests/js/](./tests/mocha/).  To run the automated tests, run:
+
+```sh
+npm run test
+```
+
+I've also included a few html pages (in the [tests/browser/](./tests/browser/) directory) for testing various functions of this library in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/webgl-compute/tests/](http://apps.amandaghassaei.com/webgl-compute/tests/).
 
 To run these tests locally:
 

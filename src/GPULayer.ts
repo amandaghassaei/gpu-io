@@ -7,7 +7,7 @@ import {
 	isValidDataType,
 	isValidFilter,
 	isValidWrap,
-} from './Checks';
+} from './checks';
 import {
 	HALF_FLOAT,
 	FLOAT,
@@ -34,7 +34,7 @@ import {
 	validFilters,
 	validWraps,
 	validDataTypes,
- } from './Constants';
+ } from './constants';
 import {
 	getExtension,
 	EXT_COLOR_BUFFER_FLOAT,
