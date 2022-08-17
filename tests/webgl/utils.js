@@ -257,42 +257,42 @@
 			});
 			it('should convert glsl3 shader to glsl1', () => {
 				assert.equal(preprocessVertexShader(defaultVertexShader, GLSL1), `attribute vec2 a_internal_position;
+#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE
+in vec2 a_internal_uv;
+#endif
+#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
+in vec2 a_internal_normal;
+#endif
+
+uniform vec2 u_internal_scale;
+uniform vec2 u_internal_translation;
+
+varying vec2 v_UV;
+varying vec2 v_UV_local;
+#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
+varying vec2 v_normal;
+#endif
+
+void main() {
+	// Optional varyings.
 	#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE
-	in vec2 a_internal_uv;
+	v_UV_local = a_internal_uv;
+	#else
+	v_UV_local = a_internal_position;
 	#endif
 	#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
-	in vec2 a_internal_normal;
+	v_normal = a_internal_normal;
 	#endif
 
-	uniform vec2 u_internal_scale;
-	uniform vec2 u_internal_translation;
+	// Apply transformations.
+	vec2 position = u_internal_scale * a_internal_position + u_internal_translation;
 
-	varying vec2 v_UV;
-	varying vec2 v_UV_local;
-	#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
-	varying vec2 v_normal;
-	#endif
+	// Calculate a global uv for the viewport.
+	v_UV = 0.5 * (position + 1.0);
 
-	void main() {
-		// Optional varyings.
-		#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE
-		v_UV_local = a_internal_uv;
-		#else
-		v_UV_local = a_internal_position;
-		#endif
-		#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
-		v_normal = a_internal_normal;
-		#endif
-
-		// Apply transformations.
-		vec2 position = u_internal_scale * a_internal_position + u_internal_translation;
-
-		// Calculate a global uv for the viewport.
-		v_UV = 0.5 * (position + 1.0);
-
-		// Calculate vertex position.
-		gl_Position = vec4(position, 0, 1);
-	}`);
+	// Calculate vertex position.
+	gl_Position = vec4(position, 0, 1);
+}`);
 				// No mutations.
 				assert.equal(defaultVertexShader, defaultVertexShaderCopy);
 			});
@@ -318,7 +318,6 @@
 				assert.equal(copyFragmentShader, copyFragmentShaderCopy);
 			});
 			it('should convert glsl3 shader to glsl1', () => {
-				console.log(preprocessFragmentShader(copyFragmentShader, GLSL1));
 				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL1), `varying vec2 v_UV;
 
 #ifdef WEBGLCOMPUTE_FLOAT
