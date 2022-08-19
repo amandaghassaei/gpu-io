@@ -213,7 +213,7 @@ I used a few codebases as reference when writing this, thanks to their authors f
 
 ## Development
 
-Pull requests welcome! I hope this library is useful to others, but realize that I also have some very specific needs that have influenced the direction of this code – so we'll see what happens.  
+Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://twitter.com/amandaghassaei) if you end up using this, I'd love to see what you're making!  
 
 some specific things that I think could be improved:
 
@@ -233,7 +233,7 @@ npm run build
 
 ### Testing
 
-I'm using mocha + karma + chai + headless Chrome to test the WebGL components of this library, following the setup described in [Automated testing with Headless Chrome](https://developer.chrome.com/blog/headless-karma-mocha-chai/).  Those tests are located in [tests/webgl/](./tests/karma/).  Additionally, I'm using mocha + chai to test the remaining parts of the code that can run in node js, located in [tests/js/](./tests/mocha/).  To run the automated tests, run:
+I'm using mocha + karma + chai + headless Chrome to test the WebGL components of this library, following the setup described in [Automated testing with Headless Chrome](https://developer.chrome.com/blog/headless-karma-mocha-chai/).  Those tests are located in [tests/webgl/](./tests/webgl/).  Additionally, I'm using mocha + chai to test the remaining parts of the code that can run in node js, located in [tests/js/](./tests/js/).  To run the automated tests, run:
 
 ```sh
 npm run test
