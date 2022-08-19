@@ -2,17 +2,14 @@ import { GPUComposer } from './GPUComposer';
 import {
 	isArray,
 	isBoolean,
-	isInteger,
-	isNumber,
+	isObject,
+	isString,
 } from './checks';
 import {
-	FLOAT,
 	FLOAT_1D_UNIFORM,
 	FLOAT_2D_UNIFORM,
 	FLOAT_3D_UNIFORM,
 	FLOAT_4D_UNIFORM,
-	INT,
-	BOOL,
 	INT_1D_UNIFORM,
 	INT_2D_UNIFORM,
 	INT_3D_UNIFORM,
@@ -37,6 +34,7 @@ import {
 	preprocessFragmentShader,
 	preprocessVertexShader,
 	initGLProgram,
+	uniformInternalTypeForValue,
 } from './utils';
 
 export class GPUProgram {
@@ -52,14 +50,14 @@ export class GPUProgram {
 	// Hold onto this in case we need to recompile with different #defines.
 	private readonly fragmentShaderSource: string;
 	// #define variables for fragment shader program.
-	private defines: CompileTimeVars = {};
+	private readonly defines: CompileTimeVars = {};
 	// Uniform locations, values, and types.
 	private readonly uniforms: { [ key: string]: Uniform } = {};
 
 	// Store WebGLProgram's - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
 	// Each combination of vertex + fragment shader requires a separate WebGLProgram.
 	// These programs are compiled on the fly as needed.
-	private programs: {[key in PROGRAM_NAME_INTERNAL]?: WebGLProgram } = {};
+	private readonly programs: {[key in PROGRAM_NAME_INTERNAL]?: WebGLProgram } = {};
 
 	/**
      * Create a GPUProgram.
@@ -86,12 +84,18 @@ export class GPUProgram {
 		if (!composer) {
 			throw new Error(`Error initing GPUProgram "${name}": must pass GPUComposer instance to GPUProgram(composer, params).`);
 		}
+		if (!params) {
+			throw new Error(`Error initing GPUProgram: must pass params to GPUProgram(composer, params).`);
+		}
+		if (!isObject(params)) {
+			throw new Error(`Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got ${JSON.stringify(params)}.`);
+		}
 		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
 		const requiredKeys = ['name', 'fragmentShader'];
 		const keys = Object.keys(params);
 		keys.forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid params key "${key}" passed to GPUProgram(composer, params) with name "${name}".  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid params key "${key}" passed to GPUProgram(composer, params) with name "${name}".  Valid keys are ${JSON.stringify(validKeys)}.`);
 			}
 		});
 		// Check for required keys.
@@ -109,8 +113,8 @@ export class GPUProgram {
 		this.name = name;
 
 		// Compile fragment shader.
-		const fragmentShaderSource = typeof(fragmentShader) === 'string' ?
-			fragmentShader :
+		const fragmentShaderSource = isString(fragmentShader) ?
+			fragmentShader as string :
 			(fragmentShader as string[]).join('\n');
 		this.fragmentShaderSource = preprocessFragmentShader(
 			fragmentShaderSource, composer.glslVersion,
@@ -256,75 +260,6 @@ export class GPUProgram {
 		return this.getProgramWithName(DATA_LAYER_LINES_PROGRAM_NAME);
 	}
 
-	private uniformInternalTypeForValue(
-		value: UniformValue,
-		type: UniformType,
-	) {
-		if (type === FLOAT) {
-			// Check that we are dealing with a number.
-			if (isArray(value)) {
-				for (let i = 0; i < (value as number[]).length; i++) {
-					if (!isNumber((value as number[])[i])) {
-						throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected float or float[] of length 1-4.`);
-					}
-				}
-			} else {
-				if (!isNumber(value)) {
-					throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected float or float[] of length 1-4.`);
-				}
-			}
-			if (!isArray(value) || (value as number[]).length === 1) {
-				return FLOAT_1D_UNIFORM;
-			}
-			if ((value as number[]).length === 2) {
-				return FLOAT_2D_UNIFORM;
-			}
-			if ((value as number[]).length === 3) {
-				return FLOAT_3D_UNIFORM;
-			}
-			if ((value as number[]).length === 4) {
-				return FLOAT_4D_UNIFORM;
-			}
-			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected float or float[] of length 1-4.`);
-		} else if (type === INT) {
-			// Check that we are dealing with an int.
-			if (isArray(value)) {
-				for (let i = 0; i < (value as number[]).length; i++) {
-					if (!isInteger((value as number[])[i])) {
-						throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);
-					}
-				}
-			} else {
-				if (!isInteger(value)) {
-					throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);
-				}
-			}
-			if (!isArray(value) || (value as number[]).length === 1) {
-				return INT_1D_UNIFORM;
-			}
-			if ((value as number[]).length === 2) {
-				return INT_2D_UNIFORM;
-			}
-			if ((value as number[]).length === 3) {
-				return INT_3D_UNIFORM;
-			}
-			if ((value as number[]).length === 4) {
-				return INT_4D_UNIFORM;
-			}
-			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected int or int[] of length 1-4.`);
-		} else if (type === BOOL) {
-			if (isBoolean(value)) {
-				// Boolean types are passed in as ints.
-				// This suggest floats work as well, but ints seem more natural:
-				// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-				return INT_1D_UNIFORM;
-			}
-			throw new Error(`Invalid uniform value: ${value} for program "${this.name}", expected boolean.`);
-		} else {
-			throw new Error(`Invalid uniform type: ${type} for program "${this.name}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
-		}
-	}
-
 	private setProgramUniform(
 		program: WebGLProgram,
 		programName: string,
@@ -408,7 +343,7 @@ Error code: ${gl.getError()}.`);
 
 		let currentType = uniforms[name]?.type;
 		if (type) {
-			const internalType = this.uniformInternalTypeForValue(value, type);
+			const internalType = uniformInternalTypeForValue(value, type, this.name);
 			if (currentType === undefined) currentType = internalType;
 			else {
 				// console.warn(`Don't need to pass in type to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
@@ -460,13 +395,13 @@ Error code: ${gl.getError()}.`);
 		value: UniformValue,
 		type: UniformType,
 	) {
-		const internalType = this.uniformInternalTypeForValue(value, type);
+		const internalType = uniformInternalTypeForValue(value, type, this.name);
 		if (program === undefined) {
 			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
 		}
 		const programName = Object.keys(this.programs).find(key => this.programs[key as PROGRAM_NAME_INTERNAL] === program);
 		if (!programName) {
-			throw new Error(`Could not find valid vertex programName for WebGLProgram "${this.name}".`);
+			throw new Error(`Could not find valid vertex programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
 		this.setProgramUniform(program, programName, uniformName, value, internalType);
 	}

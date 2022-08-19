@@ -4848,12 +4848,18 @@ var GPUProgram = /** @class */ (function () {
         if (!composer) {
             throw new Error("Error initing GPUProgram \"" + name + "\": must pass GPUComposer instance to GPUProgram(composer, params).");
         }
+        if (!params) {
+            throw new Error("Error initing GPUProgram: must pass params to GPUProgram(composer, params).");
+        }
+        if (!checks_1.isObject(params)) {
+            throw new Error("Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got " + JSON.stringify(params) + ".");
+        }
         var validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
         var requiredKeys = ['name', 'fragmentShader'];
         var keys = Object.keys(params);
         keys.forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid params key \"" + key + "\" passed to GPUProgram(composer, params) with name \"" + name + "\".  Valid keys are " + validKeys.join(', ') + ".");
+                throw new Error("Invalid params key \"" + key + "\" passed to GPUProgram(composer, params) with name \"" + name + "\".  Valid keys are " + JSON.stringify(validKeys) + ".");
             }
         });
         // Check for required keys.
@@ -4867,7 +4873,7 @@ var GPUProgram = /** @class */ (function () {
         this.composer = composer;
         this.name = name;
         // Compile fragment shader.
-        var fragmentShaderSource = typeof (fragmentShader) === 'string' ?
+        var fragmentShaderSource = checks_1.isString(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
         this.fragmentShaderSource = utils_1.preprocessFragmentShader(fragmentShaderSource, composer.glslVersion);
@@ -5002,76 +5008,6 @@ var GPUProgram = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    GPUProgram.prototype.uniformInternalTypeForValue = function (value, type) {
-        if (type === constants_1.FLOAT) {
-            // Check that we are dealing with a number.
-            if (checks_1.isArray(value)) {
-                for (var i = 0; i < value.length; i++) {
-                    if (!checks_1.isNumber(value[i])) {
-                        throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected float or float[] of length 1-4.");
-                    }
-                }
-            }
-            else {
-                if (!checks_1.isNumber(value)) {
-                    throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected float or float[] of length 1-4.");
-                }
-            }
-            if (!checks_1.isArray(value) || value.length === 1) {
-                return constants_1.FLOAT_1D_UNIFORM;
-            }
-            if (value.length === 2) {
-                return constants_1.FLOAT_2D_UNIFORM;
-            }
-            if (value.length === 3) {
-                return constants_1.FLOAT_3D_UNIFORM;
-            }
-            if (value.length === 4) {
-                return constants_1.FLOAT_4D_UNIFORM;
-            }
-            throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected float or float[] of length 1-4.");
-        }
-        else if (type === constants_1.INT) {
-            // Check that we are dealing with an int.
-            if (checks_1.isArray(value)) {
-                for (var i = 0; i < value.length; i++) {
-                    if (!checks_1.isInteger(value[i])) {
-                        throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected int or int[] of length 1-4.");
-                    }
-                }
-            }
-            else {
-                if (!checks_1.isInteger(value)) {
-                    throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected int or int[] of length 1-4.");
-                }
-            }
-            if (!checks_1.isArray(value) || value.length === 1) {
-                return constants_1.INT_1D_UNIFORM;
-            }
-            if (value.length === 2) {
-                return constants_1.INT_2D_UNIFORM;
-            }
-            if (value.length === 3) {
-                return constants_1.INT_3D_UNIFORM;
-            }
-            if (value.length === 4) {
-                return constants_1.INT_4D_UNIFORM;
-            }
-            throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected int or int[] of length 1-4.");
-        }
-        else if (type === constants_1.BOOL) {
-            if (checks_1.isBoolean(value)) {
-                // Boolean types are passed in as ints.
-                // This suggest floats work as well, but ints seem more natural:
-                // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-                return constants_1.INT_1D_UNIFORM;
-            }
-            throw new Error("Invalid uniform value: " + value + " for program \"" + this.name + "\", expected boolean.");
-        }
-        else {
-            throw new Error("Invalid uniform type: " + type + " for program \"" + this.name + "\", expected " + constants_1.FLOAT + " or " + constants_1.INT + " of " + constants_1.BOOL + ".");
-        }
-    };
     GPUProgram.prototype.setProgramUniform = function (program, programName, name, value, type) {
         var _a;
         var _b = this, composer = _b.composer, uniforms = _b.uniforms;
@@ -5141,7 +5077,7 @@ var GPUProgram = /** @class */ (function () {
         }
         var currentType = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
         if (type) {
-            var internalType = this.uniformInternalTypeForValue(value, type);
+            var internalType = utils_1.uniformInternalTypeForValue(value, type, this.name);
             if (currentType === undefined)
                 currentType = internalType;
             else {
@@ -5191,13 +5127,13 @@ var GPUProgram = /** @class */ (function () {
     // This is used internally.
     GPUProgram.prototype._setVertexUniform = function (program, uniformName, value, type) {
         var _this = this;
-        var internalType = this.uniformInternalTypeForValue(value, type);
+        var internalType = utils_1.uniformInternalTypeForValue(value, type, this.name);
         if (program === undefined) {
             throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
         }
         var programName = Object.keys(this.programs).find(function (key) { return _this.programs[key] === program; });
         if (!programName) {
-            throw new Error("Could not find valid vertex programName for WebGLProgram \"" + this.name + "\".");
+            throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"" + this.name + "\".");
         }
         this.setProgramUniform(program, programName, uniformName, value, internalType);
     };
@@ -5292,7 +5228,7 @@ exports.Vector4 = Vector4;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isBoolean = exports.isArray = exports.isString = exports.isNonNegativeInteger = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isNumberOfType = exports.isValidClearValue = exports.isValidTextureType = exports.isValidTextureFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
+exports.isBoolean = exports.isObject = exports.isArray = exports.isString = exports.isNonNegativeInteger = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isNumberOfType = exports.isValidClearValue = exports.isValidTextureType = exports.isValidTextureFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
 var constants_1 = __webpack_require__(601);
 function isValidDataType(type) {
     return constants_1.validDataTypes.indexOf(type) > -1;
@@ -5341,12 +5277,43 @@ function isNumberOfType(value, type) {
         case constants_1.FLOAT:
             return isNumber(value);
         case constants_1.BYTE:
+            // -(2 ** 7)
+            if (value < -128)
+                return false;
+            // 2 ** 7 - 1
+            if (value > 127)
+                return false;
+            return isInteger(value);
         case constants_1.SHORT:
+            // -(2 ** 15)
+            if (value < -32768)
+                return false;
+            // 2 ** 15 - 1
+            if (value > 32767)
+                return false;
+            return isInteger(value);
         case constants_1.INT:
+            // -(2 ** 31)
+            if (value < -2147483648)
+                return false;
+            // 2 ** 31 - 1
+            if (value > 2147483647)
+                return false;
             return isInteger(value);
         case constants_1.UNSIGNED_BYTE:
+            // 2 ** 8 - 1
+            if (value > 255)
+                return false;
+            return isNonNegativeInteger(value);
         case constants_1.UNSIGNED_SHORT:
+            // 2 ** 16 - 1
+            if (value > 65535)
+                return false;
+            return isNonNegativeInteger(value);
         case constants_1.UNSIGNED_INT:
+            // 2 ** 32 - 1
+            if (value > 4294967295)
+                return false;
             return isNonNegativeInteger(value);
         default:
             throw new Error("Unknown type " + type);
@@ -5354,7 +5321,7 @@ function isNumberOfType(value, type) {
 }
 exports.isNumberOfType = isNumberOfType;
 function isNumber(value) {
-    return !isNaN(value);
+    return !Number.isNaN(value) && typeof value === 'number' && Number.isFinite(value);
 }
 exports.isNumber = isNumber;
 function isInteger(value) {
@@ -5377,6 +5344,10 @@ function isArray(value) {
     return Array.isArray(value);
 }
 exports.isArray = isArray;
+function isObject(value) {
+    return typeof value === 'object' && !isArray(value) && value !== null;
+}
+exports.isObject = isObject;
 function isBoolean(value) {
     return typeof value === 'boolean';
 }
@@ -5512,6 +5483,17 @@ exports.getExtension = getExtension;
 
 "use strict";
 
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -5537,16 +5519,16 @@ var GPULayer_1 = __webpack_require__(355);
 Object.defineProperty(exports, "GPULayer", ({ enumerable: true, get: function () { return GPULayer_1.GPULayer; } }));
 var GPUProgram_1 = __webpack_require__(664);
 Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function () { return GPUProgram_1.GPUProgram; } }));
+var checks = __webpack_require__(707);
 // These exports are only used for testing.
-var _testing = {
-    makeShaderHeader: utils_1.makeShaderHeader,
+var _testing = __assign({ makeShaderHeader: utils_1.makeShaderHeader,
     compileShader: utils_1.compileShader,
     initGLProgram: utils_1.initGLProgram,
     preprocessVertexShader: utils_1.preprocessVertexShader,
     preprocessFragmentShader: utils_1.preprocessFragmentShader,
     isPowerOf2: utils_1.isPowerOf2,
     initSequentialFloatArray: utils_1.initSequentialFloatArray,
-};
+    uniformInternalTypeForValue: utils_1.uniformInternalTypeForValue }, checks);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
@@ -5560,7 +5542,7 @@ __exportStar(__webpack_require__(601), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
+exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var precisionSource = __webpack_require__(937);
@@ -5896,6 +5878,77 @@ function preprocessFragmentShader(shaderSource, glslVersion) {
     return convertFragmentShaderToGLSL1(shaderSource);
 }
 exports.preprocessFragmentShader = preprocessFragmentShader;
+function uniformInternalTypeForValue(value, type, programName) {
+    if (type === constants_1.FLOAT) {
+        // Check that we are dealing with a number.
+        if (checks_1.isArray(value)) {
+            for (var i = 0; i < value.length; i++) {
+                if (!checks_1.isNumber(value[i])) {
+                    throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected float or float[] of length 1-4.");
+                }
+            }
+        }
+        else {
+            if (!checks_1.isNumber(value)) {
+                throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected float or float[] of length 1-4.");
+            }
+        }
+        if (!checks_1.isArray(value) || value.length === 1) {
+            return constants_1.FLOAT_1D_UNIFORM;
+        }
+        if (value.length === 2) {
+            return constants_1.FLOAT_2D_UNIFORM;
+        }
+        if (value.length === 3) {
+            return constants_1.FLOAT_3D_UNIFORM;
+        }
+        if (value.length === 4) {
+            return constants_1.FLOAT_4D_UNIFORM;
+        }
+        throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected float or float[] of length 1-4.");
+    }
+    else if (type === constants_1.INT) {
+        // Check that we are dealing with an int.
+        if (checks_1.isArray(value)) {
+            for (var i = 0; i < value.length; i++) {
+                if (!checks_1.isInteger(value[i])) {
+                    throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected int or int[] of length 1-4.");
+                }
+            }
+        }
+        else {
+            if (!checks_1.isInteger(value)) {
+                throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected int or int[] of length 1-4.");
+            }
+        }
+        if (!checks_1.isArray(value) || value.length === 1) {
+            return constants_1.INT_1D_UNIFORM;
+        }
+        if (value.length === 2) {
+            return constants_1.INT_2D_UNIFORM;
+        }
+        if (value.length === 3) {
+            return constants_1.INT_3D_UNIFORM;
+        }
+        if (value.length === 4) {
+            return constants_1.INT_4D_UNIFORM;
+        }
+        throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected int or int[] of length 1-4.");
+    }
+    else if (type === constants_1.BOOL) {
+        if (checks_1.isBoolean(value)) {
+            // Boolean types are passed in as ints.
+            // This suggest floats work as well, but ints seem more natural:
+            // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+            return constants_1.INT_1D_UNIFORM;
+        }
+        throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected boolean.");
+    }
+    else {
+        throw new Error("Invalid uniform type: " + type + " for program \"" + programName + "\", expected " + constants_1.FLOAT + " or " + constants_1.INT + " of " + constants_1.BOOL + ".");
+    }
+}
+exports.uniformInternalTypeForValue = uniformInternalTypeForValue;
 
 
 /***/ }),

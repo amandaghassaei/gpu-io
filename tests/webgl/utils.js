@@ -6,7 +6,6 @@
 		WEBGL1,
 		WEBGL2,
 		PRECISION_HIGH_P,
-		PRECISION_MEDIUM_P,
 		getVertexShaderMediumpPrecision,
 		getFragmentShaderMediumpPrecision,
 		isHighpSupportedInVertexShader,
@@ -17,16 +16,13 @@
 	const {
 		compileShader,
 		initGLProgram,
-		makeShaderHeader,
-		isPowerOf2,
-		initSequentialFloatArray,
 		preprocessVertexShader,
 		preprocessFragmentShader,
 	} = _testing;
 
 	// Testing components of utils that require WebGL with headless chrome + karma + mocha + chai.
 
-	describe('utils', function () {
+	describe('utils', () => {
 		describe('compileShader', () => {
 			it('should compile WebGL2 vertex shaders', () => {
 				const webgl2 = document.createElement('canvas').getContext(WEBGL2);

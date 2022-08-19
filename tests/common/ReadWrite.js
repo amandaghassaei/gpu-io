@@ -1,4 +1,4 @@
-const testArrayWrites = (() => {
+const testLayerWrites = (() => {
 	const { setFloat16, getFloat16 } = float16;
 
 	const {
@@ -102,7 +102,7 @@ const testArrayWrites = (() => {
 	}
 
 	// General code for testing array writes.
-	function testArrayWrites(options) {
+	function testLayerWrites(options) {
 		const { 
 			TYPE,
 			DIM_X,
@@ -548,5 +548,5 @@ const testArrayWrites = (() => {
 			};
 		}
 	}
-	return testArrayWrites;
+	return testLayerWrites;
 })();

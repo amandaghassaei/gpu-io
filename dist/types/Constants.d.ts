@@ -15,7 +15,7 @@ export declare const CLAMP_TO_EDGE = "CLAMP_TO_EDGE";
 export declare const RGB = "RGB";
 export declare const RGBA = "RGBA";
 export declare type GPULayerArray = Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
-export declare const validArrayTypes: (Uint8ArrayConstructor | Float32ArrayConstructor | Int8ArrayConstructor | Uint16ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor | ArrayConstructor)[];
+export declare const validArrayTypes: (ArrayConstructor | Uint8ArrayConstructor | Float32ArrayConstructor | Int8ArrayConstructor | Uint16ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor)[];
 export declare type GPULayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
 export declare const validDataTypes: string[];
 export declare type GPULayerNumComponents = 1 | 2 | 3 | 4;

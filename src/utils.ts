@@ -1,14 +1,33 @@
-import { isString } from './checks';
 import {
+	isArray,
+	isBoolean,
+	isInteger,
+	isNumber,
+	isString,
+} from './checks';
+import {
+	BOOL,
 	CompileTimeVars,
 	DEFAULT_ERROR_CALLBACK,
 	ErrorCallback,
+	FLOAT,
+	FLOAT_1D_UNIFORM,
+	FLOAT_2D_UNIFORM,
+	FLOAT_3D_UNIFORM,
+	FLOAT_4D_UNIFORM,
 	GLSL1,
 	GLSL3,
 	GLSLPrecision,
 	GLSLVersion,
+	INT,
+	INT_1D_UNIFORM,
+	INT_2D_UNIFORM,
+	INT_3D_UNIFORM,
+	INT_4D_UNIFORM,
 	PRECISION_HIGH_P,
 	PRECISION_MEDIUM_P,
+	UniformType,
+	UniformValue,
 	WEBGL1,
 	WEBGL2,
 } from './constants';
@@ -472,4 +491,74 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 		return shaderSource;
 	}
 	return convertFragmentShaderToGLSL1(shaderSource);
+}
+
+export function uniformInternalTypeForValue(
+	value: UniformValue,
+	type: UniformType,
+	programName: string,
+) {
+	if (type === FLOAT) {
+		// Check that we are dealing with a number.
+		if (isArray(value)) {
+			for (let i = 0; i < (value as number[]).length; i++) {
+				if (!isNumber((value as number[])[i])) {
+					throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected float or float[] of length 1-4.`);
+				}
+			}
+		} else {
+			if (!isNumber(value)) {
+				throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected float or float[] of length 1-4.`);
+			}
+		}
+		if (!isArray(value) || (value as number[]).length === 1) {
+			return FLOAT_1D_UNIFORM;
+		}
+		if ((value as number[]).length === 2) {
+			return FLOAT_2D_UNIFORM;
+		}
+		if ((value as number[]).length === 3) {
+			return FLOAT_3D_UNIFORM;
+		}
+		if ((value as number[]).length === 4) {
+			return FLOAT_4D_UNIFORM;
+		}
+		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected float or float[] of length 1-4.`);
+	} else if (type === INT) {
+		// Check that we are dealing with an int.
+		if (isArray(value)) {
+			for (let i = 0; i < (value as number[]).length; i++) {
+				if (!isInteger((value as number[])[i])) {
+					throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected int or int[] of length 1-4.`);
+				}
+			}
+		} else {
+			if (!isInteger(value)) {
+				throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected int or int[] of length 1-4.`);
+			}
+		}
+		if (!isArray(value) || (value as number[]).length === 1) {
+			return INT_1D_UNIFORM;
+		}
+		if ((value as number[]).length === 2) {
+			return INT_2D_UNIFORM;
+		}
+		if ((value as number[]).length === 3) {
+			return INT_3D_UNIFORM;
+		}
+		if ((value as number[]).length === 4) {
+			return INT_4D_UNIFORM;
+		}
+		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected int or int[] of length 1-4.`);
+	} else if (type === BOOL) {
+		if (isBoolean(value)) {
+			// Boolean types are passed in as ints.
+			// This suggest floats work as well, but ints seem more natural:
+			// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+			return INT_1D_UNIFORM;
+		}
+		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected boolean.`);
+	} else {
+		throw new Error(`Invalid uniform type: ${type} for program "${programName}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
+	}
 }

@@ -5,9 +5,9 @@ export declare class GPUProgram {
     readonly name: string;
     private fragmentShader;
     private readonly fragmentShaderSource;
-    private defines;
+    private readonly defines;
     private readonly uniforms;
-    private programs;
+    private readonly programs;
     /**
      * Create a GPUProgram.
      * @param {GPUComposer} composer - The current GPUComposer instance.
@@ -33,7 +33,6 @@ export declare class GPUProgram {
     get _GPULayerPointsProgram(): WebGLProgram | undefined;
     get _GPULayerVectorFieldProgram(): WebGLProgram | undefined;
     get _GPULayerLinesProgram(): WebGLProgram | undefined;
-    private uniformInternalTypeForValue;
     private setProgramUniform;
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
     _setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValue, type: UniformType): void;

@@ -60,12 +60,34 @@ export function isNumberOfType(value: any, type: GPULayerType) {
 		case FLOAT:
 			return isNumber(value);
 		case BYTE:
+			// -(2 ** 7)
+			if (value < -128) return false;
+			// 2 ** 7 - 1
+			if (value > 127) return false;
+			return isInteger(value);
 		case SHORT:
+			// -(2 ** 15)
+			if (value < -32768) return false;
+			// 2 ** 15 - 1
+			if (value > 32767) return false;
+			return isInteger(value);
 		case INT:
+			// -(2 ** 31)
+			if (value < -2147483648) return false;
+			// 2 ** 31 - 1
+			if (value > 2147483647) return false;
 			return isInteger(value);
 		case UNSIGNED_BYTE:
+			// 2 ** 8 - 1
+			if (value > 255) return false;
+			return isNonNegativeInteger(value);
 		case UNSIGNED_SHORT:
+			// 2 ** 16 - 1
+			if (value > 65535) return false;
+			return isNonNegativeInteger(value);
 		case UNSIGNED_INT:
+			// 2 ** 32 - 1
+			if (value > 4294967295) return false;
 			return isNonNegativeInteger(value);
 		default:
 			throw new Error(`Unknown type ${type}`);
@@ -73,7 +95,7 @@ export function isNumberOfType(value: any, type: GPULayerType) {
 }
 
 export function isNumber(value: any) {
-	return !isNaN(value);
+	return !Number.isNaN(value) && typeof value === 'number' && Number.isFinite(value);
 }
 
 export function isInteger(value: any) {
@@ -81,7 +103,7 @@ export function isInteger(value: any) {
 }
 
 export function isPositiveInteger(value: any) {
-	return isInteger(value) &&  value > 0;
+	return isInteger(value) && value > 0;
 }
 
 export function isNonNegativeInteger(value: any) {
@@ -94,6 +116,10 @@ export function isString(value: any){
 
 export function isArray(value: any) {
 	return Array.isArray(value);
+}
+
+export function isObject(value: any) {
+	return typeof value === 'object' && !isArray(value) && value !== null;
 }
 
 export function isBoolean(value: any) {

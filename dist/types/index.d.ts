@@ -1,8 +1,23 @@
-import { makeShaderHeader, compileShader, initGLProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, preprocessFragmentShader, preprocessVertexShader, isPowerOf2, initSequentialFloatArray } from './utils';
+import { makeShaderHeader, compileShader, initGLProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, preprocessFragmentShader, preprocessVertexShader, isPowerOf2, initSequentialFloatArray, uniformInternalTypeForValue } from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
 declare const _testing: {
+    isValidDataType(type: string): boolean;
+    isValidFilter(type: string): boolean;
+    isValidWrap(type: string): boolean;
+    isValidTextureFormat(type: string): boolean;
+    isValidTextureType(type: string): boolean;
+    isValidClearValue(clearValue: number | number[], numComponents: number, type: import("./constants").GPULayerType): boolean;
+    isNumberOfType(value: any, type: import("./constants").GPULayerType): boolean;
+    isNumber(value: any): boolean;
+    isInteger(value: any): boolean;
+    isPositiveInteger(value: any): boolean;
+    isNonNegativeInteger(value: any): boolean;
+    isString(value: any): boolean;
+    isArray(value: any): boolean;
+    isObject(value: any): boolean;
+    isBoolean(value: any): boolean;
     makeShaderHeader: typeof makeShaderHeader;
     compileShader: typeof compileShader;
     initGLProgram: typeof initGLProgram;
@@ -10,6 +25,7 @@ declare const _testing: {
     preprocessFragmentShader: typeof preprocessFragmentShader;
     isPowerOf2: typeof isPowerOf2;
     initSequentialFloatArray: typeof initSequentialFloatArray;
+    uniformInternalTypeForValue: typeof uniformInternalTypeForValue;
 };
 export * from './constants';
 export { GPUComposer, GPULayer, GPUProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, _testing, };

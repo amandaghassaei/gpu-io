@@ -12,11 +12,12 @@ import {
 	preprocessVertexShader,
 	isPowerOf2,
 	initSequentialFloatArray,
+	uniformInternalTypeForValue,
 } from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
-import * as Constants from './constants';
+import * as checks from './checks';
 
 // These exports are only used for testing.
 const _testing = {
@@ -27,6 +28,8 @@ const _testing = {
 	preprocessFragmentShader,
 	isPowerOf2,
 	initSequentialFloatArray,
+	uniformInternalTypeForValue,
+	...checks,
 }
 
 // Named exports.

@@ -1,8 +1,34 @@
+const SUCCESS = 'success';
+const ERROR = 'error';
+const WARNING = 'warning';
+const NA = 'NA';
+
+const gl1Canvas = document.createElement('canvas');
+const gl2Canvas = document.createElement('canvas');
+
+// Extrema values to test.
+const MIN_UNSIGNED_INT = 0;
+const MIN_BYTE = -(2 ** 7);
+const MAX_BYTE = 2 ** 7 - 1;
+const MAX_UNSIGNED_BYTE = 2 ** 8 - 1;
+const MIN_SHORT = -(2 ** 15);
+const MAX_SHORT = 2 ** 15 - 1;
+const MAX_UNSIGNED_SHORT = 2 ** 16 - 1;
+const MIN_INT = -(2 ** 31);
+const MAX_INT = 2 ** 31 - 1;
+const MAX_UNSIGNED_INT = 2 ** 32 - 1;
+const MIN_FLOAT_INT = -16777216;
+const MAX_FLOAT_INT = 16777216;
+const MIN_HALF_FLOAT_INT = -2048;
+const MAX_HALF_FLOAT_INT = 2048;
+
 function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wrap, offset) {
 	if (offset === 0) return input;
 
+	const { setFloat16, getFloat16 } = float16;
 	const {
 		NEAREST,
+		REPEAT,
 		CLAMP_TO_EDGE,
 		HALF_FLOAT,
 	} = WebGLCompute;

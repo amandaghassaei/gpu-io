@@ -1,4 +1,4 @@
-const testArrayReads = (() => {
+const testLayerReads = (() => {
 	
 	const { setFloat16, getFloat16 } = float16;
 
@@ -70,7 +70,7 @@ const testArrayReads = (() => {
 	}
 
 	// General code for testing array reads.
-	function testArrayReads(options) {
+	function testLayerReads(options) {
 
 		const { 
 			TYPE,
@@ -379,6 +379,7 @@ const testArrayReads = (() => {
 					],
 				},
 			);
+			console.log(input.slice(0, 4));
 
 			composer.step({
 				program: offsetProgram,
@@ -411,6 +412,7 @@ const testArrayReads = (() => {
 				for (let i = 0; i < input.length; i++) {
 					if (input[i] !== output[i]) {
 						if (i < NUM_TYPE_EXTREMA) {
+							console.log(input[i], output[i]);
 							typeExtremaSupported = false;
 						} else if (i < NUM_TYPE_EXTREMA + NUM_FLOAT_INT_EXTREMA) {
 							floatExtremaSupported = false;
@@ -527,5 +529,5 @@ const testArrayReads = (() => {
 			};
 		}
 	}
-	return testArrayReads;
+	return testLayerReads;
 })();
