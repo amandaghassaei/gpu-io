@@ -5838,6 +5838,8 @@ function convertShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
     shaderSource = shaderSource.replace(/((\bivec3\b)|(\buvec3\b))/g, 'vec3');
     shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
+    shaderSource = shaderSource.replace(/\buint\b/g, 'int');
+    shaderSource = shaderSource.replace(/\buint\(/g, 'int(');
     // Convert texture to texture2D.
     shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
     return shaderSource;
@@ -5965,7 +5967,7 @@ exports.uniformInternalTypeForValue = uniformInternalTypeForValue;
 /***/ 937:
 /***/ ((module) => {
 
-module.exports = "#if (WEBGLCOMPUTE_INT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp int;\n#else\nprecision mediump int;\n#endif\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 1)\nprecision mediump int;\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 0)\nprecision lowp int;\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)\nprecision mediump float;\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)\nprecision lowp float;\n#endif\nprecision lowp sampler2D;\n#if (__VERSION__ == 300)\nprecision lowp isampler2D;precision lowp usampler2D;\n#endif\n"
+module.exports = "#if (WEBGLCOMPUTE_INT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp int;\n#if (__VERSION__ == 300)\nprecision highp isampler2D;precision highp usampler2D;\n#endif\n#else\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 1)\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 0)\nprecision lowp int;\n#if (__VERSION__ == 300)\nprecision lowp isampler2D;precision lowp usampler2D;\n#endif\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp sampler2D;\n#else\nprecision mediump float;precision mediump sampler2D;\n#endif\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)\nprecision mediump float;precision mediump sampler2D;\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)\nprecision lowp float;precision lowp sampler2D;\n#endif\n"
 
 /***/ }),
 

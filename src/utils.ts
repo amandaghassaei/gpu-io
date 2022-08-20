@@ -441,6 +441,8 @@ function convertShaderToGLSL1(shaderSource: string) {
 	shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
 	shaderSource = shaderSource.replace(/((\bivec3\b)|(\buvec3\b))/g, 'vec3');
 	shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
+	shaderSource = shaderSource.replace(/\buint\b/g, 'int');
+	shaderSource = shaderSource.replace(/\buint\(/g, 'int(');
 	// Convert texture to texture2D.
 	shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
 	return shaderSource;

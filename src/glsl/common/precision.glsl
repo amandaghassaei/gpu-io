@@ -5,31 +5,46 @@
 #if (WEBGLCOMPUTE_INT_PRECISION == 2)
 	#ifdef GL_FRAGMENT_PRECISION_HIGH
 		precision highp int;
+		#if (__VERSION__ == 300)
+			precision highp isampler2D;
+			precision highp usampler2D;
+		#endif
 	#else
 		precision mediump int;
+		#if (__VERSION__ == 300)
+			precision mediump isampler2D;
+			precision mediump usampler2D;
+		#endif
 	#endif
 #endif
 #if (WEBGLCOMPUTE_INT_PRECISION == 1)
 	precision mediump int;
+	#if (__VERSION__ == 300)
+		precision mediump isampler2D;
+		precision mediump usampler2D;
+	#endif
 #endif
 #if (WEBGLCOMPUTE_INT_PRECISION == 0)
 	precision lowp int;
+	#if (__VERSION__ == 300)
+		precision lowp isampler2D;
+		precision lowp usampler2D;
+	#endif
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)
 	#ifdef GL_FRAGMENT_PRECISION_HIGH
 		precision highp float;
+		precision highp sampler2D;
 	#else
 		precision mediump float;
+		precision mediump sampler2D;
 	#endif
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)
 	precision mediump float;
+	precision mediump sampler2D;
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)
 	precision lowp float;
-#endif
-precision lowp sampler2D;
-#if (__VERSION__ == 300)
-	precision lowp isampler2D;
-	precision lowp usampler2D;
+	precision lowp sampler2D;
 #endif
