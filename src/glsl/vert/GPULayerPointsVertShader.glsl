@@ -1,4 +1,4 @@
-@include "../common/utils.glsl"
+@include "../common/modI.glsl"
 
 // Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl
 in float a_internal_index; // Index of point.
@@ -24,7 +24,7 @@ void main() {
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
 	// We have packed a 2D displacement with the position.
-	vec4 positionData = texture2D(u_internal_positions, particleUV);
+	vec4 positionData = texture(u_internal_positions, particleUV);
 	// position = first two components plus last two components (optional accumulation buffer).
 	vec2 positionAbsolute = positionData.rg;
 	if (u_internal_positionWithAccumulation) positionAbsolute += positionData.ba;

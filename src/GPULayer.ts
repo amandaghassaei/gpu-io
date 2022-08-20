@@ -1099,6 +1099,14 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 
+	getValues() {
+		return this.composer._getValues(this);
+	}
+
+	savePNG(filename: string, dpi?: number) {
+		return this.composer._savePNG(this, filename, dpi);
+	}
+
 	resize(
 		dimensions: number | [number, number],
 		array?: GPULayerArray | number[],

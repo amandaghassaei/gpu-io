@@ -2397,11 +2397,12 @@ var GPUComposer = /** @class */ (function () {
         }
         this.gl = gl;
         // Save glsl version, default to 3 if using webgl2 context.
-        var glslVersion = params.glslVersion === undefined ? (utils_1.isWebGL2(gl) ? constants_1.GLSL3 : constants_1.GLSL1) : params.glslVersion;
+        var glslVersion = params.glslVersion || (utils_1.isWebGL2(gl) ? constants_1.GLSL3 : constants_1.GLSL1);
         if (!utils_1.isWebGL2(gl) && glslVersion === constants_1.GLSL3) {
             console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
             glslVersion = constants_1.GLSL1; // Fall back to GLSL1 in these cases.
         }
+        // TODO: check that this is valid.
         this.glslVersion = glslVersion;
         // Set default int/float precision.
         this.intPrecision = params.intPrecision || constants_1.PRECISION_HIGH_P;
@@ -2586,7 +2587,7 @@ var GPUComposer = /** @class */ (function () {
             dimensions = [gpuLayer.width, gpuLayer.height];
         }
         // If read only, get state by reading to GPU.
-        var array = gpuLayer.writable ? undefined : this.getValues(gpuLayer);
+        var array = gpuLayer.writable ? undefined : gpuLayer.getValues();
         var clone = new GPULayer_1.GPULayer(this, {
             name: name || gpuLayer.name + "-clone",
             dimensions: dimensions,
@@ -3494,7 +3495,7 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
-    GPUComposer.prototype.getValues = function (gpuLayer) {
+    GPUComposer.prototype._getValues = function (gpuLayer) {
         var _a = this, gl = _a.gl, glslVersion = _a.glslVersion;
         // In case GPULayer was not the last output written to.
         gpuLayer._bindOutputBuffer();
@@ -3655,11 +3656,11 @@ var GPUComposer = /** @class */ (function () {
         return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
     };
     ;
-    GPUComposer.prototype.savePNG = function (GPULayer, filename, dpi, callback) {
-        if (filename === void 0) { filename = GPULayer.name; }
+    GPUComposer.prototype._savePNG = function (gpuLayer, filename, dpi, callback) {
+        if (filename === void 0) { filename = GPULayer_1.GPULayer.name; }
         if (callback === void 0) { callback = file_saver_1.saveAs; }
-        var values = this.getValues(GPULayer);
-        var width = GPULayer.width, height = GPULayer.height;
+        var values = gpuLayer.getValues();
+        var width = gpuLayer.width, height = gpuLayer.height;
         var canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -3667,16 +3668,16 @@ var GPUComposer = /** @class */ (function () {
         var imageData = context.getImageData(0, 0, width, height);
         var buffer = imageData.data;
         // TODO: this isn't working for UNSIGNED_BYTE types?
-        var isFloat = GPULayer.type === constants_1.FLOAT || GPULayer.type === constants_1.HALF_FLOAT;
+        var isFloat = gpuLayer.type === constants_1.FLOAT || gpuLayer.type === constants_1.HALF_FLOAT;
         // Have to flip the y axis since PNGs are written top to bottom.
         for (var y = 0; y < height; y++) {
             for (var x = 0; x < width; x++) {
                 var index = y * width + x;
                 var indexFlipped = (height - 1 - y) * width + x;
-                for (var i = 0; i < GPULayer.numComponents; i++) {
-                    buffer[4 * indexFlipped + i] = values[GPULayer.numComponents * index + i] * (isFloat ? 255 : 1);
+                for (var i = 0; i < gpuLayer.numComponents; i++) {
+                    buffer[4 * indexFlipped + i] = values[gpuLayer.numComponents * index + i] * (isFloat ? 255 : 1);
                 }
-                if (GPULayer.numComponents < 4) {
+                if (gpuLayer.numComponents < 4) {
                     buffer[4 * indexFlipped + 3] = 255; // Set alpha channel to 255.
                 }
             }
@@ -4673,6 +4674,12 @@ var GPULayer = /** @class */ (function () {
         // Unbind texture.
         gl.bindTexture(gl.TEXTURE_2D, null);
     };
+    GPULayer.prototype.getValues = function () {
+        return this.composer._getValues(this);
+    };
+    GPULayer.prototype.savePNG = function (filename, dpi) {
+        return this.composer._savePNG(this, filename, dpi);
+    };
     GPULayer.prototype.resize = function (dimensions, array) {
         var _a = this, name = _a.name, composer = _a.composer;
         var verboseLogging = composer.verboseLogging;
@@ -5127,14 +5134,14 @@ var GPUProgram = /** @class */ (function () {
     // This is used internally.
     GPUProgram.prototype._setVertexUniform = function (program, uniformName, value, type) {
         var _this = this;
-        var internalType = utils_1.uniformInternalTypeForValue(value, type, this.name);
-        if (program === undefined) {
+        if (!program) {
             throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
         }
         var programName = Object.keys(this.programs).find(function (key) { return _this.programs[key] === program; });
         if (!programName) {
             throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"" + this.name + "\".");
         }
+        var internalType = utils_1.uniformInternalTypeForValue(value, type, this.name);
         this.setProgramUniform(program, programName, uniformName, value, internalType);
     };
     GPUProgram.prototype.dispose = function () {
@@ -5145,7 +5152,8 @@ var GPUProgram = /** @class */ (function () {
             console.log("Deallocating GPUProgram \"" + this.name + "\".");
         // Unbind all gl data before deleting.
         Object.values(programs).forEach(function (program) {
-            gl.deleteProgram(program);
+            if (program)
+                gl.deleteProgram(program);
         });
         Object.keys(this.programs).forEach(function (key) {
             delete _this.programs[key];
@@ -5154,6 +5162,7 @@ var GPUProgram = /** @class */ (function () {
         gl.deleteShader(fragmentShader);
         // @ts-ignore
         delete this.fragmentShader;
+        // Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
         // Delete all references.
         // @ts-ignore
         delete this.composer;
@@ -5813,7 +5822,7 @@ function preprocessShader(shaderSource) {
     var origSrc = shaderSource.slice();
     shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+[a-zA-Z]+)?)\s*/, '');
     if (shaderSource !== origSrc) {
-        console.warn('WebGLCompute expects shader source that does not contain #version definitions, removing...');
+        console.warn('WebGLCompute expects shader source that does not contain #version declarations, removing...');
     }
     // Strip out any precision declarations.
     origSrc = shaderSource.slice();
@@ -5998,21 +6007,21 @@ module.exports = "in vec2 a_internal_position;\n#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE
 /***/ 629:
 /***/ ((module) => {
 
-module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;v_lineWrapping=vec2(0.);if(u_internal_wrapX){if(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}}if(u_internal_wrapY){if(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(H,0,1);}"
+module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=G(u_internal_positions,E);vec2 H=F.rg;if(u_internal_positionWithAccumulation)H+=F.ba;v_UV=H*u_internal_scale;v_lineWrapping=vec2(0.);if(u_internal_wrapX){if(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}}if(u_internal_wrapY){if(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}}vec2 I=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(I,0,1);}"
 
 /***/ }),
 
 /***/ 62:
 /***/ ((module) => {
 
-module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=texture2D(u_internal_positions,E);vec2 G=F.rg;if(u_internal_positionWithAccumulation)G+=F.ba;v_UV=G*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_PointSize=u_internal_pointSize;gl_Position=vec4(H,0,1);}"
+module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out float v_index;void main(){vec2 E=vec2(A(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 F=G(u_internal_positions,E);vec2 H=F.rg;if(u_internal_positionWithAccumulation)H+=F.ba;v_UV=H*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 I=v_UV*2.-1.;v_index=a_internal_index;gl_PointSize=u_internal_pointSize;gl_Position=vec4(I,0,1);}"
 
 /***/ }),
 
 /***/ 430:
 /***/ ((module) => {
 
-module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_vectors;uniform vec2 u_internal_dimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out float v_index;void main(){float E=floor((a_internal_index+0.5)/2.);v_UV=vec2(A(E,u_internal_dimensions.x),floor(floor(E+0.5)/u_internal_dimensions.x))/u_internal_dimensions;if(A(a_internal_index,2.)>0.){vec2 F=texture2D(u_internal_vectors,v_UV).xy;v_UV+=F*u_internal_scale;}vec2 G=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(G,0,1);}"
+module.exports = "float A(float B,float C){float D=B-floor((B+0.5)/C)*C;return floor(D+0.5);}in float a_internal_index;uniform sampler2D u_internal_vectors;uniform vec2 u_internal_dimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out float v_index;void main(){float E=floor((a_internal_index+0.5)/2.);v_UV=vec2(A(E,u_internal_dimensions.x),floor(floor(E+0.5)/u_internal_dimensions.x))/u_internal_dimensions;if(A(a_internal_index,2.)>0.){vec2 F=G(u_internal_vectors,v_UV).xy;v_UV+=F*u_internal_scale;}vec2 H=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(H,0,1);}"
 
 /***/ }),
 

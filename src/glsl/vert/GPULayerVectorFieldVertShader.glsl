@@ -1,4 +1,4 @@
-@include "../common/utils.glsl"
+@include "../common/modI.glsl"
 
 // Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl
 in float a_internal_index; // Index of point.
@@ -22,7 +22,7 @@ void main() {
 	// Add vector displacement if needed.
 	if (modI(a_internal_index, 2.0) > 0.0) {
 		// Lookup vectorData at current UV.
-		vec2 vectorData = texture2D(u_internal_vectors, v_UV).xy;
+		vec2 vectorData = texture(u_internal_vectors, v_UV).xy;
 		v_UV += vectorData * u_internal_scale;
 	}
 

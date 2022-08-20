@@ -395,14 +395,14 @@ Error code: ${gl.getError()}.`);
 		value: UniformValue,
 		type: UniformType,
 	) {
-		const internalType = uniformInternalTypeForValue(value, type, this.name);
-		if (program === undefined) {
+		if (!program) {
 			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
 		}
 		const programName = Object.keys(this.programs).find(key => this.programs[key as PROGRAM_NAME_INTERNAL] === program);
 		if (!programName) {
 			throw new Error(`Could not find valid vertex programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
+		const internalType = uniformInternalTypeForValue(value, type, this.name);
 		this.setProgramUniform(program, programName, uniformName, value, internalType);
 	}
 
@@ -414,7 +414,7 @@ Error code: ${gl.getError()}.`);
 
 		// Unbind all gl data before deleting.
 		Object.values(programs).forEach(program => {
-			gl.deleteProgram(program!);
+			if (program) gl.deleteProgram(program);
 		});
 		Object.keys(this.programs).forEach(key => {
 			delete this.programs[key as PROGRAM_NAME_INTERNAL];
@@ -424,6 +424,7 @@ Error code: ${gl.getError()}.`);
 		gl.deleteShader(fragmentShader);
 		// @ts-ignore
 		delete this.fragmentShader;
+		// Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
 
 		// Delete all references.
 		// @ts-ignore

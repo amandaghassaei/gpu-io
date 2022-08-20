@@ -424,7 +424,7 @@ function preprocessShader(shaderSource: string) {
 	let origSrc = shaderSource.slice();
 	shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+[a-zA-Z]+)?)\s*/, '');
 	if (shaderSource !== origSrc) {
-		console.warn('WebGLCompute expects shader source that does not contain #version definitions, removing...');
+		console.warn('WebGLCompute expects shader source that does not contain #version declarations, removing...');
 	}
 	// Strip out any precision declarations.
 	origSrc = shaderSource.slice();

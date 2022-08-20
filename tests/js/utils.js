@@ -133,23 +133,36 @@ precision lowp isampler2D;precision lowp usampler2D;
 		});
 		describe('uniformInternalTypeForValue', () => {
 			it('should throw error if value is wrong type', () => {
-				assert.throws(() => { uniformInternalTypeForValue('test', FLOAT, 'test-program'); }, new Error('Invalid uniform value: "test" for program "test-program", expected float or float[] of length 1-4.'));
-				assert.throws(() => { uniformInternalTypeForValue([2, 4, 6, 7, 8], FLOAT, 'test-program'); }, new Error('Invalid uniform value: [2,4,6,7,8] for program "test-program", expected float or float[] of length 1-4.'));
-				assert.throws(() => { uniformInternalTypeForValue([2, 4, {}, 7], FLOAT, 'test-program'); }, new Error('Invalid uniform value: [2,4,{},7] for program "test-program", expected float or float[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue('test', FLOAT, 'test-program'); },
+					new Error('Invalid uniform value: "test" for program "test-program", expected float or float[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue([2, 4, 6, 7, 8], FLOAT, 'test-program'); },
+					new Error('Invalid uniform value: [2,4,6,7,8] for program "test-program", expected float or float[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue([2, 4, {}, 7], FLOAT, 'test-program'); },
+					new Error('Invalid uniform value: [2,4,{},7] for program "test-program", expected float or float[] of length 1-4.'));
 
-				assert.throws(() => { uniformInternalTypeForValue('test', INT, 'test-program'); }, new Error('Invalid uniform value: "test" for program "test-program", expected int or int[] of length 1-4.'));
-				assert.throws(() => { uniformInternalTypeForValue(4.5, INT, 'test-program'); }, new Error('Invalid uniform value: 4.5 for program "test-program", expected int or int[] of length 1-4.'));
-				assert.throws(() => { uniformInternalTypeForValue([2, 4, 6, 7, 8], INT, 'test-program'); }, new Error('Invalid uniform value: [2,4,6,7,8] for program "test-program", expected int or int[] of length 1-4.'));
-				assert.throws(() => { uniformInternalTypeForValue([2.4, 5.5], INT, 'test-program'); }, new Error('Invalid uniform value: [2.4,5.5] for program "test-program", expected int or int[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue('test', INT, 'test-program'); },
+					new Error('Invalid uniform value: "test" for program "test-program", expected int or int[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue(4.5, INT, 'test-program'); },
+					new Error('Invalid uniform value: 4.5 for program "test-program", expected int or int[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue([2, 4, 6, 7, 8], INT, 'test-program'); },
+					new Error('Invalid uniform value: [2,4,6,7,8] for program "test-program", expected int or int[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue([2.4, 5.5], INT, 'test-program'); },
+					new Error('Invalid uniform value: [2.4,5.5] for program "test-program", expected int or int[] of length 1-4.'));
 
-				assert.throws(() => { uniformInternalTypeForValue('test', BOOL, 'test-program'); }, new Error('Invalid uniform value: "test" for program "test-program", expected boolean.'));
-				assert.throws(() => { uniformInternalTypeForValue(3, BOOL, 'test-program'); }, new Error('Invalid uniform value: 3 for program "test-program", expected boolean.'));
-				assert.throws(() => { uniformInternalTypeForValue(1, BOOL, 'test-program'); }, new Error('Invalid uniform value: 1 for program "test-program", expected boolean.'));
-				assert.throws(() => { uniformInternalTypeForValue(0, BOOL, 'test-program'); }, new Error('Invalid uniform value: 0 for program "test-program", expected boolean.'));
-				assert.throws(() => { uniformInternalTypeForValue([true, false], BOOL, 'test-program'); }, new Error('Invalid uniform value: [true,false] for program "test-program", expected boolean.'));
+				assert.throws(() => { uniformInternalTypeForValue('test', BOOL, 'test-program'); },
+					new Error('Invalid uniform value: "test" for program "test-program", expected boolean.'));
+				assert.throws(() => { uniformInternalTypeForValue(3, BOOL, 'test-program'); },
+					new Error('Invalid uniform value: 3 for program "test-program", expected boolean.'));
+				assert.throws(() => { uniformInternalTypeForValue(1, BOOL, 'test-program'); },
+					new Error('Invalid uniform value: 1 for program "test-program", expected boolean.'));
+				assert.throws(() => { uniformInternalTypeForValue(0, BOOL, 'test-program'); },
+					new Error('Invalid uniform value: 0 for program "test-program", expected boolean.'));
+				assert.throws(() => { uniformInternalTypeForValue([true, false], BOOL, 'test-program'); },
+					new Error('Invalid uniform value: [true,false] for program "test-program", expected boolean.'));
 			});
 			it('should throw error if type is invalid', () => {
-				assert.throws(() => { uniformInternalTypeForValue(0, 'THING', 'test-program'); }, new Error('Invalid uniform type: THING for program "test-program", expected FLOAT or INT of BOOL.'));
+				assert.throws(() => { uniformInternalTypeForValue(0, 'THING', 'test-program'); },
+					new Error('Invalid uniform type: THING for program "test-program", expected FLOAT or INT of BOOL.'));
 			});
 			it('should return valid uniform type', () => {
 				assert.equal(uniformInternalTypeForValue(0, FLOAT, 'test-program'), FLOAT_1D_UNIFORM);

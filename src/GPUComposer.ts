@@ -272,11 +272,12 @@ export class GPUComposer {
 		this.gl = gl;
 
 		// Save glsl version, default to 3 if using webgl2 context.
-		let glslVersion = params.glslVersion === undefined ? (isWebGL2(gl) ? GLSL3 : GLSL1) : params.glslVersion;
+		let glslVersion = params.glslVersion || (isWebGL2(gl) ? GLSL3 : GLSL1);
 		if (!isWebGL2(gl) && glslVersion === GLSL3) {
 			console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
 			glslVersion = GLSL1; // Fall back to GLSL1 in these cases.
 		}
+		// TODO: check that this is valid.
 		this.glslVersion = glslVersion;
 
 		// Set default int/float precision.
@@ -459,7 +460,7 @@ export class GPUComposer {
 		}
 
 		// If read only, get state by reading to GPU.
-		const array = gpuLayer.writable ? undefined : this.getValues(gpuLayer);
+		const array = gpuLayer.writable ? undefined : gpuLayer.getValues();
 
 		const clone = new GPULayer(this, {
 			name: name || `${gpuLayer.name}-clone`,
@@ -1619,7 +1620,7 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	getValues(gpuLayer: GPULayer) {
+	_getValues(gpuLayer: GPULayer) {
 		const { gl, glslVersion } = this;
 
 		// In case GPULayer was not the last output written to.
@@ -1785,9 +1786,9 @@ export class GPUComposer {
 		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
 	};
 
-	savePNG(GPULayer: GPULayer, filename = GPULayer.name, dpi?: number, callback = saveAs) {
-		const values = this.getValues(GPULayer);
-		const { width, height } = GPULayer;
+	_savePNG(gpuLayer: GPULayer, filename = GPULayer.name, dpi?: number, callback = saveAs) {
+		const values = gpuLayer.getValues();
+		const { width, height } = gpuLayer;
 
 		const canvas = document.createElement('canvas');
 		canvas.width = width;
@@ -1796,16 +1797,16 @@ export class GPUComposer {
 		const imageData = context.getImageData(0, 0, width, height);
 		const buffer = imageData.data;
 		// TODO: this isn't working for UNSIGNED_BYTE types?
-		const isFloat = GPULayer.type === FLOAT || GPULayer.type === HALF_FLOAT;
+		const isFloat = gpuLayer.type === FLOAT || gpuLayer.type === HALF_FLOAT;
 		// Have to flip the y axis since PNGs are written top to bottom.
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				const index = y * width + x;
 				const indexFlipped = (height - 1 - y) * width + x;
-				for (let i = 0; i < GPULayer.numComponents; i++) {
-					buffer[4 * indexFlipped + i] = values[GPULayer.numComponents * index + i] * (isFloat ? 255 : 1);
+				for (let i = 0; i < gpuLayer.numComponents; i++) {
+					buffer[4 * indexFlipped + i] = values[gpuLayer.numComponents * index + i] * (isFloat ? 255 : 1);
 				}
-				if (GPULayer.numComponents < 4) {
+				if (gpuLayer.numComponents < 4) {
 					buffer[4 * indexFlipped + 3] = 255; // Set alpha channel to 255.
 				}
 			}

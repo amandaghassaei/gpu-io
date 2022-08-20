@@ -62,6 +62,8 @@ export declare class GPULayer {
     _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
     _bindOutputBuffer(): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
+    getValues(): GPULayerArray;
+    savePNG(filename: string, dpi?: number): void;
     resize(dimensions: number | [number, number], array?: GPULayerArray | number[]): void;
     get clearValue(): number | number[];
     set clearValue(clearValue: number | number[]);
