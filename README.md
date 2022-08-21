@@ -145,21 +145,7 @@ My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially laun
 
 ### Precision
 
-By default all shaders in this library are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs):
-```glsl
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-  precision highp float;
-  precision highp int;
-#else
-  precision mediump float;
-  precision mediump int;
-#endif
-precision lowp sampler2D;
-#if (__VERSION__ == 300)
-  precision lowp isampler2D;
-  precision lowp usampler2D;
-#endif
-```
+By default all shaders in this library are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.glsl](./src/glsl/common/precision.glsl).
 
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
 ```js
