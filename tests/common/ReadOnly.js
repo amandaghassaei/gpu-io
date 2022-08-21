@@ -386,7 +386,7 @@ const testLayerReads = (() => {
 				input: inputLayer,
 				output: outputLayer,
 			});
-			const output = composer.getValues(outputLayer);
+			const output = outputLayer.getValues();
 
 			let status = SUCCESS;
 			const error = [];

@@ -1,6 +1,5 @@
-import { saveAs } from 'file-saver';
 import { GPULayer } from './GPULayer';
-import { GPULayerArray, GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './constants';
+import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer, Texture } from 'three';
 export declare class GPUComposer {
@@ -52,12 +51,12 @@ export declare class GPUComposer {
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     });
+    isWebGL2(): boolean;
     private glslKeyForType;
     _setValueProgramForType(type: GPULayerType): GPUProgram;
     private copyProgramForType;
     private get wrappedLineColorProgram();
     private vectorMagnitudeProgramForType;
-    isWebGL2(): boolean;
     private get quadPositionsBuffer();
     private get boundaryPositionsBuffer();
     private getCirclePositionsBuffer;
@@ -79,10 +78,10 @@ export declare class GPUComposer {
     private addLayerToInputs;
     private passThroughLayerDataFromInputToOutput;
     private setOutputLayer;
+    private setVertexAttribute;
     private setPositionAttribute;
     private setIndexAttribute;
     private setUVAttribute;
-    private setVertexAttribute;
     step(params: {
         program: GPUProgram;
         input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
@@ -198,9 +197,6 @@ export declare class GPUComposer {
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
-    _getValues(gpuLayer: GPULayer): GPULayerArray;
-    private readyToRead;
-    _savePNG(gpuLayer: GPULayer, filename?: string, dpi?: number, callback?: typeof saveAs): void;
     attachGPULayerToThreeTexture(GPULayer: GPULayer, texture: Texture): void;
     resetThreeState(): void;
     dispose(): void;

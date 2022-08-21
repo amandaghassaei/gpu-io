@@ -2,8 +2,9 @@ const {
 	GPUComposer,
 	GPUProgram,
 	GPULayer,
-	BYTE,
+	UNSIGNED_BYTE,
 	INT,
+	UINT,
 	FLOAT,
 	REPEAT,
 } = WebGLCompute;
@@ -18,6 +19,7 @@ const PARAMS = {
 	birthRateHigh: 3,
 	seedRatio: 0.35,
 	reset: onResize,
+	shouldSavePNG: false,
 }
 
 const canvas = document.createElement('canvas');
@@ -28,7 +30,7 @@ const state = new GPULayer(composer, {
 	name: 'state',
 	dimensions: [canvas.width, canvas.height],
 	numComponents: 1,
-	type: BYTE,
+	type: UNSIGNED_BYTE,
 	numBuffers: 2,
 	wrapS: REPEAT,
 	wrapT: REPEAT,
@@ -38,30 +40,34 @@ const golRules = new GPUProgram(composer, {
 	name: 'golRules',
 	fragmentShader: `
 in vec2 v_UV;
+
 uniform vec2 u_pxSize;
-uniform isampler2D u_state;
-uniform int u_overPopulationLimit;
-uniform int u_underPopulationLimit;
-uniform int u_birthRateLow;
-uniform int u_birthRateHigh;
-out ivec4 out_fragColor;
+uniform usampler2D u_state;
+
+uniform uint u_overPopulationLimit;
+uniform uint u_underPopulationLimit;
+uniform uint u_birthRateLow;
+uniform uint u_birthRateHigh;
+
+out uint out_fragColor;
+
 void main() {
-	int state = texture(u_state, v_UV).r;
-	int n = texture(u_state, v_UV + vec2(0, u_pxSize[1])).r;
-	int s = texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r;
-	int e = texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r;
-	int w = texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r;
-	int ne = texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r;
-	int nw = texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r;
-	int se = texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r;
-	int sw = texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r;
-	int numLiving = n + s + e + w + ne + nw + se + sw;
-	if (state == 0 && numLiving >= u_birthRateLow && numLiving <= u_birthRateHigh) {
-		state = 1;
-	} else if (state == 1 && (numLiving < u_underPopulationLimit || numLiving > u_overPopulationLimit)) {
-		state = 0;
+	uint state = texture(u_state, v_UV).r;
+	uint n = texture(u_state, v_UV + vec2(0, u_pxSize[1])).r;
+	uint s = texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r;
+	uint e = texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r;
+	uint w = texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r;
+	uint ne = texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r;
+	uint nw = texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r;
+	uint se = texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r;
+	uint sw = texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r;
+	uint numLiving = n + s + e + w + ne + nw + se + sw;
+	if (state == uint(0) && numLiving >= u_birthRateLow && numLiving <= u_birthRateHigh) {
+		state = uint(1);
+	} else if (state == uint(1) && (numLiving < u_underPopulationLimit || numLiving > u_overPopulationLimit)) {
+		state = uint(0);
 	}
-	out_fragColor = ivec4(state);
+	out_fragColor = state;
 }`,
 	uniforms: [
 		{
@@ -77,22 +83,22 @@ void main() {
 		{
 			name: 'u_overPopulationLimit',
 			value: PARAMS.overPopulationLimit,
-			type: INT,
+			type: UINT,
 		},
 		{
 			name: 'u_underPopulationLimit',
 			value: PARAMS.underPopulationLimit,
-			type: INT,
+			type: UINT,
 		},
 		{
 			name: 'u_birthRateLow',
 			value: PARAMS.birthRateLow,
-			type: INT,
+			type: UINT,
 		},
 		{
 			name: 'u_birthRateHigh',
 			value: PARAMS.birthRateHigh,
-			type: INT,
+			type: UINT,
 		},
 	],
 });
@@ -100,10 +106,12 @@ const golRender = new GPUProgram(composer, {
 	name: 'golRender',
 	fragmentShader: `
 in vec2 v_UV;
-uniform isampler2D u_state;
+
+uniform usampler2D u_state;
 out vec4 out_fragColor;
+
 void main() {
-	int state = texture(u_state, v_UV).r;
+	uint state = texture(u_state, v_UV).r;
 	out_fragColor = vec4(state, state, state, 1);
 }`,
 	uniforms: {
@@ -127,7 +135,7 @@ gui.add(PARAMS, 'birthRateLow', 0, 8, 1).onChange((val) => {
 gui.add(PARAMS, 'birthRateHigh', 0, 8, 1).onChange((val) => {
 	golRules.setUniform('u_birthRateHigh', val);
 });
-gui.add(PARAMS, 'seedRatio', 0, 1, 0.1).onFinishChange(() => {
+gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
 	onResize();
 });
 gui.add(PARAMS, 'reset', 0, 8, 1);
@@ -147,6 +155,14 @@ function loop() {
 	});
 }
 loop();
+
+// Add p hotkey to print screen.
+window.addEventListener('keydown', (e) => {
+	if (e.key === 'p') {
+		// TODO: this isn't working for UNSIGNED_BYTE types?
+		state.savePNG({ filename: 'gol', multiplier: 255 });
+	}
+})
 
 // Resize if needed.
 window.addEventListener('resize', onResize);

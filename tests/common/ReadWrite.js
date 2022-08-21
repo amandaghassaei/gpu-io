@@ -418,7 +418,7 @@ const testLayerWrites = (() => {
 				input: layer,
 				output: layer,
 			});
-			const output = composer.getValues(layer);
+			const output = layer.getValues();
 
 			let status = SUCCESS;
 			const error = [];

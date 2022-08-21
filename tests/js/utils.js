@@ -17,6 +17,11 @@
 		INT_2D_UNIFORM,
 		INT_3D_UNIFORM,
 		INT_4D_UNIFORM,
+		UINT_1D_UNIFORM,
+		UINT_2D_UNIFORM,
+		UINT_3D_UNIFORM,
+		UINT_4D_UNIFORM,
+		UINT,
 	} = require('../../dist/webgl-compute');
 	const {
 		makeShaderHeader,
@@ -43,32 +48,40 @@
 #if (WEBGLCOMPUTE_INT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp int;
+#if (__VERSION__ == 300)
+precision highp isampler2D;precision highp usampler2D;
+#endif
 #else
 precision mediump int;
+#if (__VERSION__ == 300)
+precision mediump isampler2D;precision mediump usampler2D;
+#endif
 #endif
 #endif
 #if (WEBGLCOMPUTE_INT_PRECISION == 1)
 precision mediump int;
+#if (__VERSION__ == 300)
+precision mediump isampler2D;precision mediump usampler2D;
+#endif
 #endif
 #if (WEBGLCOMPUTE_INT_PRECISION == 0)
 precision lowp int;
+#if (__VERSION__ == 300)
+precision lowp isampler2D;precision lowp usampler2D;
+#endif
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;
+precision highp float;precision highp sampler2D;
 #else
-precision mediump float;
+precision mediump float;precision mediump sampler2D;
 #endif
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)
-precision mediump float;
+precision mediump float;precision mediump sampler2D;
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)
-precision lowp float;
-#endif
-precision lowp sampler2D;
-#if (__VERSION__ == 300)
-precision lowp isampler2D;precision lowp usampler2D;
+precision lowp float;precision lowp sampler2D;
 #endif
 `);
 				assert.equal(makeShaderHeader(
@@ -82,32 +95,40 @@ precision lowp isampler2D;precision lowp usampler2D;
 #if (WEBGLCOMPUTE_INT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp int;
+#if (__VERSION__ == 300)
+precision highp isampler2D;precision highp usampler2D;
+#endif
 #else
 precision mediump int;
+#if (__VERSION__ == 300)
+precision mediump isampler2D;precision mediump usampler2D;
+#endif
 #endif
 #endif
 #if (WEBGLCOMPUTE_INT_PRECISION == 1)
 precision mediump int;
+#if (__VERSION__ == 300)
+precision mediump isampler2D;precision mediump usampler2D;
+#endif
 #endif
 #if (WEBGLCOMPUTE_INT_PRECISION == 0)
 precision lowp int;
+#if (__VERSION__ == 300)
+precision lowp isampler2D;precision lowp usampler2D;
+#endif
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;
+precision highp float;precision highp sampler2D;
 #else
-precision mediump float;
+precision mediump float;precision mediump sampler2D;
 #endif
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)
-precision mediump float;
+precision mediump float;precision mediump sampler2D;
 #endif
 #if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)
-precision lowp float;
-#endif
-precision lowp sampler2D;
-#if (__VERSION__ == 300)
-precision lowp isampler2D;precision lowp usampler2D;
+precision lowp float;precision lowp sampler2D;
 #endif
 `);
 			});
@@ -149,6 +170,17 @@ precision lowp isampler2D;precision lowp usampler2D;
 				assert.throws(() => { uniformInternalTypeForValue([2.4, 5.5], INT, 'test-program'); },
 					new Error('Invalid uniform value: [2.4,5.5] for program "test-program", expected int or int[] of length 1-4.'));
 
+					assert.throws(() => { uniformInternalTypeForValue('test', UINT, 'test-program'); },
+					new Error('Invalid uniform value: "test" for program "test-program", expected uint or uint[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue(4.5, UINT, 'test-program'); },
+					new Error('Invalid uniform value: 4.5 for program "test-program", expected uint or uint[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue([2, 4, 6, 7, 8], UINT, 'test-program'); },
+					new Error('Invalid uniform value: [2,4,6,7,8] for program "test-program", expected uint or uint[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue([2.4, 5.5], UINT, 'test-program'); },
+					new Error('Invalid uniform value: [2.4,5.5] for program "test-program", expected uint or uint[] of length 1-4.'));
+				assert.throws(() => { uniformInternalTypeForValue([2, 4, -6, 8], UINT, 'test-program'); },
+					new Error('Invalid uniform value: [2,4,-6,8] for program "test-program", expected uint or uint[] of length 1-4.'));
+
 				assert.throws(() => { uniformInternalTypeForValue('test', BOOL, 'test-program'); },
 					new Error('Invalid uniform value: "test" for program "test-program", expected boolean.'));
 				assert.throws(() => { uniformInternalTypeForValue(3, BOOL, 'test-program'); },
@@ -176,6 +208,12 @@ precision lowp isampler2D;precision lowp usampler2D;
 				assert.equal(uniformInternalTypeForValue([0, 1], INT, 'test-program'), INT_2D_UNIFORM);
 				assert.equal(uniformInternalTypeForValue([0, 4, 6], INT, 'test-program'), INT_3D_UNIFORM);
 				assert.equal(uniformInternalTypeForValue([4, 0, -4, 60000], INT, 'test-program'), INT_4D_UNIFORM);
+
+				assert.equal(uniformInternalTypeForValue(0, UINT, 'test-program'), UINT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0], UINT, 'test-program'), UINT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, 1], UINT, 'test-program'), UINT_2D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, 4, 6], UINT, 'test-program'), UINT_3D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([4, 0, 40, 60000], UINT, 'test-program'), UINT_4D_UNIFORM);
 
 				// Passing bools as ints.
 				assert.equal(uniformInternalTypeForValue(true, BOOL, 'test-program'), INT_1D_UNIFORM);

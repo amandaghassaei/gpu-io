@@ -28,6 +28,13 @@ import {
 	DATA_LAYER_POINTS_PROGRAM_NAME,
 	DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME,
 	DATA_LAYER_LINES_PROGRAM_NAME,
+	INT,
+	UINT,
+	GLSL1,
+	UINT_1D_UNIFORM,
+	UINT_2D_UNIFORM,
+	UINT_3D_UNIFORM,
+	UINT_4D_UNIFORM,
 } from './constants';
 import {
 	compileShader,
@@ -35,6 +42,7 @@ import {
 	preprocessVertexShader,
 	initGLProgram,
 	uniformInternalTypeForValue,
+	isWebGL2,
 } from './utils';
 
 export class GPUProgram {
@@ -322,6 +330,18 @@ Error code: ${gl.getError()}.`);
 			case INT_4D_UNIFORM:
 				gl.uniform4iv(location, value as number[]);
 				break;
+			case UINT_1D_UNIFORM:
+				(gl as WebGL2RenderingContext).uniform1ui(location, value as number);
+				break;
+			case UINT_2D_UNIFORM:
+				(gl as WebGL2RenderingContext).uniform2uiv(location, value as number[]);
+				break;
+			case UINT_3D_UNIFORM:
+				(gl as WebGL2RenderingContext).uniform3uiv(location, value as number[]);
+				break;
+			case UINT_4D_UNIFORM:
+				(gl as WebGL2RenderingContext).uniform4uiv(location, value as number[]);
+				break;
 			default:
 				throw new Error(`Unknown uniform type ${type} for GPUProgram "${this.name}".`);
 		}
@@ -334,6 +354,11 @@ Error code: ${gl.getError()}.`);
 	) {
 		const { programs, uniforms, composer } = this;
 		const { verboseLogging } = composer;
+
+		// Uint is not supported in webgl1.
+		if (!isWebGL2(composer.gl) && type === UINT) {
+			type = INT;
+		}
 
 		// Check that length of value is correct.
 		if (isArray(value)) {

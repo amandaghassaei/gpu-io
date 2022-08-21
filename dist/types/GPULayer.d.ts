@@ -41,17 +41,9 @@ export declare class GPULayer {
         numBuffers?: number;
         clearValue?: number | number[];
     });
-    private static calcSize;
-    private static getInternalWrap;
-    private static getInternalFilter;
-    private static getInternalType;
-    private static shouldCastIntTypeAsFloat;
-    private static getGLTextureParameters;
-    private static testFramebufferWrite;
     get bufferIndex(): number;
     saveCurrentStateToGPULayer(layer: GPULayer): void;
     _setCurrentStateTexture(texture: WebGLTexture): void;
-    private static initArrayForInternalType;
     private validateDataArray;
     private initBuffers;
     getStateAtIndex(index: number): WebGLTexture;
@@ -62,8 +54,6 @@ export declare class GPULayer {
     _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
     _bindOutputBuffer(): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
-    getValues(): GPULayerArray;
-    savePNG(filename: string, dpi?: number): void;
     resize(dimensions: number | [number, number], array?: GPULayerArray | number[]): void;
     get clearValue(): number | number[];
     set clearValue(clearValue: number | number[]);
@@ -71,6 +61,13 @@ export declare class GPULayer {
     get width(): number;
     get height(): number;
     get length(): number;
+    getValues(): GPULayerArray;
+    savePNG(params: {
+        filename: string;
+        dpi?: number;
+        multiplier?: number;
+        callback: (data: string | Blob, filename?: string) => void;
+    }): void;
     private destroyBuffers;
     dispose(): void;
     clone(name?: string): GPULayer;

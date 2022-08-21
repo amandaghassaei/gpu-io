@@ -1,4 +1,4 @@
-import { makeShaderHeader, compileShader, initGLProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, preprocessFragmentShader, preprocessVertexShader, isPowerOf2, initSequentialFloatArray, uniformInternalTypeForValue } from './utils';
+import { makeShaderHeader, compileShader, initGLProgram, isWebGL2, isWebGL2Supported, readyToRead, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, preprocessFragmentShader, preprocessVertexShader, isPowerOf2, initSequentialFloatArray, uniformInternalTypeForValue } from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
@@ -21,6 +21,7 @@ declare const _testing: {
     makeShaderHeader: typeof makeShaderHeader;
     compileShader: typeof compileShader;
     initGLProgram: typeof initGLProgram;
+    readyToRead: typeof readyToRead;
     preprocessVertexShader: typeof preprocessVertexShader;
     preprocessFragmentShader: typeof preprocessFragmentShader;
     isPowerOf2: typeof isPowerOf2;

@@ -16,6 +16,7 @@
 	const {
 		compileShader,
 		initGLProgram,
+		readyToRead,
 		preprocessVertexShader,
 		preprocessFragmentShader,
 	} = _testing;
@@ -203,6 +204,13 @@
 				const context2 = document.createElement('canvas').getContext('2d');
 				assert.equal(isWebGL2(context2), false);
 				assert.equal(isWebGL2(), false);
+			});
+		});
+		describe('readyToRead', () => {
+			it('should determine if framebuffer is ready to read', () => {
+				const context = document.createElement('canvas').getContext(WEBGL2);
+				const framebuffer = context.createFramebuffer();
+				assert.equal(readyToRead(context), true);
 			});
 		});
 		describe('isWebGL2Supported', () => {

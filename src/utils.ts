@@ -2,6 +2,7 @@ import {
 	isArray,
 	isBoolean,
 	isInteger,
+	isNonNegativeInteger,
 	isNumber,
 	isString,
 } from './checks';
@@ -26,6 +27,11 @@ import {
 	INT_4D_UNIFORM,
 	PRECISION_HIGH_P,
 	PRECISION_MEDIUM_P,
+	UINT,
+	UINT_1D_UNIFORM,
+	UINT_2D_UNIFORM,
+	UINT_3D_UNIFORM,
+	UINT_4D_UNIFORM,
 	UniformType,
 	UniformValue,
 	WEBGL1,
@@ -35,9 +41,9 @@ const precisionSource = require('./glsl/common/precision.glsl');
 
 // Memoize results.
 const results = {
-	webgl2: undefined as undefined | boolean,
-	highpVertex: undefined as  undefined | boolean,
-	highpFragment: undefined as undefined | boolean,
+	supportsWebGL2: undefined as undefined | boolean,
+	supportsHighpVertex: undefined as  undefined | boolean,
+	supportsHighpFragment: undefined as undefined | boolean,
 	mediumpVertexPrecision: undefined as undefined | typeof PRECISION_HIGH_P | typeof PRECISION_MEDIUM_P,
 	mediumpFragmentPrecision: undefined as undefined | typeof PRECISION_HIGH_P | typeof PRECISION_MEDIUM_P,
 }
@@ -153,14 +159,18 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 }
 
 export function isWebGL2Supported() {
-	if (results.webgl2 === undefined) {
+	if (results.supportsWebGL2 === undefined) {
 		const gl = document.createElement('canvas').getContext(WEBGL2);
 		// GL context and canvas will be garbage collected.
-		results.webgl2 = !!gl;
+		results.supportsWebGL2 = !!gl;
 		return true;
 	}
-	return results.webgl2;
+	return results.supportsWebGL2;
 }
+
+export function readyToRead(gl: WebGLRenderingContext | WebGL2RenderingContext) {
+	return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
+};
 
 function isHighpSupported(vsSource: string, fsSource: string) {
 	// This is supposed to be relatively easy. You call gl.getShaderPrecisionFormat, you pass in the shader type,
@@ -206,25 +216,25 @@ function isHighpSupported(vsSource: string, fsSource: string) {
 }
 
 export function isHighpSupportedInVertexShader() {
-	if (results.highpVertex === undefined) {
+	if (results.supportsHighpVertex === undefined) {
 		const vertexSupport = isHighpSupported(
 			'void main() { highp float test = 0.524; gl_Position = vec4(test, test, 0, 1); }',
 			'void main() { gl_FragColor = vec4(0); }',
 		);
-		results.highpVertex = vertexSupport;
+		results.supportsHighpVertex = vertexSupport;
 	}
-	return results.highpVertex;
+	return results.supportsHighpVertex;
 }
 
 export function isHighpSupportedInFragmentShader() {
-	if (results.highpFragment === undefined) {
+	if (results.supportsHighpFragment === undefined) {
 		const fragmentSupport = isHighpSupported(
 			'void main() { gl_Position = vec4(0.5, 0.5, 0, 1); }',
 			'void main() { highp float test = 1.35; gl_FragColor = vec4(test); }',
 		);
-		results.highpFragment = fragmentSupport;
+		results.supportsHighpFragment = fragmentSupport;
 	}
-	return results.highpFragment;
+	return results.supportsHighpFragment;
 }
 
 function test1PxCalc(
@@ -552,6 +562,32 @@ export function uniformInternalTypeForValue(
 			return INT_4D_UNIFORM;
 		}
 		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected int or int[] of length 1-4.`);
+	} else if (type === UINT) {
+		// Check that we are dealing with a uint.
+		if (isArray(value)) {
+			for (let i = 0; i < (value as number[]).length; i++) {
+				if (!isNonNegativeInteger((value as number[])[i])) {
+					throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected uint or uint[] of length 1-4.`);
+				}
+			}
+		} else {
+			if (!isNonNegativeInteger(value)) {
+				throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected uint or uint[] of length 1-4.`);
+			}
+		}
+		if (!isArray(value) || (value as number[]).length === 1) {
+			return UINT_1D_UNIFORM;
+		}
+		if ((value as number[]).length === 2) {
+			return UINT_2D_UNIFORM;
+		}
+		if ((value as number[]).length === 3) {
+			return UINT_3D_UNIFORM;
+		}
+		if ((value as number[]).length === 4) {
+			return UINT_4D_UNIFORM;
+		}
+		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected uint or uint[] of length 1-4.`);
 	} else if (type === BOOL) {
 		if (isBoolean(value)) {
 			// Boolean types are passed in as ints.

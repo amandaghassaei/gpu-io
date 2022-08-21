@@ -1,6 +1,3 @@
-import { saveAs } from 'file-saver';
-// @ts-ignore
-import { changeDpiBlob } from 'changedpi';
 import { GPULayer } from './GPULayer';
 import {
 	GPULayerArray,
@@ -61,7 +58,6 @@ import {
 	isPowerOf2,
 	initSequentialFloatArray,
 } from './utils';
-import { getFloat16 } from '@petamoriken/float16';
 import {
 	isArray,
 	isString,
@@ -310,6 +306,10 @@ export class GPUComposer {
 		if (this.verboseLogging) console.log(`${this.maxNumTextures} textures max.`);
 	}
 
+	isWebGL2() {
+		return isWebGL2(this.gl);
+	}
+
 	private glslKeyForType(type: GPULayerType) {
 		if (this.glslVersion === GLSL1) return FLOAT;
 		switch (type) {
@@ -397,10 +397,6 @@ export class GPUComposer {
 			this.vectorMagnitudePrograms[key] = program;
 		}
 		return this.vectorMagnitudePrograms[key]!;
-	}
-
-	isWebGL2() {
-		return isWebGL2(this.gl);
 	}
 
 	private get quadPositionsBuffer() {
@@ -755,18 +751,6 @@ export class GPUComposer {
 		gl.viewport(0, 0, width, height);
 	};
 
-	private setPositionAttribute(program: WebGLProgram, programName: string) {
-		this.setVertexAttribute(program, 'a_internal_position', 2, programName);
-	}
-
-	private setIndexAttribute(program: WebGLProgram, programName: string) {
-		this.setVertexAttribute(program, 'a_internal_index', 1, programName);
-	}
-
-	private setUVAttribute(program: WebGLProgram, programName: string) {
-		this.setVertexAttribute(program, 'a_internal_uv', 2, programName);
-	}
-
 	private setVertexAttribute(program: WebGLProgram, name: string, size: number, programName: string) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
@@ -778,6 +762,18 @@ export class GPUComposer {
 		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
+	}
+
+	private setPositionAttribute(program: WebGLProgram, programName: string) {
+		this.setVertexAttribute(program, 'a_internal_position', 2, programName);
+	}
+
+	private setIndexAttribute(program: WebGLProgram, programName: string) {
+		this.setVertexAttribute(program, 'a_internal_index', 1, programName);
+	}
+
+	private setUVAttribute(program: WebGLProgram, programName: string) {
+		this.setVertexAttribute(program, 'a_internal_uv', 2, programName);
 	}
 
 	// Step for entire fullscreen quad.
@@ -1620,215 +1616,6 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	_getValues(gpuLayer: GPULayer) {
-		const { gl, glslVersion } = this;
-
-		// In case GPULayer was not the last output written to.
-		gpuLayer._bindOutputBuffer();
-
-		const { width, height } = gpuLayer;
-		let { glNumChannels, glType, glFormat, internalType } = gpuLayer;
-		let values;
-		switch (internalType) {
-			case HALF_FLOAT:
-				if (gl.FLOAT !== undefined) {
-					// Firefox requires that RGBA/FLOAT is used for readPixels of float16 types.
-					glNumChannels = 4;
-					glFormat = gl.RGBA;
-					glType = gl.FLOAT;
-					values = new Float32Array(width * height * glNumChannels);
-				} else {
-					values = new Uint16Array(width * height * glNumChannels);
-				}
-				// // The following works in Chrome.
-				// values = new Uint16Array(width * height * glNumChannels);
-				break
-			case FLOAT:
-				// Chrome and Firefox require that RGBA/FLOAT is used for readPixels of float32 types.
-				// https://github.com/KhronosGroup/WebGL/issues/2747
-				glNumChannels = 4;
-				glFormat = gl.RGBA;
-				values = new Float32Array(width * height * glNumChannels);
-				break;
-			case UNSIGNED_BYTE:
-				if (glslVersion === GLSL1) {
-					// Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
-					glNumChannels = 4;
-					glFormat = gl.RGBA;
-					values = new Uint8Array(width * height * glNumChannels);
-					break;
-				}
-				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.UNSIGNED_INT;
-				values = new Uint32Array(width * height * glNumChannels);
-				// // The following works in Chrome.
-				// values = new Uint8Array(width * height * glNumChannels);
-				break;
-			case UNSIGNED_SHORT:
-				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.UNSIGNED_INT;
-				values = new Uint32Array(width * height * glNumChannels);
-				// // The following works in Chrome.
-				// values = new Uint16Array(width * height * glNumChannels);
-				break;
-			case UNSIGNED_INT:
-				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				values = new Uint32Array(width * height * glNumChannels);
-				// // The following works in Chrome.
-				// values = new Uint32Array(width * height * glNumChannels);
-				break;
-			case BYTE:
-				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.INT;
-				values = new Int32Array(width * height * glNumChannels);
-				// // The following works in Chrome.
-				// values = new Int8Array(width * height * glNumChannels);
-				break;
-			case SHORT:
-				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.INT;
-				values = new Int32Array(width * height * glNumChannels);
-				// // The following works in Chrome.
-				// values = new Int16Array(width * height * glNumChannels);
-				break;
-			case INT:
-				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				values = new Int32Array(width * height * glNumChannels);
-				// // The following works in Chrome.
-				// values = new Int32Array(width * height * glNumChannels);
-				break;
-			default:
-				throw new Error(`Unsupported internalType ${internalType} for getValues().`);
-		}
-
-		if (this.readyToRead()) {
-			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
-			gl.readPixels(0, 0, width, height, glFormat, glType, values);
-			const { numComponents, type } = gpuLayer;
-			const OUTPUT_LENGTH = (gpuLayer._length ? gpuLayer._length : width * height) * numComponents;
-
-			// Convert uint16 to float32 if needed.
-			const handleFloat16Conversion = internalType === HALF_FLOAT && values.constructor === Uint16Array;
-			// @ts-ignore
-			const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
-
-			let output: GPULayerArray = values;
-			
-			// We may use a different internal type than the assigned type of the GPULayer.
-			if (internalType !== type) {
-				switch (type) {
-					case HALF_FLOAT:
-					case FLOAT:
-						output = new Float32Array(OUTPUT_LENGTH);
-						break;
-					case UNSIGNED_BYTE:
-						output = new Uint8Array(OUTPUT_LENGTH);
-						break;
-					case BYTE:
-						output = new Int8Array(OUTPUT_LENGTH);
-						break;
-					case UNSIGNED_SHORT:
-						output = new Uint16Array(OUTPUT_LENGTH);
-						break;
-					case SHORT:
-						output = new Int16Array(OUTPUT_LENGTH);
-						break;
-					case UNSIGNED_INT:
-						output = new Uint32Array(OUTPUT_LENGTH);
-						break;
-					case INT:
-						output = new Int32Array(OUTPUT_LENGTH);
-						break;
-					default:
-						throw new Error(`Unsupported type ${type} for getValues().`);
-				}
-			}
-
-			// In some cases glNumChannels may be > numComponents.
-			if (handleFloat16Conversion || output !== values || numComponents !== glNumChannels) {
-				for (let i = 0, length = width * height; i < length; i++) {
-					const index1 = i * glNumChannels;
-					const index2 = i * numComponents;
-					if (index2 >= OUTPUT_LENGTH) break;
-					for (let j = 0; j < numComponents; j++) {
-						if (handleFloat16Conversion) {
-							output[index2 + j] = getFloat16(view!, 2 * (index1 + j), true);
-						} else {
-							output[index2 + j] = values[index1 + j];
-						}
-					}
-				}
-			}
-
-			if (output.length !== OUTPUT_LENGTH) {
-				output = output.slice(0, OUTPUT_LENGTH);
-			}
-			return output;
-		} else {
-			throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
-		}
-	}
-
-	private readyToRead() {
-		const { gl } = this;
-		return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
-	};
-
-	_savePNG(gpuLayer: GPULayer, filename = GPULayer.name, dpi?: number, callback = saveAs) {
-		const values = gpuLayer.getValues();
-		const { width, height } = gpuLayer;
-
-		const canvas = document.createElement('canvas');
-		canvas.width = width;
-    	canvas.height = height;
-		const context = canvas.getContext('2d')!;
-		const imageData = context.getImageData(0, 0, width, height);
-		const buffer = imageData.data;
-		// TODO: this isn't working for UNSIGNED_BYTE types?
-		const isFloat = gpuLayer.type === FLOAT || gpuLayer.type === HALF_FLOAT;
-		// Have to flip the y axis since PNGs are written top to bottom.
-		for (let y = 0; y < height; y++) {
-			for (let x = 0; x < width; x++) {
-				const index = y * width + x;
-				const indexFlipped = (height - 1 - y) * width + x;
-				for (let i = 0; i < gpuLayer.numComponents; i++) {
-					buffer[4 * indexFlipped + i] = values[gpuLayer.numComponents * index + i] * (isFloat ? 255 : 1);
-				}
-				if (gpuLayer.numComponents < 4) {
-					buffer[4 * indexFlipped + 3] = 255; // Set alpha channel to 255.
-				}
-			}
-		}
-		context.putImageData(imageData, 0, 0);
-
-		canvas!.toBlob((blob) => {
-			if (!blob) {
-				console.warn('Problem saving PNG, unable to init blob.');
-				return;
-			}
-			if (dpi) {
-				changeDpiBlob(blob, dpi).then((blob: Blob) =>{
-					callback(blob, `${filename}.png`);
-				});
-			} else {
-				callback(blob, `${filename}.png`);
-			}
-			
-		}, 'image/png');
-	}
-
 	attachGPULayerToThreeTexture(GPULayer: GPULayer, texture: Texture) {
 		if (!this.renderer) {
 			throw new Error('GPUComposer was not inited with a renderer.');
@@ -1845,7 +1632,7 @@ export class GPUComposer {
 
 	resetThreeState() {
 		if (!this.renderer) {
-			throw new Error('GPUComposer was not inited with a renderer.');
+			throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
 		}
 		const { gl } = this;
 		// Reset viewport.

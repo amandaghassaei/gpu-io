@@ -106,6 +106,9 @@
 			it('should handle a variety of types and sizes', () => {
 
 			});
+			it('should convert uint uniforms to int', () => {
+
+			});
 		});
 		describe('_setVertexUniform', () => {
 			it('should set program vertex uniform', () => {
