@@ -616,6 +616,7 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 export function uniformInternalTypeForValue(
 	value: UniformValue,
 	type: UniformType,
+	uniformName: string,
 	programName: string,
 ) {
 	if (type === FLOAT) {
@@ -623,12 +624,12 @@ export function uniformInternalTypeForValue(
 		if (isArray(value)) {
 			for (let i = 0; i < (value as number[]).length; i++) {
 				if (!isNumber((value as number[])[i])) {
-					throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected float or float[] of length 1-4.`);
+					throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected float or float[] of length 1-4.`);
 				}
 			}
 		} else {
 			if (!isNumber(value)) {
-				throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected float or float[] of length 1-4.`);
+				throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected float or float[] of length 1-4.`);
 			}
 		}
 		if (!isArray(value) || (value as number[]).length === 1) {
@@ -643,18 +644,18 @@ export function uniformInternalTypeForValue(
 		if ((value as number[]).length === 4) {
 			return FLOAT_4D_UNIFORM;
 		}
-		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected float or float[] of length 1-4.`);
+		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected float or float[] of length 1-4.`);
 	} else if (type === INT) {
 		// Check that we are dealing with an int.
 		if (isArray(value)) {
 			for (let i = 0; i < (value as number[]).length; i++) {
 				if (!isInteger((value as number[])[i])) {
-					throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected int or int[] of length 1-4.`);
+					throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected int or int[] of length 1-4.`);
 				}
 			}
 		} else {
 			if (!isInteger(value)) {
-				throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected int or int[] of length 1-4.`);
+				throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected int or int[] of length 1-4.`);
 			}
 		}
 		if (!isArray(value) || (value as number[]).length === 1) {
@@ -669,18 +670,18 @@ export function uniformInternalTypeForValue(
 		if ((value as number[]).length === 4) {
 			return INT_4D_UNIFORM;
 		}
-		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected int or int[] of length 1-4.`);
+		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in  program "${programName}", expected int or int[] of length 1-4.`);
 	} else if (type === UINT) {
 		// Check that we are dealing with a uint.
 		if (isArray(value)) {
 			for (let i = 0; i < (value as number[]).length; i++) {
 				if (!isNonNegativeInteger((value as number[])[i])) {
-					throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected uint or uint[] of length 1-4.`);
+					throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected uint or uint[] of length 1-4.`);
 				}
 			}
 		} else {
 			if (!isNonNegativeInteger(value)) {
-				throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected uint or uint[] of length 1-4.`);
+				throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected uint or uint[] of length 1-4.`);
 			}
 		}
 		if (!isArray(value) || (value as number[]).length === 1) {
@@ -695,7 +696,7 @@ export function uniformInternalTypeForValue(
 		if ((value as number[]).length === 4) {
 			return UINT_4D_UNIFORM;
 		}
-		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected uint or uint[] of length 1-4.`);
+		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected uint or uint[] of length 1-4.`);
 	} else if (type === BOOL) {
 		if (isBoolean(value)) {
 			// Boolean types are passed in as ints.
@@ -703,8 +704,8 @@ export function uniformInternalTypeForValue(
 			// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
 			return INT_1D_UNIFORM;
 		}
-		throw new Error(`Invalid uniform value: ${JSON.stringify(value)} for program "${programName}", expected boolean.`);
+		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected boolean.`);
 	} else {
-		throw new Error(`Invalid uniform type: ${type} for program "${programName}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
+		throw new Error(`Invalid uniform type "${type}" for uniform "${uniformName}" in program "${programName}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
 	}
 }

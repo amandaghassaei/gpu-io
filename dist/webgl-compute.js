@@ -2431,6 +2431,7 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.initWithThreeRenderer = function (renderer, params) {
         var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision || constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || constants_1.PRECISION_HIGH_P }, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? constants_1.GLSL3 : constants_1.GLSL1 }));
         // Attach renderer.
+        // @ts-ignore
         composer.renderer = renderer;
         return composer;
     };
@@ -3512,19 +3513,6 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
-    GPUComposer.prototype.attachGPULayerToThreeTexture = function (GPULayer, texture) {
-        if (!this.renderer) {
-            throw new Error('GPUComposer was not inited with a renderer.');
-        }
-        // Link webgl texture to threejs object.
-        // This is not officially supported.
-        if (GPULayer.numBuffers > 1) {
-            throw new Error("GPULayer \"" + GPULayer.name + "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.");
-        }
-        var offsetTextureProperties = this.renderer.properties.get(texture);
-        offsetTextureProperties.__webglTexture = GPULayer.currentState;
-        offsetTextureProperties.__webglInit = true;
-    };
     GPUComposer.prototype.resetThreeState = function () {
         if (!this.renderer) {
             throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
@@ -3581,6 +3569,7 @@ var GPUComposer = /** @class */ (function () {
         });
         (_a = this._wrappedLineColorProgram) === null || _a === void 0 ? void 0 : _a.dispose();
         delete this._wrappedLineColorProgram;
+        // @ts-ignore
         delete this.renderer;
         // @ts-ignore
         delete this.gl;
@@ -4250,6 +4239,21 @@ var GPULayer = /** @class */ (function () {
                 callback(blob, filename + ".png");
             }
         }, 'image/png');
+    };
+    GPULayer.prototype.attachToThreeTexture = function (texture) {
+        var _a = this, composer = _a.composer, numBuffers = _a.numBuffers, currentState = _a.currentState, name = _a.name;
+        var renderer = composer.renderer;
+        if (!renderer) {
+            throw new Error('GPUComposer was not inited with a renderer.');
+        }
+        // Link webgl texture to threejs object.
+        // This is not officially supported.
+        if (numBuffers > 1) {
+            throw new Error("GPULayer \"" + name + "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.");
+        }
+        var offsetTextureProperties = renderer.properties.get(texture);
+        offsetTextureProperties.__webglTexture = currentState;
+        offsetTextureProperties.__webglInit = true;
     };
     GPULayer.prototype.destroyBuffers = function () {
         var _a = this, composer = _a.composer, buffers = _a.buffers;
@@ -5169,7 +5173,7 @@ var GPUProgram = /** @class */ (function () {
         }
         var currentType = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
         if (type) {
-            var internalType = utils_1.uniformInternalTypeForValue(value, type, this.name);
+            var internalType = utils_1.uniformInternalTypeForValue(value, type, name, this.name);
             if (currentType === undefined)
                 currentType = internalType;
             else {
@@ -5229,7 +5233,7 @@ var GPUProgram = /** @class */ (function () {
         if (!programName) {
             throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"" + this.name + "\".");
         }
-        var internalType = utils_1.uniformInternalTypeForValue(value, type, this.name);
+        var internalType = utils_1.uniformInternalTypeForValue(value, type, uniformName, this.name);
         this.setProgramUniform(program, programName, uniformName, value, internalType);
     };
     /**
@@ -6167,19 +6171,19 @@ exports.preprocessFragmentShader = preprocessFragmentShader;
  * Check uniforms and return internal WebGL type (e.g. [1234][u]?[if])
  * Used internally.
  */
-function uniformInternalTypeForValue(value, type, programName) {
+function uniformInternalTypeForValue(value, type, uniformName, programName) {
     if (type === constants_1.FLOAT) {
         // Check that we are dealing with a number.
         if (checks_1.isArray(value)) {
             for (var i = 0; i < value.length; i++) {
                 if (!checks_1.isNumber(value[i])) {
-                    throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected float or float[] of length 1-4.");
+                    throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected float or float[] of length 1-4.");
                 }
             }
         }
         else {
             if (!checks_1.isNumber(value)) {
-                throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected float or float[] of length 1-4.");
+                throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected float or float[] of length 1-4.");
             }
         }
         if (!checks_1.isArray(value) || value.length === 1) {
@@ -6194,20 +6198,20 @@ function uniformInternalTypeForValue(value, type, programName) {
         if (value.length === 4) {
             return constants_1.FLOAT_4D_UNIFORM;
         }
-        throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected float or float[] of length 1-4.");
+        throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected float or float[] of length 1-4.");
     }
     else if (type === constants_1.INT) {
         // Check that we are dealing with an int.
         if (checks_1.isArray(value)) {
             for (var i = 0; i < value.length; i++) {
                 if (!checks_1.isInteger(value[i])) {
-                    throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected int or int[] of length 1-4.");
+                    throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected int or int[] of length 1-4.");
                 }
             }
         }
         else {
             if (!checks_1.isInteger(value)) {
-                throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected int or int[] of length 1-4.");
+                throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected int or int[] of length 1-4.");
             }
         }
         if (!checks_1.isArray(value) || value.length === 1) {
@@ -6222,20 +6226,20 @@ function uniformInternalTypeForValue(value, type, programName) {
         if (value.length === 4) {
             return constants_1.INT_4D_UNIFORM;
         }
-        throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected int or int[] of length 1-4.");
+        throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in  program \"" + programName + "\", expected int or int[] of length 1-4.");
     }
     else if (type === constants_1.UINT) {
         // Check that we are dealing with a uint.
         if (checks_1.isArray(value)) {
             for (var i = 0; i < value.length; i++) {
                 if (!checks_1.isNonNegativeInteger(value[i])) {
-                    throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected uint or uint[] of length 1-4.");
+                    throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected uint or uint[] of length 1-4.");
                 }
             }
         }
         else {
             if (!checks_1.isNonNegativeInteger(value)) {
-                throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected uint or uint[] of length 1-4.");
+                throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected uint or uint[] of length 1-4.");
             }
         }
         if (!checks_1.isArray(value) || value.length === 1) {
@@ -6250,7 +6254,7 @@ function uniformInternalTypeForValue(value, type, programName) {
         if (value.length === 4) {
             return constants_1.UINT_4D_UNIFORM;
         }
-        throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected uint or uint[] of length 1-4.");
+        throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected uint or uint[] of length 1-4.");
     }
     else if (type === constants_1.BOOL) {
         if (checks_1.isBoolean(value)) {
@@ -6259,10 +6263,10 @@ function uniformInternalTypeForValue(value, type, programName) {
             // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
             return constants_1.INT_1D_UNIFORM;
         }
-        throw new Error("Invalid uniform value: " + JSON.stringify(value) + " for program \"" + programName + "\", expected boolean.");
+        throw new Error("Invalid value " + JSON.stringify(value) + " for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected boolean.");
     }
     else {
-        throw new Error("Invalid uniform type: " + type + " for program \"" + programName + "\", expected " + constants_1.FLOAT + " or " + constants_1.INT + " of " + constants_1.BOOL + ".");
+        throw new Error("Invalid uniform type \"" + type + "\" for uniform \"" + uniformName + "\" in program \"" + programName + "\", expected " + constants_1.FLOAT + " or " + constants_1.INT + " of " + constants_1.BOOL + ".");
     }
 }
 exports.uniformInternalTypeForValue = uniformInternalTypeForValue;

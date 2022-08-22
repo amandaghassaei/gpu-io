@@ -2,7 +2,7 @@ const {
 	GPUComposer,
 	GPUProgram,
 	GPULayer,
-	UNSIGNED_BYTE,
+	BYTE,
 	INT,
 	UINT,
 	FLOAT,
@@ -13,11 +13,25 @@ const {
 MicroModal.init();
 
 const PARAMS = {
-	overPopulationLimit: 3,
-	underPopulationLimit: 2,
-	birthRateLow: 3,
-	birthRateHigh: 3,
-	seedRatio: 0.35,
+	survivalRules: Number.parseInt('00000110', 2),
+	s1: false,
+	s2: true,
+	s3: true,
+	s4: false,
+	s5: false,
+	s6: false,
+	s7: false,
+	s8: false,
+	birthRules: Number.parseInt('00000100', 2),
+	b1: false,
+	b2: false,
+	b3: true,
+	b4: false,
+	b5: false,
+	b6: false,
+	b7: false,
+	b8: false,
+	seedRatio: 0.12,
 	reset: onResize,
 	shouldSavePNG: false,
 }
@@ -30,7 +44,7 @@ const state = new GPULayer(composer, {
 	name: 'state',
 	dimensions: [canvas.width, canvas.height],
 	numComponents: 1,
-	type: UNSIGNED_BYTE,
+	type: BYTE,
 	numBuffers: 2,
 	wrapS: REPEAT,
 	wrapT: REPEAT,
@@ -42,30 +56,34 @@ const golRules = new GPUProgram(composer, {
 in vec2 v_UV;
 
 uniform vec2 u_pxSize;
-uniform usampler2D u_state;
+uniform isampler2D u_state;
 
-uniform uint u_overPopulationLimit;
-uniform uint u_underPopulationLimit;
-uniform uint u_birthRateLow;
-uniform uint u_birthRateHigh;
+uniform uint u_survivalRules;
+uniform uint u_birthRules;
 
-out uint out_fragColor;
+out int out_fragColor;
 
 void main() {
-	uint state = texture(u_state, v_UV).r;
-	uint n = texture(u_state, v_UV + vec2(0, u_pxSize[1])).r;
-	uint s = texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r;
-	uint e = texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r;
-	uint w = texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r;
-	uint ne = texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r;
-	uint nw = texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r;
-	uint se = texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r;
-	uint sw = texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r;
-	uint numLiving = n + s + e + w + ne + nw + se + sw;
-	if (state == uint(0) && numLiving >= u_birthRateLow && numLiving <= u_birthRateHigh) {
-		state = uint(1);
-	} else if (state == uint(1) && (numLiving < u_underPopulationLimit || numLiving > u_overPopulationLimit)) {
-		state = uint(0);
+	int state = texture(u_state, v_UV).r;
+	int n = texture(u_state, v_UV + vec2(0, u_pxSize[1])).r;
+	int s = texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r;
+	int e = texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r;
+	int w = texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r;
+	int ne = texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r;
+	int nw = texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r;
+	int se = texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r;
+	int sw = texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r;
+	int numLiving = n + s + e + w + ne + nw + se + sw;
+	if (state == 0){
+		uint mask = u_birthRules & uint(1 << (numLiving - 1));
+		if (mask > uint(0)) {
+			state = 1;
+		}
+	} else {
+		uint mask = u_survivalRules & uint(1 << (numLiving - 1));
+		if (mask == uint(0)) {
+			state = 0;
+		}
 	}
 	out_fragColor = state;
 }`,
@@ -81,23 +99,13 @@ void main() {
 			type: FLOAT,
 		},
 		{
-			name: 'u_overPopulationLimit',
-			value: PARAMS.overPopulationLimit,
+			name: 'u_survivalRules',
+			value: PARAMS.survivalRules,
 			type: UINT,
 		},
 		{
-			name: 'u_underPopulationLimit',
-			value: PARAMS.underPopulationLimit,
-			type: UINT,
-		},
-		{
-			name: 'u_birthRateLow',
-			value: PARAMS.birthRateLow,
-			type: UINT,
-		},
-		{
-			name: 'u_birthRateHigh',
-			value: PARAMS.birthRateHigh,
+			name: 'u_birthRules',
+			value: PARAMS.birthRules,
 			type: UINT,
 		},
 	],
@@ -107,11 +115,11 @@ const golRender = new GPUProgram(composer, {
 	fragmentShader: `
 in vec2 v_UV;
 
-uniform usampler2D u_state;
+uniform isampler2D u_state;
 out vec4 out_fragColor;
 
 void main() {
-	uint state = texture(u_state, v_UV).r;
+	int state = texture(u_state, v_UV).r;
 	out_fragColor = vec4(state, state, state, 1);
 }`,
 	uniforms: {
@@ -121,20 +129,71 @@ void main() {
 	},
 });
 
+function changeBit(key, bit, index) {
+	const mask = 1 << index;
+	if (bit) {
+		PARAMS[key] |= mask;
+	} else {
+		PARAMS[key] &= ((~mask) & 255);
+	}
+	// Update uniform.
+	golRules.setUniform(`u_${key}`, PARAMS[key]);
+}
+
 // Init simple GUI.
 const gui = new dat.GUI();
-gui.add(PARAMS, 'overPopulationLimit', 0, 8, 1).onChange((val) => {
-	golRules.setUniform('u_overPopulationLimit', val);
+const survival = gui.addFolder('Survival Rules');
+survival.add(PARAMS, 's1').onChange((val) => {
+	changeBit('survivalRules', val, 0);
 });
-gui.add(PARAMS, 'underPopulationLimit', 0, 8, 1).onChange((val) => {
-	golRules.setUniform('u_underPopulationLimit', val);
+survival.add(PARAMS, 's2').onChange((val) => {
+	changeBit('survivalRules', val, 1);
 });
-gui.add(PARAMS, 'birthRateLow', 0, 8, 1).onChange((val) => {
-	golRules.setUniform('u_birthRateLow', val);
+survival.add(PARAMS, 's3').onChange((val) => {
+	changeBit('survivalRules', val, 2);
 });
-gui.add(PARAMS, 'birthRateHigh', 0, 8, 1).onChange((val) => {
-	golRules.setUniform('u_birthRateHigh', val);
+survival.add(PARAMS, 's4').onChange((val) => {
+	changeBit('survivalRules', val, 3);
 });
+survival.add(PARAMS, 's5').onChange((val) => {
+	changeBit('survivalRules', val, 4);
+});
+survival.add(PARAMS, 's6').onChange((val) => {
+	changeBit('survivalRules', val, 5);
+});
+survival.add(PARAMS, 's7').onChange((val) => {
+	changeBit('survivalRules', val, 6);
+});
+survival.add(PARAMS, 's8').onChange((val) => {
+	changeBit('survivalRules', val, 7);
+});
+survival.open();
+const birth = gui.addFolder('Birth Rules');
+birth.add(PARAMS, 'b1').onChange((val) => {
+	changeBit('birthRules', val, 0);
+});
+birth.add(PARAMS, 'b2').onChange((val) => {
+	changeBit('birthRules', val, 1);
+});
+birth.add(PARAMS, 'b3').onChange((val) => {
+	changeBit('birthRules', val, 2);
+});
+birth.add(PARAMS, 'b4').onChange((val) => {
+	changeBit('birthRules', val, 3);
+});
+birth.add(PARAMS, 'b5').onChange((val) => {
+	changeBit('birthRules', val, 4);
+});
+birth.add(PARAMS, 'b6').onChange((val) => {
+	changeBit('birthRules', val, 5);
+});
+birth.add(PARAMS, 'b7').onChange((val) => {
+	changeBit('birthRules', val, 6);
+});
+birth.add(PARAMS, 'b8').onChange((val) => {
+	changeBit('birthRules', val, 7);
+});
+birth.open();
 gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
 	onResize();
 });
@@ -174,7 +233,7 @@ function onResize() {
 	// Init new random state.
 	const array = new Uint8Array(width * height);
 	for (let i = 0; i < array.length; i++) {
-		array[i] = Math.random() < PARAMS.seedRatio ? 0 : 1;
+		array[i] = Math.random() < PARAMS.seedRatio ? 1 : 0;
 	}
 	state.resize([width, height], array);
 	// Update px size.

@@ -83,7 +83,7 @@ export class GPUComposer {
 	readonly _errorCallback: ErrorCallback;
 
 	// Save threejs renderer if passed in.
-	private renderer?: WebGLRenderer;
+	readonly renderer?: WebGLRenderer;
 	private readonly maxNumTextures!: number;
 	
 	// Precomputed buffers (inited as needed).
@@ -192,6 +192,7 @@ export class GPUComposer {
 			},
 		);
 		// Attach renderer.
+		// @ts-ignore
 		composer.renderer = renderer;
 		return composer;
 	}
@@ -1657,20 +1658,6 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	attachGPULayerToThreeTexture(GPULayer: GPULayer, texture: Texture) {
-		if (!this.renderer) {
-			throw new Error('GPUComposer was not inited with a renderer.');
-		}
-		// Link webgl texture to threejs object.
-		// This is not officially supported.
-		if (GPULayer.numBuffers > 1) {
-			throw new Error(`GPULayer "${GPULayer.name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
-		}
-		const offsetTextureProperties = this.renderer.properties.get(texture);
-		offsetTextureProperties.__webglTexture = GPULayer.currentState;
-		offsetTextureProperties.__webglInit = true;
-	}
-
 	resetThreeState() {
 		if (!this.renderer) {
 			throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
@@ -1732,6 +1719,7 @@ export class GPUComposer {
 		this._wrappedLineColorProgram?.dispose();
 		delete this._wrappedLineColorProgram;
 
+		// @ts-ignore
 		delete this.renderer;
 		// @ts-ignore
 		delete this.gl;

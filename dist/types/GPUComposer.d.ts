@@ -1,7 +1,7 @@
 import { GPULayer } from './GPULayer';
 import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './constants';
 import { GPUProgram } from './GPUProgram';
-import { WebGLRenderer, Texture } from 'three';
+import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     readonly glslVersion: GLSLVersion;
@@ -11,7 +11,7 @@ export declare class GPUComposer {
     private height;
     private errorState;
     readonly _errorCallback: ErrorCallback;
-    private renderer?;
+    readonly renderer?: WebGLRenderer;
     private readonly maxNumTextures;
     private _quadPositionsBuffer?;
     private _boundaryPositionsBuffer?;
@@ -201,7 +201,6 @@ export declare class GPUComposer {
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
-    attachGPULayerToThreeTexture(GPULayer: GPULayer, texture: Texture): void;
     resetThreeState(): void;
     dispose(): void;
 }

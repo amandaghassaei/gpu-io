@@ -102,7 +102,7 @@ const texture = new THREE.Texture(
 	THREE.UnsignedByteType,
 );
 // Link webgl texture to threejs object.
-composer.attachGPULayerToThreeTexture(layer1, texture);
+layer1.attachToThreeTexture(texture);
 
 const mesh = new THREE.Mesh(
 	new PlaneBufferGeometry(1, 1),

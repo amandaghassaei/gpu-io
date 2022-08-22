@@ -1,5 +1,6 @@
 import { GPUComposer } from './GPUComposer';
 import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap } from './constants';
+import { Texture } from 'three';
 export declare class GPULayer {
     private readonly composer;
     readonly name: string;
@@ -68,6 +69,7 @@ export declare class GPULayer {
         multiplier?: number;
         callback: (data: string | Blob, filename?: string) => void;
     }): void;
+    attachToThreeTexture(texture: Texture): void;
     private destroyBuffers;
     dispose(): void;
     clone(name?: string): GPULayer;

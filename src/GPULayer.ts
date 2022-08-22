@@ -46,6 +46,7 @@ import {
 	getGPULayerInternalWrap,
 	initArrayForType,
 } from './GPULayerHelpers';
+import { Texture } from 'three';
 
 export class GPULayer {
 	// Keep a reference to GPUComposer.
@@ -805,6 +806,22 @@ export class GPULayer {
 			}
 			
 		}, 'image/png');
+	}
+
+	attachToThreeTexture(texture: Texture) {
+		const { composer, numBuffers, currentState, name } = this;
+		const { renderer } = composer;
+		if (!renderer) {
+			throw new Error('GPUComposer was not inited with a renderer.');
+		}
+		// Link webgl texture to threejs object.
+		// This is not officially supported.
+		if (numBuffers > 1) {
+			throw new Error(`GPULayer "${name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
+		}
+		const offsetTextureProperties = renderer.properties.get(texture);
+		offsetTextureProperties.__webglTexture = currentState;
+		offsetTextureProperties.__webglInit = true;
 	}
 
 	private destroyBuffers() {

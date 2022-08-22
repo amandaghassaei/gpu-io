@@ -83,4 +83,4 @@ export declare function preprocessFragmentShader(shaderSource: string, glslVersi
  * Check uniforms and return internal WebGL type (e.g. [1234][u]?[if])
  * Used internally.
  */
-export declare function uniformInternalTypeForValue(value: UniformValue, type: UniformType, programName: string): "1f" | "2f" | "3f" | "4f" | "1i" | "2i" | "3i" | "4i" | "1ui" | "2ui" | "3ui" | "4ui";
+export declare function uniformInternalTypeForValue(value: UniformValue, type: UniformType, uniformName: string, programName: string): "1f" | "2f" | "3f" | "4f" | "1i" | "2i" | "3i" | "4i" | "1ui" | "2ui" | "3ui" | "4ui";

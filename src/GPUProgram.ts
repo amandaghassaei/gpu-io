@@ -362,7 +362,7 @@ Error code: ${gl.getError()}.`);
 
 		let currentType = uniforms[name]?.type;
 		if (type) {
-			const internalType = uniformInternalTypeForValue(value, type, this.name);
+			const internalType = uniformInternalTypeForValue(value, type, name, this.name);
 			if (currentType === undefined) currentType = internalType;
 			else {
 				// console.warn(`Don't need to pass in type to GPUProgram.setUniform for previously inited uniform "${uniformName}"`);
@@ -424,7 +424,7 @@ Error code: ${gl.getError()}.`);
 		if (!programName) {
 			throw new Error(`Could not find valid vertex programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
-		const internalType = uniformInternalTypeForValue(value, type, this.name);
+		const internalType = uniformInternalTypeForValue(value, type, uniformName, this.name);
 		this.setProgramUniform(program, programName, uniformName, value, internalType);
 	}
 
