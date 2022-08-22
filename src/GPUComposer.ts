@@ -70,6 +70,7 @@ import {
 const defaultVertexShaderSource = require('./glsl/vert/DefaultVertShader.glsl');
 
 export class GPUComposer {
+	readonly canvas: HTMLCanvasElement;
 	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
 	readonly glslVersion!: GLSLVersion;
 	readonly intPrecision!: GLSLPrecision;
@@ -79,8 +80,7 @@ export class GPUComposer {
 	private height!: number;
 
 	private errorState = false;
-	// For internal use only.
-	readonly _errorCallback: ErrorCallback;
+	readonly errorCallback: ErrorCallback;
 
 	// Save threejs renderer if passed in.
 	readonly renderer?: WebGLRenderer;
@@ -235,7 +235,7 @@ export class GPUComposer {
 
 		// Save callback in case we run into an error.
 		const self = this;
-		this._errorCallback = (message: string) => {
+		this.errorCallback = (message: string) => {
 			if (self.errorState) {
 				return;
 			}
@@ -244,6 +244,7 @@ export class GPUComposer {
 		}
 
 		const { canvas } = params;
+		this.canvas = canvas;
 		let gl = params.context;
 
 		// Init GL.
@@ -261,7 +262,7 @@ export class GPUComposer {
 					|| canvas.getContext(EXPERIMENTAL_WEBGL, params.contextOptions)  as WebGLRenderingContext | null;
 			}
 			if (gl === null) {
-				this._errorCallback('Unable to initialize WebGL context.');
+				this.errorCallback('Unable to initialize WebGL context.');
 				return;
 			}
 		}
@@ -304,7 +305,7 @@ export class GPUComposer {
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		// Canvas setup.
-		this.onResize(canvas);
+		this.resize(canvas.clientWidth, canvas.clientHeight);
 
 		// Log number of textures available.
 		this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
@@ -439,10 +440,10 @@ export class GPUComposer {
 	private initVertexBuffer(
 		data: Float32Array,
 	) {
-		const { _errorCallback, gl } = this;
+		const { errorCallback, gl } = this;
 		const buffer = gl.createBuffer();
 		if (!buffer) {
-			_errorCallback('Unable to allocate gl buffer.');
+			errorCallback('Unable to allocate gl buffer.');
 			return;
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -549,7 +550,7 @@ export class GPUComposer {
 			throw new Error(`Invalid type: ${type} for GPULayer "${name}", must be ${validTextureTypes.join(', ')}.`);
 		}
 
-		const { gl, _errorCallback } = this;
+		const { gl, errorCallback } = this;
 		const texture = gl.createTexture();
 		if (texture === null) {
 			throw new Error(`Unable to init glTexture.`);
@@ -600,7 +601,7 @@ export class GPUComposer {
 			if (params.onLoad) params.onLoad(texture);
 		};
 		image.onerror = (e) => {
-			_errorCallback(`Error loading image ${name}: ${e}`);
+			errorCallback(`Error loading image ${name}: ${e}`);
 		}
 		image.src = url;
 
@@ -609,7 +610,7 @@ export class GPUComposer {
 
 	_getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string) {
 		const {
-			_errorCallback,
+			errorCallback,
 			_vertexShaders,
 			gl,
 			glslVersion,
@@ -631,11 +632,11 @@ export class GPUComposer {
 				preprocessedSrc,
 				gl.VERTEX_SHADER,
 				programName,
-				_errorCallback,
+				errorCallback,
 				vertexShader.defines,
 			);
 			if (!shader) {
-				_errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${programName}".`);
+				errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${programName}".`);
 				return;
 			}
 			// Save the results so this does not have to be repeated.
@@ -644,9 +645,8 @@ export class GPUComposer {
 		return vertexShader.shader;
 	}
 
-	onResize(canvas: HTMLCanvasElement) {
-		const width = canvas.clientWidth;
-		const height = canvas.clientHeight;
+	resize(width: number, height: number) {
+		const { canvas } = this;
 		// Set correct canvas pixel size.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
 		canvas.width = width;
@@ -1723,7 +1723,8 @@ export class GPUComposer {
 		delete this.renderer;
 		// @ts-ignore
 		delete this.gl;
-
+		// @ts-ignore;
+		delete this.canvas;
 		// GL context will be garbage collected by webgl.
 	}
 }

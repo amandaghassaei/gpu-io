@@ -143,7 +143,7 @@ export class GPUProgram {
 		const { composer, name, fragmentShaderSource } = this;
 		const {
 			gl,
-			_errorCallback,
+			errorCallback,
 			verboseLogging,
 			glslVersion,
 			floatPrecision,
@@ -178,11 +178,11 @@ export class GPUProgram {
 			fragmentShaderSource,
 			gl.FRAGMENT_SHADER,
 			name,
-			_errorCallback,
+			errorCallback,
 			this.defines,
 		);
 		if (!shader) {
-			_errorCallback(`Unable to compile fragment shader for GPUProgram "${name}".`);
+			errorCallback(`Unable to compile fragment shader for GPUProgram "${name}".`);
 			return;
 		}
 		this.fragmentShader = shader;
@@ -200,17 +200,17 @@ export class GPUProgram {
 
 		// Otherwise, we need to compile a new program on the fly.
 		const { composer, uniforms, fragmentShader } = this;
-		const { gl, _errorCallback } = composer;
+		const { gl, errorCallback } = composer;
 
 		const vertexShader = composer._getVertexShaderWithName(name, this.name);
 		if (vertexShader === undefined) {
-			_errorCallback(`Unable to init vertex shader "${name}" for GPUProgram "${this.name}".`);
+			errorCallback(`Unable to init vertex shader "${name}" for GPUProgram "${this.name}".`);
 			return;
 		}
 
-		const program = initGLProgram(gl, vertexShader, fragmentShader, this.name, _errorCallback);
+		const program = initGLProgram(gl, vertexShader, fragmentShader, this.name, errorCallback);
 		if (program === undefined) {
-			_errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
+			errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
 			return;
 		}
 
@@ -263,7 +263,7 @@ export class GPUProgram {
 		type: UniformInternalType,
 	) {
 		const { composer, uniforms } = this;
-		const { gl, _errorCallback } = composer;
+		const { gl, errorCallback } = composer;
 		// Set active program.
 		gl.useProgram(program);
 
@@ -272,7 +272,7 @@ export class GPUProgram {
 		if (location === undefined) {
 			const _location = gl.getUniformLocation(program, name);
 			if (!_location) {
-				_errorCallback(`Could not init uniform "${name}" for program "${this.name}".
+				errorCallback(`Could not init uniform "${name}" for program "${this.name}".
 Check that uniform is present in shader code, unused uniforms may be removed by compiler.
 Also check that uniform type in shader code matches type ${type}.
 Error code: ${gl.getError()}.`);

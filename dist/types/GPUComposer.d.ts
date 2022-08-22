@@ -3,6 +3,7 @@ import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
+    readonly canvas: HTMLCanvasElement;
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     readonly glslVersion: GLSLVersion;
     readonly intPrecision: GLSLPrecision;
@@ -10,7 +11,7 @@ export declare class GPUComposer {
     private width;
     private height;
     private errorState;
-    readonly _errorCallback: ErrorCallback;
+    readonly errorCallback: ErrorCallback;
     readonly renderer?: WebGLRenderer;
     private readonly maxNumTextures;
     private _quadPositionsBuffer?;
@@ -76,7 +77,7 @@ export declare class GPUComposer {
         onLoad?: (texture: WebGLTexture) => void;
     }): WebGLTexture;
     _getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string): WebGLProgram | undefined;
-    onResize(canvas: HTMLCanvasElement): void;
+    resize(width: number, height: number): void;
     private drawSetup;
     private setBlendMode;
     private addLayerToInputs;

@@ -1,6 +1,7 @@
 {
 	const {
 		GPUComposer,
+		GPULayer,
 		HALF_FLOAT,
 		FLOAT,
 		UNSIGNED_BYTE,
@@ -27,6 +28,9 @@
 		getGLTextureParameters,
 		testFramebufferWrite,
 		getGPULayerInternalType,
+		validateGPULayerArray,
+		initArrayForType,
+		initSequentialFloatArray,
 	} = _testing;
 
 	let composer1, composer2, composer3;
@@ -208,6 +212,55 @@
 						});
 					});
 				});
+			});
+		});
+		describe('validateGPULayerArray', () => {
+			it('should validate 2D arrays', () => {
+				const dimensions = [10, 12];
+				[1, 2, 3, 4].forEach(numComponents => {
+					[FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
+						const layer = new GPULayer(composer3, {
+							name: 'test',
+							type,
+							dimensions,
+							writable: false,
+							numComponents,
+						});
+						// Array1 may be undersized if numComponents < layer.glNumChannels.
+						const array1 = initArrayForType(type, dimensions[0] * dimensions[1] * numComponents);
+						const validated1 = validateGPULayerArray(array1, layer);
+						assert.typeOf(validated1, array1.constructor.name);
+						assert.isAtLeast(validated1.length, array1.length);
+
+						// Array2 is correct size and type, should pass through.
+						const array2 = initArrayForType(type, dimensions[0] * dimensions[1] * layer.glNumChannels);
+						const validated2 = validateGPULayerArray(array2, layer);
+						assert.equal(validated2, array2);
+
+						// Incorrect type (and possibly length) passed in, should type cast.
+						const array3 = initSequentialFloatArray(dimensions[0] * dimensions[1] * numComponents);
+						const validated3 = validateGPULayerArray(array3, layer);
+						assert.typeOf(validated3, array1.constructor.name); // Intentionally comparing with array1 constructor here.
+						assert.isAtLeast(validated3.length, array3.length);
+						// Check that values are passed through.
+						for (let i = 0; i < dimensions[0] * dimensions[1]; i++) {
+							for (let j = 0; j < layer.glNumChannels; j++) {
+								if (j < numComponents) {
+									assert.equal(validated3[layer.glNumChannels * i + j], array3[numComponents * i + j]);
+								} else {
+									assert.equal(validated3[layer.glNumChannels * i + j], 0);
+								}
+							}
+						}
+					});
+				});
+			});
+			it ('should handle HALF_FLOAT cases', () => {
+
+			});
+			it('should throw error in case of invalid array', () => {
+				// Wrong length.
+				// Wrong type.
 			});
 		});
 	});

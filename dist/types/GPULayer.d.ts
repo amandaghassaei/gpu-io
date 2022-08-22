@@ -14,7 +14,7 @@ export declare class GPULayer {
     private _bufferIndex;
     readonly numBuffers: number;
     private readonly buffers;
-    _length?: number;
+    private _length?;
     private _width;
     private _height;
     readonly glInternalFormat: number;
@@ -43,9 +43,6 @@ export declare class GPULayer {
         clearValue?: number | number[];
     });
     get bufferIndex(): number;
-    saveCurrentStateToGPULayer(layer: GPULayer): void;
-    _setCurrentStateTexture(texture: WebGLTexture): void;
-    private validateDataArray;
     private initBuffers;
     getStateAtIndex(index: number): WebGLTexture;
     get currentState(): WebGLTexture;
@@ -62,6 +59,7 @@ export declare class GPULayer {
     get width(): number;
     get height(): number;
     get length(): number;
+    is1D(): boolean;
     getValues(): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
     savePNG(params: {
         filename: string;

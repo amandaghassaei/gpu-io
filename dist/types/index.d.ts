@@ -50,6 +50,7 @@ declare const _testing: {
         writable: boolean;
         name: string;
     }): import("./constants").GPULayerType;
+    validateGPULayerArray(array: Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array | number[], layer: GPULayer): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
     isValidDataType(type: string): boolean;
     isValidFilter(type: string): boolean;
     isValidWrap(type: string): boolean;

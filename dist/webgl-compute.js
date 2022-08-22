@@ -2357,7 +2357,7 @@ var GPUComposer = /** @class */ (function () {
             this.verboseLogging = params.verboseLogging;
         // Save callback in case we run into an error.
         var self = this;
-        this._errorCallback = function (message) {
+        this.errorCallback = function (message) {
             if (self.errorState) {
                 return;
             }
@@ -2365,6 +2365,7 @@ var GPUComposer = /** @class */ (function () {
             params.errorCallback ? params.errorCallback(message) : constants_1.DEFAULT_ERROR_CALLBACK(message);
         };
         var canvas = params.canvas;
+        this.canvas = canvas;
         var gl = params.context;
         // Init GL.
         if (!gl) {
@@ -2381,7 +2382,7 @@ var GPUComposer = /** @class */ (function () {
                     || canvas.getContext(constants_1.EXPERIMENTAL_WEBGL, params.contextOptions);
             }
             if (gl === null) {
-                this._errorCallback('Unable to initialize WebGL context.');
+                this.errorCallback('Unable to initialize WebGL context.');
                 return;
             }
         }
@@ -2422,7 +2423,7 @@ var GPUComposer = /** @class */ (function () {
         // Unbind active buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         // Canvas setup.
-        this.onResize(canvas);
+        this.resize(canvas.clientWidth, canvas.clientHeight);
         // Log number of textures available.
         this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         if (this.verboseLogging)
@@ -2565,10 +2566,10 @@ var GPUComposer = /** @class */ (function () {
         return this._circlePositionsBuffer[numSegments];
     };
     GPUComposer.prototype.initVertexBuffer = function (data) {
-        var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl;
+        var _a = this, errorCallback = _a.errorCallback, gl = _a.gl;
         var buffer = gl.createBuffer();
         if (!buffer) {
-            _errorCallback('Unable to allocate gl buffer.');
+            errorCallback('Unable to allocate gl buffer.');
             return;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -2655,7 +2656,7 @@ var GPUComposer = /** @class */ (function () {
         if (!checks_1.isValidTextureType(type)) {
             throw new Error("Invalid type: " + type + " for GPULayer \"" + name + "\", must be " + constants_1.validTextureTypes.join(', ') + ".");
         }
-        var _a = this, gl = _a.gl, _errorCallback = _a._errorCallback;
+        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
         var texture = gl.createTexture();
         if (texture === null) {
             throw new Error("Unable to init glTexture.");
@@ -2703,13 +2704,13 @@ var GPUComposer = /** @class */ (function () {
                 params.onLoad(texture);
         };
         image.onerror = function (e) {
-            _errorCallback("Error loading image " + name + ": " + e);
+            errorCallback("Error loading image " + name + ": " + e);
         };
         image.src = url;
         return texture;
     };
     GPUComposer.prototype._getVertexShaderWithName = function (name, programName) {
-        var _a = this, _errorCallback = _a._errorCallback, _vertexShaders = _a._vertexShaders, gl = _a.gl, glslVersion = _a.glslVersion, intPrecision = _a.intPrecision, floatPrecision = _a.floatPrecision;
+        var _a = this, errorCallback = _a.errorCallback, _vertexShaders = _a._vertexShaders, gl = _a.gl, glslVersion = _a.glslVersion, intPrecision = _a.intPrecision, floatPrecision = _a.floatPrecision;
         var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
             // Init a vertex shader (this only happens once for each possible vertex shader across all GPUPrograms).
@@ -2717,9 +2718,9 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("Error compiling GPUProgram \"" + programName + "\": no source for vertex shader with name \"" + name + "\".");
             }
             var preprocessedSrc = utils_1.preprocessVertexShader(vertexShader.src, glslVersion);
-            var shader = utils_1.compileShader(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexShader.defines);
+            var shader = utils_1.compileShader(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, errorCallback, vertexShader.defines);
             if (!shader) {
-                _errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + programName + "\".");
+                errorCallback("Unable to compile \"" + name + "\" vertex shader for GPUProgram \"" + programName + "\".");
                 return;
             }
             // Save the results so this does not have to be repeated.
@@ -2727,9 +2728,8 @@ var GPUComposer = /** @class */ (function () {
         }
         return vertexShader.shader;
     };
-    GPUComposer.prototype.onResize = function (canvas) {
-        var width = canvas.clientWidth;
-        var height = canvas.clientHeight;
+    GPUComposer.prototype.resize = function (width, height) {
+        var canvas = this.canvas;
         // Set correct canvas pixel size.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
         canvas.width = width;
@@ -3573,6 +3573,8 @@ var GPUComposer = /** @class */ (function () {
         delete this.renderer;
         // @ts-ignore
         delete this.gl;
+        // @ts-ignore;
+        delete this.canvas;
         // GL context will be garbage collected by webgl.
     };
     return GPUComposer;
@@ -3599,6 +3601,7 @@ var utils_1 = __webpack_require__(593);
 var GPULayerHelpers_1 = __webpack_require__(191);
 var GPULayer = /** @class */ (function () {
     function GPULayer(composer, params) {
+        this._clearValue = 0; // Value to set when clear() is called, defaults to zero.  Access with GPULayer.clearValue.
         // Each GPULayer may contain a number of buffers to store different instances of the state.
         // e.g [currentState, previousState]
         this._bufferIndex = 0;
@@ -3623,8 +3626,8 @@ var GPULayer = /** @class */ (function () {
                 throw new Error("Required params key \"" + key + "\" was not passed to GPUProgram(composer, params) with name \"" + name + "\".");
             }
         });
-        var dimensions = params.dimensions, type = params.type, numComponents = params.numComponents, array = params.array;
-        var gl = composer.gl, _errorCallback = composer._errorCallback, glslVersion = composer.glslVersion;
+        var dimensions = params.dimensions, type = params.type, numComponents = params.numComponents;
+        var gl = composer.gl;
         // Save params.
         this.composer = composer;
         this.name = name;
@@ -3707,11 +3710,11 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Invalid numBuffers: " + numBuffers + " for GPULayer \"" + name + "\", must be positive integer.");
         }
         this.numBuffers = numBuffers;
-        // clearValue defaults to zero.
         // Wait until after type has been set to set clearValue.
-        var clearValue = params.clearValue !== undefined ? params.clearValue : 0;
-        this.clearValue = clearValue; // Setter can only be called after this.numComponents has been set.
-        this.initBuffers(array);
+        if (params.clearValue !== undefined) {
+            this.clearValue = params.clearValue; // Setter can only be called after this.numComponents has been set.
+        }
+        this.initBuffers(params.array);
     }
     Object.defineProperty(GPULayer.prototype, "bufferIndex", {
         get: function () {
@@ -3720,138 +3723,70 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    GPULayer.prototype.saveCurrentStateToGPULayer = function (layer) {
-        // A method for saving a copy of the current state without a draw call.
-        // Draw calls are expensive, this optimization helps.
-        if (this.numBuffers < 2) {
-            throw new Error("Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer \"" + this.name + "\" with less than 2 buffers.");
-        }
-        if (!this.writable) {
-            throw new Error("Can't call GPULayer.saveCurrentStateToGPULayer on read-only GPULayer \"" + this.name + "\".");
-        }
-        if (layer.writable) {
-            throw new Error("Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer \"" + this.name + "\" using writable GPULayer \"" + layer.name + "\".");
-        }
-        // Check that texture params are the same.
-        if (layer.glWrapS !== this.glWrapS || layer.glWrapT !== this.glWrapT ||
-            layer.wrapS !== this.wrapS || layer.wrapT !== this.wrapT ||
-            layer.width !== this.width || layer.height !== this.height ||
-            layer.glFilter !== this.glFilter || layer.filter !== this.filter ||
-            layer.glNumChannels !== this.glNumChannels || layer.numComponents !== this.numComponents ||
-            layer.glType !== this.glType || layer.type !== this.type ||
-            layer.glFormat !== this.glFormat || layer.glInternalFormat !== this.glInternalFormat) {
-            throw new Error("Incompatible texture params between GPULayers \"" + layer.name + "\" and \"" + this.name + "\".");
-        }
-        // If we have not already inited overrides array, do so now.
-        if (!this.textureOverrides) {
-            this.textureOverrides = [];
-            for (var i = 0; i < this.numBuffers; i++) {
-                this.textureOverrides.push(undefined);
-            }
-        }
-        // Check if we already have an override in place.
-        if (this.textureOverrides[this.bufferIndex]) {
-            throw new Error("Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer \"" + this.name + "\", this GPULayer has not written new state since last call to GPULayer.saveCurrentStateToGPULayer.");
-        }
-        var currentState = this.currentState;
-        this.textureOverrides[this.bufferIndex] = currentState;
-        // Swap textures.
-        this.buffers[this.bufferIndex].texture = layer.currentState;
-        layer._setCurrentStateTexture(currentState);
-        // Bind swapped texture to framebuffer.
-        var gl = this.composer.gl;
-        var _a = this.buffers[this.bufferIndex], framebuffer = _a.framebuffer, texture = _a.texture;
-        if (!framebuffer)
-            throw new Error("No framebuffer for writable GPULayer \"" + this.name + "\".");
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-        // Unbind.
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    };
-    // This is used internally.
-    GPULayer.prototype._setCurrentStateTexture = function (texture) {
-        if (this.writable) {
-            throw new Error("Can't call GPULayer._setCurrentStateTexture on writable texture \"" + this.name + "\".");
-        }
-        this.buffers[this.bufferIndex].texture = texture;
-    };
-    GPULayer.prototype.validateDataArray = function (array) {
-        var _a = this, numComponents = _a.numComponents, glNumChannels = _a.glNumChannels, internalType = _a.internalType, width = _a.width, height = _a.height;
-        var length = this._length;
-        // Check that data is correct length (user error).
-        if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
-            if (!length || (length && array.length !== length * numComponents)) { // Of the correct length for 1D array.
-                throw new Error("Invalid data length: " + array.length + " for GPULayer \"" + this.name + "\" of " + (length ? "length " + length + " and " : '') + "dimensions: [" + width + ", " + height + "] and numComponents: " + numComponents + ".");
-            }
-        }
-        // Get array type to figure out if we need to type cast.
-        // For webgl1.0 we may need to cast an int type to a FLOAT or HALF_FLOAT.
-        var shouldTypeCast = false;
-        switch (array.constructor) {
-            case Array:
-                shouldTypeCast = true;
-                break;
-            case Float32Array:
-                shouldTypeCast = internalType !== constants_1.FLOAT;
-                break;
-            case Uint8Array:
-                shouldTypeCast = internalType !== constants_1.UNSIGNED_BYTE;
-                break;
-            case Int8Array:
-                shouldTypeCast = internalType !== constants_1.BYTE;
-                break;
-            case Uint16Array:
-                shouldTypeCast = internalType !== constants_1.UNSIGNED_SHORT;
-                break;
-            case Int16Array:
-                shouldTypeCast = internalType !== constants_1.SHORT;
-                break;
-            case Uint32Array:
-                shouldTypeCast = internalType !== constants_1.UNSIGNED_INT;
-                break;
-            case Int32Array:
-                shouldTypeCast = internalType !== constants_1.INT;
-                break;
-            default:
-                throw new Error("Invalid array type: " + array.constructor.name + " for GPULayer \"" + this.name + "\", please use one of [" + constants_1.validArrayTypes.map(function (constructor) { return constructor.name; }).join(', ') + "].");
-        }
-        var imageSize = width * height * glNumChannels;
-        // Then check if array needs to be lengthened.
-        // This could be because glNumChannels !== numComponents.
-        // Or because length !== width * height.
-        var incorrectSize = array.length !== imageSize;
-        // We have to handle the case of Float16 specially by converting data to Uint16Array.
-        var handleFloat16 = internalType === constants_1.HALF_FLOAT;
-        var validatedArray = array;
-        if (shouldTypeCast || incorrectSize || handleFloat16) {
-            validatedArray = GPULayerHelpers_1.initArrayForType(internalType, imageSize);
-            // Fill new data array with old data.
-            var view = handleFloat16 ? new DataView(validatedArray.buffer) : null;
-            for (var i = 0, _len = array.length / numComponents; i < _len; i++) {
-                for (var j = 0; j < numComponents; j++) {
-                    var value = array[i * numComponents + j];
-                    var index = i * glNumChannels + j;
-                    if (handleFloat16) {
-                        float16_1.setFloat16(view, 2 * index, value, true);
-                    }
-                    else {
-                        validatedArray[index] = value;
-                    }
-                }
-            }
-        }
-        return validatedArray;
-    };
+    // saveCurrentStateToGPULayer(layer: GPULayer) {
+    // 	// A method for saving a copy of the current state without a draw call.
+    // 	// Draw calls are expensive, this optimization helps.
+    // 	if (this.numBuffers < 2) {
+    // 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" with less than 2 buffers.`);
+    // 	}
+    // 	if (!this.writable) {
+    // 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on read-only GPULayer "${this.name}".`);
+    // 	}
+    // 	if (layer.writable) {
+    // 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" using writable GPULayer "${layer.name}".`)
+    // 	}
+    // 	// Check that texture params are the same.
+    // 	if (layer.glWrapS !== this.glWrapS || layer.glWrapT !== this.glWrapT ||
+    // 		layer.wrapS !== this.wrapS || layer.wrapT !== this.wrapT ||
+    // 		layer.width !== this.width || layer.height !== this.height ||
+    // 		layer.glFilter !== this.glFilter || layer.filter !== this.filter ||
+    // 		layer.glNumChannels !== this.glNumChannels || layer.numComponents !== this.numComponents ||
+    // 		layer.glType !== this.glType || layer.type !== this.type ||
+    // 		layer.glFormat !== this.glFormat || layer.glInternalFormat !== this.glInternalFormat) {
+    // 			throw new Error(`Incompatible texture params between GPULayers "${layer.name}" and "${this.name}".`);
+    // 	}
+    // 	// If we have not already inited overrides array, do so now.
+    // 	if (!this.textureOverrides) {
+    // 		this.textureOverrides = [];
+    // 		for (let i = 0; i < this.numBuffers; i++) {
+    // 			this.textureOverrides.push(undefined);
+    // 		}
+    // 	}
+    // 	// Check if we already have an override in place.
+    // 	if (this.textureOverrides[this.bufferIndex]) {
+    // 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}", this GPULayer has not written new state since last call to GPULayer.saveCurrentStateToGPULayer.`);
+    // 	}
+    // 	const { currentState } = this;
+    // 	this.textureOverrides[this.bufferIndex] = currentState;
+    // 	// Swap textures.
+    // 	this.buffers[this.bufferIndex].texture = layer.currentState;
+    // 	layer._setCurrentStateTexture(currentState);
+    // 	// Bind swapped texture to framebuffer.
+    // 	const { gl } = this.composer;
+    // 	const { framebuffer, texture } = this.buffers[this.bufferIndex];
+    // 	if (!framebuffer) throw new Error(`No framebuffer for writable GPULayer "${this.name}".`);
+    // 	gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    // 	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
+    // 	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    // 	// Unbind.
+    // 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // }
+    // // This is used internally.
+    // _setCurrentStateTexture(texture: WebGLTexture) {
+    // 	if (this.writable) {
+    // 		throw new Error(`Can't call GPULayer._setCurrentStateTexture on writable texture "${this.name}".`);
+    // 	}
+    // 	this.buffers[this.bufferIndex].texture = texture;
+    // }
     GPULayer.prototype.initBuffers = function (array) {
         var _a = this, name = _a.name, numBuffers = _a.numBuffers, composer = _a.composer, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
-        var gl = composer.gl, _errorCallback = composer._errorCallback;
-        var validatedArray = array ? this.validateDataArray(array) : undefined;
+        var gl = composer.gl, errorCallback = composer.errorCallback;
+        var validatedArray = array ? GPULayerHelpers_1.validateGPULayerArray(array, this) : undefined;
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
             if (!texture) {
-                _errorCallback("Could not init texture for GPULayer \"" + name + "\": " + gl.getError() + ".");
+                errorCallback("Could not init texture for GPULayer \"" + name + "\": " + gl.getError() + ".");
                 return;
             }
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -3869,7 +3804,7 @@ var GPULayer = /** @class */ (function () {
                 // Init a framebuffer for this texture so we can write to it.
                 var framebuffer = gl.createFramebuffer();
                 if (!framebuffer) {
-                    _errorCallback("Could not init framebuffer for GPULayer \"" + name + "\": " + gl.getError() + ".");
+                    errorCallback("Could not init framebuffer for GPULayer \"" + name + "\": " + gl.getError() + ".");
                     return;
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -3877,7 +3812,7 @@ var GPULayer = /** @class */ (function () {
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
                 var status_1 = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
                 if (status_1 != gl.FRAMEBUFFER_COMPLETE) {
-                    _errorCallback("Invalid status for framebuffer for GPULayer \"" + name + "\": " + status_1 + ".");
+                    errorCallback("Invalid status for framebuffer for GPULayer \"" + name + "\": " + status_1 + ".");
                 }
                 // Add framebuffer.
                 buffer.framebuffer = framebuffer;
@@ -3946,7 +3881,7 @@ var GPULayer = /** @class */ (function () {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
         var _a = this, composer = _a.composer, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, numBuffers = _a.numBuffers, width = _a.width, height = _a.height, bufferIndex = _a.bufferIndex;
         var gl = composer.gl;
-        var validatedArray = this.validateDataArray(array);
+        var validatedArray = GPULayerHelpers_1.validateGPULayerArray(array, this);
         // TODO: check that this is working.
         var startIndex = applyToAllBuffers ? 0 : bufferIndex;
         var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
@@ -4065,6 +4000,9 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    GPULayer.prototype.is1D = function () {
+        return this._length !== undefined;
+    };
     GPULayer.prototype.getValues = function () {
         var _a = this, width = _a.width, height = _a.height, composer = _a.composer, numComponents = _a.numComponents, type = _a.type;
         var gl = composer.gl, glslVersion = composer.glslVersion;
@@ -4301,7 +4239,8 @@ exports.GPULayer = GPULayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getGPULayerInternalType = exports.testFramebufferWrite = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+exports.validateGPULayerArray = exports.getGPULayerInternalType = exports.testFramebufferWrite = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+var float16_1 = __webpack_require__(501);
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
@@ -4346,7 +4285,7 @@ exports.initArrayForType = initArrayForType;
  * Also checks that size elements are valid.
  * Used internally.
  */
-// TODO: should we relax adherence to power of 2.
+// TODO: should we relax adherence to power of 2?
 function calcGPULayerSize(size, name, verboseLogging) {
     if (checks_1.isNumber(size)) {
         if (!checks_1.isPositiveInteger(size)) {
@@ -4824,7 +4763,7 @@ exports.testFramebufferWrite = testFramebufferWrite;
  */
 function getGPULayerInternalType(params) {
     var composer = params.composer, writable = params.writable, name = params.name;
-    var gl = composer.gl, _errorCallback = composer._errorCallback;
+    var gl = composer.gl, errorCallback = composer.errorCallback;
     var type = params.type;
     var internalType = type;
     // Check if int types are supported.
@@ -4871,7 +4810,7 @@ function getGPULayerInternalType(params) {
             if (writable) {
                 var valid = testFramebufferWrite({ composer: composer, internalType: internalType });
                 if (!valid) {
-                    _errorCallback("This browser does not support rendering to HALF_FLOAT textures.");
+                    errorCallback("This browser does not support rendering to HALF_FLOAT textures.");
                 }
             }
         }
@@ -4883,6 +4822,85 @@ function getGPULayerInternalType(params) {
     return internalType;
 }
 exports.getGPULayerInternalType = getGPULayerInternalType;
+/**
+ * Recasts typed array to match GPULayer.internalType.
+ * Used internally.
+ */
+function validateGPULayerArray(array, layer) {
+    var numComponents = layer.numComponents, glNumChannels = layer.glNumChannels, internalType = layer.internalType, width = layer.width, height = layer.height, name = layer.name;
+    var length = layer.is1D() ? layer.length : null;
+    // Check that data is correct length (user error).
+    if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
+        if (!length || (length && array.length !== length * numComponents)) { // Of the correct length for 1D array.
+            throw new Error("Invalid data length: " + array.length + " for GPULayer \"" + name + "\" of " + (length ? "length " + length + " and " : '') + "dimensions: [" + width + ", " + height + "] and numComponents: " + numComponents + ".");
+        }
+    }
+    // Get array type to figure out if we need to type cast.
+    // For webgl1.0 we may need to cast an int type to a FLOAT or HALF_FLOAT.
+    var shouldTypeCast = false;
+    switch (array.constructor) {
+        case Array:
+            shouldTypeCast = true;
+            break;
+        case Float32Array:
+            shouldTypeCast = internalType !== constants_1.FLOAT;
+            break;
+        case Uint8Array:
+            shouldTypeCast = internalType !== constants_1.UNSIGNED_BYTE;
+            break;
+        case Int8Array:
+            shouldTypeCast = internalType !== constants_1.BYTE;
+            break;
+        case Uint16Array:
+            // User may have converted to HALF_FLOAT already.
+            // We need to add this check in case type is UNSIGNED_SHORT and internal type is HALF_FLOAT.
+            // (This can happen for some WebGL1 contexts.)
+            // if (type === HALF_FLOAT) {
+            // 	shouldTypeCast = internalType !== HALF_FLOAT;
+            // 	// In order to complete this, we will also need to handle converting from Uint16Array to some other type.
+            // 	// Are there cases where HALF_FLOAT is not supported?
+            // } else {
+            shouldTypeCast = internalType !== constants_1.UNSIGNED_SHORT;
+            // }
+            break;
+        case Int16Array:
+            shouldTypeCast = internalType !== constants_1.SHORT;
+            break;
+        case Uint32Array:
+            shouldTypeCast = internalType !== constants_1.UNSIGNED_INT;
+            break;
+        case Int32Array:
+            shouldTypeCast = internalType !== constants_1.INT;
+            break;
+        default:
+            throw new Error("Invalid array type: " + array.constructor.name + " for GPULayer \"" + name + "\", please use one of [" + constants_1.validArrayTypes.map(function (constructor) { return constructor.name; }).join(', ') + "].");
+    }
+    // Then check if array needs to be lengthened.
+    // This could be because glNumChannels !== numComponents or because length !== width * height.
+    var arrayLength = width * height * glNumChannels;
+    var shouldResize = array.length !== arrayLength;
+    var validatedArray = array;
+    if (shouldTypeCast || shouldResize) {
+        validatedArray = initArrayForType(internalType, arrayLength);
+        // Fill new data array with old data.
+        // We have to handle the case of Float16 specially by converting data to Uint16Array.
+        var view = (internalType === constants_1.HALF_FLOAT && shouldTypeCast) ? new DataView(validatedArray.buffer) : null;
+        for (var i = 0, _len = array.length / numComponents; i < _len; i++) {
+            for (var j = 0; j < numComponents; j++) {
+                var value = array[i * numComponents + j];
+                var index = i * glNumChannels + j;
+                if (view) {
+                    float16_1.setFloat16(view, 2 * index, value, true);
+                }
+                else {
+                    validatedArray[index] = value;
+                }
+            }
+        }
+    }
+    return validatedArray;
+}
+exports.validateGPULayerArray = validateGPULayerArray;
 
 
 /***/ }),
@@ -4961,7 +4979,7 @@ var GPUProgram = /** @class */ (function () {
      */
     GPUProgram.prototype.compile = function (defines) {
         var _a = this, composer = _a.composer, name = _a.name, fragmentShaderSource = _a.fragmentShaderSource;
-        var gl = composer.gl, _errorCallback = composer._errorCallback, verboseLogging = composer.verboseLogging, glslVersion = composer.glslVersion, floatPrecision = composer.floatPrecision, intPrecision = composer.intPrecision;
+        var gl = composer.gl, errorCallback = composer.errorCallback, verboseLogging = composer.verboseLogging, glslVersion = composer.glslVersion, floatPrecision = composer.floatPrecision, intPrecision = composer.intPrecision;
         // Update this.defines if needed.
         // Passed in defines param may only be a partial list.
         var definesNeedUpdate = false;
@@ -4981,9 +4999,9 @@ var GPUProgram = /** @class */ (function () {
         }
         if (verboseLogging)
             console.log("Compiling fragment shader for GPUProgram \"" + name + "\" with defines: " + JSON.stringify(this.defines));
-        var shader = utils_1.compileShader(gl, glslVersion, intPrecision, floatPrecision, fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, this.defines);
+        var shader = utils_1.compileShader(gl, glslVersion, intPrecision, floatPrecision, fragmentShaderSource, gl.FRAGMENT_SHADER, name, errorCallback, this.defines);
         if (!shader) {
-            _errorCallback("Unable to compile fragment shader for GPUProgram \"" + name + "\".");
+            errorCallback("Unable to compile fragment shader for GPUProgram \"" + name + "\".");
             return;
         }
         this.fragmentShader = shader;
@@ -4999,15 +5017,15 @@ var GPUProgram = /** @class */ (function () {
             return this.programs[name];
         // Otherwise, we need to compile a new program on the fly.
         var _a = this, composer = _a.composer, uniforms = _a.uniforms, fragmentShader = _a.fragmentShader;
-        var gl = composer.gl, _errorCallback = composer._errorCallback;
+        var gl = composer.gl, errorCallback = composer.errorCallback;
         var vertexShader = composer._getVertexShaderWithName(name, this.name);
         if (vertexShader === undefined) {
-            _errorCallback("Unable to init vertex shader \"" + name + "\" for GPUProgram \"" + this.name + "\".");
+            errorCallback("Unable to init vertex shader \"" + name + "\" for GPUProgram \"" + this.name + "\".");
             return;
         }
-        var program = utils_1.initGLProgram(gl, vertexShader, fragmentShader, this.name, _errorCallback);
+        var program = utils_1.initGLProgram(gl, vertexShader, fragmentShader, this.name, errorCallback);
         if (program === undefined) {
-            _errorCallback("Unable to init program \"" + name + "\" for GPUProgram \"" + this.name + "\".");
+            errorCallback("Unable to init program \"" + name + "\" for GPUProgram \"" + this.name + "\".");
             return;
         }
         // If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
@@ -5084,7 +5102,7 @@ var GPUProgram = /** @class */ (function () {
     GPUProgram.prototype.setProgramUniform = function (program, programName, name, value, type) {
         var _a;
         var _b = this, composer = _b.composer, uniforms = _b.uniforms;
-        var gl = composer.gl, _errorCallback = composer._errorCallback;
+        var gl = composer.gl, errorCallback = composer.errorCallback;
         // Set active program.
         gl.useProgram(program);
         var location = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.location[programName];
@@ -5092,7 +5110,7 @@ var GPUProgram = /** @class */ (function () {
         if (location === undefined) {
             var _location = gl.getUniformLocation(program, name);
             if (!_location) {
-                _errorCallback("Could not init uniform \"" + name + "\" for program \"" + this.name + "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
+                errorCallback("Could not init uniform \"" + name + "\" for program \"" + this.name + "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type " + type + ".\nError code: " + gl.getError() + ".");
                 return;
             }
             location = _location;
@@ -5628,7 +5646,7 @@ function getExtension(composer, extensionName, optional) {
     // Check if we've already loaded the extension.
     if (composer.extensions[extensionName] !== undefined)
         return composer.extensions[extensionName];
-    var gl = composer.gl, _errorCallback = composer._errorCallback;
+    var gl = composer.gl, errorCallback = composer.errorCallback;
     var extension;
     try {
         extension = gl.getExtension(extensionName);
@@ -5645,7 +5663,7 @@ function getExtension(composer, extensionName, optional) {
     }
     // If the extension is not optional, throw error.
     if (!extension && !optional) {
-        _errorCallback("Required extension unsupported by this device / browser: " + extensionName + ".");
+        errorCallback("Required extension unsupported by this device / browser: " + extensionName + ".");
     }
     return extension;
 }

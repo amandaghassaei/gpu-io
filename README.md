@@ -66,8 +66,8 @@ import THREE from 'three';
 import * as WebGLCompute from 'webgl-compute';
 
 const renderer = new THREE.WebGLRenderer();
-// Use renderer.autoClear = false if you want to overlay threejs stuff on top
-// of things rendered to the screen from webgl-compute.
+// Use renderer.autoClear = false if you want to overlay threejs stuff
+// on top of things rendered to the screen from webgl-compute.
 renderer.autoClear = false;
 
 const gl = renderer.getContext();
@@ -111,7 +111,8 @@ const mesh = new THREE.Mesh(
 	}),
 );
 
-// Updates to layer1 will propagate to mesh map without any additional needsUpdate flags.
+// Updates to layer1 will propagate to mesh map without any
+// additional needsUpdate flags.
 ```
 
 More info about using webgl-compute to update mesh positions data is coming soon.
@@ -173,9 +174,11 @@ const {
 	getFragmentShaderMediumpPrecision,
 } = WebGLCompute;
 
-// Prints 'highp' or 'mediump' depending on returned precision of mediump (16+bit or 32+bit).
+// Prints 'highp' or 'mediump' depending on returned precision of
+// mediump (16+bit or 32+bit).
 // On many devices (esp desktop) mediump defaults to 32bit.
-// See https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html for more info.
+// See https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+// for more info.
 console.log(getVertexShaderMediumpPrecision());
 console.log(getFragmentShaderMediumpPrecision());
 
@@ -199,7 +202,7 @@ I used a few codebases as reference when writing this, thanks to their authors f
 
 Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://twitter.com/amandaghassaei) if you end up using this, I'd love to see what you're making!  
 
-some specific things that I think could be improved:
+Some specific things that I think could be improved:
 
 - 
 - I'm sure there are some additional tricks that could be used to further speed up some of the underlying GLSL code and polyfills.

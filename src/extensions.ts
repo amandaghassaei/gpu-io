@@ -31,7 +31,7 @@ export function getExtension(
 	// Check if we've already loaded the extension.
 	if (composer.extensions[extensionName] !== undefined) return composer.extensions[extensionName];
 
-	const { gl, _errorCallback } = composer;
+	const { gl, errorCallback } = composer;
 	let extension;
 	try {
 		extension = gl.getExtension(extensionName);
@@ -46,7 +46,7 @@ export function getExtension(
 	}
 	// If the extension is not optional, throw error.
 	if (!extension && !optional) {
-		_errorCallback(`Required extension unsupported by this device / browser: ${extensionName}.`);
+		errorCallback(`Required extension unsupported by this device / browser: ${extensionName}.`);
 	}
 	return extension;
 }

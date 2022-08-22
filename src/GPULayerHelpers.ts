@@ -1,3 +1,4 @@
+import { setFloat16 } from '@petamoriken/float16';
 import {
 	isNumber,
 	isPositiveInteger,
@@ -19,6 +20,8 @@ import {
 	GLSL3,
 	GPULayerNumComponents,
 	GLSL1,
+	GPULayerArray,
+	validArrayTypes,
 } from './constants';
 import {
 	EXT_COLOR_BUFFER_FLOAT,
@@ -29,6 +32,7 @@ import {
 	OES_TEXTURE_HAlF_FLOAT_LINEAR,
 } from './extensions';
 import { GPUComposer } from './GPUComposer';
+import { GPULayer } from './GPULayer';
 import { isWebGL2 } from './utils';
 
 // Memoize results.
@@ -74,7 +78,7 @@ export function initArrayForType(
  * Also checks that size elements are valid.
  * Used internally.
  */
-// TODO: should we relax adherence to power of 2.
+// TODO: should we relax adherence to power of 2?
 export function calcGPULayerSize(
 	size: number | [number, number],
 	name: string,
@@ -600,7 +604,7 @@ export function getGPULayerInternalType(
 	},
 ) {
 	const { composer, writable, name } = params;
-	const { gl, _errorCallback } = composer;
+	const { gl, errorCallback } = composer;
 	const { type } = params;
 	let internalType = type;
 	// Check if int types are supported.
@@ -647,7 +651,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			if (writable) {
 				const valid = testFramebufferWrite({ composer, internalType: internalType });
 				if (!valid) {
-					_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
+					errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 				}
 			}
 		}
@@ -658,4 +662,87 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		getExtension(composer, EXT_COLOR_BUFFER_FLOAT);
 	}
 	return internalType;
+}
+
+/**
+ * Recasts typed array to match GPULayer.internalType.
+ * Used internally.
+ */
+export function validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer) {
+	const { numComponents, glNumChannels, internalType, width, height, name } = layer;
+	const length = layer.is1D() ? layer.length : null;
+
+	// Check that data is correct length (user error).
+	if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
+		if (!length || (length &&  array.length !== length * numComponents)) { // Of the correct length for 1D array.
+			throw new Error(`Invalid data length: ${array.length} for GPULayer "${name}" of ${length ? `length ${length} and ` : ''}dimensions: [${width}, ${height}] and numComponents: ${numComponents}.`);
+		}
+	}
+
+	// Get array type to figure out if we need to type cast.
+	// For webgl1.0 we may need to cast an int type to a FLOAT or HALF_FLOAT.
+	let shouldTypeCast = false;
+	switch(array.constructor) {
+		case Array:
+			shouldTypeCast = true;
+			break;
+		case Float32Array:
+			shouldTypeCast = internalType !== FLOAT;
+			break;
+		case Uint8Array:
+			shouldTypeCast = internalType !== UNSIGNED_BYTE;
+			break;
+		case Int8Array:
+			shouldTypeCast = internalType !== BYTE;
+			break;
+		case Uint16Array:
+			// User may have converted to HALF_FLOAT already.
+			// We need to add this check in case type is UNSIGNED_SHORT and internal type is HALF_FLOAT.
+			// (This can happen for some WebGL1 contexts.)
+			// if (type === HALF_FLOAT) {
+			// 	shouldTypeCast = internalType !== HALF_FLOAT;
+			// 	// In order to complete this, we will also need to handle converting from Uint16Array to some other type.
+			// 	// Are there cases where HALF_FLOAT is not supported?
+			// } else {
+				shouldTypeCast = internalType !== UNSIGNED_SHORT
+			// }
+			break;
+		case Int16Array:
+			shouldTypeCast = internalType !== SHORT;
+			break;
+		case Uint32Array:
+			shouldTypeCast = internalType !== UNSIGNED_INT;
+			break;
+		case Int32Array:
+			shouldTypeCast = internalType !== INT;
+			break;
+		default:
+			throw new Error(`Invalid array type: ${array.constructor.name} for GPULayer "${name}", please use one of [${validArrayTypes.map(constructor => constructor.name).join(', ')}].`);
+	}
+
+	// Then check if array needs to be lengthened.
+	// This could be because glNumChannels !== numComponents or because length !== width * height.
+	const arrayLength = width * height * glNumChannels;
+	const shouldResize = array.length !== arrayLength;
+		
+	let validatedArray = array as GPULayerArray;
+	if (shouldTypeCast || shouldResize) {
+		validatedArray = initArrayForType(internalType, arrayLength);
+		// Fill new data array with old data.
+		// We have to handle the case of Float16 specially by converting data to Uint16Array.
+		const view = (internalType === HALF_FLOAT && shouldTypeCast) ? new DataView(validatedArray.buffer) : null;
+		for (let i = 0, _len = array.length / numComponents; i < _len; i++) {
+			for (let j = 0; j < numComponents; j++) {
+				const value = array[i * numComponents + j];
+				const index = i * glNumChannels + j;
+				if (view) {
+					setFloat16(view, 2 * index, value, true);
+				} else {
+					validatedArray[index] = value;
+				}
+			}
+		}
+	}
+
+	return validatedArray;
 }

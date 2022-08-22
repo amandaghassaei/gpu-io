@@ -90,12 +90,12 @@ void main() {
 	uniforms: [
 		{
 			name: 'u_state',
-			value: 0, // We don't even really need to add this, bc all uniforms default to zero.
+			value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
 			type: INT,
 		},
 		{
 			name: 'u_pxSize',
-			value: [1/canvas.width, 1/canvas.height],
+			value: [1 / canvas.width, 1 / canvas.height],
 			type: FLOAT,
 		},
 		{
@@ -124,7 +124,7 @@ void main() {
 }`,
 	uniforms: {
 		name: 'u_state',
-		value: 0, // We don't even really need to add this, bc all uniforms default to zero.
+		value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
 		type: INT,
 	},
 });
@@ -215,10 +215,9 @@ function loop() {
 }
 loop();
 
-// Add p hotkey to print screen.
+// Add 'p' hotkey to print screen.
 window.addEventListener('keydown', (e) => {
 	if (e.key === 'p') {
-		// TODO: this isn't working for UNSIGNED_BYTE types?
 		state.savePNG({ filename: 'gol', multiplier: 255 });
 	}
 })
@@ -229,14 +228,17 @@ function onResize() {
 	const width = window.innerWidth;
 	const height = window.innerHeight;
 
-	composer.onResize(canvas);
+	// Resize composer.
+	composer.resize(width, height);
+
 	// Init new random state.
 	const array = new Uint8Array(width * height);
 	for (let i = 0; i < array.length; i++) {
 		array[i] = Math.random() < PARAMS.seedRatio ? 1 : 0;
 	}
 	state.resize([width, height], array);
-	// Update px size.
+
+	// Update px size uniform.
 	golRules.setUniform('u_pxSize', [1 / width, 1 / height]);
 }
 onResize();

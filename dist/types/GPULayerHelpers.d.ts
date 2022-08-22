@@ -1,5 +1,6 @@
-import { GPULayerFilter, GPULayerType, GPULayerWrap, GPULayerNumComponents } from './constants';
+import { GPULayerFilter, GPULayerType, GPULayerWrap, GPULayerNumComponents, GPULayerArray } from './constants';
 import { GPUComposer } from './GPUComposer';
+import { GPULayer } from './GPULayer';
 /**
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
  * Used internally.
@@ -82,3 +83,8 @@ export declare function getGPULayerInternalType(params: {
     writable: boolean;
     name: string;
 }): GPULayerType;
+/**
+ * Recasts typed array to match GPULayer.internalType.
+ * Used internally.
+ */
+export declare function validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
