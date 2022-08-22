@@ -54,7 +54,7 @@ const results = {
 
 /**
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
- * Used internally.
+ * @private
  */
 export function initArrayForType(
 	type: GPULayerType,
@@ -88,7 +88,7 @@ export function initArrayForType(
  * Calc 2D size [width, height] for GPU layer given a 1D or 2D size parameter.
  * If 1D size supplied, nearest power of 2 width/height is generated.
  * Also checks that size elements are valid.
- * Used internally.
+ * @private
  */
 // TODO: should we relax adherence to power of 2?
 export function calcGPULayerSize(
@@ -128,7 +128,7 @@ export function calcGPULayerSize(
 
 /**
  * Get the GL wrap type to use internally in GPULayer, based on browser support.
- * Used internally.
+ * @private
  */
 export function getGPULayerInternalWrap(
 	params: {
@@ -165,7 +165,7 @@ export function getGPULayerInternalWrap(
 
 /**
  * Get the GL filter type to use internally in GPULayer, based on browser support.
- * Used internally.
+ * @private
  */
 export function getGPULayerInternalFilter(
 	params: {
@@ -204,7 +204,7 @@ export function getGPULayerInternalFilter(
 
 /**
  * Returns whether to cast int type as floats, as needed by browser.
- * Used internally.
+ * @private
  */
 export function shouldCastIntTypeAsFloat(
 	params: {
@@ -226,7 +226,7 @@ export function shouldCastIntTypeAsFloat(
 
 /**
  * Returns GLTexture parameters for GPULayer, based on browser support.
- * Used internally.
+ * @private
  */
 export function getGLTextureParameters(
 	params: {
@@ -533,11 +533,10 @@ export function getGLTextureParameters(
 }
 
 /**
- * 
- * @param params 
- * @returns 
+ * Rigorous method for testing FLOAT and HALF_FLOAT texture support by attaching texture to framebuffer.
+ * @private
  */
-export function testFramebufferWrite(
+export function testFramebufferAttachment(
 	params: {
 		composer: GPUComposer,
 		internalType: GPULayerType,
@@ -546,6 +545,7 @@ export function testFramebufferWrite(
 	const { composer, internalType } = params;
 	const { gl, glslVersion } = composer;
 
+	// Memoize results for a given set of inputs.
 	const key = `${isWebGL2(gl),internalType,glslVersion}`;
 	if (results.framebufferWriteSupport[key] !== undefined) {
 		return results.framebufferWriteSupport[key];
@@ -605,7 +605,8 @@ export function testFramebufferWrite(
 
 /**
  * Get the GL type to use internally in GPULayer, based on browser support.
- * Used internally, only exported for testing purposes.
+ * @private
+ * Exported here for testing purposes.
  */
 export function getGPULayerInternalType(
 	params: {
@@ -649,7 +650,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			// To check if this is supported, you have to call the WebGL
 			// checkFramebufferStatus() function.
 			if (writable) {
-				const valid = testFramebufferWrite({ composer, internalType: internalType });
+				const valid = testFramebufferAttachment({ composer, internalType: internalType });
 				if (!valid && internalType !== HALF_FLOAT) {
 					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
@@ -661,7 +662,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
-				const valid = testFramebufferWrite({ composer, internalType: internalType });
+				const valid = testFramebufferAttachment({ composer, internalType: internalType });
 				if (!valid) {
 					errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 				}
@@ -678,7 +679,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 
 /**
  * Recasts typed array to match GPULayer.internalType.
- * Used internally.
+ * @private
  */
 export function validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer) {
 	const { numComponents, glNumChannels, internalType, width, height, name } = layer;

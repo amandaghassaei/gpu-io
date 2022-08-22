@@ -54,7 +54,7 @@ const results = {
 /**
  * Enum for precision values.
  * See src/glsl/common/precision.glsl for more info.
- * Used internally.
+ * @private
  */
 function intForPrecision(precision: GLSLPrecision) {
 	if (precision === PRECISION_HIGH_P) return 2;
@@ -65,7 +65,7 @@ function intForPrecision(precision: GLSLPrecision) {
 
 /**
  * Create a string to pass defines into shader.
- * Used internally.
+ * @private
  */
 function convertDefinesToString(defines: CompileTimeVars) {
 	let definesSource = '';
@@ -84,7 +84,7 @@ function convertDefinesToString(defines: CompileTimeVars) {
 /**
  * Create header string for fragment and vertex shaders.
  * Export this for testing purposes.
- * Used internally.
+ * @private
  */
 export function makeShaderHeader(
 	glslVersion: GLSLVersion,
@@ -105,7 +105,7 @@ export function makeShaderHeader(
  * Compile vertex or fragment shaders.
  * Fragment shaders may be compiled on the fly, so keep this efficient.
  * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
- * Used internally.
+ * @private
  */
 export function compileShader(
 	gl: WebGLRenderingContext | WebGL2RenderingContext,
@@ -151,7 +151,7 @@ shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 /**
  * Init a WebGL program from vertex and fragment shaders.
  * GLPrograms may be inited on the fly, so keep this efficient.
- * Used internally.
+ * @private
  */
 export function initGLProgram(
 	gl: WebGLRenderingContext | WebGL2RenderingContext,
@@ -183,8 +183,8 @@ export function initGLProgram(
 /**
  * Returns whether a WebGL context is WebGL1 or WebGL2.
  * This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/renderers/webgl/WebGLCapabilities.js
- * @param gl - WebGLRenderingContext or WebGL2RenderingContext to test.
- * @returns boolean
+ * @param {WebGLRenderingContext|WebGL2RenderingContext} gl - WebGL context to test.
+ * @returns {boolean}
  */
 export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 	// @ts-ignore
@@ -193,8 +193,8 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 
 /**
  * Returns whether WebGL2 is supported by the current browser.
- * @returns boolean
- */
+ * @returns {boolean}
+*/
 export function isWebGL2Supported() {
 	if (results.supportsWebGL2 === undefined) {
 		const gl = document.createElement('canvas').getContext(WEBGL2);
@@ -207,7 +207,7 @@ export function isWebGL2Supported() {
 
 /**
  * Checks if the framebuffer is ready to read.
- * Used internally.
+ * @private
  */
 export function readyToRead(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 	return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
@@ -220,7 +220,7 @@ export function readyToRead(gl: WebGLRenderingContext | WebGL2RenderingContext) 
  * and it returns the precision info.
  * Unfortunately Safari has a bug here which means checking this way will fail on iPhone, at least as of April 2020.
  * https://webglfundamentals.org/webgl/webgl-precision-lowp-mediump-highp.html
- * Used internally.
+ * @private
  */
 function isHighpSupported(vsSource: string, fsSource: string) {
 	const gl = document.createElement('canvas').getContext(WEBGL1);
@@ -262,7 +262,7 @@ function isHighpSupported(vsSource: string, fsSource: string) {
 
 /**
  * Detects whether highp precision is supported in vertex shaders in the current browser.
- * @returns boolean
+ * @returns {boolean}
  */
 export function isHighpSupportedInVertexShader() {
 	if (results.supportsHighpVertex === undefined) {
@@ -277,7 +277,7 @@ export function isHighpSupportedInVertexShader() {
 
 /**
  * Detects whether highp precision is supported in fragment shaders in the current browser.
- * @returns boolean
+ * @returns {boolean}
  */
 export function isHighpSupportedInFragmentShader() {
 	if (results.supportsHighpFragment === undefined) {
@@ -293,7 +293,7 @@ export function isHighpSupportedInFragmentShader() {
 /**
  * Helper function to perform a 1px math calculation in order to determine WebGL capabilities.
  * From https://webglfundamentals.org/
- * Used internally.
+ * @private
  */
 function test1PxCalc(
 	name: string,
@@ -352,7 +352,7 @@ function test1PxCalc(
 /**
  * Returns the actual precision of mediump inside vertex shader.
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
- * @returns 'highp' or 'mediump'
+ * @returns {'highp'|'mediump'} - Vertex shader supported mediump precision.
  */
 export function getVertexShaderMediumpPrecision() {
 	if (results.mediumpVertexPrecision === undefined) {
@@ -420,7 +420,7 @@ export function getVertexShaderMediumpPrecision() {
 /**
  * Returns the actual precision of mediump inside fragment shader.
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
- * @returns 'highp' or 'mediump'
+ * @returns {'highp'|'mediump'} - Fragment shader supported mediump precision.
  */
 export function getFragmentShaderMediumpPrecision() {
 	if (results.mediumpFragmentPrecision === undefined) {
@@ -483,7 +483,7 @@ export function getFragmentShaderMediumpPrecision() {
 
 /**
  * Returns whether a number is a power of 2.
- * Used internally.
+ * @private
  */
 export function isPowerOf2(value: number) {
 	// Use bitwise operation to evaluate this.
@@ -492,7 +492,7 @@ export function isPowerOf2(value: number) {
 
 /**
  * Returns a Float32 array with sequential values [0, 1, 2, 3...].
- * Used internally.
+ * @private
  */
 export function initSequentialFloatArray(length: number) {
 	const array = new Float32Array(length);
@@ -505,7 +505,7 @@ export function initSequentialFloatArray(length: number) {
 /**
  * Strip out any unnecessary elements in shader source, e.g. #version and precision declarations.
  * This is called once on initialization, so doesn't need to be extremely efficient.
- * Used internally.
+ * @private
  */
 function preprocessShader(shaderSource: string) {
 	// Strip out any version numbers.
@@ -527,7 +527,7 @@ function preprocessShader(shaderSource: string) {
 /**
  * Common code for converting vertex/fragment shader source to GLSL1.
  * This is called once on initialization, so doesn't need to be extremely efficient.
- * Used internally.
+ * @private
  */
 function convertShaderToGLSL1(shaderSource: string) {
 	// TODO: there are probably more to add here.
@@ -545,7 +545,7 @@ function convertShaderToGLSL1(shaderSource: string) {
 /**
  * Convert vertex shader source to GLSL1.
  * This is called once on initialization, so doesn't need to be extremely efficient.
- * Used internally.
+ * @private
  */
 function convertVertexShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
@@ -559,7 +559,7 @@ function convertVertexShaderToGLSL1(shaderSource: string) {
 /**
  * Convert fragment shader source to GLSL1.
  * This is called once on initialization, so doesn't need to be extremely efficient.
- * Used internally.
+ * @private
  */
 function convertFragmentShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
@@ -574,7 +574,7 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 /**
  * Preprocess vertex shader for glslVersion and browser capabilities.
  * This is called once on initialization, so doesn't need to be extremely efficient.
- * Used internally.
+ * @private
  */
 export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion) {
 	shaderSource = preprocessShader(shaderSource);
@@ -593,7 +593,7 @@ export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVe
 /**
  * Preprocess fragment shader for glslVersion and browser capabilities.
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
- * Used internally.
+ * @private
  */
 export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion) {
 	shaderSource = preprocessShader(shaderSource);
@@ -611,7 +611,7 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 
 /**
  * Check uniforms and return internal WebGL type (e.g. [1234][u]?[if])
- * Used internally.
+ * @private
  */
 export function uniformInternalTypeForValue(
 	value: UniformValue,

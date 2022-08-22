@@ -1,6 +1,7 @@
 /**
  * These are the parts of threejs Vector4 that we need.
  * Used internally.
+ * @private
  */
 export class Vector4 {
 	x: number;

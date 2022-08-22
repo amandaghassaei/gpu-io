@@ -17,7 +17,7 @@ import {
 
 /**
  * Checks if type is valid GPULayer data type.
- * Used internally.
+ * @private
  */
 export function isValidDataType(type: string) {
 	return validDataTypes.indexOf(type) > -1;
@@ -25,7 +25,7 @@ export function isValidDataType(type: string) {
 
 /**
  * Checks if filter is valid GPULayer filter type.
- * Used internally.
+ * @private
  */
 export function isValidFilter(type: string) {
 	return validFilters.indexOf(type) > -1;
@@ -33,7 +33,7 @@ export function isValidFilter(type: string) {
 
 /**
  * Checks if wrap is valid GPULayer wrap type.
- * Used internally.
+ * @private
  */
 export function isValidWrap(type: string) {
 	return validWraps.indexOf(type) > -1;
@@ -51,7 +51,7 @@ export function isValidTextureType(type: string) {
 
 /**
  * Checks if value is valid GPULayer clear value for numComponents and type.
- * Used internally.
+ * @private
  */
 export function isValidClearValue(clearValue: number | number[], numComponents: number, type: GPULayerType) {
 	if (isArray(clearValue)) {
@@ -75,7 +75,7 @@ export function isValidClearValue(clearValue: number | number[], numComponents: 
 /**
  * Checks if value is valid number for a given GPULayer type.
  * Checks extrema values.
- * Used internally.
+ * @private
  */
 export function isNumberOfType(value: any, type: GPULayerType) {
 	switch (type) {
@@ -119,7 +119,7 @@ export function isNumberOfType(value: any, type: GPULayerType) {
 
 /**
  * Checks if value is finite number.
- * Used internally.
+ * @private
  */
 export function isNumber(value: any) {
 	return !Number.isNaN(value) && typeof value === 'number' && Number.isFinite(value);
@@ -127,7 +127,7 @@ export function isNumber(value: any) {
 
 /**
  * Checks if value is finite integer.
- * Used internally.
+ * @private
  */
 export function isInteger(value: any) {
 	return isNumber(value) && (value % 1 === 0);
@@ -135,7 +135,7 @@ export function isInteger(value: any) {
 
 /**
  * Checks if value is finite positive integer (> 0).
- * Used internally.
+ * @private
  */
 export function isPositiveInteger(value: any) {
 	return isInteger(value) && value > 0;
@@ -143,7 +143,7 @@ export function isPositiveInteger(value: any) {
 
 /**
  * Checks if value is finite non-negative integer (>= 0).
- * Used internally.
+ * @private
  */
 export function isNonNegativeInteger(value: any) {
 	return isInteger(value) &&  value >= 0;
@@ -151,7 +151,7 @@ export function isNonNegativeInteger(value: any) {
 
 /**
  * Checks if value is string.
- * Used internally.
+ * @private
  */
 export function isString(value: any){
 	return typeof value === 'string';
@@ -159,15 +159,15 @@ export function isString(value: any){
 
 /**
  * Checks if value is array.
- * Used internally.
+ * @private
  */
 export function isArray(value: any) {
 	return Array.isArray(value);
 }
 
 /**
- * Checks if value is JS object {}.
- * Used internally.
+ * Checks if value is Javascript object.
+ * @private
  */
 export function isObject(value: any) {
 	return typeof value === 'object' && !isArray(value) && value !== null;
@@ -175,7 +175,7 @@ export function isObject(value: any) {
 
 /**
  * Checks if value is boolean.
- * Used internally.
+ * @private
  */
 export function isBoolean(value: any) {
 	return typeof value === 'boolean';

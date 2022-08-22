@@ -1,0 +1,7 @@
+{
+    "entryPoints": ["./src/index.ts"],
+    "tsconfig": "./tsconfig.json",
+	"cleanOutputDir": false,
+	"plugin": "typedoc-plugin-markdown",
+    "out": "./docs"
+}

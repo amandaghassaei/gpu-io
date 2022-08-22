@@ -38,7 +38,7 @@
 		getGPULayerInternalFilter,
 		shouldCastIntTypeAsFloat,
 		getGLTextureParameters,
-		testFramebufferWrite,
+		testFramebufferAttachment,
 		getGPULayerInternalType,
 		validateGPULayerArray,
 		initArrayForType,
@@ -182,12 +182,12 @@
 				'Unsupported glNumChannels: 5 for GPULayer "test".');
 			});
 		});
-		describe('testFramebufferWrite', () => {
+		describe('testFramebufferAttachment', () => {
 			it('should succeed for all combinations', () => {
 				[composer1, composer2, composer3].forEach(composer => {
 					[FLOAT, HALF_FLOAT].forEach(type => {
 						console.log(`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`)
-						assert.equal(testFramebufferWrite({
+						assert.equal(testFramebufferAttachment({
 							composer: composer,
 							internalType: getGPULayerInternalType({
 								composer: composer,

@@ -40,7 +40,7 @@ declare const _testing: {
         glType: number;
         glNumChannels: number;
     };
-    testFramebufferWrite(params: {
+    testFramebufferAttachment(params: {
         composer: GPUComposer;
         internalType: import("./constants").GPULayerType;
     }): boolean;
@@ -50,7 +50,7 @@ declare const _testing: {
         writable: boolean;
         name: string;
     }): import("./constants").GPULayerType;
-    validateGPULayerArray(array: Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array | number[], layer: GPULayer): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
+    validateGPULayerArray(array: number[] | import("./constants").GPULayerArray, layer: GPULayer): import("./constants").GPULayerArray;
     isValidDataType(type: string): boolean;
     isValidFilter(type: string): boolean;
     isValidWrap(type: string): boolean;

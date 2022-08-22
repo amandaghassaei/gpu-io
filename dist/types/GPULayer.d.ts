@@ -42,15 +42,15 @@ export declare class GPULayer {
         numBuffers?: number;
         clearValue?: number | number[];
     });
-    get bufferIndex(): number;
+    _usingTextureOverrideForCurrentBuffer(): WebGLTexture | undefined;
     private initBuffers;
+    get bufferIndex(): number;
+    incrementBufferIndex(): void;
     getStateAtIndex(index: number): WebGLTexture;
     get currentState(): WebGLTexture;
     get lastState(): WebGLTexture;
-    _usingTextureOverrideForCurrentBuffer(): WebGLTexture | undefined;
-    incrementBufferIndex(): void;
-    _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
     _bindOutputBuffer(): void;
+    _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
     resize(dimensions: number | [number, number], array?: GPULayerArray | number[]): void;
     get clearValue(): number | number[];
@@ -60,15 +60,35 @@ export declare class GPULayer {
     get height(): number;
     get length(): number;
     is1D(): boolean;
-    getValues(): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
+    getValues(): GPULayerArray;
+    /**
+     * Save the current state of this GPULayer to png.
+     * @param {Object} params
+     */
     savePNG(params: {
         filename: string;
         dpi?: number;
         multiplier?: number;
         callback: (data: string | Blob, filename?: string) => void;
     }): void;
+    /**
+     * Attach the output buffer of this GPULayer to a Threejs Texture object.
+     * @param {Texture} texture - Threejs texture object.
+     */
     attachToThreeTexture(texture: Texture): void;
+    /**
+     * Delete this GPULayer's framebuffers and textures.
+     * @private
+     */
     private destroyBuffers;
+    /**
+     * Deallocate GPULayer instance and associated WebGL properties.
+     */
     dispose(): void;
+    /**
+     * Create a deep copy of GPULayer with current state copied over.
+     * @param {string} [name] - Name of new GPULayer as string.
+     * @returns {GPULayer} - Deep copy.
+     */
     clone(name?: string): GPULayer;
 }

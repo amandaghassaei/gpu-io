@@ -3,14 +3,14 @@ import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 /**
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
- * Used internally.
+ * @private
  */
 export declare function initArrayForType(type: GPULayerType, length: number, halfFloatsAsFloats?: boolean): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
 /**
  * Calc 2D size [width, height] for GPU layer given a 1D or 2D size parameter.
  * If 1D size supplied, nearest power of 2 width/height is generated.
  * Also checks that size elements are valid.
- * Used internally.
+ * @private
  */
 export declare function calcGPULayerSize(size: number | [number, number], name: string, verboseLogging: boolean): {
     width: number;
@@ -23,7 +23,7 @@ export declare function calcGPULayerSize(size: number | [number, number], name: 
 };
 /**
  * Get the GL wrap type to use internally in GPULayer, based on browser support.
- * Used internally.
+ * @private
  */
 export declare function getGPULayerInternalWrap(params: {
     composer: GPUComposer;
@@ -32,7 +32,7 @@ export declare function getGPULayerInternalWrap(params: {
 }): GPULayerWrap;
 /**
  * Get the GL filter type to use internally in GPULayer, based on browser support.
- * Used internally.
+ * @private
  */
 export declare function getGPULayerInternalFilter(params: {
     composer: GPUComposer;
@@ -42,7 +42,7 @@ export declare function getGPULayerInternalFilter(params: {
 }): GPULayerFilter;
 /**
  * Returns whether to cast int type as floats, as needed by browser.
- * Used internally.
+ * @private
  */
 export declare function shouldCastIntTypeAsFloat(params: {
     composer: GPUComposer;
@@ -50,7 +50,7 @@ export declare function shouldCastIntTypeAsFloat(params: {
 }): boolean;
 /**
  * Returns GLTexture parameters for GPULayer, based on browser support.
- * Used internally.
+ * @private
  */
 export declare function getGLTextureParameters(params: {
     composer: GPUComposer;
@@ -65,17 +65,17 @@ export declare function getGLTextureParameters(params: {
     glNumChannels: number;
 };
 /**
- *
- * @param params
- * @returns
+ * Rigorous method for testing FLOAT and HALF_FLOAT texture support by attaching texture to framebuffer.
+ * @private
  */
-export declare function testFramebufferWrite(params: {
+export declare function testFramebufferAttachment(params: {
     composer: GPUComposer;
     internalType: GPULayerType;
 }): boolean;
 /**
  * Get the GL type to use internally in GPULayer, based on browser support.
- * Used internally, only exported for testing purposes.
+ * @private
+ * Exported here for testing purposes.
  */
 export declare function getGPULayerInternalType(params: {
     composer: GPUComposer;
@@ -85,6 +85,6 @@ export declare function getGPULayerInternalType(params: {
 }): GPULayerType;
 /**
  * Recasts typed array to match GPULayer.internalType.
- * Used internally.
+ * @private
  */
-export declare function validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
+export declare function validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer): GPULayerArray;

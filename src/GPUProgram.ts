@@ -138,6 +138,7 @@ export class GPUProgram {
 	/**
 	 * Compile fragment shader for GPUProgram.
 	 * Used internally, called only one.
+	 * @private
 	 */
 	private compile(defines?: CompileTimeVars) {
 		const { composer, name, fragmentShaderSource } = this;
@@ -192,7 +193,7 @@ export class GPUProgram {
 
 	/**
 	 * Get GLProgram associated with a specific vertex shader.
-	 * Used internally.
+	 * @private
 	 */
 	private getProgramWithName(name: PROGRAM_NAME_INTERNAL) {
 		// Check if we've already compiled program.
@@ -226,34 +227,58 @@ export class GPUProgram {
 		this.programs[name] = program;
 		return program;
 	}
+	/**
+	 * @private
+	 */
 	get _defaultProgram() {
 		return this.getProgramWithName(DEFAULT_PROGRAM_NAME);
 	}
+	/**
+	 * @private
+	 */
 	get _defaultProgramWithUV() {
 		return this.getProgramWithName(DEFAULT_W_UV_PROGRAM_NAME);
 	}
+	/**
+	 * @private
+	 */
 	get _defaultProgramWithNormal() {
 		return this.getProgramWithName(DEFAULT_W_NORMAL_PROGRAM_NAME);
 	}
+	/**
+	 * @private
+	 */
 	get _defaultProgramWithUVNormal() {
 		return this.getProgramWithName(DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
 	}
+	/**
+	 * @private
+	 */
 	get _segmentProgram() {
 		return this.getProgramWithName(SEGMENT_PROGRAM_NAME);
 	}
+	/**
+	 * @private
+	 */
 	get _layerPointsProgram() {
 		return this.getProgramWithName(LAYER_POINTS_PROGRAM_NAME);
 	}
+	/**
+	 * @private
+	 */
 	get _layerVectorFieldProgram() {
 		return this.getProgramWithName(LAYER_VECTOR_FIELD_PROGRAM_NAME);
 	}
+	/**
+	 * @private
+	 */
 	get _layerLinesProgram() {
 		return this.getProgramWithName(LAYER_LINES_PROGRAM_NAME);
 	}
 
 	/**
 	 * Set uniform for GLProgram.
-	 * Used internally.
+	 * @private
 	 */
 	private setProgramUniform(
 		program: WebGLProgram,
@@ -336,10 +361,9 @@ Error code: ${gl.getError()}.`);
 
 	/**
 	 * Set fragment shader uniform for GPUProgram.
-	 * @param name - Uniform name as string.
-	 * @param value - Uniform value as boolean, number, or number[].
-	 * @param type - (optional) Uniform type: INT, UINT, FLOAT, BOOL.
-	 * @returns 
+	 * @param {string} name - Uniform name as it appears in fragment shader.
+	 * @param {boolean|number|number[]} value - Uniform value.
+	 * @param {BOOL|INT|UINT|FLOAT} [type] - Uniform type.
 	 */
 	setUniform(
 		name: string,
@@ -409,7 +433,7 @@ Error code: ${gl.getError()}.`);
 
 	/**
 	 * Set vertex shader uniform for GPUProgram.
-	 * Used internally.
+	 * @private
 	 */
 	_setVertexUniform(
 		program: WebGLProgram,

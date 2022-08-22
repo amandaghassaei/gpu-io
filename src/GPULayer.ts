@@ -245,8 +245,9 @@ export class GPULayer {
 		this.initBuffers(params.array);
 	}
 
-	get bufferIndex() {
-		return this._bufferIndex;
+	// This is used internally.
+	_usingTextureOverrideForCurrentBuffer() {
+		return this.textureOverrides && this.textureOverrides[this.bufferIndex];
 	}
 
 	// saveCurrentStateToGPULayer(layer: GPULayer) {
@@ -379,6 +380,15 @@ export class GPULayer {
 		gl.bindTexture(gl.TEXTURE_2D, null);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
+	
+	get bufferIndex() {
+		return this._bufferIndex;
+	}
+
+	incrementBufferIndex() {
+		// Increment bufferIndex.
+		this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+	}
 
 	getStateAtIndex(index: number) {
 		if (index < 0 || index >= this.numBuffers) {
@@ -400,13 +410,13 @@ export class GPULayer {
 	}
 
 	// This is used internally.
-	_usingTextureOverrideForCurrentBuffer() {
-		return this.textureOverrides && this.textureOverrides[this.bufferIndex];
-	}
-
-	incrementBufferIndex() {
-		// Increment bufferIndex.
-		this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+	_bindOutputBuffer() {
+		const { gl } = this.composer;
+		const { framebuffer } = this.buffers[this.bufferIndex];
+		if (!framebuffer) {
+			throw new Error(`GPULayer "${this.name}" is not writable.`);
+		}
+		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
 
 	// This is used internally.
@@ -422,16 +432,6 @@ export class GPULayer {
 		if (this.textureOverrides) {
 			this.textureOverrides[this.bufferIndex] = undefined;
 		}
-	}
-
-	// This is used internally.
-	_bindOutputBuffer() {
-		const { gl } = this.composer;
-		const { framebuffer } = this.buffers[this.bufferIndex];
-		if (!framebuffer) {
-			throw new Error(`GPULayer "${this.name}" is not writable.`);
-		}
-		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
 
 	setFromArray(array: GPULayerArray | number[], applyToAllBuffers = false) {
@@ -685,6 +685,10 @@ export class GPULayer {
 		}
 	}
 
+	/**
+	 * Save the current state of this GPULayer to png.
+	 * @param {Object} params 
+	 */
 	savePNG(params: {
 		filename: string,
 		dpi?: number,
@@ -741,6 +745,10 @@ export class GPULayer {
 		}, 'image/png');
 	}
 
+	/**
+	 * Attach the output buffer of this GPULayer to a Threejs Texture object.
+	 * @param {Texture} texture - Threejs texture object.
+	 */
 	attachToThreeTexture(texture: Texture) {
 		const { composer, numBuffers, currentState, name } = this;
 		const { renderer } = composer;
@@ -757,6 +765,10 @@ export class GPULayer {
 		offsetTextureProperties.__webglInit = true;
 	}
 
+	/**
+	 * Delete this GPULayer's framebuffers and textures.
+	 * @private
+	 */
 	private destroyBuffers() {
 		const { composer, buffers } = this;
 		const { gl } = composer;
@@ -777,6 +789,9 @@ export class GPULayer {
 		delete this.textureOverrides;
 	}
 
+	/**
+	 * Deallocate GPULayer instance and associated WebGL properties.
+	 */
 	dispose() {
 		const { name, composer } = this;
 		const { gl, verboseLogging } = composer;
@@ -790,6 +805,11 @@ export class GPULayer {
 		delete this.composer;
 	}
 
+	/**
+	 * Create a deep copy of GPULayer with current state copied over.
+	 * @param {string} [name] - Name of new GPULayer as string.
+	 * @returns {GPULayer} - Deep copy.
+	 */
 	clone(name?: string) {
 		// Make a deep copy.
 		return this.composer._cloneGPULayer(this, name);

@@ -26,37 +26,61 @@ export declare class GPUProgram {
     /**
      * Compile fragment shader for GPUProgram.
      * Used internally, called only one.
+     * @private
      */
     private compile;
     /**
      * Get GLProgram associated with a specific vertex shader.
-     * Used internally.
+     * @private
      */
     private getProgramWithName;
+    /**
+     * @private
+     */
     get _defaultProgram(): WebGLProgram | undefined;
+    /**
+     * @private
+     */
     get _defaultProgramWithUV(): WebGLProgram | undefined;
+    /**
+     * @private
+     */
     get _defaultProgramWithNormal(): WebGLProgram | undefined;
+    /**
+     * @private
+     */
     get _defaultProgramWithUVNormal(): WebGLProgram | undefined;
+    /**
+     * @private
+     */
     get _segmentProgram(): WebGLProgram | undefined;
+    /**
+     * @private
+     */
     get _layerPointsProgram(): WebGLProgram | undefined;
+    /**
+     * @private
+     */
     get _layerVectorFieldProgram(): WebGLProgram | undefined;
+    /**
+     * @private
+     */
     get _layerLinesProgram(): WebGLProgram | undefined;
     /**
      * Set uniform for GLProgram.
-     * Used internally.
+     * @private
      */
     private setProgramUniform;
     /**
      * Set fragment shader uniform for GPUProgram.
-     * @param name - Uniform name as string.
-     * @param value - Uniform value as boolean, number, or number[].
-     * @param type - (optional) Uniform type: INT, UINT, FLOAT, BOOL.
-     * @returns
+     * @param {string} name - Uniform name as it appears in fragment shader.
+     * @param {boolean|number|number[]} value - Uniform value.
+     * @param {BOOL|INT|UINT|FLOAT} [type] - Uniform type.
      */
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
     /**
      * Set vertex shader uniform for GPUProgram.
-     * Used internally.
+     * @private
      */
     _setVertexUniform(program: WebGLProgram, uniformName: string, value: UniformValue, type: UniformType): void;
     /**
