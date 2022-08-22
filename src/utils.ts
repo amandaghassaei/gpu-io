@@ -670,7 +670,7 @@ export function uniformInternalTypeForValue(
 		if ((value as number[]).length === 4) {
 			return INT_4D_UNIFORM;
 		}
-		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in  program "${programName}", expected int or int[] of length 1-4.`);
+		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected int or int[] of length 1-4.`);
 	} else if (type === UINT) {
 		// Check that we are dealing with a uint.
 		if (isArray(value)) {
@@ -706,6 +706,6 @@ export function uniformInternalTypeForValue(
 		}
 		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected boolean.`);
 	} else {
-		throw new Error(`Invalid uniform type "${type}" for uniform "${uniformName}" in program "${programName}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
+		throw new Error(`Invalid type "${type}" for uniform "${uniformName}" in program "${programName}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
 	}
 }
