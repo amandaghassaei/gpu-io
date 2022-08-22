@@ -30,9 +30,9 @@ import {
 	DEFAULT_W_NORMAL_PROGRAM_NAME,
 	DEFAULT_W_UV_NORMAL_PROGRAM_NAME,
 	SEGMENT_PROGRAM_NAME,
-	DATA_LAYER_POINTS_PROGRAM_NAME,
-	DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME,
-	DATA_LAYER_LINES_PROGRAM_NAME,
+	LAYER_POINTS_PROGRAM_NAME,
+	LAYER_VECTOR_FIELD_PROGRAM_NAME,
+	LAYER_LINES_PROGRAM_NAME,
 	ErrorCallback,
 	DEFAULT_CIRCLE_NUM_SEGMENTS,
 	validFilters,
@@ -57,6 +57,8 @@ import {
 	isWebGL2,
 	isPowerOf2,
 	initSequentialFloatArray,
+	preprocessVertexShader,
+	compileShader,
 } from './utils';
 import {
 	isArray,
@@ -96,6 +98,9 @@ export class GPUComposer {
 	private vectorFieldIndexArray?: Float32Array;
 	private vectorFieldIndexBuffer?: WebGLBuffer;
 	private indexedLinesIndexBuffer?: WebGLBuffer;
+
+	// Keep track of all GL extensions that have been loaded.
+	readonly extensions: { [key: string]: any } = {};
 
 	// Programs for copying data (these are needed for rendering partial screen geometries).
 	private readonly copyPrograms: {
@@ -157,14 +162,14 @@ export class GPUComposer {
 		[SEGMENT_PROGRAM_NAME]: {
 			src: require('./glsl/vert/SegmentVertShader.glsl'),
 		},
-		[DATA_LAYER_POINTS_PROGRAM_NAME]: {
-			src: require('./glsl/vert/GPULayerPointsVertShader.glsl'),
+		[LAYER_POINTS_PROGRAM_NAME]: {
+			src: require('./glsl/vert/LayerPointsVertShader.glsl'),
 		},
-		[DATA_LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
-			src: require('./glsl/vert/GPULayerVectorFieldVertShader.glsl'),
+		[LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
+			src: require('./glsl/vert/LayerVectorFieldVertShader.glsl'),
 		},
-		[DATA_LAYER_LINES_PROGRAM_NAME]: {
-			src: require('./glsl/vert/GPULayerLinesVertShader.glsl'),
+		[LAYER_LINES_PROGRAM_NAME]: {
+			src: require('./glsl/vert/LayerLinesVertShader.glsl'),
 		},
 	};
 
@@ -600,6 +605,43 @@ export class GPUComposer {
 		image.src = url;
 
 		return texture;
+	}
+
+	_getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string) {
+		const {
+			_errorCallback,
+			_vertexShaders,
+			gl,
+			glslVersion,
+			intPrecision,
+			floatPrecision,
+		} = this;
+		const vertexShader = _vertexShaders[name];
+		if (vertexShader.shader === undefined) {
+			// Init a vertex shader (this only happens once for each possible vertex shader across all GPUPrograms).
+			if (vertexShader.src === '') {
+				throw new Error(`Error compiling GPUProgram "${programName}": no source for vertex shader with name "${name}".`);
+			}
+			const preprocessedSrc = preprocessVertexShader(vertexShader.src, glslVersion);
+			const shader = compileShader(
+				gl,
+				glslVersion,
+				intPrecision,
+				floatPrecision,
+				preprocessedSrc,
+				gl.VERTEX_SHADER,
+				programName,
+				_errorCallback,
+				vertexShader.defines,
+			);
+			if (!shader) {
+				_errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${programName}".`);
+				return;
+			}
+			// Save the results so this does not have to be repeated.
+			vertexShader.shader = shader;
+		}
+		return vertexShader.shader;
 	}
 
 	onResize(canvas: HTMLCanvasElement) {
@@ -1374,7 +1416,7 @@ export class GPUComposer {
 			const color = params.color || [1, 0, 0]; // Default of red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._GPULayerPointsProgram!;
+		const glProgram = program._layerPointsProgram!;
 
 		// Add positions to end of input if needed.
 		const input = this.addLayerToInputs(positions, params.input);
@@ -1447,7 +1489,7 @@ export class GPUComposer {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._GPULayerLinesProgram!;
+		const glProgram = program._layerLinesProgram!;
 
 		// Add positionLayer to end of input if needed.
 		const input = this.addLayerToInputs(positions, params.input);
@@ -1539,7 +1581,7 @@ export class GPUComposer {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._GPULayerVectorFieldProgram!;
+		const glProgram = program._layerVectorFieldProgram!;
 
 		// Add data to end of input if needed.
 		const input = this.addLayerToInputs(data, params.input);

@@ -1,6 +1,4 @@
-import { ErrorCallback } from './constants';
-
-const extensions: { [key: string]: any } = {};
+import { GPUComposer } from './GPUComposer';
 
 // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float
 // Float is provided by default in WebGL2 contexts.
@@ -26,29 +24,29 @@ export const WEBGL_DEPTH_TEXTURE = 'WEBGL_depth_texture';
 export const EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 
 export function getExtension(
-	gl: WebGLRenderingContext | WebGL2RenderingContext,
+	composer: GPUComposer,
 	extensionName: string,
-	errorCallback: ErrorCallback,
 	optional = false,
 ) {
 	// Check if we've already loaded the extension.
-	if (extensions[extensionName] !== undefined) return extensions[extensionName];
+	if (composer.extensions[extensionName] !== undefined) return composer.extensions[extensionName];
 
+	const { gl, _errorCallback } = composer;
 	let extension;
 	try {
 		extension = gl.getExtension(extensionName);
 	} catch (e) {}
 	if (extension) {
 		// Cache this extension.
-		extensions[extensionName] = extension;
+		composer.extensions[extensionName] = extension;
 		console.log(`Loaded extension: ${extensionName}.`);
 	} else {
-		extensions[extensionName] = false; // Cache the bad extension lookup.
+		composer.extensions[extensionName] = false; // Cache the bad extension lookup.
 		console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extensionName}.`);
 	}
 	// If the extension is not optional, throw error.
 	if (!extension && !optional) {
-		errorCallback(`Required extension unsupported by this device / browser: ${extensionName}.`);
+		_errorCallback(`Required extension unsupported by this device / browser: ${extensionName}.`);
 	}
 	return extension;
 }

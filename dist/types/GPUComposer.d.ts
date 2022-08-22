@@ -21,6 +21,9 @@ export declare class GPUComposer {
     private vectorFieldIndexArray?;
     private vectorFieldIndexBuffer?;
     private indexedLinesIndexBuffer?;
+    readonly extensions: {
+        [key: string]: any;
+    };
     private readonly copyPrograms;
     private readonly setValuePrograms;
     private _wrappedLineColorProgram?;
@@ -72,6 +75,7 @@ export declare class GPUComposer {
         type?: TextureType;
         onLoad?: (texture: WebGLTexture) => void;
     }): WebGLTexture;
+    _getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string): WebGLProgram | undefined;
     onResize(canvas: HTMLCanvasElement): void;
     private drawSetup;
     private setBlendMode;

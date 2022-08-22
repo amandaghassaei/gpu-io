@@ -40,9 +40,7 @@ module.exports = {
 					  output: 'source',
 					//   esModule: false,
 					  stripVersion: false,
-					//   preserveDefines: false,
-					//   preserveUniforms: false,
-					//   preserveVariables: false,
+					  preserveAll: true,
 					  disableMangle: true,
 					//   includesOnly: false,
 					}

@@ -34,7 +34,7 @@
 		isObject,
 		isBoolean,
 	} = _testing;
-	const assert = require('assert');
+	const { assert } = require('chai');
 
 	const typeChecks = [
 		0, -1, 5.7, 92, true,

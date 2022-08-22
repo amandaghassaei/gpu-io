@@ -1,5 +1,4 @@
 {
-
 	let composer, program;
 
 	const {
@@ -8,10 +7,17 @@
 		GPULayer,
 		FLOAT,
 	} = WebGLCompute;
+
 	describe('GPUProgram', () => {
 		before(() => {
 			composer = new GPUComposer({ canvas: document.createElement('canvas') });
 			program = new GPUProgram(composer, {name: 'common-program', fragmentShader: simpleFragmentShader});
+		});
+		after(() => {
+			program.dispose();
+			program = undefined;
+			composer.dispose();
+			composer = undefined;
 		});
 		describe('constructor', () => {
 			it('should error if GPUComposer not passed in', () => {
@@ -33,12 +39,6 @@
 			it('should error if unknown params passed in', () => {
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "", otherThing: 2 }); },
 					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","defines"].');
-			});
-		});
-		describe('recompile', () => {
-			it('should recompile fragment shader with new defines', () => {
-				// { WEBGLCOMPUTE_INT: '1' }
-				// TODO:
 			});
 		});
 		describe('get _defaultProgram', () => {
@@ -66,48 +66,47 @@
 				assert.typeOf(program._segmentProgram, 'WebGLProgram');
 			});
 		});
-		// TODO:
-		// describe('get _GPULayerPointsProgram', () => {
-		// 	it('should return valid WebGLProgram', () => {
-		// 		assert.typeOf(program._GPULayerPointsProgram, 'WebGLProgram');
-		// 	});
-		// });
-		// describe('get _GPULayerVectorFieldProgram', () => {
-		// 	it('should return valid WebGLProgram', () => {
-		// 		assert.typeOf(program._GPULayerVectorFieldProgram, 'WebGLProgram');
-		// 	});
-		// });
-		// describe('get _GPULayerLinesProgram', () => {
-		// 	it('should return valid WebGLProgram', () => {
-		// 		assert.typeOf(program._GPULayerLinesProgram, 'WebGLProgram');
-		// 	});
-		// });
+		describe('get _layerPointsProgram', () => {
+			it('should return valid WebGLProgram', () => {
+				assert.typeOf(program._layerPointsProgram, 'WebGLProgram');
+			});
+		});
+		describe('get _layerVectorFieldProgram', () => {
+			it('should return valid WebGLProgram', () => {
+				assert.typeOf(program._layerVectorFieldProgram, 'WebGLProgram');
+			});
+		});
+		describe('get _layerLinesProgram', () => {
+			it('should return valid WebGLProgram', () => {
+				assert.typeOf(program._layerLinesProgram, 'WebGLProgram');
+			});
+		});
 		
 		describe('setUniform', () => {
 			it('should set program uniform', () => {
-				// TODO: fix this.
-				// const setValueProgram = new GPUProgram(composer, {
-				// 	name: 'uniform-test',
-				// 	fragmentShader: setValueFragmentShader,
-				// });
-				// const value = [1, 2, 3, 4];
-				// setValueProgram.setUniform('u_value', value, FLOAT);
-				// const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
-				// composer.step({
-				// 	program: setValueProgram,
-				// 	output: layer,
-				// });
-				// const output = layer.getValues();
-				// console.log(output)
-				// output.forEach((out, i) => {
-				// 	assert.equal(out, value[i]);
-				// });
+				const setValueProgram = new GPUProgram(composer, {
+					name: 'uniform-test',
+					fragmentShader: setValueFragmentShader,
+				});
+				const value = [1, 2, 3, 4];
+				setValueProgram.setUniform('u_value', value, FLOAT);
+				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
+				composer.step({
+					program: setValueProgram,
+					output: layer,
+				});
+				const output = layer.getValues();
+				output.forEach((out, i) => {
+					assert.equal(out, value[i]);
+				});
+				setValueProgram.dispose();
+				layer.dispose();
 			});
 			it('should handle a variety of types and sizes', () => {
-
+				// TODO: 
 			});
 			it('should convert uint uniforms to int', () => {
-
+				// TODO:
 			});
 		});
 		describe('_setVertexUniform', () => {
@@ -122,8 +121,9 @@
 		});
 		describe('dispose', () => {
 			it('should delete all keys', () => {
-				program.dispose();
-				assert.equal(Object.keys(program).length, 0);
+				const testProgram = new GPUProgram(composer, {name: 'dispose-program', fragmentShader: simpleFragmentShader});
+				testProgram.dispose();
+				assert.equal(Object.keys(testProgram).length, 0);
 				// We don't really have a way to test if WebGL things were actually deleted.
 				// dispose() marks them for deletion, but they are garbage collected later.
 			});

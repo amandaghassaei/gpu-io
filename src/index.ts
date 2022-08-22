@@ -19,6 +19,7 @@ import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
 import * as checks from './checks';
+import * as GPULayerHelpers from './GPULayerHelpers';
 
 // These exports are only used for testing.
 const _testing = {
@@ -32,6 +33,7 @@ const _testing = {
 	initSequentialFloatArray,
 	uniformInternalTypeForValue,
 	...checks,
+	...GPULayerHelpers,
 }
 
 // Named exports.

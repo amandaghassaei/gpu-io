@@ -29,7 +29,7 @@
 		initSequentialFloatArray,
 		uniformInternalTypeForValue,
 	} = _testing;
-	const assert = require('assert');
+	const assert = require('assert');// TODO: use chai
 
 	// Testing components of utils that DO NOT require WebGL with mocha + chai.
 

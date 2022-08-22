@@ -196,12 +196,10 @@ export class GPULayer {
 		}
 		this.type = type;
 		const internalType = getGPULayerInternalType({
-			gl,
+			composer,
 			type,
-			glslVersion,
 			writable,
 			name,
-			errorCallback: _errorCallback,
 		});
 		this.internalType = internalType;
 		// Set gl texture parameters.
@@ -211,13 +209,11 @@ export class GPULayer {
 			glType,
 			glNumChannels,
 		} = getGLTextureParameters({
-			gl,
+			composer,
 			name,
 			numComponents,
 			writable,
 			internalType,
-			glslVersion,
-			errorCallback: _errorCallback,
 		});
 		this.glInternalFormat = glInternalFormat;
 		this.glFormat = glFormat;
@@ -225,11 +221,11 @@ export class GPULayer {
 		this.glNumChannels = glNumChannels;
 
 		// Set internal filtering/wrap types.
-		this.internalFilter = getGPULayerInternalFilter({ gl, filter, internalType, name, errorCallback: _errorCallback });
+		this.internalFilter = getGPULayerInternalFilter({ composer, filter, internalType, name });
 		this.glFilter = gl[this.internalFilter];
-		this.internalWrapS = getGPULayerInternalWrap({ gl, wrap: wrapS, name });
+		this.internalWrapS = getGPULayerInternalWrap({ composer, wrap: wrapS, name });
 		this.glWrapS = gl[this.internalWrapS];
-		this.internalWrapT = getGPULayerInternalWrap({ gl, wrap: wrapT, name });
+		this.internalWrapT = getGPULayerInternalWrap({ composer, wrap: wrapT, name });
 		this.glWrapT = gl[this.internalWrapT];
 
 		// Num buffers is the number of states to store for this data.
@@ -833,8 +829,11 @@ export class GPULayer {
 
 	dispose() {
 		const { name, composer } = this;
-		const { verboseLogging } = composer;
+		const { gl, verboseLogging } = composer;
+
 		if (verboseLogging) console.log(`Deallocating GPULayer "${name}".`);
+
+		if (!gl) throw new Error(`Must call dispose() on all GPULayers before calling dispose() on GPUComposer.`);
 	
 		this.destroyBuffers();
 		// @ts-ignore

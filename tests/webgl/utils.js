@@ -100,6 +100,45 @@
 					{ WEBGLCOMPUTE_INT: '1' },
 				), 'WebGLShader');
 			});
+			it('should throw error if define is not a string', () => {
+				const webgl1 = document.createElement('canvas').getContext(WEBGL1);
+				assert.throws(() => { compileShader(
+					webgl1,
+					GLSL1,
+					PRECISION_HIGH_P,
+					PRECISION_HIGH_P,
+					preprocessFragmentShader(copyFragmentShader, GLSL1),
+					webgl1.FRAGMENT_SHADER,
+					'fragment-shader-test',
+					(message) => {console.log(message)},
+					{ WEBGLCOMPUTE_INT: 1 },
+				); }, 'GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [string : number] for key WEBGLCOMPUTE_INT');
+			});
+			it('should throw error if precision is not valid value', () => {
+				const webgl1 = document.createElement('canvas').getContext(WEBGL1);
+				assert.throws(() => { compileShader(
+					webgl1,
+					GLSL1,
+					'thing1',
+					PRECISION_HIGH_P,
+					preprocessFragmentShader(copyFragmentShader, GLSL1),
+					webgl1.FRAGMENT_SHADER,
+					'fragment-shader-test',
+					(message) => {console.log(message)},
+					{ WEBGLCOMPUTE_INT: '1' },
+				); }, 'Unknown shader precision value: "thing1".');
+				assert.throws(() => { compileShader(
+					webgl1,
+					GLSL1,
+					PRECISION_HIGH_P,
+					'thing2',
+					preprocessFragmentShader(copyFragmentShader, GLSL1),
+					webgl1.FRAGMENT_SHADER,
+					'fragment-shader-test',
+					(message) => {console.log(message)},
+					{ WEBGLCOMPUTE_INT: '1' },
+				); }, 'Unknown shader precision value: "thing2".');
+			});
 		});
 		describe('initGLProgram', () => {
 			it('should compile WebGL2 programs', () => {
@@ -127,8 +166,8 @@
 				);
 				assert.typeOf(initGLProgram(
 					webgl2,
-					frag3,
 					vert3,
+					frag3,
 					'webgl1-test',
 					(message) => {console.log(message)},
 				), 'WebGLProgram');
@@ -155,8 +194,8 @@
 				);
 				assert.typeOf(initGLProgram(
 					webgl2,
-					frag1,
 					vert1,
+					frag1,
 					'webgl1-test',
 					(message) => {console.log(message)},
 				), 'WebGLProgram');
@@ -186,8 +225,8 @@
 				);
 				assert.typeOf(initGLProgram(
 					webgl1,
-					frag,
 					vert,
+					frag,
 					'webgl1-test',
 					(message) => {console.log(message)},
 				), 'WebGLProgram');
@@ -204,6 +243,7 @@
 				const context2 = document.createElement('canvas').getContext('2d');
 				assert.equal(isWebGL2(context2), false);
 				assert.equal(isWebGL2(), false);
+				assert.equal(isWebGL2(null), false);
 			});
 		});
 		describe('readyToRead', () => {

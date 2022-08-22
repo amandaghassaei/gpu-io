@@ -54,9 +54,7 @@ TODO: finish this.
 
 ## Examples
 
-Note: these are stale examples at this point, will be updated soon.  
-- [Conway's Game of Life shader](https://github.com/amandaghassaei/ConwayShader)
-- [Mass Spring shader](https://github.com/amandaghassaei/MassSpringShader)
+- [Conway's Game of Life](http://apps.amandaghassaei.com/webgl-compute/examples/gol/)
 
 
 ## Compatibility with Threejs

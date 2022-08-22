@@ -30,6 +30,7 @@ import {
 	OES_TEXTURE_HALF_FLOAT,
 	OES_TEXTURE_HAlF_FLOAT_LINEAR,
 } from './extensions';
+import { GPUComposer } from './GPUComposer';
 import { isWebGL2 } from './utils';
 
 // Memoize results.
@@ -37,6 +38,10 @@ const results = {
 	framebufferWriteSupport: {} as { [key: string]: boolean },
 }
 
+/**
+ * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
+ * Used internally.
+ */
 export function initArrayForType(
 	type: GPULayerType,
 	length: number,
@@ -61,21 +66,27 @@ export function initArrayForType(
 		case INT:
 			return new Int32Array(length);
 		default:
-			throw new Error(`Unsupported type: ${type}.`);
+			throw new Error(`Unsupported type: "${type}".`);
 	}
 }
 
+/**
+ * Calc 2D size [width, height] for GPU layer given a 1D or 2D size parameter.
+ * If 1D size supplied, nearest power of 2 width/height is generated.
+ * Also checks that size elements are valid.
+ * Used internally.
+ */
+// TODO: should we relax adherence to power of 2.
 export function calcGPULayerSize(
 	size: number | [number, number],
 	name: string,
 	verboseLogging: boolean,
 ) {
-	let length, width, height;
 	if (isNumber(size as number)) {
 		if (!isPositiveInteger(size)) {
 			throw new Error(`Invalid length: ${size} for GPULayer "${name}", must be positive integer.`);
 		}
-		length = size as number;
+		const length = size as number;
 		// Calc power of two width and height for length.
 		let exp = 1;
 		let remainder = length;
@@ -83,32 +94,37 @@ export function calcGPULayerSize(
 			exp++;
 			remainder /= 2;
 		}
-		width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
-		height = Math.pow(2, Math.floor(exp/2));
+		const width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
+		const height = Math.pow(2, Math.floor(exp/2));
 		if (verboseLogging) {
 			console.log(`Using [${width}, ${height}] for 1D array of length ${size} in GPULayer "${name}".`);
 		}
-	} else {
-		width = (size as [number, number])[0];
-		if (!isPositiveInteger(width)) {
-			throw new Error(`Invalid width: ${width} for GPULayer "${name}", must be positive integer.`);
-		}
-		height = (size as [number, number])[1];
-		if (!isPositiveInteger(height)) {
-			throw new Error(`Invalid height: ${height} for GPULayer "${name}", must be positive integer.`);
-		}
+		return { width, height, length };
 	}
-	return { width, height, length };
+	const width = (size as [number, number])[0];
+	if (!isPositiveInteger(width)) {
+		throw new Error(`Invalid width: ${width} for GPULayer "${name}", must be positive integer.`);
+	}
+	const height = (size as [number, number])[1];
+	if (!isPositiveInteger(height)) {
+		throw new Error(`Invalid height: ${height} for GPULayer "${name}", must be positive integer.`);
+	}
+	return { width, height };
 }
 
+/**
+ * Get the GL wrap type to use internally in GPULayer, based on browser support.
+ * Used internally.
+ */
 export function getGPULayerInternalWrap(
 	params: {
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
+		composer: GPUComposer,
 		wrap: GPULayerWrap,
 		name: string,
 	},
 ) {
-	const { gl, wrap, name } = params;
+	const { composer, wrap, name } = params;
+	const { gl } = composer;
 	// Webgl2.0 supports all combinations of types and filtering.
 	if (isWebGL2(gl)) {
 		return wrap;
@@ -133,16 +149,19 @@ export function getGPULayerInternalWrap(
 	return wrap;
 }
 
+/**
+ * Get the GL filter type to use internally in GPULayer, based on browser support.
+ * Used internally.
+ */
 export function getGPULayerInternalFilter(
 	params: {
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
+		composer: GPUComposer,
 		filter: GPULayerFilter,
 		internalType: GPULayerType,
 		name: string,
-		errorCallback: ErrorCallback,
 	},
 ) {
-	const { gl, errorCallback, internalType, name } = params;
+	const { composer, internalType, name } = params;
 	let { filter } = params;
 	if (filter === NEAREST) {
 		// NEAREST filtering is always supported.
@@ -151,15 +170,15 @@ export function getGPULayerInternalFilter(
 
 	if (internalType === HALF_FLOAT) {
 		// TODO: test if float linear extension is actually working.
-		const extension = getExtension(gl, OES_TEXTURE_HAlF_FLOAT_LINEAR, errorCallback, true)
-			|| getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
+		const extension = getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
+			|| getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
 		if (!extension) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 			//TODO: add a fallback that does this filtering in the frag shader.
 			filter = NEAREST;
 		}
 	} if (internalType === FLOAT) {
-		const extension = getExtension(gl, OES_TEXTURE_FLOAT_LINEAR, errorCallback, true);
+		const extension = getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
 		if (!extension) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 			//TODO: add a fallback that does this filtering in the frag shader.
@@ -169,14 +188,18 @@ export function getGPULayerInternalFilter(
 	return filter;
 }
 
-function shouldCastIntTypeAsFloat(
+/**
+ * Returns whether to cast int type as floats, as needed by browser.
+ * Used internally.
+ */
+export function shouldCastIntTypeAsFloat(
 	params: {
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
+		composer: GPUComposer,
 		type: GPULayerType,
-		glslVersion: GLSLVersion,
 	}
 ) {
-	const { gl, type, glslVersion } = params;
+	const { type, composer } = params;
+	const { gl, glslVersion } = composer;
 	// All types are supported by WebGL2 + glsl3.
 	if (glslVersion === GLSL3 && isWebGL2(gl)) return false;
 	// Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
@@ -187,18 +210,21 @@ function shouldCastIntTypeAsFloat(
 	return type === BYTE || type === SHORT || type === INT || type === UNSIGNED_SHORT || type === UNSIGNED_INT;
 }
 
+/**
+ * Returns GLTexture parameters for GPULayer, based on browser support.
+ * Used internally.
+ */
 export function getGLTextureParameters(
 	params: {
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
+		composer: GPUComposer,
 		name: string,
 		numComponents: GPULayerNumComponents,
 		internalType: GPULayerType,
 		writable: boolean,
-		glslVersion: GLSLVersion,
-		errorCallback: ErrorCallback,
 	}
 ) {
-	const { gl, errorCallback, name, numComponents, internalType, writable, glslVersion } = params;
+	const { composer, name, numComponents, internalType, writable } = params;
+	const { gl, glslVersion } = composer;
 	// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 	let glType: number | undefined,
 		glFormat: number | undefined,
@@ -431,7 +457,7 @@ export function getGLTextureParameters(
 				}
 				break;
 			default:
-				throw new Error(`Unsupported type: ${internalType} for GPULayer "${name}".`);
+				throw new Error(`Unsupported type: "${internalType}" for GPULayer "${name}".`);
 		}
 	} else {
 		// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
@@ -461,14 +487,14 @@ export function getGLTextureParameters(
 				glType = gl.FLOAT;
 				break;
 			case HALF_FLOAT:
-				glType = (gl as WebGL2RenderingContext).HALF_FLOAT || getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback).HALF_FLOAT_OES as number;
+				glType = (gl as WebGL2RenderingContext).HALF_FLOAT || getExtension(composer, OES_TEXTURE_HALF_FLOAT).HALF_FLOAT_OES as number;
 				break;
 			case UNSIGNED_BYTE:
 				glType = gl.UNSIGNED_BYTE;
 				break;
-			// No other types are supported in glsl1.x
+			// No other types are supported in WebGL1.
 			default:
-				throw new Error(`Unsupported type: ${internalType} in WebGL 1.0 for GPULayer "${name}".`);
+				throw new Error(`Unsupported type: "${internalType}" in WebGL 1.0 for GPULayer "${name}".`);
 		}
 	}
 
@@ -492,16 +518,21 @@ export function getGLTextureParameters(
 	};
 }
 
-function testFramebufferWrite(
+/**
+ * 
+ * @param params 
+ * @returns 
+ */
+export function testFramebufferWrite(
 	params: {
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
-		type: GPULayerType,
-		glslVersion: GLSLVersion,
+		composer: GPUComposer,
+		internalType: GPULayerType,
 	},
 ) {
-	const { gl, type, glslVersion } = params;
+	const { composer, internalType } = params;
+	const { gl, glslVersion } = composer;
 
-	const key = `${isWebGL2(gl),type,glslVersion}`;
+	const key = `${isWebGL2(gl),internalType,glslVersion}`;
 	if (results.framebufferWriteSupport[key] !== undefined) {
 		return results.framebufferWriteSupport[key];
 	}
@@ -527,13 +558,11 @@ function testFramebufferWrite(
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
 	const { glInternalFormat, glFormat, glType } = getGLTextureParameters({
-		gl,
+		composer,
 		name: 'testFramebufferWrite',
 		numComponents: 1,
 		writable: true,
-		internalType: type,
-		glslVersion,
-		errorCallback: () => {},
+		internalType,
 	});
 	gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, null);
 
@@ -560,17 +589,20 @@ function testFramebufferWrite(
 	return results.framebufferWriteSupport[key];
 }
 
+/**
+ * Get the GL type to use internally in GPULayer, based on browser support.
+ * Used internally, only exported for testing purposes.
+ */
 export function getGPULayerInternalType(
 	params: {
-		gl: WebGLRenderingContext | WebGL2RenderingContext,
+		composer: GPUComposer,
 		type: GPULayerType,
-		glslVersion: GLSLVersion,
 		writable: boolean,
 		name: string,
-		errorCallback: ErrorCallback,
 	},
 ) {
-	const { gl, errorCallback, writable, name, glslVersion } = params;
+	const { composer, writable, name } = params;
+	const { gl, _errorCallback } = composer;
 	const { type } = params;
 	let internalType = type;
 	// Check if int types are supported.
@@ -591,7 +623,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	// Check if float32 supported.
 	if (!isWebGL2(gl)) {
 		if (internalType === FLOAT) {
-			const extension = getExtension(gl, OES_TEXTURE_FLOAT, errorCallback, true);
+			const extension = getExtension(composer, OES_TEXTURE_FLOAT, true);
 			if (!extension) {
 				console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 				internalType = HALF_FLOAT;
@@ -603,7 +635,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			// To check if this is supported, you have to call the WebGL
 			// checkFramebufferStatus() function.
 			if (writable) {
-				const valid = testFramebufferWrite({ gl, type: internalType, glslVersion });
+				const valid = testFramebufferWrite({ composer, internalType: internalType });
 				if (!valid && internalType !== HALF_FLOAT) {
 					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
@@ -612,12 +644,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		}
 		// Must support at least half float if using a float type.
 		if (internalType === HALF_FLOAT) {
-			getExtension(gl, OES_TEXTURE_HALF_FLOAT, errorCallback);
+			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
-				const valid = testFramebufferWrite({ gl, type: internalType, glslVersion });
+				const valid = testFramebufferWrite({ composer, internalType: internalType });
 				if (!valid) {
-					errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
+					_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 				}
 			}
 		}
@@ -625,7 +657,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	
 	// Load additional extensions if needed.
 	if (writable && isWebGL2(gl) && (internalType === HALF_FLOAT || internalType === FLOAT)) {
-		getExtension(gl, EXT_COLOR_BUFFER_FLOAT, errorCallback);
+		getExtension(composer, EXT_COLOR_BUFFER_FLOAT);
 	}
 	return internalType;
 }

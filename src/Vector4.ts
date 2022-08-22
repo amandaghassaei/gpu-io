@@ -1,4 +1,7 @@
-// These are the parts of threejs Vector4 that we need.
+/**
+ * These are the parts of threejs Vector4 that we need.
+ * Used internally.
+ */
 export class Vector4 {
 	x: number;
 	y: number;

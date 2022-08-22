@@ -26,6 +26,7 @@ import {
 	INT_3D_UNIFORM,
 	INT_4D_UNIFORM,
 	PRECISION_HIGH_P,
+	PRECISION_LOW_P,
 	PRECISION_MEDIUM_P,
 	UINT,
 	UINT_1D_UNIFORM,
@@ -39,7 +40,9 @@ import {
 } from './constants';
 const precisionSource = require('./glsl/common/precision.glsl');
 
-// Memoize results.
+/**
+ * Memoize results of more complex WebGL tests (that require allocations/deallocations).
+ */
 const results = {
 	supportsWebGL2: undefined as undefined | boolean,
 	supportsHighpVertex: undefined as  undefined | boolean,
@@ -48,12 +51,22 @@ const results = {
 	mediumpFragmentPrecision: undefined as undefined | typeof PRECISION_HIGH_P | typeof PRECISION_MEDIUM_P,
 }
 
+/**
+ * Enum for precision values.
+ * See src/glsl/common/precision.glsl for more info.
+ * Used internally.
+ */
 function intForPrecision(precision: GLSLPrecision) {
 	if (precision === PRECISION_HIGH_P) return 2;
 	if (precision === PRECISION_MEDIUM_P) return 1;
-	return 0;
+	if (precision === PRECISION_LOW_P) return 0;
+	throw new Error(`Unknown shader precision value: ${JSON.stringify(precision)}.`);
 }
 
+/**
+ * Create a string to pass defines into shader.
+ * Used internally.
+ */
 function convertDefinesToString(defines: CompileTimeVars) {
 	let definesSource = '';
 	const keys = Object.keys(defines);
@@ -61,13 +74,18 @@ function convertDefinesToString(defines: CompileTimeVars) {
 		const key = keys[i];
 		// Check that define is passed in as a string.
 		if (!isString(key) || !isString(defines[key])) {
-			throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}].`)
+			throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}] for key ${key}.`)
 		}
 		definesSource += `#define ${key} ${defines[key]}\n`;
 	}
 	return definesSource;
 }
 
+/**
+ * Create header string for fragment and vertex shaders.
+ * Export this for testing purposes.
+ * Used internally.
+ */
 export function makeShaderHeader(
 	glslVersion: GLSLVersion,
 	intPrecision: GLSLPrecision,
@@ -83,7 +101,12 @@ export function makeShaderHeader(
 	return `${versionSource}${definesSource}${precisionDefinesSource}${precisionSource}`;
 }
 
-// Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
+/**
+ * Compile vertex or fragment shaders.
+ * Fragment shaders may be compiled on the fly, so keep this efficient.
+ * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
+ * Used internally.
+ */
 export function compileShader(
 	gl: WebGLRenderingContext | WebGL2RenderingContext,
 	glslVersion: GLSLVersion,
@@ -92,24 +115,24 @@ export function compileShader(
 	shaderSource: string,
 	shaderType: number,
 	programName: string,
-	_errorCallback: ErrorCallback,
+	errorCallback: ErrorCallback,
 	defines?: CompileTimeVars,
 ) {
-	shaderSource = `${makeShaderHeader(
-		glslVersion,
-		intPrecision,
-		floatPrecision,
-		defines,
-	)}${shaderSource}`;
 	// Create the shader object
 	const shader = gl.createShader(shaderType);
 	if (!shader) {
-		_errorCallback('Unable to init gl shader.');
+		errorCallback('Unable to init gl shader.');
 		return null;
 	}
 
 	// Set the shader source code.
-	gl.shaderSource(shader, shaderSource);
+	const shaderHeader = makeShaderHeader(
+		glslVersion,
+		intPrecision,
+		floatPrecision,
+		defines,
+	);
+	gl.shaderSource(shader, `${shaderHeader}${shaderSource}`);
 
 	// Compile the shader
 	gl.compileShader(shader);
@@ -118,66 +141,88 @@ export function compileShader(
 	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!success) {
 		// Something went wrong during compilation - print the error.
-		_errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
-			 shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
+		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'}
+shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}
 	return shader;
 }
 
+/**
+ * Init a WebGL program from vertex and fragment shaders.
+ * GLPrograms may be inited on the fly, so keep this efficient.
+ * Used internally.
+ */
 export function initGLProgram(
 	gl: WebGLRenderingContext | WebGL2RenderingContext,
-	fragmentShader: WebGLShader,
 	vertexShader: WebGLShader,
+	fragmentShader: WebGLShader,
 	name: string,
-	_errorCallback: ErrorCallback,
+	errorCallback: ErrorCallback,
 ) {
 	// Create a program.
 	const program = gl.createProgram();
 	if (!program) {
-		_errorCallback(`Unable to init gl program for GPUProgram "${name}", gl.createProgram() has failed.`);
+		errorCallback(`Unable to init GL program for GPUProgram "${name}", gl.createProgram() has failed.`);
 		return;
 	}
 	// Link the program.
-	gl.attachShader(program, fragmentShader);
 	gl.attachShader(program, vertexShader);
+	gl.attachShader(program, fragmentShader);
 	gl.linkProgram(program);
 	// Check if it linked.
 	const success = gl.getProgramParameter(program, gl.LINK_STATUS);
 	if (!success) {
 		// Something went wrong with the link.
-		_errorCallback(`GPUProgram "${name}" failed to link: ${gl.getProgramInfoLog(program)}`);
+		errorCallback(`GPUProgram "${name}" failed to link: ${gl.getProgramInfoLog(program)}`);
 		return;
 	}
 	return program;
 }
 
+/**
+ * Returns whether a WebGL context is WebGL1 or WebGL2.
+ * This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/renderers/webgl/WebGLCapabilities.js
+ * @param gl - WebGLRenderingContext or WebGL2RenderingContext to test.
+ * @returns boolean
+ */
 export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
-	// This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/renderers/webgl/WebGLCapabilities.js
 	// @ts-ignore
 	return (typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext) || (typeof WebGL2ComputeRenderingContext !== 'undefined' && gl instanceof WebGL2ComputeRenderingContext);
 }
 
+/**
+ * Returns whether WebGL2 is supported by the current browser.
+ * @returns boolean
+ */
 export function isWebGL2Supported() {
 	if (results.supportsWebGL2 === undefined) {
 		const gl = document.createElement('canvas').getContext(WEBGL2);
 		// GL context and canvas will be garbage collected.
-		results.supportsWebGL2 = !!gl;
+		results.supportsWebGL2 = isWebGL2(gl!); // Will return false in case of gl = null.
 		return true;
 	}
 	return results.supportsWebGL2;
 }
 
+/**
+ * Checks if the framebuffer is ready to read.
+ * Used internally.
+ */
 export function readyToRead(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 	return gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE;
 };
 
+/**
+ * Detects whether highp is supported by this browser.
+ * This is supposed to be relatively easy. You call gl.getShaderPrecisionFormat, you pass in the shader type,
+ * VERTEX_SHADER or FRAGMENT_SHADER and you pass in one of LOW_FLOAT, MEDIUM_FLOAT, HIGH_FLOAT, LOW_INT, MEDIUM_INT, HIGH_INT,
+ * and it returns the precision info.
+ * Unfortunately Safari has a bug here which means checking this way will fail on iPhone, at least as of April 2020.
+ * https://webglfundamentals.org/webgl/webgl-precision-lowp-mediump-highp.html
+ * Used internally.
+ */
 function isHighpSupported(vsSource: string, fsSource: string) {
-	// This is supposed to be relatively easy. You call gl.getShaderPrecisionFormat, you pass in the shader type,
-	// VERTEX_SHADER or FRAGMENT_SHADER and you pass in one of LOW_FLOAT, MEDIUM_FLOAT, HIGH_FLOAT, LOW_INT, MEDIUM_INT, HIGH_INT,
-	// and it returns the precision info.
-	// Unfortunately Safari has a bug here which means checking this way will fail on iPhone, at least as of April 2020.
-	// https://webglfundamentals.org/webgl/webgl-precision-lowp-mediump-highp.html
 	const gl = document.createElement('canvas').getContext(WEBGL1);
 	if (!gl) {
 		throw new Error(`Unable to init webgl context.`);
@@ -203,7 +248,7 @@ function isHighpSupported(vsSource: string, fsSource: string) {
 			'highpFragmentTest',
 			DEFAULT_ERROR_CALLBACK,
 		)!;
-		const program = initGLProgram(gl, fs, vs, 'highpFragmentTest', DEFAULT_ERROR_CALLBACK)!;
+		const program = initGLProgram(gl, vs, fs, 'highpFragmentTest', DEFAULT_ERROR_CALLBACK)!;
 		// Deallocate everything.
 		gl.deleteProgram(program);
 		gl.deleteShader(vs);
@@ -215,6 +260,10 @@ function isHighpSupported(vsSource: string, fsSource: string) {
 	return true;
 }
 
+/**
+ * Detects whether highp precision is supported in vertex shaders in the current browser.
+ * @returns boolean
+ */
 export function isHighpSupportedInVertexShader() {
 	if (results.supportsHighpVertex === undefined) {
 		const vertexSupport = isHighpSupported(
@@ -226,6 +275,10 @@ export function isHighpSupportedInVertexShader() {
 	return results.supportsHighpVertex;
 }
 
+/**
+ * Detects whether highp precision is supported in fragment shaders in the current browser.
+ * @returns boolean
+ */
 export function isHighpSupportedInFragmentShader() {
 	if (results.supportsHighpFragment === undefined) {
 		const fragmentSupport = isHighpSupported(
@@ -237,6 +290,11 @@ export function isHighpSupportedInFragmentShader() {
 	return results.supportsHighpFragment;
 }
 
+/**
+ * Helper function to perform a 1px math calculation in order to determine WebGL capabilities.
+ * From https://webglfundamentals.org/
+ * Used internally.
+ */
 function test1PxCalc(
 	name: string,
 	gl: WebGL2RenderingContext | WebGLRenderingContext,
@@ -244,7 +302,7 @@ function test1PxCalc(
 	vs: WebGLShader,
 	addUniforms: (program: WebGLProgram) => void,
 ) {
-	const program = initGLProgram(gl, fs, vs, name, DEFAULT_ERROR_CALLBACK);
+	const program = initGLProgram(gl, vs, fs, name, DEFAULT_ERROR_CALLBACK);
 	if (!program) {
 		throw new Error(`Unable to init WebGLProgram.`);
 	}
@@ -291,7 +349,11 @@ function test1PxCalc(
 	return pixel;
 }
 
-// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+/**
+ * Returns the actual precision of mediump inside vertex shader.
+ * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+ * @returns 'highp' or 'mediump'
+ */
 export function getVertexShaderMediumpPrecision() {
 	if (results.mediumpVertexPrecision === undefined) {
 		// This entire program is only needed because of a bug in Safari.
@@ -355,7 +417,11 @@ export function getVertexShaderMediumpPrecision() {
 	return results.mediumpVertexPrecision;
 }
 
-// From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+/**
+ * Returns the actual precision of mediump inside fragment shader.
+ * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+ * @returns 'highp' or 'mediump'
+ */
 export function getFragmentShaderMediumpPrecision() {
 	if (results.mediumpFragmentPrecision === undefined) {
 		// This entire program is only needed because of a bug in Safari.
@@ -415,11 +481,19 @@ export function getFragmentShaderMediumpPrecision() {
 	return results.mediumpFragmentPrecision;
 }
 
+/**
+ * Returns whether a number is a power of 2.
+ * Used internally.
+ */
 export function isPowerOf2(value: number) {
 	// Use bitwise operation to evaluate this.
 	return value > 0 && (value & (value - 1)) == 0;
 }
 
+/**
+ * Returns a Float32 array with sequential values [0, 1, 2, 3...].
+ * Used internally.
+ */
 export function initSequentialFloatArray(length: number) {
 	const array = new Float32Array(length);
 	for (let i = 0; i < length; i++) {
@@ -428,23 +502,33 @@ export function initSequentialFloatArray(length: number) {
 	return array;
 }
 
+/**
+ * Strip out any unnecessary elements in shader source, e.g. #version and precision declarations.
+ * This is called once on initialization, so doesn't need to be extremely efficient.
+ * Used internally.
+ */
 function preprocessShader(shaderSource: string) {
 	// Strip out any version numbers.
 	// https://github.com/Jam3/glsl-version-regex
-	let origSrc = shaderSource.slice();
+	let origLength = shaderSource.length;
 	shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+[a-zA-Z]+)?)\s*/, '');
-	if (shaderSource !== origSrc) {
+	if (shaderSource.length !== origLength) {
 		console.warn('WebGLCompute expects shader source that does not contain #version declarations, removing...');
 	}
 	// Strip out any precision declarations.
-	origSrc = shaderSource.slice();
+	origLength = shaderSource.length;
 	shaderSource = shaderSource.replace(/\s*precision\s+((highp)|(mediump)|(lowp))\s+[a-zA-Z0-9]+\s*;/g, '');
-	if (shaderSource !== origSrc) {
+	if (shaderSource.length !== origLength) {
 		console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
 	}
 	return shaderSource;
 }
 
+/**
+ * Common code for converting vertex/fragment shader source to GLSL1.
+ * This is called once on initialization, so doesn't need to be extremely efficient.
+ * Used internally.
+ */
 function convertShaderToGLSL1(shaderSource: string) {
 	// TODO: there are probably more to add here.
 	shaderSource = shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
@@ -458,6 +542,11 @@ function convertShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
+/**
+ * Convert vertex shader source to GLSL1.
+ * This is called once on initialization, so doesn't need to be extremely efficient.
+ * Used internally.
+ */
 function convertVertexShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to attribute.
@@ -467,6 +556,11 @@ function convertVertexShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
+/**
+ * Convert fragment shader source to GLSL1.
+ * This is called once on initialization, so doesn't need to be extremely efficient.
+ * Used internally.
+ */
 function convertFragmentShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to varying.
@@ -477,6 +571,11 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 	return shaderSource;
 }
 
+/**
+ * Preprocess vertex shader for glslVersion and browser capabilities.
+ * This is called once on initialization, so doesn't need to be extremely efficient.
+ * Used internally.
+ */
 export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion) {
 	shaderSource = preprocessShader(shaderSource);
 	// Check if highp supported in vertex shaders.
@@ -491,6 +590,11 @@ export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVe
 	return convertVertexShaderToGLSL1(shaderSource);
 }
 
+/**
+ * Preprocess fragment shader for glslVersion and browser capabilities.
+ * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
+ * Used internally.
+ */
 export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion) {
 	shaderSource = preprocessShader(shaderSource);
 	// Check if highp supported in fragment shaders.
@@ -505,6 +609,10 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 	return convertFragmentShaderToGLSL1(shaderSource);
 }
 
+/**
+ * Check uniforms and return internal WebGL type (e.g. [1234][u]?[if])
+ * Used internally.
+ */
 export function uniformInternalTypeForValue(
 	value: UniformValue,
 	type: UniformType,
