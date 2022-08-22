@@ -1,6 +1,5 @@
 import { GPULayer } from './GPULayer';
 import {
-	GPULayerArray,
 	GPULayerFilter,
 	GPULayerType,
 	GPULayerWrap,

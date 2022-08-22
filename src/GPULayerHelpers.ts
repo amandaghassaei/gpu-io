@@ -16,8 +16,6 @@ import {
 	UNSIGNED_BYTE,
 	UNSIGNED_INT,
 	UNSIGNED_SHORT,
-	ErrorCallback,
-	GLSLVersion,
 	GLSL3,
 	GPULayerNumComponents,
 	GLSL1,
