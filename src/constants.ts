@@ -125,3 +125,22 @@ export const DEFAULT_ERROR_CALLBACK = (msg: string) => { throw new Error(msg); }
 
 // For stepCircle() and stepSegment() (with end caps).
 export const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;// Must be divisible by 6 to work with stepSegment().
+
+// Extrema values.
+export const MIN_UNSIGNED_BYTE = 0;
+export const MAX_UNSIGNED_BYTE = 2 ** 8 - 1;
+export const MIN_BYTE = -(2 ** 7);
+export const MAX_BYTE = 2 ** 7 - 1;
+export const MIN_UNSIGNED_SHORT = 0;
+export const MAX_UNSIGNED_SHORT = 2 ** 16 - 1;
+export const MIN_SHORT = -(2 ** 15);
+export const MAX_SHORT = 2 ** 15 - 1;
+export const MIN_UNSIGNED_INT = 0;
+export const MAX_UNSIGNED_INT = 2 ** 32 - 1;
+export const MIN_INT = -(2 ** 31);
+export const MAX_INT = 2 ** 31 - 1;
+// There are larger HALF_FLOAT and FLOAT ints, but they may be spaced out by > 1.
+export const MIN_HALF_FLOAT_INT = -2048;
+export const MAX_HALF_FLOAT_INT = 2048;
+export const MIN_FLOAT_INT = -16777216;
+export const MAX_FLOAT_INT = 16777216;

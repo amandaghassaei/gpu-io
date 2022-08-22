@@ -4105,14 +4105,14 @@ var GPULayer = /** @class */ (function () {
             // We may use a different internal type than the assigned type of the GPULayer.
             var output = internalType === type ? values : GPULayerHelpers_1.initArrayForType(type, OUTPUT_LENGTH, true);
             // In some cases glNumChannels may be > numComponents.
-            if (handleFloat16Conversion || output !== values || numComponents !== glNumChannels) {
+            if (view || output !== values || numComponents !== glNumChannels) {
                 for (var i = 0, length_1 = width * height; i < length_1; i++) {
                     var index1 = i * glNumChannels;
                     var index2 = i * numComponents;
                     if (index2 >= OUTPUT_LENGTH)
                         break;
                     for (var j = 0; j < numComponents; j++) {
-                        if (handleFloat16Conversion) {
+                        if (view) {
                             output[index2 + j] = float16_1.getFloat16(view, 2 * (index1 + j), true);
                         }
                         else {
@@ -4875,6 +4875,35 @@ function validateGPULayerArray(array, layer) {
         default:
             throw new Error("Invalid array type: " + array.constructor.name + " for GPULayer \"" + name + "\", please use one of [" + constants_1.validArrayTypes.map(function (constructor) { return constructor.name; }).join(', ') + "].");
     }
+    // Get min and max values for int types.
+    var min = -Infinity;
+    var max = Infinity;
+    switch (internalType) {
+        case constants_1.UNSIGNED_BYTE:
+            min = constants_1.MIN_UNSIGNED_BYTE;
+            max = constants_1.MAX_UNSIGNED_BYTE;
+            break;
+        case constants_1.BYTE:
+            min = constants_1.MIN_BYTE;
+            max = constants_1.MAX_BYTE;
+            break;
+        case constants_1.UNSIGNED_SHORT:
+            min = constants_1.MIN_UNSIGNED_SHORT;
+            max = constants_1.MAX_UNSIGNED_SHORT;
+            break;
+        case constants_1.SHORT:
+            min = constants_1.MIN_SHORT;
+            max = constants_1.MAX_SHORT;
+            break;
+        case constants_1.UNSIGNED_INT:
+            min = constants_1.MIN_UNSIGNED_INT;
+            max = constants_1.MAX_UNSIGNED_INT;
+            break;
+        case constants_1.INT:
+            min = constants_1.MIN_INT;
+            max = constants_1.MAX_INT;
+            break;
+    }
     // Then check if array needs to be lengthened.
     // This could be because glNumChannels !== numComponents or because length !== width * height.
     var arrayLength = width * height * glNumChannels;
@@ -4887,7 +4916,20 @@ function validateGPULayerArray(array, layer) {
         var view = (internalType === constants_1.HALF_FLOAT && shouldTypeCast) ? new DataView(validatedArray.buffer) : null;
         for (var i = 0, _len = array.length / numComponents; i < _len; i++) {
             for (var j = 0; j < numComponents; j++) {
-                var value = array[i * numComponents + j];
+                var origValue = array[i * numComponents + j];
+                var value = origValue;
+                var clipped = false;
+                if (value < min) {
+                    value = min;
+                    clipped = true;
+                }
+                else if (value > max) {
+                    value = max;
+                    clipped = true;
+                }
+                if (clipped) {
+                    console.warn("Clipping out of range value " + origValue + " to " + value + " for GPULayer \"" + name + "\" with internal type " + internalType + ".");
+                }
                 var index = i * glNumChannels + j;
                 if (view) {
                     float16_1.setFloat16(view, 2 * index, value, true);
@@ -5544,7 +5586,7 @@ exports.isBoolean = isBoolean;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 // Data types.
 exports.HALF_FLOAT = 'HALF_FLOAT';
 exports.FLOAT = 'FLOAT';
@@ -5608,6 +5650,24 @@ exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
 exports.DEFAULT_ERROR_CALLBACK = function (msg) { throw new Error(msg); };
 // For stepCircle() and stepSegment() (with end caps).
 exports.DEFAULT_CIRCLE_NUM_SEGMENTS = 18; // Must be divisible by 6 to work with stepSegment().
+// Extrema values.
+exports.MIN_UNSIGNED_BYTE = 0;
+exports.MAX_UNSIGNED_BYTE = Math.pow(2, 8) - 1;
+exports.MIN_BYTE = -(Math.pow(2, 7));
+exports.MAX_BYTE = Math.pow(2, 7) - 1;
+exports.MIN_UNSIGNED_SHORT = 0;
+exports.MAX_UNSIGNED_SHORT = Math.pow(2, 16) - 1;
+exports.MIN_SHORT = -(Math.pow(2, 15));
+exports.MAX_SHORT = Math.pow(2, 15) - 1;
+exports.MIN_UNSIGNED_INT = 0;
+exports.MAX_UNSIGNED_INT = Math.pow(2, 32) - 1;
+exports.MIN_INT = -(Math.pow(2, 31));
+exports.MAX_INT = Math.pow(2, 31) - 1;
+// There are larger HALF_FLOAT and FLOAT ints, but they may be spaced out by > 1.
+exports.MIN_HALF_FLOAT_INT = -2048;
+exports.MAX_HALF_FLOAT_INT = 2048;
+exports.MIN_FLOAT_INT = -16777216;
+exports.MAX_FLOAT_INT = 16777216;
 
 
 /***/ }),

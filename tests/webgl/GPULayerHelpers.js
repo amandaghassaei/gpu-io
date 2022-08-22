@@ -18,6 +18,18 @@
 		LINEAR,
 		GLSL1,
 		GLSL3,
+		MIN_UNSIGNED_BYTE,
+		MAX_UNSIGNED_BYTE,
+		MIN_BYTE,
+		MAX_BYTE,
+		MIN_UNSIGNED_SHORT,
+		MAX_UNSIGNED_SHORT,
+		MIN_SHORT,
+		MAX_SHORT,
+		MIN_UNSIGNED_INT,
+		MAX_UNSIGNED_INT,
+		MIN_INT,
+		MAX_INT,
 		isWebGL2,
 		_testing,
 	} = WebGLCompute;
@@ -31,7 +43,10 @@
 		validateGPULayerArray,
 		initArrayForType,
 		initSequentialFloatArray,
+		isArray,
+		isPowerOf2
 	} = _testing;
+	const { getFloat16 } = float16;
 
 	let composer1, composer2, composer3;
 
@@ -215,38 +230,117 @@
 			});
 		});
 		describe('validateGPULayerArray', () => {
-			it('should validate 2D arrays', () => {
-				const dimensions = [10, 12];
-				[1, 2, 3, 4].forEach(numComponents => {
-					[FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
+			const size = [10, 12];
+			const length = 100;
+			it('should validate 1D and 2D arrays', () => {
+				// 2D, 1D and 1D power of 2.
+				[size, length, 256].forEach(dimensions => {
+					[1, 2, 3, 4].forEach(numComponents => {
+						[FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
+							const layer = new GPULayer(composer3, {
+								name: 'test',
+								type,
+								dimensions,
+								writable: false,
+								numComponents,
+							});
+							// Array1 may be undersized if numComponents < layer.glNumChannels.
+							const array1 = initArrayForType(type, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * numComponents);
+							const validated1 = validateGPULayerArray(array1, layer);
+							assert.typeOf(validated1, array1.constructor.name);
+							assert.isAtLeast(validated1.length, array1.length);
+
+							// Array2 is correct size and type, should pass through for 2D and 1D power of 2 cases.
+							const array2 = initArrayForType(type, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer.glNumChannels);
+							const validated2 = validateGPULayerArray(array2, layer);
+							if (isArray(dimensions) || isPowerOf2(dimensions)) assert.equal(validated2, array2);
+							else assert.isAtLeast(validated2.length, array2.length);
+
+							// Incorrect type (and possibly length) passed in, should type cast.
+							const array3 = initSequentialFloatArray((isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * numComponents);
+							const validated3 = validateGPULayerArray(array3, layer);
+							assert.typeOf(validated3, array1.constructor.name); // Intentionally comparing with array1 constructor here.
+							assert.isAtLeast(validated3.length, array3.length);
+							// Get min and max values for int types.
+							let min = -Infinity;
+							let max = Infinity;
+							switch(type) {
+								case UNSIGNED_BYTE:
+									min = MIN_UNSIGNED_BYTE;
+									max = MAX_UNSIGNED_BYTE;
+									break;
+								case BYTE:
+									min = MIN_BYTE;
+									max = MAX_BYTE;
+									break;
+								case UNSIGNED_SHORT:
+									min = MIN_UNSIGNED_SHORT;
+									max = MAX_UNSIGNED_SHORT;
+									break;
+								case SHORT:
+									min = MIN_SHORT;
+									max = MAX_SHORT;
+									break;
+								case UNSIGNED_INT:
+									min = MIN_UNSIGNED_INT;
+									max = MAX_UNSIGNED_INT;
+									break;
+								case INT:
+									min = MIN_INT;
+									max = MAX_INT;
+									break;
+							}
+							// Check that values are passed through.
+							for (let i = 0; i < (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions); i++) {
+								for (let j = 0; j < layer.glNumChannels; j++) {
+									if (j < numComponents) {
+										// Values are clipped if needed.
+										assert.equal(validated3[layer.glNumChannels * i + j], Math.max(Math.min(array3[numComponents * i + j], max), min));
+									} else {
+										assert.equal(validated3[layer.glNumChannels * i + j], 0);
+									}
+								}
+							}
+						});
+					});
+				});
+			});
+			it ('should handle HALF_FLOAT cases', () => {
+				// 2D, 1D and 1D power of 2.
+				[size, length, 256].forEach(dimensions => {
+					[1, 2, 3, 4].forEach(numComponents => {
 						const layer = new GPULayer(composer3, {
 							name: 'test',
-							type,
+							type: HALF_FLOAT,
 							dimensions,
 							writable: false,
 							numComponents,
 						});
 						// Array1 may be undersized if numComponents < layer.glNumChannels.
-						const array1 = initArrayForType(type, dimensions[0] * dimensions[1] * numComponents);
+						const array1 = initArrayForType(HALF_FLOAT, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * numComponents, true);
+						assert.typeOf(array1, 'Float32Array');
 						const validated1 = validateGPULayerArray(array1, layer);
-						assert.typeOf(validated1, array1.constructor.name);
+						assert.typeOf(validated1, 'Uint16Array');
 						assert.isAtLeast(validated1.length, array1.length);
 
-						// Array2 is correct size and type, should pass through.
-						const array2 = initArrayForType(type, dimensions[0] * dimensions[1] * layer.glNumChannels);
+						// Array2 is correct size and type, should still type cast.
+						const array2 = initArrayForType(HALF_FLOAT, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer.glNumChannels, true);
+						assert.typeOf(array2, 'Float32Array');
 						const validated2 = validateGPULayerArray(array2, layer);
-						assert.equal(validated2, array2);
+						assert.typeOf(validated2, 'Uint16Array');
 
 						// Incorrect type (and possibly length) passed in, should type cast.
-						const array3 = initSequentialFloatArray(dimensions[0] * dimensions[1] * numComponents);
+						const array3 = initSequentialFloatArray((isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * numComponents);
 						const validated3 = validateGPULayerArray(array3, layer);
-						assert.typeOf(validated3, array1.constructor.name); // Intentionally comparing with array1 constructor here.
+						assert.typeOf(validated3, 'Uint16Array');
 						assert.isAtLeast(validated3.length, array3.length);
+						
 						// Check that values are passed through.
-						for (let i = 0; i < dimensions[0] * dimensions[1]; i++) {
+						const view = new DataView((validated3).buffer);
+						for (let i = 0; i < (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions); i++) {
 							for (let j = 0; j < layer.glNumChannels; j++) {
 								if (j < numComponents) {
-									assert.equal(validated3[layer.glNumChannels * i + j], array3[numComponents * i + j]);
+									assert.equal(getFloat16(view, 2 * (layer.glNumChannels * i + j), true), array3[numComponents * i + j]);
 								} else {
 									assert.equal(validated3[layer.glNumChannels * i + j], 0);
 								}
@@ -255,12 +349,32 @@
 					});
 				});
 			});
-			it ('should handle HALF_FLOAT cases', () => {
-
-			});
 			it('should throw error in case of invalid array', () => {
+				const numComponents = 3;
+				const layer1 = new GPULayer(composer3, {
+					name: 'test',
+					type: UNSIGNED_BYTE,
+					dimensions: length,
+					writable: false,
+					numComponents,
+				});
+				const layer2 = new GPULayer(composer3, {
+					name: 'test',
+					type: UNSIGNED_BYTE,
+					dimensions: size,
+					writable: false,
+					numComponents,
+				});
 				// Wrong length.
+				const array1 = new Array(length * numComponents + 10);
+				assert.throws(() => { validateGPULayerArray(array1, layer1); },	
+					'Invalid data length: 310 for GPULayer "test" of length 100 and dimensions: [16, 8] and numComponents: 3.');
+				const array2 = new Array(size[0] * size[1] * numComponents + 10);
+				assert.throws(() => { validateGPULayerArray(array2, layer2); },
+					'Invalid data length: 370 for GPULayer "test" of dimensions: [10, 12] and numComponents: 3.');
 				// Wrong type.
+				assert.throws(() => { validateGPULayerArray(new Array(length * numComponents).fill(0).join(''), layer1); },
+					'Invalid array type: String for GPULayer "test", please use one of [Float32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Array].');
 			});
 		});
 	});

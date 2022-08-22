@@ -661,14 +661,14 @@ export class GPULayer {
 			let output: GPULayerArray = internalType === type ? values : initArrayForType(type, OUTPUT_LENGTH, true);
 
 			// In some cases glNumChannels may be > numComponents.
-			if (handleFloat16Conversion || output !== values || numComponents !== glNumChannels) {
+			if (view || output !== values || numComponents !== glNumChannels) {
 				for (let i = 0, length = width * height; i < length; i++) {
 					const index1 = i * glNumChannels;
 					const index2 = i * numComponents;
 					if (index2 >= OUTPUT_LENGTH) break;
 					for (let j = 0; j < numComponents; j++) {
-						if (handleFloat16Conversion) {
-							output[index2 + j] = getFloat16(view!, 2 * (index1 + j), true);
+						if (view) {
+							output[index2 + j] = getFloat16(view, 2 * (index1 + j), true);
 						} else {
 							output[index2 + j] = values[index1 + j];
 						}

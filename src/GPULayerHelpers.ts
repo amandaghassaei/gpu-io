@@ -22,6 +22,18 @@ import {
 	GLSL1,
 	GPULayerArray,
 	validArrayTypes,
+	MIN_UNSIGNED_BYTE,
+	MAX_UNSIGNED_BYTE,
+	MIN_BYTE,
+	MAX_BYTE,
+	MIN_UNSIGNED_SHORT,
+	MAX_UNSIGNED_SHORT,
+	MIN_SHORT,
+	MAX_SHORT,
+	MIN_UNSIGNED_INT,
+	MAX_UNSIGNED_INT,
+	MIN_INT,
+	MAX_INT,
 } from './constants';
 import {
 	EXT_COLOR_BUFFER_FLOAT,
@@ -720,6 +732,36 @@ export function validateGPULayerArray(array: GPULayerArray | number[], layer: GP
 			throw new Error(`Invalid array type: ${array.constructor.name} for GPULayer "${name}", please use one of [${validArrayTypes.map(constructor => constructor.name).join(', ')}].`);
 	}
 
+	// Get min and max values for int types.
+	let min = -Infinity;
+	let max = Infinity;
+	switch(internalType) {
+		case UNSIGNED_BYTE:
+			min = MIN_UNSIGNED_BYTE;
+			max = MAX_UNSIGNED_BYTE;
+			break;
+		case BYTE:
+			min = MIN_BYTE;
+			max = MAX_BYTE;
+			break;
+		case UNSIGNED_SHORT:
+			min = MIN_UNSIGNED_SHORT;
+			max = MAX_UNSIGNED_SHORT;
+			break;
+		case SHORT:
+			min = MIN_SHORT;
+			max = MAX_SHORT;
+			break;
+		case UNSIGNED_INT:
+			min = MIN_UNSIGNED_INT;
+			max = MAX_UNSIGNED_INT;
+			break;
+		case INT:
+			min = MIN_INT;
+			max = MAX_INT;
+			break;
+	}
+
 	// Then check if array needs to be lengthened.
 	// This could be because glNumChannels !== numComponents or because length !== width * height.
 	const arrayLength = width * height * glNumChannels;
@@ -733,7 +775,19 @@ export function validateGPULayerArray(array: GPULayerArray | number[], layer: GP
 		const view = (internalType === HALF_FLOAT && shouldTypeCast) ? new DataView(validatedArray.buffer) : null;
 		for (let i = 0, _len = array.length / numComponents; i < _len; i++) {
 			for (let j = 0; j < numComponents; j++) {
-				const value = array[i * numComponents + j];
+				const origValue = array[i * numComponents + j];
+				let value = origValue;
+				let clipped = false;
+				if (value < min) {
+					value = min;
+					clipped = true;
+				} else if (value > max) {
+					value = max;
+					clipped = true;
+				}
+				if (clipped) {
+					console.warn(`Clipping out of range value ${origValue} to ${value} for GPULayer "${name}" with internal type ${internalType}.`);
+				}
 				const index = i * glNumChannels + j;
 				if (view) {
 					setFloat16(view, 2 * index, value, true);

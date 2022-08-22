@@ -33,7 +33,7 @@ const PARAMS = {
 	b8: false,
 	seedRatio: 0.12,
 	reset: onResize,
-	shouldSavePNG: false,
+	savePNG: savePNG,
 }
 
 const canvas = document.createElement('canvas');
@@ -45,7 +45,7 @@ const state = new GPULayer(composer, {
 	dimensions: [canvas.width, canvas.height],
 	numComponents: 1,
 	type: BYTE,
-	numBuffers: 2,
+	numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
 	wrapS: REPEAT,
 	wrapT: REPEAT,
 	writable: true,
@@ -56,31 +56,31 @@ const golRules = new GPUProgram(composer, {
 in vec2 v_UV;
 
 uniform vec2 u_pxSize;
-uniform isampler2D u_state;
+uniform lowp isampler2D u_state;
 
-uniform uint u_survivalRules;
-uniform uint u_birthRules;
+uniform lowp uint u_survivalRules;
+uniform lowp uint u_birthRules;
 
-out int out_fragColor;
+out lowp int out_fragColor;
 
 void main() {
-	int state = texture(u_state, v_UV).r;
-	int n = texture(u_state, v_UV + vec2(0, u_pxSize[1])).r;
-	int s = texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r;
-	int e = texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r;
-	int w = texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r;
-	int ne = texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r;
-	int nw = texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r;
-	int se = texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r;
-	int sw = texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r;
-	int numLiving = n + s + e + w + ne + nw + se + sw;
+	lowp int state = texture(u_state, v_UV).r;
+	lowp int n = texture(u_state, v_UV + vec2(0, u_pxSize[1])).r;
+	lowp int s = texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r;
+	lowp int e = texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r;
+	lowp int w = texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r;
+	lowp int ne = texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r;
+	lowp int nw = texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r;
+	lowp int se = texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r;
+	lowp int sw = texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r;
+	lowp int numLiving = n + s + e + w + ne + nw + se + sw;
 	if (state == 0){
-		uint mask = u_birthRules & uint(1 << (numLiving - 1));
+		lowp uint mask = u_birthRules & uint(1 << (numLiving - 1));
 		if (mask > uint(0)) {
 			state = 1;
 		}
 	} else {
-		uint mask = u_survivalRules & uint(1 << (numLiving - 1));
+		lowp uint mask = u_survivalRules & uint(1 << (numLiving - 1));
 		if (mask == uint(0)) {
 			state = 0;
 		}
@@ -115,11 +115,12 @@ const golRender = new GPUProgram(composer, {
 	fragmentShader: `
 in vec2 v_UV;
 
-uniform isampler2D u_state;
+uniform lowp isampler2D u_state;
+
 out vec4 out_fragColor;
 
 void main() {
-	int state = texture(u_state, v_UV).r;
+	lowp int state = texture(u_state, v_UV).r;
 	out_fragColor = vec4(state, state, state, 1);
 }`,
 	uniforms: {
@@ -196,8 +197,9 @@ birth.add(PARAMS, 'b8').onChange((val) => {
 birth.open();
 gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
 	onResize();
-});
-gui.add(PARAMS, 'reset', 0, 8, 1);
+}).name('Seed Ratio');
+gui.add(PARAMS, 'reset').name('Reset');
+gui.add(PARAMS, 'savePNG').name('Save PNG');
 
 // Start loop.
 function loop() {
@@ -215,10 +217,13 @@ function loop() {
 }
 loop();
 
+function savePNG() {
+	state.savePNG({ filename: 'gol', multiplier: 255 });
+}
 // Add 'p' hotkey to print screen.
 window.addEventListener('keydown', (e) => {
 	if (e.key === 'p') {
-		state.savePNG({ filename: 'gol', multiplier: 255 });
+		savePNG();
 	}
 })
 
