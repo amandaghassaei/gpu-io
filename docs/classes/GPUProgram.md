@@ -31,14 +31,14 @@ Create a GPUProgram.
 | :------ | :------ | :------ |
 | `composer` | [`GPUComposer`](GPUComposer.md) | The current GPUComposer instance. |
 | `params` | `Object` | GPUProgram parameters. |
-| `params.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) | - |
-| `params.fragmentShader` | `string` \| `string`[] | - |
-| `params.name` | `string` | - |
-| `params.uniforms?` | { `name`: `string` ; `type`: [`UniformType`](../README.md#uniformtype) ; `value`: [`UniformValue`](../README.md#uniformvalue)  }[] | - |
+| `params.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) | Compile-time #define variables to include with fragment shader. |
+| `params.fragmentShader` | `string` \| `string`[] | Fragment shader source or array of sources to be joined. |
+| `params.name` | `string` | Name of GPUProgram, used for error logging. |
+| `params.uniforms?` | { `name`: `string` ; `type`: [`UniformType`](../README.md#uniformtype) ; `value`: [`UniformValue`](../README.md#uniformvalue)  }[] | Array of uniforms to initialize with GPUProgram.  Can also be added later with GPUProgram.setUniform(). |
 
 #### Defined in
 
-[GPUProgram.ts:75](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPUProgram.ts#L75)
+[GPUProgram.ts:79](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPUProgram.ts#L79)
 
 ## Properties
 
@@ -50,7 +50,7 @@ Name of GPUProgram, used for error logging.
 
 #### Defined in
 
-[GPUProgram.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPUProgram.ts#L53)
+[GPUProgram.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPUProgram.ts#L53)
 
 ## Methods
 
@@ -66,7 +66,7 @@ Deallocate GPUProgram instance and associated WebGL properties.
 
 #### Defined in
 
-[GPUProgram.ts:460](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPUProgram.ts#L460)
+[GPUProgram.ts:464](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPUProgram.ts#L464)
 
 ___
 
@@ -90,4 +90,4 @@ Set fragment shader uniform for GPUProgram.
 
 #### Defined in
 
-[GPUProgram.ts:370](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPUProgram.ts#L370)
+[GPUProgram.ts:374](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPUProgram.ts#L374)

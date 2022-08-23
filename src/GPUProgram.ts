@@ -69,8 +69,12 @@ export class GPUProgram {
 
 	/**
      * Create a GPUProgram.
-     * @param {GPUComposer} composer - The current GPUComposer instance.
-     * @param {Object} params - GPUProgram parameters.
+     * @param composer - The current GPUComposer instance.
+     * @param params - GPUProgram parameters.
+	 * @param params.name - Name of GPUProgram, used for error logging.
+	 * @param params.fragmentShader - Fragment shader source or array of sources to be joined.
+	 * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  Can also be added later with GPUProgram.setUniform().
+	 * @param params.defines - Compile-time #define variables to include with fragment shader.
      */
 	constructor(
 		composer: GPUComposer,

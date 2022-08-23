@@ -123,7 +123,7 @@ webgl-compute
 
 #### Defined in
 
-[constants.ts:114](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L114)
+[constants.ts:114](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L114)
 
 ___
 
@@ -147,7 +147,7 @@ ___
 
 #### Defined in
 
-[constants.ts:123](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L123)
+[constants.ts:123](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L123)
 
 ___
 
@@ -157,7 +157,7 @@ ___
 
 #### Defined in
 
-[constants.ts:56](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L56)
+[constants.ts:56](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L56)
 
 ___
 
@@ -167,7 +167,7 @@ ___
 
 #### Defined in
 
-[constants.ts:45](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L45)
+[constants.ts:45](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L45)
 
 ___
 
@@ -177,7 +177,7 @@ ___
 
 #### Defined in
 
-[constants.ts:23](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L23)
+[constants.ts:23](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L23)
 
 ___
 
@@ -194,7 +194,7 @@ ___
 
 #### Defined in
 
-[constants.ts:117](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L117)
+[constants.ts:117](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L117)
 
 ___
 
@@ -204,7 +204,7 @@ ___
 
 #### Defined in
 
-[constants.ts:28](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L28)
+[constants.ts:28](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L28)
 
 ___
 
@@ -214,7 +214,7 @@ ___
 
 #### Defined in
 
-[constants.ts:27](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L27)
+[constants.ts:27](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L27)
 
 ___
 
@@ -224,7 +224,7 @@ ___
 
 #### Defined in
 
-[constants.ts:25](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L25)
+[constants.ts:25](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L25)
 
 ___
 
@@ -234,7 +234,7 @@ ___
 
 #### Defined in
 
-[constants.ts:31](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L31)
+[constants.ts:31](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L31)
 
 ___
 
@@ -244,7 +244,7 @@ ___
 
 #### Defined in
 
-[constants.ts:103](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L103)
+[constants.ts:103](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L103)
 
 ___
 
@@ -254,7 +254,7 @@ ___
 
 #### Defined in
 
-[constants.ts:37](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L37)
+[constants.ts:37](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L37)
 
 ___
 
@@ -264,7 +264,7 @@ ___
 
 #### Defined in
 
-[constants.ts:39](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L39)
+[constants.ts:39](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L39)
 
 ___
 
@@ -282,7 +282,7 @@ ___
 
 #### Defined in
 
-[constants.ts:88](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L88)
+[constants.ts:88](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L88)
 
 ___
 
@@ -292,7 +292,7 @@ ___
 
 #### Defined in
 
-[constants.ts:74](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L74)
+[constants.ts:74](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L74)
 
 ___
 
@@ -302,7 +302,7 @@ ___
 
 #### Defined in
 
-[constants.ts:73](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L73)
+[constants.ts:73](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L73)
 
 ___
 
@@ -312,7 +312,7 @@ ___
 
 #### Defined in
 
-[constants.ts:87](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L87)
+[constants.ts:87](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L87)
 
 ## Variables
 
@@ -322,7 +322,7 @@ ___
 
 #### Defined in
 
-[constants.ts:10](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L10)
+[constants.ts:10](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L10)
 
 ___
 
@@ -332,7 +332,7 @@ ___
 
 #### Defined in
 
-[constants.ts:5](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L5)
+[constants.ts:5](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L5)
 
 ___
 
@@ -342,7 +342,7 @@ ___
 
 #### Defined in
 
-[constants.ts:19](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L19)
+[constants.ts:19](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L19)
 
 ___
 
@@ -352,7 +352,7 @@ ___
 
 #### Defined in
 
-[constants.ts:127](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L127)
+[constants.ts:127](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L127)
 
 ___
 
@@ -362,7 +362,7 @@ ___
 
 #### Defined in
 
-[constants.ts:95](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L95)
+[constants.ts:95](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L95)
 
 ___
 
@@ -372,7 +372,7 @@ ___
 
 #### Defined in
 
-[constants.ts:97](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L97)
+[constants.ts:97](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L97)
 
 ___
 
@@ -382,7 +382,7 @@ ___
 
 #### Defined in
 
-[constants.ts:98](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L98)
+[constants.ts:98](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L98)
 
 ___
 
@@ -392,7 +392,7 @@ ___
 
 #### Defined in
 
-[constants.ts:96](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L96)
+[constants.ts:96](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L96)
 
 ___
 
@@ -402,7 +402,7 @@ ___
 
 #### Defined in
 
-[constants.ts:50](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L50)
+[constants.ts:50](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L50)
 
 ___
 
@@ -412,7 +412,7 @@ ___
 
 #### Defined in
 
-[constants.ts:3](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L3)
+[constants.ts:3](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L3)
 
 ___
 
@@ -422,7 +422,7 @@ ___
 
 #### Defined in
 
-[constants.ts:59](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L59)
+[constants.ts:59](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L59)
 
 ___
 
@@ -432,7 +432,7 @@ ___
 
 #### Defined in
 
-[constants.ts:60](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L60)
+[constants.ts:60](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L60)
 
 ___
 
@@ -442,7 +442,7 @@ ___
 
 #### Defined in
 
-[constants.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L61)
+[constants.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L61)
 
 ___
 
@@ -452,7 +452,7 @@ ___
 
 #### Defined in
 
-[constants.ts:62](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L62)
+[constants.ts:62](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L62)
 
 ___
 
@@ -462,7 +462,7 @@ ___
 
 #### Defined in
 
-[constants.ts:44](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L44)
+[constants.ts:44](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L44)
 
 ___
 
@@ -472,7 +472,7 @@ ___
 
 #### Defined in
 
-[constants.ts:43](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L43)
+[constants.ts:43](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L43)
 
 ___
 
@@ -482,7 +482,7 @@ ___
 
 #### Defined in
 
-[constants.ts:2](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L2)
+[constants.ts:2](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L2)
 
 ___
 
@@ -492,7 +492,7 @@ ___
 
 #### Defined in
 
-[constants.ts:9](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L9)
+[constants.ts:9](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L9)
 
 ___
 
@@ -502,7 +502,7 @@ ___
 
 #### Defined in
 
-[constants.ts:63](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L63)
+[constants.ts:63](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L63)
 
 ___
 
@@ -512,7 +512,7 @@ ___
 
 #### Defined in
 
-[constants.ts:64](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L64)
+[constants.ts:64](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L64)
 
 ___
 
@@ -522,7 +522,7 @@ ___
 
 #### Defined in
 
-[constants.ts:65](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L65)
+[constants.ts:65](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L65)
 
 ___
 
@@ -532,7 +532,7 @@ ___
 
 #### Defined in
 
-[constants.ts:66](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L66)
+[constants.ts:66](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L66)
 
 ___
 
@@ -542,7 +542,7 @@ ___
 
 #### Defined in
 
-[constants.ts:101](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L101)
+[constants.ts:101](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L101)
 
 ___
 
@@ -552,7 +552,7 @@ ___
 
 #### Defined in
 
-[constants.ts:100](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L100)
+[constants.ts:100](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L100)
 
 ___
 
@@ -562,7 +562,7 @@ ___
 
 #### Defined in
 
-[constants.ts:102](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L102)
+[constants.ts:102](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L102)
 
 ___
 
@@ -572,7 +572,7 @@ ___
 
 #### Defined in
 
-[constants.ts:14](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L14)
+[constants.ts:14](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L14)
 
 ___
 
@@ -582,7 +582,7 @@ ___
 
 #### Defined in
 
-[constants.ts:133](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L133)
+[constants.ts:133](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L133)
 
 ___
 
@@ -592,7 +592,7 @@ ___
 
 #### Defined in
 
-[constants.ts:146](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L146)
+[constants.ts:146](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L146)
 
 ___
 
@@ -602,7 +602,7 @@ ___
 
 #### Defined in
 
-[constants.ts:144](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L144)
+[constants.ts:144](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L144)
 
 ___
 
@@ -612,7 +612,7 @@ ___
 
 #### Defined in
 
-[constants.ts:141](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L141)
+[constants.ts:141](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L141)
 
 ___
 
@@ -622,7 +622,7 @@ ___
 
 #### Defined in
 
-[constants.ts:137](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L137)
+[constants.ts:137](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L137)
 
 ___
 
@@ -632,7 +632,7 @@ ___
 
 #### Defined in
 
-[constants.ts:131](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L131)
+[constants.ts:131](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L131)
 
 ___
 
@@ -642,7 +642,7 @@ ___
 
 #### Defined in
 
-[constants.ts:139](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L139)
+[constants.ts:139](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L139)
 
 ___
 
@@ -652,7 +652,7 @@ ___
 
 #### Defined in
 
-[constants.ts:135](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L135)
+[constants.ts:135](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L135)
 
 ___
 
@@ -662,7 +662,7 @@ ___
 
 #### Defined in
 
-[constants.ts:132](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L132)
+[constants.ts:132](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L132)
 
 ___
 
@@ -672,7 +672,7 @@ ___
 
 #### Defined in
 
-[constants.ts:145](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L145)
+[constants.ts:145](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L145)
 
 ___
 
@@ -682,7 +682,7 @@ ___
 
 #### Defined in
 
-[constants.ts:143](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L143)
+[constants.ts:143](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L143)
 
 ___
 
@@ -692,7 +692,7 @@ ___
 
 #### Defined in
 
-[constants.ts:140](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L140)
+[constants.ts:140](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L140)
 
 ___
 
@@ -702,7 +702,7 @@ ___
 
 #### Defined in
 
-[constants.ts:136](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L136)
+[constants.ts:136](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L136)
 
 ___
 
@@ -712,7 +712,7 @@ ___
 
 #### Defined in
 
-[constants.ts:130](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L130)
+[constants.ts:130](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L130)
 
 ___
 
@@ -722,7 +722,7 @@ ___
 
 #### Defined in
 
-[constants.ts:138](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L138)
+[constants.ts:138](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L138)
 
 ___
 
@@ -732,7 +732,7 @@ ___
 
 #### Defined in
 
-[constants.ts:134](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L134)
+[constants.ts:134](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L134)
 
 ___
 
@@ -742,7 +742,7 @@ ___
 
 #### Defined in
 
-[constants.ts:15](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L15)
+[constants.ts:15](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L15)
 
 ___
 
@@ -752,7 +752,7 @@ ___
 
 #### Defined in
 
-[constants.ts:55](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L55)
+[constants.ts:55](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L55)
 
 ___
 
@@ -762,7 +762,7 @@ ___
 
 #### Defined in
 
-[constants.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L53)
+[constants.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L53)
 
 ___
 
@@ -772,7 +772,7 @@ ___
 
 #### Defined in
 
-[constants.ts:54](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L54)
+[constants.ts:54](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L54)
 
 ___
 
@@ -782,7 +782,7 @@ ___
 
 #### Defined in
 
-[constants.ts:18](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L18)
+[constants.ts:18](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L18)
 
 ___
 
@@ -792,7 +792,7 @@ ___
 
 #### Defined in
 
-[constants.ts:35](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L35)
+[constants.ts:35](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L35)
 
 ___
 
@@ -802,7 +802,7 @@ ___
 
 #### Defined in
 
-[constants.ts:36](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L36)
+[constants.ts:36](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L36)
 
 ___
 
@@ -812,7 +812,7 @@ ___
 
 #### Defined in
 
-[constants.ts:99](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L99)
+[constants.ts:99](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L99)
 
 ___
 
@@ -822,7 +822,7 @@ ___
 
 #### Defined in
 
-[constants.ts:7](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L7)
+[constants.ts:7](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L7)
 
 ___
 
@@ -832,7 +832,7 @@ ___
 
 #### Defined in
 
-[constants.ts:11](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L11)
+[constants.ts:11](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L11)
 
 ___
 
@@ -842,7 +842,7 @@ ___
 
 #### Defined in
 
-[constants.ts:67](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L67)
+[constants.ts:67](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L67)
 
 ___
 
@@ -852,7 +852,7 @@ ___
 
 #### Defined in
 
-[constants.ts:68](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L68)
+[constants.ts:68](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L68)
 
 ___
 
@@ -862,7 +862,7 @@ ___
 
 #### Defined in
 
-[constants.ts:69](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L69)
+[constants.ts:69](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L69)
 
 ___
 
@@ -872,7 +872,7 @@ ___
 
 #### Defined in
 
-[constants.ts:70](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L70)
+[constants.ts:70](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L70)
 
 ___
 
@@ -882,7 +882,7 @@ ___
 
 #### Defined in
 
-[constants.ts:4](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L4)
+[constants.ts:4](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L4)
 
 ___
 
@@ -892,7 +892,7 @@ ___
 
 #### Defined in
 
-[constants.ts:8](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L8)
+[constants.ts:8](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L8)
 
 ___
 
@@ -902,7 +902,7 @@ ___
 
 #### Defined in
 
-[constants.ts:6](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L6)
+[constants.ts:6](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L6)
 
 ___
 
@@ -912,7 +912,7 @@ ___
 
 #### Defined in
 
-[constants.ts:49](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L49)
+[constants.ts:49](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L49)
 
 ___
 
@@ -922,7 +922,7 @@ ___
 
 #### Defined in
 
-[constants.ts:48](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L48)
+[constants.ts:48](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L48)
 
 ___
 
@@ -948,7 +948,7 @@ ___
 
 #### Defined in
 
-[index.ts:25](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/index.ts#L25)
+[index.ts:25](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/index.ts#L25)
 
 ___
 
@@ -958,7 +958,7 @@ ___
 
 #### Defined in
 
-[constants.ts:24](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L24)
+[constants.ts:24](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L24)
 
 ___
 
@@ -968,7 +968,7 @@ ___
 
 #### Defined in
 
-[constants.ts:26](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L26)
+[constants.ts:26](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L26)
 
 ___
 
@@ -978,7 +978,7 @@ ___
 
 #### Defined in
 
-[constants.ts:29](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L29)
+[constants.ts:29](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L29)
 
 ___
 
@@ -988,7 +988,7 @@ ___
 
 #### Defined in
 
-[constants.ts:38](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L38)
+[constants.ts:38](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L38)
 
 ___
 
@@ -998,7 +998,7 @@ ___
 
 #### Defined in
 
-[constants.ts:40](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L40)
+[constants.ts:40](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L40)
 
 ___
 
@@ -1008,7 +1008,7 @@ ___
 
 #### Defined in
 
-[constants.ts:30](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L30)
+[constants.ts:30](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L30)
 
 ## Functions
 
@@ -1028,7 +1028,7 @@ ___
 
 #### Defined in
 
-[constants.ts:124](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/constants.ts#L124)
+[constants.ts:124](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/constants.ts#L124)
 
 ___
 
@@ -1047,7 +1047,7 @@ From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 
 #### Defined in
 
-[utils.ts:425](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/utils.ts#L425)
+[utils.ts:425](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/utils.ts#L425)
 
 ___
 
@@ -1066,7 +1066,7 @@ From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 
 #### Defined in
 
-[utils.ts:357](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/utils.ts#L357)
+[utils.ts:357](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/utils.ts#L357)
 
 ___
 
@@ -1082,7 +1082,7 @@ Detects whether highp precision is supported in fragment shaders in the current 
 
 #### Defined in
 
-[utils.ts:282](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/utils.ts#L282)
+[utils.ts:282](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/utils.ts#L282)
 
 ___
 
@@ -1098,7 +1098,7 @@ Detects whether highp precision is supported in vertex shaders in the current br
 
 #### Defined in
 
-[utils.ts:267](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/utils.ts#L267)
+[utils.ts:267](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/utils.ts#L267)
 
 ___
 
@@ -1121,7 +1121,7 @@ This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/rend
 
 #### Defined in
 
-[utils.ts:189](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/utils.ts#L189)
+[utils.ts:189](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/utils.ts#L189)
 
 ___
 
@@ -1137,4 +1137,4 @@ Returns whether WebGL2 is supported by the current browser.
 
 #### Defined in
 
-[utils.ts:198](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/utils.ts#L198)
+[utils.ts:198](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/utils.ts#L198)

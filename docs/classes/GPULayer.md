@@ -83,7 +83,7 @@
 
 #### Defined in
 
-[GPULayer.ts:104](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L104)
+[GPULayer.ts:104](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L104)
 
 ## Properties
 
@@ -93,7 +93,7 @@
 
 #### Defined in
 
-[GPULayer.ts:58](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L58)
+[GPULayer.ts:58](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L58)
 
 ___
 
@@ -103,7 +103,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:92](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L92)
+[GPULayer.ts:92](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L92)
 
 ___
 
@@ -113,7 +113,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:83](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L83)
+[GPULayer.ts:83](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L83)
 
 ___
 
@@ -123,7 +123,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:82](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L82)
+[GPULayer.ts:82](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L82)
 
 ___
 
@@ -133,7 +133,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:89](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L89)
+[GPULayer.ts:89](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L89)
 
 ___
 
@@ -143,7 +143,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:86](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L86)
+[GPULayer.ts:86](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L86)
 
 ___
 
@@ -153,7 +153,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:95](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L95)
+[GPULayer.ts:95](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L95)
 
 ___
 
@@ -163,7 +163,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:98](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L98)
+[GPULayer.ts:98](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L98)
 
 ___
 
@@ -173,7 +173,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:91](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L91)
+[GPULayer.ts:91](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L91)
 
 ___
 
@@ -183,7 +183,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:85](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L85)
+[GPULayer.ts:85](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L85)
 
 ___
 
@@ -193,7 +193,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:94](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L94)
+[GPULayer.ts:94](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L94)
 
 ___
 
@@ -203,7 +203,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:97](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L97)
+[GPULayer.ts:97](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L97)
 
 ___
 
@@ -213,7 +213,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:55](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L55)
+[GPULayer.ts:55](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L55)
 
 ___
 
@@ -223,7 +223,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:67](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L67)
+[GPULayer.ts:67](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L67)
 
 ___
 
@@ -233,7 +233,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:57](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L57)
+[GPULayer.ts:57](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L57)
 
 ___
 
@@ -243,7 +243,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:56](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L56)
+[GPULayer.ts:56](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L56)
 
 ___
 
@@ -253,7 +253,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:59](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L59)
+[GPULayer.ts:59](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L59)
 
 ___
 
@@ -263,7 +263,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:60](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L60)
+[GPULayer.ts:60](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L60)
 
 ___
 
@@ -273,7 +273,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L61)
+[GPULayer.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L61)
 
 ## Accessors
 
@@ -287,7 +287,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:384](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L384)
+[GPULayer.ts:384](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L384)
 
 ___
 
@@ -301,7 +301,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:468](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L468)
+[GPULayer.ts:468](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L468)
 
 • `set` **clearValue**(`clearValue`): `void`
 
@@ -317,7 +317,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:472](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L472)
+[GPULayer.ts:472](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L472)
 
 ___
 
@@ -331,7 +331,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:401](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L401)
+[GPULayer.ts:401](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L401)
 
 ___
 
@@ -345,7 +345,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:542](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L542)
+[GPULayer.ts:542](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L542)
 
 ___
 
@@ -359,7 +359,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:405](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L405)
+[GPULayer.ts:405](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L405)
 
 ___
 
@@ -373,7 +373,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:546](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L546)
+[GPULayer.ts:546](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L546)
 
 ___
 
@@ -387,7 +387,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:538](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L538)
+[GPULayer.ts:538](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L538)
 
 ## Methods
 
@@ -401,7 +401,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:413](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L413)
+[GPULayer.ts:413](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L413)
 
 ___
 
@@ -421,7 +421,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:423](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L423)
+[GPULayer.ts:423](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L423)
 
 ___
 
@@ -435,7 +435,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:249](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L249)
+[GPULayer.ts:249](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L249)
 
 ___
 
@@ -457,7 +457,7 @@ Attach the output buffer of this GPULayer to a Threejs Texture object.
 
 #### Defined in
 
-[GPULayer.ts:752](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L752)
+[GPULayer.ts:752](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L752)
 
 ___
 
@@ -477,7 +477,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:480](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L480)
+[GPULayer.ts:480](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L480)
 
 ___
 
@@ -501,7 +501,7 @@ Create a deep copy of GPULayer with current state copied over.
 
 #### Defined in
 
-[GPULayer.ts:813](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L813)
+[GPULayer.ts:813](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L813)
 
 ___
 
@@ -517,7 +517,7 @@ Deallocate GPULayer instance and associated WebGL properties.
 
 #### Defined in
 
-[GPULayer.ts:795](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L795)
+[GPULayer.ts:795](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L795)
 
 ___
 
@@ -537,7 +537,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:393](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L393)
+[GPULayer.ts:393](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L393)
 
 ___
 
@@ -551,7 +551,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:557](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L557)
+[GPULayer.ts:557](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L557)
 
 ___
 
@@ -565,7 +565,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:388](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L388)
+[GPULayer.ts:388](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L388)
 
 ___
 
@@ -579,7 +579,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:553](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L553)
+[GPULayer.ts:553](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L553)
 
 ___
 
@@ -600,7 +600,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:453](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L453)
+[GPULayer.ts:453](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L453)
 
 ___
 
@@ -626,7 +626,7 @@ Save the current state of this GPULayer to png.
 
 #### Defined in
 
-[GPULayer.ts:692](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L692)
+[GPULayer.ts:692](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L692)
 
 ___
 
@@ -647,4 +647,4 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:437](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L437)
+[GPULayer.ts:437](https://github.com/amandaghassaei/webgl-compute/blob/f4996f0/src/GPULayer.ts#L437)
