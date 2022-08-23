@@ -66,10 +66,6 @@ webgl-compute
 
 Half float data type.
 
-#### Defined in
-
-[constants.ts:5](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L5)
-
 ___
 
 ### FLOAT
@@ -77,10 +73,6 @@ ___
 • `Const` **FLOAT**: ``"FLOAT"``
 
 Float data type.
-
-#### Defined in
-
-[constants.ts:9](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L9)
 
 ___
 
@@ -90,10 +82,6 @@ ___
 
 Unsigned byte data type.
 
-#### Defined in
-
-[constants.ts:13](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L13)
-
 ___
 
 ### BYTE
@@ -101,10 +89,6 @@ ___
 • `Const` **BYTE**: ``"BYTE"``
 
 Byte data type.
-
-#### Defined in
-
-[constants.ts:17](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L17)
 
 ___
 
@@ -114,10 +98,6 @@ ___
 
 Unsigned short data type.
 
-#### Defined in
-
-[constants.ts:21](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L21)
-
 ___
 
 ### SHORT
@@ -125,10 +105,6 @@ ___
 • `Const` **SHORT**: ``"SHORT"``
 
 Short data type.
-
-#### Defined in
-
-[constants.ts:25](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L25)
 
 ___
 
@@ -138,10 +114,6 @@ ___
 
 Unsigned int data type.
 
-#### Defined in
-
-[constants.ts:29](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L29)
-
 ___
 
 ### INT
@@ -149,10 +121,6 @@ ___
 • `Const` **INT**: ``"INT"``
 
 Int data type.
-
-#### Defined in
-
-[constants.ts:33](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L33)
 
 ___
 
@@ -162,10 +130,6 @@ ___
 
 Boolean data type (GPUProgram uniforms only).
 
-#### Defined in
-
-[constants.ts:37](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L37)
-
 ___
 
 ### UINT
@@ -173,10 +137,6 @@ ___
 • `Const` **UINT**: ``"UINT"``
 
 Unsigned int data type (GPUProgram uniforms only).
-
-#### Defined in
-
-[constants.ts:41](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L41)
 
 ___
 
@@ -186,10 +146,6 @@ ___
 
 Nearest texture filtering.
 
-#### Defined in
-
-[constants.ts:47](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L47)
-
 ___
 
 ### LINEAR
@@ -197,10 +153,6 @@ ___
 • `Const` **LINEAR**: ``"LINEAR"``
 
 Linear texture filtering.
-
-#### Defined in
-
-[constants.ts:51](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L51)
 
 ___
 
@@ -210,10 +162,6 @@ ___
 
 Clamp to edge wrapping (no wrapping).
 
-#### Defined in
-
-[constants.ts:57](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L57)
-
 ___
 
 ### REPEAT
@@ -221,10 +169,6 @@ ___
 • `Const` **REPEAT**: ``"REPEAT"``
 
 Repeat/periodic wrapping.
-
-#### Defined in
-
-[constants.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L61)
 
 ___
 
@@ -234,10 +178,6 @@ ___
 
 GLSL version 300 (WebGL2 only).
 
-#### Defined in
-
-[constants.ts:137](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L137)
-
 ___
 
 ### GLSL1
@@ -245,10 +185,6 @@ ___
 • `Const` **GLSL1**: ``"100"``
 
 GLSL version 100 (WebGL1 and WebGL2).
-
-#### Defined in
-
-[constants.ts:141](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L141)
 
 ___
 
@@ -258,10 +194,6 @@ ___
 
 WebGL2 context ID.
 
-#### Defined in
-
-[constants.ts:151](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L151)
-
 ___
 
 ### WEBGL1
@@ -269,10 +201,6 @@ ___
 • `Const` **WEBGL1**: ``"webgl"``
 
 WebGL1 context ID.
-
-#### Defined in
-
-[constants.ts:155](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L155)
 
 ___
 
@@ -282,10 +210,6 @@ ___
 
 Experimental WebGL context ID.
 
-#### Defined in
-
-[constants.ts:159](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L159)
-
 ___
 
 ### PRECISION\_LOW\_P
@@ -293,10 +217,6 @@ ___
 • `Const` **PRECISION\_LOW\_P**: ``"lowp"``
 
 GLSL lowp precision declaration.
-
-#### Defined in
-
-[constants.ts:165](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L165)
 
 ___
 
@@ -306,10 +226,6 @@ ___
 
 GLSL mediump precision declaration.
 
-#### Defined in
-
-[constants.ts:169](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L169)
-
 ___
 
 ### PRECISION\_HIGH\_P
@@ -317,10 +233,6 @@ ___
 • `Const` **PRECISION\_HIGH\_P**: ``"highp"``
 
 GLSL highp precision declaration.
-
-#### Defined in
-
-[constants.ts:173](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L173)
 
 ## Type Aliases
 
@@ -330,10 +242,6 @@ GLSL highp precision declaration.
 
 GPULayer array types.
 
-#### Defined in
-
-[constants.ts:68](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L68)
-
 ___
 
 ### GPULayerType
@@ -341,10 +249,6 @@ ___
 Ƭ **GPULayerType**: typeof [`HALF_FLOAT`](README.md#half_float) \| typeof [`FLOAT`](README.md#float) \| typeof [`UNSIGNED_BYTE`](README.md#unsigned_byte) \| typeof [`BYTE`](README.md#byte) \| typeof [`UNSIGNED_SHORT`](README.md#unsigned_short) \| typeof [`SHORT`](README.md#short) \| typeof [`UNSIGNED_INT`](README.md#unsigned_int) \| typeof [`INT`](README.md#int)
 
 GPULayer data types.
-
-#### Defined in
-
-[constants.ts:76](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L76)
 
 ___
 
@@ -354,10 +258,6 @@ ___
 
 GPULayer numComponents options.
 
-#### Defined in
-
-[constants.ts:84](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L84)
-
 ___
 
 ### GPULayerFilter
@@ -365,10 +265,6 @@ ___
 Ƭ **GPULayerFilter**: typeof [`LINEAR`](README.md#linear) \| typeof [`NEAREST`](README.md#nearest)
 
 GPULayer filter/interpolation types.
-
-#### Defined in
-
-[constants.ts:88](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L88)
 
 ___
 
@@ -378,10 +274,6 @@ ___
 
 GPULayer wrap types.
 
-#### Defined in
-
-[constants.ts:99](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L99)
-
 ___
 
 ### GLSLVersion
@@ -389,10 +281,6 @@ ___
 Ƭ **GLSLVersion**: typeof [`GLSL1`](README.md#glsl1) \| typeof [`GLSL3`](README.md#glsl3)
 
 GLSL available versions.
-
-#### Defined in
-
-[constants.ts:145](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L145)
 
 ___
 
@@ -402,10 +290,6 @@ ___
 
 GLSL available precision declarations.
 
-#### Defined in
-
-[constants.ts:177](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L177)
-
 ___
 
 ### UniformType
@@ -414,10 +298,6 @@ ___
 
 GPUProgram uniform types.
 
-#### Defined in
-
-[constants.ts:233](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L233)
-
 ___
 
 ### UniformValue
@@ -425,10 +305,6 @@ ___
 Ƭ **UniformValue**: `boolean` \| `number` \| `number`[]
 
 GPUProgram uniform values.
-
-#### Defined in
-
-[constants.ts:253](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L253)
 
 ___
 
@@ -441,10 +317,6 @@ Object containing compile-time #define variables for GPUProgram fragment shader.
 #### Index signature
 
 ▪ [key: `string`]: `string`
-
-#### Defined in
-
-[constants.ts:313](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L313)
 
 ___
 
@@ -465,10 +337,6 @@ ___
 ##### Returns
 
 `void`
-
-#### Defined in
-
-[constants.ts:325](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/constants.ts#L325)
 
 ## Functions
 
@@ -491,10 +359,6 @@ This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/rend
 
 - true if WebGL2 context, else false.
 
-#### Defined in
-
-[utils.ts:190](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/utils.ts#L190)
-
 ___
 
 ### isWebGL2Supported
@@ -508,10 +372,6 @@ Returns whether WebGL2 is supported by the current browser.
 `boolean`
 
 - true if WebGL2 is supported, else false.
-
-#### Defined in
-
-[utils.ts:199](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/utils.ts#L199)
 
 ___
 
@@ -527,10 +387,6 @@ Detects whether highp precision is supported in vertex shaders in the current br
 
 - true is highp is supported in vertex shaders, else false.
 
-#### Defined in
-
-[utils.ts:268](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/utils.ts#L268)
-
 ___
 
 ### isHighpSupportedInFragmentShader
@@ -544,10 +400,6 @@ Detects whether highp precision is supported in fragment shaders in the current 
 `boolean`
 
 - true is highp is supported in fragment shaders, else false.
-
-#### Defined in
-
-[utils.ts:283](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/utils.ts#L283)
 
 ___
 
@@ -564,10 +416,6 @@ From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 
 - Vertex shader mediump precision.
 
-#### Defined in
-
-[utils.ts:358](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/utils.ts#L358)
-
 ___
 
 ### getFragmentShaderMediumpPrecision
@@ -582,7 +430,3 @@ From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 ``"mediump"`` \| ``"highp"``
 
 - Fragment shader supported mediump precision.
-
-#### Defined in
-
-[utils.ts:426](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/utils.ts#L426)

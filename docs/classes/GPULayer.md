@@ -49,19 +49,11 @@
 
 • `Readonly` **name**: `string`
 
-#### Defined in
-
-[GPULayer.ts:55](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L55)
-
 ___
 
 ### type
 
 • `Readonly` **type**: [`GPULayerType`](../README.md#gpulayertype)
-
-#### Defined in
-
-[GPULayer.ts:56](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L56)
 
 ___
 
@@ -69,19 +61,11 @@ ___
 
 • `Readonly` **numComponents**: [`GPULayerNumComponents`](../README.md#gpulayernumcomponents)
 
-#### Defined in
-
-[GPULayer.ts:57](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L57)
-
 ___
 
 ### filter
 
 • `Readonly` **filter**: [`GPULayerFilter`](../README.md#gpulayerfilter)
-
-#### Defined in
-
-[GPULayer.ts:58](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L58)
 
 ___
 
@@ -89,19 +73,11 @@ ___
 
 • `Readonly` **wrapS**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
-#### Defined in
-
-[GPULayer.ts:59](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L59)
-
 ___
 
 ### wrapT
 
 • `Readonly` **wrapT**: [`GPULayerWrap`](../README.md#gpulayerwrap)
-
-#### Defined in
-
-[GPULayer.ts:60](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L60)
 
 ___
 
@@ -109,19 +85,11 @@ ___
 
 • `Readonly` **writable**: `boolean`
 
-#### Defined in
-
-[GPULayer.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L61)
-
 ___
 
 ### numBuffers
 
 • `Readonly` **numBuffers**: `number`
-
-#### Defined in
-
-[GPULayer.ts:67](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L67)
 
 ## Constructors
 
@@ -147,10 +115,6 @@ ___
 | `params.numBuffers?` | `number` |
 | `params.clearValue?` | `number` \| `number`[] |
 
-#### Defined in
-
-[GPULayer.ts:137](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L137)
-
 ## Accessors
 
 ### bufferIndex
@@ -160,10 +124,6 @@ ___
 #### Returns
 
 `number`
-
-#### Defined in
-
-[GPULayer.ts:424](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L424)
 
 ___
 
@@ -175,10 +135,6 @@ ___
 
 `WebGLTexture`
 
-#### Defined in
-
-[GPULayer.ts:441](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L441)
-
 ___
 
 ### lastState
@@ -188,10 +144,6 @@ ___
 #### Returns
 
 `WebGLTexture`
-
-#### Defined in
-
-[GPULayer.ts:445](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L445)
 
 ___
 
@@ -204,10 +156,6 @@ Get the clearValue of the GPULayer.
 #### Returns
 
 `number` \| `number`[]
-
-#### Defined in
-
-[GPULayer.ts:528](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L528)
 
 • `set` **clearValue**(`clearValue`): `void`
 
@@ -223,10 +171,6 @@ Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
 
 `void`
 
-#### Defined in
-
-[GPULayer.ts:517](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L517)
-
 ___
 
 ### width
@@ -238,10 +182,6 @@ The width of the GPULayer array.
 #### Returns
 
 `number`
-
-#### Defined in
-
-[GPULayer.ts:599](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L599)
 
 ___
 
@@ -255,10 +195,6 @@ The height of the GPULayer array.
 
 `number`
 
-#### Defined in
-
-[GPULayer.ts:606](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L606)
-
 ___
 
 ### length
@@ -271,10 +207,6 @@ The length of the GPULayer array (only available to 1D GPULayers).
 
 `number`
 
-#### Defined in
-
-[GPULayer.ts:613](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L613)
-
 ## Methods
 
 ### incrementBufferIndex
@@ -284,10 +216,6 @@ The length of the GPULayer array (only available to 1D GPULayers).
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPULayer.ts:428](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L428)
 
 ___
 
@@ -304,10 +232,6 @@ ___
 #### Returns
 
 `WebGLTexture`
-
-#### Defined in
-
-[GPULayer.ts:433](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L433)
 
 ___
 
@@ -326,10 +250,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPULayer.ts:483](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L483)
-
 ___
 
 ### resize
@@ -346,10 +266,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPULayer.ts:499](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L499)
 
 ___
 
@@ -369,10 +285,6 @@ Clear all data in GPULayer to GPULayer.clearValue.
 
 `void`
 
-#### Defined in
-
-[GPULayer.ts:538](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L538)
-
 ___
 
 ### is1D
@@ -387,10 +299,6 @@ Returns whether the GPULayer was inited as a 1D array (rather than 2D).
 
 - true if GPULayer is 1D, else false.
 
-#### Defined in
-
-[GPULayer.ts:624](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L624)
-
 ___
 
 ### getValues
@@ -404,10 +312,6 @@ Returns the current values of the GPULayer as a TypedArray.
 [`GPULayerArray`](../README.md#gpulayerarray)
 
 - A TypedArray containing current state of GPULayer.
-
-#### Defined in
-
-[GPULayer.ts:632](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L632)
 
 ___
 
@@ -431,10 +335,6 @@ Save the current state of this GPULayer to png.
 
 `void`
 
-#### Defined in
-
-[GPULayer.ts:771](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L771)
-
 ___
 
 ### attachToThreeTexture
@@ -453,10 +353,6 @@ Attach the output buffer of this GPULayer to a Threejs Texture object.
 
 `void`
 
-#### Defined in
-
-[GPULayer.ts:831](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L831)
-
 ___
 
 ### dispose
@@ -468,10 +364,6 @@ Deallocate GPULayer instance and associated WebGL properties.
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPULayer.ts:874](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L874)
 
 ___
 
@@ -492,7 +384,3 @@ Create a deep copy of GPULayer with current state copied over.
 [`GPULayer`](GPULayer.md)
 
 - Deep copy of GPULayer.
-
-#### Defined in
-
-[GPULayer.ts:892](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPULayer.ts#L892)

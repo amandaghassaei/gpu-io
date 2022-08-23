@@ -51,19 +51,11 @@
 
 • `Readonly` **canvas**: `HTMLCanvasElement`
 
-#### Defined in
-
-[GPUComposer.ts:73](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L73)
-
 ___
 
 ### gl
 
 • `Readonly` **gl**: `WebGLRenderingContext` \| `WebGL2RenderingContext`
-
-#### Defined in
-
-[GPUComposer.ts:74](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L74)
 
 ___
 
@@ -71,19 +63,11 @@ ___
 
 • `Readonly` **glslVersion**: [`GLSLVersion`](../README.md#glslversion)
 
-#### Defined in
-
-[GPUComposer.ts:75](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L75)
-
 ___
 
 ### intPrecision
 
 • `Readonly` **intPrecision**: [`GLSLPrecision`](../README.md#glslprecision)
-
-#### Defined in
-
-[GPUComposer.ts:76](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L76)
 
 ___
 
@@ -91,29 +75,17 @@ ___
 
 • `Readonly` **floatPrecision**: [`GLSLPrecision`](../README.md#glslprecision)
 
-#### Defined in
-
-[GPUComposer.ts:77](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L77)
-
 ___
 
 ### errorCallback
 
 • `Readonly` **errorCallback**: [`ErrorCallback`](../README.md#errorcallback)
 
-#### Defined in
-
-[GPUComposer.ts:83](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L83)
-
 ___
 
 ### renderer
 
 • `Optional` `Readonly` **renderer**: `WebGLRenderer`
-
-#### Defined in
-
-[GPUComposer.ts:86](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L86)
 
 ___
 
@@ -124,10 +96,6 @@ ___
 #### Index signature
 
 ▪ [key: `string`]: `any`
-
-#### Defined in
-
-[GPUComposer.ts:102](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L102)
 
 ___
 
@@ -172,19 +140,11 @@ ___
 | `LAYER_VECTOR_FIELD.shader?` | `WebGLProgram` |
 | `LAYER_VECTOR_FIELD.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
 
-#### Defined in
-
-[GPUComposer.ts:134](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L134)
-
 ___
 
 ### verboseLogging
 
 • **verboseLogging**: `boolean` = `false`
-
-#### Defined in
-
-[GPUComposer.ts:175](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L175)
 
 ## Methods
 
@@ -205,10 +165,6 @@ ___
 
 [`GPUComposer`](GPUComposer.md)
 
-#### Defined in
-
-[GPUComposer.ts:177](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L177)
-
 ___
 
 ### isWebGL2
@@ -218,10 +174,6 @@ ___
 #### Returns
 
 `boolean`
-
-#### Defined in
-
-[GPUComposer.ts:315](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L315)
 
 ___
 
@@ -239,10 +191,6 @@ ___
 
 [`GPUProgram`](GPUProgram.md)
 
-#### Defined in
-
-[GPUComposer.ts:338](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L338)
-
 ___
 
 ### \_cloneGPULayer
@@ -259,10 +207,6 @@ ___
 #### Returns
 
 [`GPULayer`](GPULayer.md)
-
-#### Defined in
-
-[GPUComposer.ts:456](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L456)
 
 ___
 
@@ -288,10 +232,6 @@ ___
 
 `WebGLTexture`
 
-#### Defined in
-
-[GPUComposer.ts:498](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L498)
-
 ___
 
 ### \_getVertexShaderWithName
@@ -309,10 +249,6 @@ ___
 
 `undefined` \| `WebGLProgram`
 
-#### Defined in
-
-[GPUComposer.ts:611](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L611)
-
 ___
 
 ### resize
@@ -329,10 +265,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUComposer.ts:648](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L648)
 
 ___
 
@@ -353,10 +285,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUComposer.ts:822](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L822)
 
 ___
 
@@ -379,10 +307,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:856](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L856)
-
 ___
 
 ### stepNonBoundary
@@ -402,10 +326,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUComposer.ts:914](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L914)
 
 ___
 
@@ -429,10 +349,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUComposer.ts:951](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L951)
 
 ___
 
@@ -459,10 +375,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:992](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L992)
-
 ___
 
 ### stepPolyline
@@ -488,10 +400,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:1059](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1059)
-
 ___
 
 ### stepTriangleStrip
@@ -515,10 +423,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUComposer.ts:1252](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1252)
 
 ___
 
@@ -546,10 +450,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:1306](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1306)
-
 ___
 
 ### drawLayerAsPoints
@@ -575,10 +475,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUComposer.ts:1381](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1381)
 
 ___
 
@@ -607,10 +503,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:1454](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1454)
-
 ___
 
 ### drawLayerAsVectorField
@@ -635,10 +527,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:1548](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1548)
-
 ___
 
 ### drawLayerMagnitude
@@ -661,10 +549,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:1616](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1616)
-
 ___
 
 ### resetThreeState
@@ -675,10 +559,6 @@ ___
 
 `void`
 
-#### Defined in
-
-[GPUComposer.ts:1661](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1661)
-
 ___
 
 ### dispose
@@ -688,10 +568,6 @@ ___
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUComposer.ts:1675](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L1675)
 
 ## Constructors
 
@@ -714,7 +590,3 @@ ___
 | `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) |
 | `params.verboseLogging?` | `boolean` |
 | `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) |
-
-#### Defined in
-
-[GPUComposer.ts:200](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUComposer.ts#L200)

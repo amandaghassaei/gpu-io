@@ -25,10 +25,6 @@
 
 Name of GPUProgram, used for error logging.
 
-#### Defined in
-
-[GPUProgram.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L53)
-
 ## Constructors
 
 ### constructor
@@ -47,10 +43,6 @@ Create a GPUProgram.
 | `params.fragmentShader` | `string` \| `string`[] | Fragment shader source or array of sources to be joined. |
 | `params.uniforms?` | { `name`: `string` ; `value`: [`UniformValue`](../README.md#uniformvalue) ; `type`: [`UniformType`](../README.md#uniformtype)  }[] | Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform(). |
 | `params.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) | Compile-time #define variables to include with fragment shader. |
-
-#### Defined in
-
-[GPUProgram.ts:79](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L79)
 
 ## Methods
 
@@ -72,10 +64,6 @@ Set fragment shader uniform for GPUProgram.
 
 `void`
 
-#### Defined in
-
-[GPUProgram.ts:374](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L374)
-
 ___
 
 ### dispose
@@ -87,7 +75,3 @@ Deallocate GPUProgram instance and associated WebGL properties.
 #### Returns
 
 `void`
-
-#### Defined in
-
-[GPUProgram.ts:464](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L464)

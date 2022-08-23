@@ -6,5 +6,6 @@
 	"excludePrivate": true,
 	"readme": "none",
 	"sort": "source-order",
+	"disableSources": true,
     "out": "./docs"
 }
