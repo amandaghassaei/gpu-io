@@ -42,6 +42,7 @@ const precisionSource = require('./glsl/common/precision.glsl');
 
 /**
  * Memoize results of more complex WebGL tests (that require allocations/deallocations).
+ * @private
  */
 const results = {
 	supportsWebGL2: undefined as undefined | boolean,
@@ -181,10 +182,10 @@ export function initGLProgram(
 }
 
 /**
- * Returns whether a WebGL context is WebGL1 or WebGL2.
+ * Returns whether a WebGL context is WebGL2.
  * This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/renderers/webgl/WebGLCapabilities.js
- * @param {WebGLRenderingContext|WebGL2RenderingContext} gl - WebGL context to test.
- * @returns {boolean}
+ * @param gl - WebGL context to test.
+ * @returns - true if WebGL2 context, else false.
  */
 export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 	// @ts-ignore
@@ -193,7 +194,7 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 
 /**
  * Returns whether WebGL2 is supported by the current browser.
- * @returns {boolean}
+ * @returns - true is WebGL2 is supported, else false.
 */
 export function isWebGL2Supported() {
 	if (results.supportsWebGL2 === undefined) {
@@ -262,7 +263,7 @@ function isHighpSupported(vsSource: string, fsSource: string) {
 
 /**
  * Detects whether highp precision is supported in vertex shaders in the current browser.
- * @returns {boolean}
+ * @returns - true is highp is supported in vertex shaders, else false.
  */
 export function isHighpSupportedInVertexShader() {
 	if (results.supportsHighpVertex === undefined) {
@@ -277,7 +278,7 @@ export function isHighpSupportedInVertexShader() {
 
 /**
  * Detects whether highp precision is supported in fragment shaders in the current browser.
- * @returns {boolean}
+ * @returns - true is highp is supported in fragment shaders, else false.
  */
 export function isHighpSupportedInFragmentShader() {
 	if (results.supportsHighpFragment === undefined) {
@@ -352,7 +353,7 @@ function test1PxCalc(
 /**
  * Returns the actual precision of mediump inside vertex shader.
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
- * @returns {'highp'|'mediump'} - Vertex shader supported mediump precision.
+ * @returns - Vertex shader mediump precision.
  */
 export function getVertexShaderMediumpPrecision() {
 	if (results.mediumpVertexPrecision === undefined) {
@@ -420,7 +421,7 @@ export function getVertexShaderMediumpPrecision() {
 /**
  * Returns the actual precision of mediump inside fragment shader.
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
- * @returns {'highp'|'mediump'} - Fragment shader supported mediump precision.
+ * @returns - Fragment shader supported mediump precision.
  */
 export function getFragmentShaderMediumpPrecision() {
 	if (results.mediumpFragmentPrecision === undefined) {

@@ -4959,8 +4959,12 @@ var utils_1 = __webpack_require__(593);
 var GPUProgram = /** @class */ (function () {
     /**
      * Create a GPUProgram.
-     * @param {GPUComposer} composer - The current GPUComposer instance.
-     * @param {Object} params - GPUProgram parameters.
+     * @param composer - The current GPUComposer instance.
+     * @param params - GPUProgram parameters.
+     * @param params.name - Name of GPUProgram, used for error logging.
+     * @param params.fragmentShader - Fragment shader source or array of sources to be joined.
+     * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform().
+     * @param params.defines - Compile-time #define variables to include with fragment shader.
      */
     function GPUProgram(composer, params) {
         // #define variables for fragment shader program.
@@ -5236,9 +5240,9 @@ var GPUProgram = /** @class */ (function () {
     };
     /**
      * Set fragment shader uniform for GPUProgram.
-     * @param {string} name - Uniform name as it appears in fragment shader.
-     * @param {boolean|number|number[]} value - Uniform value.
-     * @param {BOOL|INT|UINT|FLOAT} [type] - Uniform type.
+     * @param name - Uniform name as it appears in fragment shader.
+     * @param value - Uniform value.
+     * @param type - Uniform type.
      */
     GPUProgram.prototype.setUniform = function (name, value, type) {
         var _a;
@@ -5425,7 +5429,7 @@ exports.isBoolean = exports.isObject = exports.isArray = exports.isString = expo
 var constants_1 = __webpack_require__(601);
 /**
  * Checks if type is valid GPULayer data type.
- * Used internally.
+ * @private
  */
 function isValidDataType(type) {
     return constants_1.validDataTypes.indexOf(type) > -1;
@@ -5433,7 +5437,7 @@ function isValidDataType(type) {
 exports.isValidDataType = isValidDataType;
 /**
  * Checks if filter is valid GPULayer filter type.
- * Used internally.
+ * @private
  */
 function isValidFilter(type) {
     return constants_1.validFilters.indexOf(type) > -1;
@@ -5441,7 +5445,7 @@ function isValidFilter(type) {
 exports.isValidFilter = isValidFilter;
 /**
  * Checks if wrap is valid GPULayer wrap type.
- * Used internally.
+ * @private
  */
 function isValidWrap(type) {
     return constants_1.validWraps.indexOf(type) > -1;
@@ -5460,7 +5464,7 @@ function isValidTextureType(type) {
 exports.isValidTextureType = isValidTextureType;
 /**
  * Checks if value is valid GPULayer clear value for numComponents and type.
- * Used internally.
+ * @private
  */
 function isValidClearValue(clearValue, numComponents, type) {
     if (isArray(clearValue)) {
@@ -5485,7 +5489,7 @@ exports.isValidClearValue = isValidClearValue;
 /**
  * Checks if value is valid number for a given GPULayer type.
  * Checks extrema values.
- * Used internally.
+ * @private
  */
 function isNumberOfType(value, type) {
     switch (type) {
@@ -5538,7 +5542,7 @@ function isNumberOfType(value, type) {
 exports.isNumberOfType = isNumberOfType;
 /**
  * Checks if value is finite number.
- * Used internally.
+ * @private
  */
 function isNumber(value) {
     return !Number.isNaN(value) && typeof value === 'number' && Number.isFinite(value);
@@ -5546,7 +5550,7 @@ function isNumber(value) {
 exports.isNumber = isNumber;
 /**
  * Checks if value is finite integer.
- * Used internally.
+ * @private
  */
 function isInteger(value) {
     return isNumber(value) && (value % 1 === 0);
@@ -5554,7 +5558,7 @@ function isInteger(value) {
 exports.isInteger = isInteger;
 /**
  * Checks if value is finite positive integer (> 0).
- * Used internally.
+ * @private
  */
 function isPositiveInteger(value) {
     return isInteger(value) && value > 0;
@@ -5562,7 +5566,7 @@ function isPositiveInteger(value) {
 exports.isPositiveInteger = isPositiveInteger;
 /**
  * Checks if value is finite non-negative integer (>= 0).
- * Used internally.
+ * @private
  */
 function isNonNegativeInteger(value) {
     return isInteger(value) && value >= 0;
@@ -5570,7 +5574,7 @@ function isNonNegativeInteger(value) {
 exports.isNonNegativeInteger = isNonNegativeInteger;
 /**
  * Checks if value is string.
- * Used internally.
+ * @private
  */
 function isString(value) {
     return typeof value === 'string';
@@ -5578,15 +5582,15 @@ function isString(value) {
 exports.isString = isString;
 /**
  * Checks if value is array.
- * Used internally.
+ * @private
  */
 function isArray(value) {
     return Array.isArray(value);
 }
 exports.isArray = isArray;
 /**
- * Checks if value is JS object {}.
- * Used internally.
+ * Checks if value is Javascript object.
+ * @private
  */
 function isObject(value) {
     return typeof value === 'object' && !isArray(value) && value !== null;
@@ -5594,7 +5598,7 @@ function isObject(value) {
 exports.isObject = isObject;
 /**
  * Checks if value is boolean.
- * Used internally.
+ * @private
  */
 function isBoolean(value) {
     return typeof value === 'boolean';
@@ -5610,89 +5614,293 @@ exports.isBoolean = isBoolean;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.CLAMP_TO_EDGE = exports.REPEAT = exports.NEAREST = exports.LINEAR = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = void 0;
 // Data types.
+/**
+ * Half float data type.
+ */
 exports.HALF_FLOAT = 'HALF_FLOAT';
+/**
+ * Float data type.
+ */
 exports.FLOAT = 'FLOAT';
+/**
+ * Unsigned byte data type.
+ */
 exports.UNSIGNED_BYTE = 'UNSIGNED_BYTE';
+/**
+ * Byte data type.
+ */
 exports.BYTE = 'BYTE';
+/**
+ * Unsigned short data type.
+ */
 exports.UNSIGNED_SHORT = 'UNSIGNED_SHORT';
+/**
+ * Short data type.
+ */
 exports.SHORT = 'SHORT';
+/**
+ * Unsigned int data type.
+ */
 exports.UNSIGNED_INT = 'UNSIGNED_INT';
+/**
+ * Int data type.
+ */
 exports.INT = 'INT';
+/**
+ * Boolean data type (GPUProgram uniforms only).
+ */
 exports.BOOL = 'BOOL';
+/**
+ * Unsigned int data type (GPUProgram uniforms only).
+ */
 exports.UINT = 'UINT';
 // Filter types.
-exports.LINEAR = 'LINEAR';
+/**
+ * Nearest texture filtering.
+ */
 exports.NEAREST = 'NEAREST';
+/**
+ * Linear texture filtering.
+ */
+exports.LINEAR = 'LINEAR';
 // Wrap types.
-exports.REPEAT = 'REPEAT';
+/**
+ * Clamp to edge wrapping (no wrapping).
+ */
 exports.CLAMP_TO_EDGE = 'CLAMP_TO_EDGE';
+/**
+ * Repeat/periodic wrapping.
+ */
+exports.REPEAT = 'REPEAT';
+/**
+ * @private
+ */
 exports.validArrayTypes = [Float32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Array];
+/**
+ * @private
+ */
 exports.validDataTypes = [exports.HALF_FLOAT, exports.FLOAT, exports.UNSIGNED_BYTE, exports.BYTE, exports.UNSIGNED_SHORT, exports.SHORT, exports.UNSIGNED_INT, exports.INT];
+/**
+ * @private
+ */
 exports.validFilters = [exports.LINEAR, exports.NEAREST];
+/**
+ * @private
+ */
 exports.validWraps = [exports.CLAMP_TO_EDGE, exports.REPEAT]; // MIRRORED_REPEAT
 // TODO: change this?
 // For image urls that are passed in and inited as textures.
+/**
+ * @private
+ */
 exports.RGB = 'RGB';
+/**
+ * @private
+ */
 exports.RGBA = 'RGBA';
+/**
+ * @private
+ */
 exports.validTextureFormats = [exports.RGB, exports.RGBA];
+/**
+ * @private
+ */
 exports.validTextureTypes = [exports.UNSIGNED_BYTE];
 // GLSL versions.
+/**
+ * GLSL version 300 (WebGL2 only).
+ */
 exports.GLSL3 = '300 es';
+/**
+ * GLSL version 100 (WebGL1 and WebGL2).
+ */
 exports.GLSL1 = '100';
 // WebGL versions.
+/**
+ * WebGL2 context ID.
+ */
 exports.WEBGL2 = 'webgl2';
+/**
+ * WebGL1 context ID.
+ */
 exports.WEBGL1 = 'webgl';
+/**
+ * Experimental WebGL context ID.
+ */
 exports.EXPERIMENTAL_WEBGL = 'experimental-webgl';
 // Precision declarations.
+/**
+ * GLSL lowp precision declaration.
+ */
 exports.PRECISION_LOW_P = 'lowp';
+/**
+ * GLSL mediump precision declaration.
+ */
 exports.PRECISION_MEDIUM_P = 'mediump';
+/**
+ * GLSL highp precision declaration.
+ */
 exports.PRECISION_HIGH_P = 'highp';
 // Uniform types.
+/**
+ * @private
+ */
 exports.FLOAT_1D_UNIFORM = '1f';
+/**
+ * @private
+ */
 exports.FLOAT_2D_UNIFORM = '2f';
+/**
+ * @private
+ */
 exports.FLOAT_3D_UNIFORM = '3f';
+/**
+ * @private
+ */
 exports.FLOAT_4D_UNIFORM = '4f';
+/**
+ * @private
+ */
 exports.INT_1D_UNIFORM = '1i';
+/**
+ * @private
+ */
 exports.INT_2D_UNIFORM = '2i';
+/**
+ * @private
+ */
 exports.INT_3D_UNIFORM = '3i';
+/**
+ * @private
+ */
 exports.INT_4D_UNIFORM = '4i';
+/**
+ * @private
+ */
 exports.UINT_1D_UNIFORM = '1ui';
+/**
+ * @private
+ */
 exports.UINT_2D_UNIFORM = '2ui';
+/**
+ * @private
+ */
 exports.UINT_3D_UNIFORM = '3ui';
+/**
+ * @private
+ */
 exports.UINT_4D_UNIFORM = '4ui';
 // Vertex shader types.
+/**
+ * @private
+ */
 exports.DEFAULT_PROGRAM_NAME = 'DEFAULT';
+/**
+ * @private
+ */
 exports.DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
+/**
+ * @private
+ */
 exports.DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
+/**
+ * @private
+ */
 exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
+/**
+ * @private
+ */
 exports.SEGMENT_PROGRAM_NAME = 'SEGMENT';
+/**
+ * @private
+ */
 exports.LAYER_POINTS_PROGRAM_NAME = 'LAYER_POINTS';
+/**
+ * @private
+ */
 exports.LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
+/**
+ * @private
+ */
 exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
+/**
+ * @private
+ */
 var DEFAULT_ERROR_CALLBACK = function (msg) { throw new Error(msg); };
 exports.DEFAULT_ERROR_CALLBACK = DEFAULT_ERROR_CALLBACK;
 // For stepCircle() and stepSegment() (with end caps).
+/**
+ * @private
+ */
 exports.DEFAULT_CIRCLE_NUM_SEGMENTS = 18; // Must be divisible by 6 to work with stepSegment().
 // Extrema values.
+/**
+ * @private
+ */
 exports.MIN_UNSIGNED_BYTE = 0;
+/**
+ * @private
+ */
 exports.MAX_UNSIGNED_BYTE = Math.pow(2, 8) - 1;
+/**
+ * @private
+ */
 exports.MIN_BYTE = -(Math.pow(2, 7));
+/**
+ * @private
+ */
 exports.MAX_BYTE = Math.pow(2, 7) - 1;
+/**
+ * @private
+ */
 exports.MIN_UNSIGNED_SHORT = 0;
+/**
+ * @private
+ */
 exports.MAX_UNSIGNED_SHORT = Math.pow(2, 16) - 1;
+/**
+ * @private
+ */
 exports.MIN_SHORT = -(Math.pow(2, 15));
+/**
+ * @private
+ */
 exports.MAX_SHORT = Math.pow(2, 15) - 1;
+/**
+ * @private
+ */
 exports.MIN_UNSIGNED_INT = 0;
+/**
+ * @private
+ */
 exports.MAX_UNSIGNED_INT = Math.pow(2, 32) - 1;
+/**
+ * @private
+ */
 exports.MIN_INT = -(Math.pow(2, 31));
+/**
+ * @private
+ */
 exports.MAX_INT = Math.pow(2, 31) - 1;
 // There are larger HALF_FLOAT and FLOAT ints, but they may be spaced out by > 1.
+/**
+ * @private
+ */
 exports.MIN_HALF_FLOAT_INT = -2048;
+/**
+ * @private
+ */
 exports.MAX_HALF_FLOAT_INT = 2048;
+/**
+ * @private
+ */
 exports.MIN_FLOAT_INT = -16777216;
+/**
+ * @private
+ */
 exports.MAX_FLOAT_INT = 16777216;
 
 
@@ -5806,6 +6014,9 @@ Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function 
 var checks = __webpack_require__(707);
 var GPULayerHelpers = __webpack_require__(191);
 // These exports are only used for testing.
+/**
+ * @private
+ */
 var _testing = __assign(__assign({ makeShaderHeader: utils_1.makeShaderHeader, compileShader: utils_1.compileShader, initGLProgram: utils_1.initGLProgram, readyToRead: utils_1.readyToRead, preprocessVertexShader: utils_1.preprocessVertexShader, preprocessFragmentShader: utils_1.preprocessFragmentShader, isPowerOf2: utils_1.isPowerOf2, initSequentialFloatArray: utils_1.initSequentialFloatArray, uniformInternalTypeForValue: utils_1.uniformInternalTypeForValue }, checks), GPULayerHelpers);
 exports._testing = _testing;
 // Named exports.
@@ -5826,6 +6037,7 @@ var constants_1 = __webpack_require__(601);
 var precisionSource = __webpack_require__(937);
 /**
  * Memoize results of more complex WebGL tests (that require allocations/deallocations).
+ * @private
  */
 var results = {
     supportsWebGL2: undefined,
@@ -5935,10 +6147,10 @@ function initGLProgram(gl, vertexShader, fragmentShader, name, errorCallback) {
 }
 exports.initGLProgram = initGLProgram;
 /**
- * Returns whether a WebGL context is WebGL1 or WebGL2.
+ * Returns whether a WebGL context is WebGL2.
  * This code is pulled from https://github.com/mrdoob/three.js/blob/master/src/renderers/webgl/WebGLCapabilities.js
- * @param {WebGLRenderingContext|WebGL2RenderingContext} gl - WebGL context to test.
- * @returns {boolean}
+ * @param gl - WebGL context to test.
+ * @returns - true if WebGL2 context, else false.
  */
 function isWebGL2(gl) {
     // @ts-ignore
@@ -5947,7 +6159,7 @@ function isWebGL2(gl) {
 exports.isWebGL2 = isWebGL2;
 /**
  * Returns whether WebGL2 is supported by the current browser.
- * @returns {boolean}
+ * @returns - true is WebGL2 is supported, else false.
 */
 function isWebGL2Supported() {
     if (results.supportsWebGL2 === undefined) {
@@ -5999,7 +6211,7 @@ function isHighpSupported(vsSource, fsSource) {
 }
 /**
  * Detects whether highp precision is supported in vertex shaders in the current browser.
- * @returns {boolean}
+ * @returns - true is highp is supported in vertex shaders, else false.
  */
 function isHighpSupportedInVertexShader() {
     if (results.supportsHighpVertex === undefined) {
@@ -6011,7 +6223,7 @@ function isHighpSupportedInVertexShader() {
 exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
 /**
  * Detects whether highp precision is supported in fragment shaders in the current browser.
- * @returns {boolean}
+ * @returns - true is highp is supported in fragment shaders, else false.
  */
 function isHighpSupportedInFragmentShader() {
     if (results.supportsHighpFragment === undefined) {
@@ -6063,7 +6275,7 @@ function test1PxCalc(name, gl, fs, vs, addUniforms) {
 /**
  * Returns the actual precision of mediump inside vertex shader.
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
- * @returns {'highp'|'mediump'} - Vertex shader supported mediump precision.
+ * @returns - Vertex shader mediump precision.
  */
 function getVertexShaderMediumpPrecision() {
     if (results.mediumpVertexPrecision === undefined) {
@@ -6105,7 +6317,7 @@ exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
 /**
  * Returns the actual precision of mediump inside fragment shader.
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
- * @returns {'highp'|'mediump'} - Fragment shader supported mediump precision.
+ * @returns - Fragment shader supported mediump precision.
  */
 function getFragmentShaderMediumpPrecision() {
     if (results.mediumpFragmentPrecision === undefined) {

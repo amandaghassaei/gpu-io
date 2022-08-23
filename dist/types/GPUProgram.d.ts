@@ -2,6 +2,9 @@ import { GPUComposer } from './GPUComposer';
 import { UniformType, UniformValue, CompileTimeVars } from './constants';
 export declare class GPUProgram {
     private readonly composer;
+    /**
+     * Name of GPUProgram, used for error logging.
+     */
     readonly name: string;
     private fragmentShader;
     private readonly fragmentShaderSource;
@@ -10,8 +13,12 @@ export declare class GPUProgram {
     private readonly programs;
     /**
      * Create a GPUProgram.
-     * @param {GPUComposer} composer - The current GPUComposer instance.
-     * @param {Object} params - GPUProgram parameters.
+     * @param composer - The current GPUComposer instance.
+     * @param params - GPUProgram parameters.
+     * @param params.name - Name of GPUProgram, used for error logging.
+     * @param params.fragmentShader - Fragment shader source or array of sources to be joined.
+     * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform().
+     * @param params.defines - Compile-time #define variables to include with fragment shader.
      */
     constructor(composer: GPUComposer, params: {
         name: string;
@@ -73,9 +80,9 @@ export declare class GPUProgram {
     private setProgramUniform;
     /**
      * Set fragment shader uniform for GPUProgram.
-     * @param {string} name - Uniform name as it appears in fragment shader.
-     * @param {boolean|number|number[]} value - Uniform value.
-     * @param {BOOL|INT|UINT|FLOAT} [type] - Uniform type.
+     * @param name - Uniform name as it appears in fragment shader.
+     * @param value - Uniform value.
+     * @param type - Uniform type.
      */
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
     /**

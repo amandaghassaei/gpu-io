@@ -1,76 +1,239 @@
 // Data types.
+/**
+ * Half float data type.
+ */
 export const HALF_FLOAT = 'HALF_FLOAT';
+/**
+ * Float data type.
+ */
 export const FLOAT = 'FLOAT';
+/**
+ * Unsigned byte data type.
+ */
 export const UNSIGNED_BYTE = 'UNSIGNED_BYTE';
+/**
+ * Byte data type.
+ */
 export const BYTE = 'BYTE';
+/**
+ * Unsigned short data type.
+ */
 export const UNSIGNED_SHORT = 'UNSIGNED_SHORT';
+/**
+ * Short data type.
+ */
 export const SHORT = 'SHORT';
+/**
+ * Unsigned int data type.
+ */
 export const UNSIGNED_INT = 'UNSIGNED_INT';
+/**
+ * Int data type.
+ */
 export const INT = 'INT';
+/**
+ * Boolean data type (GPUProgram uniforms only).
+ */
 export const BOOL = 'BOOL';
+/**
+ * Unsigned int data type (GPUProgram uniforms only).
+ */
 export const UINT = 'UINT';
 
 // Filter types.
-export const LINEAR = 'LINEAR';
+/**
+ * Nearest texture filtering.
+ */
 export const NEAREST = 'NEAREST';
+/**
+ * Linear texture filtering.
+ */
+export const LINEAR = 'LINEAR';
 
 // Wrap types.
-export const REPEAT = 'REPEAT';
+/**
+ * Clamp to edge wrapping (no wrapping).
+ */
 export const CLAMP_TO_EDGE = 'CLAMP_TO_EDGE';
+/**
+ * Repeat/periodic wrapping.
+ */
+export const REPEAT = 'REPEAT';
 // export const MIRRORED_REPEAT = 'MIRRORED_REPEAT';
 
 // GPULayer parameter types.
+/**
+ * GPULayer array types.
+ */
 export type GPULayerArray =  Float32Array | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array;
+/**
+ * @private
+ */
 export const validArrayTypes = [Float32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Array];
+/**
+ * GPULayer data types.
+ */
 export type GPULayerType = typeof HALF_FLOAT | typeof FLOAT | typeof UNSIGNED_BYTE | typeof BYTE | typeof UNSIGNED_SHORT | typeof SHORT | typeof UNSIGNED_INT | typeof INT;
+/**
+ * @private
+ */
 export const validDataTypes = [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT];
+/**
+ * GPULayer numComponents options.
+ */
 export type GPULayerNumComponents = 1 | 2 | 3 | 4;
+/**
+ * GPULayer filter/interpolation types.
+ */
 export type GPULayerFilter = typeof LINEAR | typeof NEAREST;
+/**
+ * @private
+ */
 export const validFilters = [LINEAR, NEAREST];
-export const validWraps = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
+/**
+ * @private
+ */
+/**
+ * GPULayer wrap types.
+ */
 export type GPULayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;// | typeof MIRRORED_REPEAT;
+/**
+ * @private
+ */
+export const validWraps = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
+
 
 // TODO: change this?
 // For image urls that are passed in and inited as textures.
+/**
+ * @private
+ */
 export const RGB = 'RGB';
+/**
+ * @private
+ */
 export const RGBA = 'RGBA';
+/**
+ * @private
+ */
 export type TextureFormat = typeof RGB | typeof RGBA;
+/**
+ * @private
+ */
 export const validTextureFormats = [RGB, RGBA];
+/**
+ * @private
+ */
 export type TextureType = typeof UNSIGNED_BYTE;
+/**
+ * @private
+ */
 export const validTextureTypes = [UNSIGNED_BYTE];
 
 // GLSL versions.
+/**
+ * GLSL version 300 (WebGL2 only).
+ */
 export const GLSL3 = '300 es';
+/**
+ * GLSL version 100 (WebGL1 and WebGL2).
+ */
 export const GLSL1 = '100';
+/**
+ * GLSL available versions.
+ */
 export type GLSLVersion = typeof GLSL1 | typeof GLSL3;
 
 // WebGL versions.
+/**
+ * WebGL2 context ID.
+ */
 export const WEBGL2 = 'webgl2';
+/**
+ * WebGL1 context ID.
+ */
 export const WEBGL1 = 'webgl';
+/**
+ * Experimental WebGL context ID.
+ */
 export const EXPERIMENTAL_WEBGL = 'experimental-webgl';
 
 // Precision declarations.
+/**
+ * GLSL lowp precision declaration.
+ */
 export const PRECISION_LOW_P = 'lowp';
+/**
+ * GLSL mediump precision declaration.
+ */
 export const PRECISION_MEDIUM_P = 'mediump';
+/**
+ * GLSL highp precision declaration.
+ */
 export const PRECISION_HIGH_P = 'highp';
+/**
+ * GLSL available precision declarations.
+ */
 export type GLSLPrecision = typeof PRECISION_LOW_P | typeof PRECISION_MEDIUM_P | typeof PRECISION_HIGH_P;
 
 // Uniform types.
+/**
+ * @private
+ */
 export const FLOAT_1D_UNIFORM = '1f';
+/**
+ * @private
+ */
 export const FLOAT_2D_UNIFORM = '2f';
+/**
+ * @private
+ */
 export const FLOAT_3D_UNIFORM = '3f';
+/**
+ * @private
+ */
 export const FLOAT_4D_UNIFORM = '4f';
+/**
+ * @private
+ */
 export const INT_1D_UNIFORM = '1i';
+/**
+ * @private
+ */
 export const INT_2D_UNIFORM = '2i';
+/**
+ * @private
+ */
 export const INT_3D_UNIFORM = '3i';
+/**
+ * @private
+ */
 export const INT_4D_UNIFORM = '4i';
+/**
+ * @private
+ */
 export const UINT_1D_UNIFORM = '1ui';
+/**
+ * @private
+ */
 export const UINT_2D_UNIFORM = '2ui';
+/**
+ * @private
+ */
 export const UINT_3D_UNIFORM = '3ui';
+/**
+ * @private
+ */
 export const UINT_4D_UNIFORM = '4ui';
 
 // Uniform types and values.
+/**
+ * GPUProgram uniform types.
+ */
 export type UniformType = typeof FLOAT | typeof INT | typeof UINT | typeof BOOL;
+/**
+ * @private
+ */
 export type UniformInternalType = 
 	typeof FLOAT_1D_UNIFORM |
 	typeof FLOAT_2D_UNIFORM |
@@ -84,7 +247,13 @@ export type UniformInternalType =
 	typeof UINT_2D_UNIFORM |
 	typeof UINT_3D_UNIFORM |
 	typeof UINT_4D_UNIFORM;
+/**
+ * GPUProgram uniform values.
+ */
 export type UniformValue = boolean | number | number[];
+/**
+ * @private
+ */
 export type Uniform = { 
 	location: { [key: string]: WebGLUniformLocation },
 	type: UniformInternalType,
@@ -92,14 +261,41 @@ export type Uniform = {
 };
 
 // Vertex shader types.
+/**
+ * @private
+ */
 export const DEFAULT_PROGRAM_NAME = 'DEFAULT';
+/**
+ * @private
+ */
 export const DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
+/**
+ * @private
+ */
 export const DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
+/**
+ * @private
+ */
 export const DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
+/**
+ * @private
+ */
 export const SEGMENT_PROGRAM_NAME = 'SEGMENT';
+/**
+ * @private
+ */
 export const LAYER_POINTS_PROGRAM_NAME = 'LAYER_POINTS';
+/**
+ * @private
+ */
 export const LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
+/**
+ * @private
+ */
 export const LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
+/**
+ * @private
+ */
 export type PROGRAM_NAME_INTERNAL =
 	typeof DEFAULT_PROGRAM_NAME |
 	typeof DEFAULT_W_UV_PROGRAM_NAME |
@@ -111,9 +307,15 @@ export type PROGRAM_NAME_INTERNAL =
 	typeof LAYER_VECTOR_FIELD_PROGRAM_NAME;
 
 // Pass in #defines as strings to make it easier to control float vs int.
+/**
+ * Object containing compile-time #define variables for GPUProgram fragment shader.
+ */
 export type CompileTimeVars = { [key: string]: string };
 
 // Each buffer in GPULayer contains a WebGLTexture and WebGLFramebuffer.
+/**
+ * @private
+ */
 export type GPULayerBuffer = {
 	texture: WebGLTexture,
 	framebuffer?: WebGLFramebuffer,
@@ -121,26 +323,80 @@ export type GPULayerBuffer = {
 
 // Error callback, defaults to throwing an error.
 export type ErrorCallback = (message: string) => void;
+/**
+ * @private
+ */
 export const DEFAULT_ERROR_CALLBACK = (msg: string) => { throw new Error(msg); };
 
 // For stepCircle() and stepSegment() (with end caps).
+/**
+ * @private
+ */
 export const DEFAULT_CIRCLE_NUM_SEGMENTS = 18;// Must be divisible by 6 to work with stepSegment().
 
 // Extrema values.
+/**
+ * @private
+ */
 export const MIN_UNSIGNED_BYTE = 0;
+/**
+ * @private
+ */
 export const MAX_UNSIGNED_BYTE = 2 ** 8 - 1;
+/**
+ * @private
+ */
 export const MIN_BYTE = -(2 ** 7);
+/**
+ * @private
+ */
 export const MAX_BYTE = 2 ** 7 - 1;
+/**
+ * @private
+ */
 export const MIN_UNSIGNED_SHORT = 0;
+/**
+ * @private
+ */
 export const MAX_UNSIGNED_SHORT = 2 ** 16 - 1;
+/**
+ * @private
+ */
 export const MIN_SHORT = -(2 ** 15);
+/**
+ * @private
+ */
 export const MAX_SHORT = 2 ** 15 - 1;
+/**
+ * @private
+ */
 export const MIN_UNSIGNED_INT = 0;
+/**
+ * @private
+ */
 export const MAX_UNSIGNED_INT = 2 ** 32 - 1;
+/**
+ * @private
+ */
 export const MIN_INT = -(2 ** 31);
+/**
+ * @private
+ */
 export const MAX_INT = 2 ** 31 - 1;
 // There are larger HALF_FLOAT and FLOAT ints, but they may be spaced out by > 1.
+/**
+ * @private
+ */
 export const MIN_HALF_FLOAT_INT = -2048;
+/**
+ * @private
+ */
 export const MAX_HALF_FLOAT_INT = 2048;
+/**
+ * @private
+ */
 export const MIN_FLOAT_INT = -16777216;
+/**
+ * @private
+ */
 export const MAX_FLOAT_INT = 16777216;

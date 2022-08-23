@@ -22,6 +22,9 @@ import * as checks from './checks';
 import * as GPULayerHelpers from './GPULayerHelpers';
 
 // These exports are only used for testing.
+/**
+ * @private
+ */
 const _testing = {
 	makeShaderHeader,
 	compileShader,

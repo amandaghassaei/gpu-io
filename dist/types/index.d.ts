@@ -2,6 +2,9 @@ import { makeShaderHeader, compileShader, initGLProgram, isWebGL2, isWebGL2Suppo
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
+/**
+ * @private
+ */
 declare const _testing: {
     initArrayForType(type: import("./constants").GPULayerType, length: number, halfFloatsAsFloats?: boolean): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
     calcGPULayerSize(size: number | [number, number], name: string, verboseLogging: boolean): {
