@@ -11,7 +11,13 @@ export declare class GPUComposer {
     private width;
     private height;
     private errorState;
+    /**
+     * @private
+     */
     readonly errorCallback: ErrorCallback;
+    /**
+     * @private
+     */
     readonly renderer?: WebGLRenderer;
     private readonly maxNumTextures;
     private _quadPositionsBuffer?;
@@ -22,6 +28,9 @@ export declare class GPUComposer {
     private vectorFieldIndexArray?;
     private vectorFieldIndexBuffer?;
     private indexedLinesIndexBuffer?;
+    /**
+     * @private
+     */
     readonly extensions: {
         [key: string]: any;
     };
@@ -29,6 +38,10 @@ export declare class GPUComposer {
     private readonly setValuePrograms;
     private _wrappedLineColorProgram?;
     private readonly vectorMagnitudePrograms;
+    /**
+     * Vertex shaders are shared across all GPUProgram instances.
+     * @private
+     */
     readonly _vertexShaders: {
         [key in PROGRAM_NAME_INTERNAL]: {
             src: string;
@@ -37,10 +50,6 @@ export declare class GPUComposer {
         };
     };
     verboseLogging: boolean;
-    static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
-        verboseLogging?: boolean;
-        errorCallback?: ErrorCallback;
-    }): GPUComposer;
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext | null;
@@ -55,8 +64,16 @@ export declare class GPUComposer {
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     });
+    static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
+        verboseLogging?: boolean;
+        errorCallback?: ErrorCallback;
+    }): GPUComposer;
     isWebGL2(): boolean;
     private glslKeyForType;
+    /**
+     *
+     * @private
+     */
     _setValueProgramForType(type: GPULayerType): GPUProgram;
     private copyProgramForType;
     private get wrappedLineColorProgram();
@@ -65,6 +82,10 @@ export declare class GPUComposer {
     private get boundaryPositionsBuffer();
     private getCirclePositionsBuffer;
     private initVertexBuffer;
+    /**
+     * Used internally, see GPULayer.clone() for public API.
+     * @private
+     */
     _cloneGPULayer(gpuLayer: GPULayer, name?: string): GPULayer;
     initTexture(params: {
         name: string;
@@ -76,6 +97,10 @@ export declare class GPUComposer {
         type?: TextureType;
         onLoad?: (texture: WebGLTexture) => void;
     }): WebGLTexture;
+    /**
+     *
+     * @private
+     */
     _getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string): WebGLProgram | undefined;
     resize(width: number, height: number): void;
     private drawSetup;

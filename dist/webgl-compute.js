@@ -2266,6 +2266,9 @@ var GPUComposer = /** @class */ (function () {
         // Store multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
         // Keep track of all GL extensions that have been loaded.
+        /**
+         * @private
+         */
         this.extensions = {};
         // Programs for copying data (these are needed for rendering partial screen geometries).
         this.copyPrograms = {
@@ -2278,7 +2281,10 @@ var GPUComposer = /** @class */ (function () {
         this.vectorMagnitudePrograms = {
             src: __webpack_require__(723),
         };
-        // Vertex shaders are shared across all GPUProgram instances.
+        /**
+         * Vertex shaders are shared across all GPUProgram instances.
+         * @private
+         */
         this._vertexShaders = (_a = {},
             _a[constants_1.DEFAULT_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
@@ -2436,6 +2442,10 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("Invalid type: ".concat(type, " passed to GPUComposer.copyProgramForType."));
         }
     };
+    /**
+     *
+     * @private
+     */
     GPUComposer.prototype._setValueProgramForType = function (type) {
         var _a;
         var key = this.glslKeyForType(type);
@@ -2555,7 +2565,10 @@ var GPUComposer = /** @class */ (function () {
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         return buffer;
     };
-    // Used internally, see GPULayer.clone() for public API.
+    /**
+     * Used internally, see GPULayer.clone() for public API.
+     * @private
+     */
     GPUComposer.prototype._cloneGPULayer = function (gpuLayer, name) {
         var dimensions = 0;
         try {
@@ -2687,6 +2700,10 @@ var GPUComposer = /** @class */ (function () {
         image.src = url;
         return texture;
     };
+    /**
+     *
+     * @private
+     */
     GPUComposer.prototype._getVertexShaderWithName = function (name, programName) {
         var _a = this, errorCallback = _a.errorCallback, _vertexShaders = _a._vertexShaders, gl = _a.gl, glslVersion = _a.glslVersion, intPrecision = _a.intPrecision, floatPrecision = _a.floatPrecision;
         var vertexShader = _vertexShaders[name];
@@ -4037,6 +4054,7 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype.is1D = function () {
         return this._length !== undefined;
     };
+    // TODO: this does not work on non-writable GPULayers, change this?
     /**
      * Returns the current values of the GPULayer as a TypedArray.
      * @returns - A TypedArray containing current state of GPULayer.
@@ -5897,7 +5915,7 @@ exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
 /**
  * @private
  */
-var DEFAULT_ERROR_CALLBACK = function (msg) { throw new Error(msg); };
+var DEFAULT_ERROR_CALLBACK = function (message) { throw new Error(message); };
 exports.DEFAULT_ERROR_CALLBACK = DEFAULT_ERROR_CALLBACK;
 // For stepCircle() and stepSegment() (with end caps).
 /**
@@ -6182,7 +6200,7 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print the error.
-        errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', "\nshader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
+        errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', " shader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
         return null;
     }
     return shader;

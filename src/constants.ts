@@ -326,7 +326,7 @@ export type ErrorCallback = (message: string) => void;
 /**
  * @private
  */
-export const DEFAULT_ERROR_CALLBACK = (msg: string) => { throw new Error(msg); };
+export const DEFAULT_ERROR_CALLBACK = (message: string) => { throw new Error(message); };
 
 // For stepCircle() and stepSegment() (with end caps).
 /**

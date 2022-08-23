@@ -280,7 +280,7 @@ export declare type ErrorCallback = (message: string) => void;
 /**
  * @private
  */
-export declare const DEFAULT_ERROR_CALLBACK: (msg: string) => never;
+export declare const DEFAULT_ERROR_CALLBACK: (message: string) => never;
 /**
  * @private
  */

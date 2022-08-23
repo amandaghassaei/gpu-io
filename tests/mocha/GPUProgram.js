@@ -40,8 +40,16 @@
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "", otherThing: 2 }); },
 					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","defines"].');
 			});
+			it('should throw errors for bad fragment source code', () => {
+				// Init a separate composer so the global one doesn't get into an error state.
+				const testComposer = new GPUComposer({ canvas: document.createElement('canvas') });
+				assert.throws(() => { new GPUProgram(testComposer, { name: 'test-program', fragmentShader: "" }); },
+					'Could not compile fragment shader for program "test-program": ERROR: Missing main()');
+				testComposer.dispose();
+			});
 			it('should set parameters', () => {
-				// TODO:
+				const program = new GPUProgram(composer, { name: 'test-program', fragmentShader: setValueFragmentShader });
+				assert.equal(program.name, 'test-program');
 			});
 		});
 		describe('get _defaultProgram', () => {
