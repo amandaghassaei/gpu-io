@@ -89,7 +89,7 @@ export type GPULayerFilter = typeof LINEAR | typeof NEAREST;
 /**
  * @private
  */
-export const validFilters = [LINEAR, NEAREST];
+export const validFilters = [NEAREST, LINEAR];
 /**
  * @private
  */

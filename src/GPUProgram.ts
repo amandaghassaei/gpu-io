@@ -102,6 +102,7 @@ export class GPUProgram {
 		if (!isObject(params)) {
 			throw new Error(`Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got ${JSON.stringify(params)}.`);
 		}
+		// Check params keys.
 		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
 		const requiredKeys = ['name', 'fragmentShader'];
 		const keys = Object.keys(params);

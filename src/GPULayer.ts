@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver';
 import { GPUComposer } from './GPUComposer';
 import {
 	isNumber,
+	isObject,
 	isPositiveInteger,
 	isValidClearValue,
 	isValidDataType,
@@ -52,12 +53,33 @@ export class GPULayer {
 	// Keep a reference to GPUComposer.
 	private readonly composer: GPUComposer;
 
-	readonly name: string; // Name of GPULayer, used for error logging.
+	/**
+	 * Name of GPULayer, used for error logging.
+	 */
+	readonly name: string;
+	/**
+	 * Data type represented by GPULayer.
+	 */
 	readonly type: GPULayerType; // Input type passed in during setup.
-	readonly numComponents: GPULayerNumComponents; // Number of RGBA channels to use for this GPULayer.
-	readonly filter: GPULayerFilter; // Interpolation filter for pixel read operations.
-	readonly wrapS: GPULayerWrap; // Input x wrap type passed in during setup.
-	readonly wrapT: GPULayerWrap; // Input y wrap type passed in during setup.
+	/**
+	 * Number of RGBA elements represented by each pixel in the GPULayer (1-4).
+	 */
+	readonly numComponents: GPULayerNumComponents;
+	/**
+	 * Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
+	 */
+	readonly filter: GPULayerFilter;
+	/**
+	 * Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 */
+	readonly wrapS: GPULayerWrap;
+	/**
+	 * Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 */
+	readonly wrapT: GPULayerWrap;
+	/**
+	 * Sets GPULayer as readonly or readwrite, defaults to false.
+	 */
 	readonly writable: boolean;
 	private _clearValue: number | number[] = 0; // Value to set when clear() is called, defaults to zero.  Access with GPULayer.clearValue.
 
@@ -87,6 +109,7 @@ export class GPULayer {
 	 * @private
 	 */
 	readonly glFormat: number;
+
 	// GPULayer.internalType corresponds to GPULayer.glType, may be different from GPULayer.type.
 	/**
 	 * @private
@@ -96,12 +119,14 @@ export class GPULayer {
 	 * @private
 	 */
 	readonly glType: number;
+
 	// Internally, GPULayer.glNumChannels may represent a larger number of channels than GPULayer.numComponents.
 	// For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
 	/**
 	 * @private
 	 */
 	readonly glNumChannels: number;
+
 	// GPULayer.internalFilter corresponds to GPULayer.glFilter, may be different from GPULayer.filter.
 	/**
 	 * @private
@@ -111,6 +136,7 @@ export class GPULayer {
 	 * @private
 	 */
 	readonly glFilter: number;
+
 	// GPULayer.internalWrapS corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapS.
 	/**
 	 * @private
@@ -120,6 +146,7 @@ export class GPULayer {
 	 * @private
 	 */
 	readonly glWrapS: number;
+
 	// GPULayer.internalWrapT corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapT.
 	/**
 	 * @private
@@ -134,13 +161,29 @@ export class GPULayer {
 	// TODO: take a second look at this.
 	private textureOverrides?: (WebGLTexture | undefined)[];
 
+	/**
+	 * Create a GPULayer.
+	 * @param composer - The current GPUComposer instance.
+	 * @param params  - GPULayer parameters.
+	 * @param params.name - Name of GPULayer, used for error logging.
+ 	 * @param params.type - Data type represented by GPULayer.
+	 * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
+	 * @param params.dimensions - Dimensions of 1D or 2D GPULayer.
+	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
+	 * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
+	 * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
+	 * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
+	 * @param params.array - Array to initialize GPULayer.
+	 */
 	constructor(
 		composer: GPUComposer,
 		params: {
 			name: string,
-			dimensions: number | [number, number],
 			type: GPULayerType,
 			numComponents: GPULayerNumComponents,
+			dimensions: number | [number, number],
 			array?: GPULayerArray | number[],
 			filter?: GPULayerFilter,
 			wrapS?: GPULayerWrap,
@@ -155,19 +198,25 @@ export class GPULayer {
 		if (!composer) {
 			throw new Error(`Error initing GPULayer "${name}": must pass GPUComposer instance to GPULayer(composer, params).`);
 		}
-		// Check params.
-		const validKeys = ['name', 'dimensions', 'type', 'numComponents', 'array', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue'];
-		const requiredKeys = ['name', 'dimensions', 'type', 'numComponents'];
+		if (!params) {
+			throw new Error('Error initing GPULayer: must pass params to GPULayer(composer, params).');
+		}
+		if (!isObject(params)) {
+			throw new Error(`Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got ${JSON.stringify(params)}.`);
+		}
+		// Check params keys.
+		const validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue', 'array'];
+		const requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
 		const keys = Object.keys(params);
 		keys.forEach(key => {
 			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid params key "${key}" passed to GPULayer(composer, params) with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+				throw new Error(`Invalid params key "${key}" passed to GPULayer(composer, params) with name "${params.name}".  Valid keys are ${JSON.stringify(validKeys)}.`);
 			}
 		});
 		// Check for required keys.
 		requiredKeys.forEach(key => {
 			if (keys.indexOf(key) < 0) {
-				throw new Error(`Required params key "${key}" was not passed to GPUProgram(composer, params) with name "${name}".`);
+				throw new Error(`Required params key "${key}" was not passed to GPULayer(composer, params) with name "${name}".`);
 			}
 		});
 
@@ -180,7 +229,7 @@ export class GPULayer {
 
 		// numComponents must be between 1 and 4.
 		if (!isPositiveInteger(numComponents) || numComponents > 4) {
-			throw new Error(`Invalid numComponents: ${numComponents} for GPULayer "${name}".`);
+			throw new Error(`Invalid numComponents: ${JSON.stringify(numComponents)} for GPULayer "${name}", must be number in range [1-4].`);
 		}
 		this.numComponents = numComponents;
 
@@ -190,14 +239,9 @@ export class GPULayer {
 
 		// Set dimensions, may be 1D or 2D.
 		const { length, width, height } = calcGPULayerSize(dimensions, name, composer.verboseLogging);
+		// We already type checked length, width, and height in calcGPULayerSize.
 		this._length = length;
-		if (!isPositiveInteger(width)) {
-			throw new Error(`Invalid width: ${width} for GPULayer "${name}".`);
-		}
 		this._width = width;
-		if (!isPositiveInteger(height)) {
-			throw new Error(`Invalid length: ${height} for GPULayer "${name}".`);
-		}
 		this._height = height;
 
 		// Set filtering - if we are processing a 1D array, default to NEAREST filtering.
@@ -205,7 +249,7 @@ export class GPULayer {
 		const defaultFilter = length ? NEAREST : ((type === FLOAT || type == HALF_FLOAT) ? LINEAR : NEAREST);
 		const filter = params.filter !== undefined ? params.filter : defaultFilter;
 		if (!isValidFilter(filter)) {
-			throw new Error(`Invalid filter: ${filter} for GPULayer "${name}", must be one of [${validFilters.join(', ')}].`);
+			throw new Error(`Invalid filter: ${JSON.stringify(filter)} for GPULayer "${name}", must be one of ${JSON.stringify(validFilters)}.`);
 		}
 		// Don't allow LINEAR filtering on integer types, it is not supported.
 		if (filter === LINEAR && !(type === FLOAT || type == HALF_FLOAT)) {
@@ -216,18 +260,18 @@ export class GPULayer {
 		// Get wrap types, default to clamp to edge.
 		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
 		if (!isValidWrap(wrapS)) {
-			throw new Error(`Invalid wrapS: ${wrapS} for GPULayer "${name}", must be one of [${validWraps.join(', ')}].`);
+			throw new Error(`Invalid wrapS: ${JSON.stringify(wrapS)} for GPULayer "${name}", must be one of ${JSON.stringify(validWraps)}.`);
 		}
 		this.wrapS = wrapS;
 		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
 		if (!isValidWrap(wrapT)) {
-			throw new Error(`Invalid wrapT: ${wrapT} for GPULayer "${name}", must be one of [${validWraps.join(', ')}].`);
+			throw new Error(`Invalid wrapT: ${JSON.stringify(wrapT)} for GPULayer "${name}", must be one of ${JSON.stringify(validWraps)}.`);
 		}
 		this.wrapT = wrapT;
 
 		// Set data type.
 		if (!isValidDataType(type)) {
-			throw new Error(`Invalid type: ${type} for GPULayer "${name}", must be one of [${validDataTypes.join(', ')}].`);
+			throw new Error(`Invalid type: ${JSON.stringify(type)} for GPULayer "${name}", must be one of ${JSON.stringify(validDataTypes)}.`);
 		}
 		this.type = type;
 		const internalType = getGPULayerInternalType({
@@ -266,7 +310,7 @@ export class GPULayer {
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
 		if (!isPositiveInteger(numBuffers)) {
-			throw new Error(`Invalid numBuffers: ${numBuffers} for GPULayer "${name}", must be positive integer.`);
+			throw new Error(`Invalid numBuffers: ${JSON.stringify(numBuffers)} for GPULayer "${name}", must be positive integer.`);
 		}
 		this.numBuffers = numBuffers;
 
@@ -347,7 +391,7 @@ export class GPULayer {
 	// }
 
 	/**
-	 * 
+	 * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
 	 * @private
 	 */
 	private initBuffers(
@@ -421,6 +465,9 @@ export class GPULayer {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 	
+	/**
+	 * 
+	 */
 	get bufferIndex() {
 		return this._bufferIndex;
 	}
@@ -428,14 +475,6 @@ export class GPULayer {
 	incrementBufferIndex() {
 		// Increment bufferIndex.
 		this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
-	}
-
-	getStateAtIndex(index: number) {
-		if (index < 0 || index >= this.numBuffers) {
-			throw new Error(`Invalid buffer index: ${index} for GPULayer "${this.name}" with ${this.numBuffers} buffer${this.numBuffers > 1 ? 's' : ''}.`)
-		}
-		if (this.textureOverrides && this.textureOverrides[index]) return this.textureOverrides[index]!;
-		return this.buffers[index].texture;
 	}
 
 	get currentState() {
@@ -449,8 +488,16 @@ export class GPULayer {
 		return this.getStateAtIndex((this.bufferIndex - 1 + this.numBuffers) % this.numBuffers);
 	}
 
+	getStateAtIndex(index: number) {
+		if (index < 0 || index >= this.numBuffers) {
+			throw new Error(`Invalid buffer index: ${index} for GPULayer "${this.name}" with ${this.numBuffers} buffer${this.numBuffers > 1 ? 's' : ''}.`)
+		}
+		if (this.textureOverrides && this.textureOverrides[index]) return this.textureOverrides[index]!;
+		return this.buffers[index].texture;
+	}
+
 	/**
-	 * 
+	 * Binds this GPULayer's current framebuffer.
 	 * @private
 	 */
 	_bindOutputBuffer() {
@@ -625,6 +672,7 @@ export class GPULayer {
 		return this._length !== undefined;
 	}
 
+	// TODO: this does not work on non-writable GPULayers, change this?
 	/**
 	 * Returns the current values of the GPULayer as a TypedArray.
 	 * @returns - A TypedArray containing current state of GPULayer.
@@ -760,6 +808,7 @@ export class GPULayer {
 		}
 	}
 
+	// TODO: this does not work on non-writable GPULayers, change this?
 	/**
 	 * Save the current state of this GPULayer to png.
 	 * @param params - PNG parameters.
@@ -772,7 +821,7 @@ export class GPULayer {
 		filename: string,
 		dpi?: number,
 		multiplier?: number,
-		callback: (data: string | Blob, filename?: string) => void,
+		callback: (blob: Blob, filename: string) => void,
 	}) {
 		const values = this.getValues();
 		const { width, height, type, name, numComponents } = this;
@@ -880,6 +929,8 @@ export class GPULayer {
 		if (!gl) throw new Error(`Must call dispose() on all GPULayers before calling dispose() on GPUComposer.`);
 	
 		this.destroyBuffers();
+		// @ts-ignore
+		delete this.buffers;
 		// @ts-ignore
 		delete this.composer;
 	}

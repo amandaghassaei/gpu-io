@@ -40,6 +40,9 @@
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "", otherThing: 2 }); },
 					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","defines"].');
 			});
+			it('should set parameters', () => {
+				// TODO:
+			});
 		});
 		describe('get _defaultProgram', () => {
 			it('should return valid WebGLProgram', () => {

@@ -3578,6 +3578,22 @@ var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var GPULayerHelpers_1 = __webpack_require__(191);
 var GPULayer = /** @class */ (function () {
+    /**
+     * Create a GPULayer.
+     * @param composer - The current GPUComposer instance.
+     * @param params  - GPULayer parameters.
+     * @param params.name - Name of GPULayer, used for error logging.
+     * @param params.type - Data type represented by GPULayer.
+     * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
+     * @param params.dimensions - Dimensions of 1D or 2D GPULayer.
+     * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
+     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
+     * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
+     * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
+     * @param params.array - Array to initialize GPULayer.
+     */
     function GPULayer(composer, params) {
         this._clearValue = 0; // Value to set when clear() is called, defaults to zero.  Access with GPULayer.clearValue.
         // Each GPULayer may contain a number of buffers to store different instances of the state.
@@ -3589,19 +3605,25 @@ var GPULayer = /** @class */ (function () {
         if (!composer) {
             throw new Error("Error initing GPULayer \"".concat(name, "\": must pass GPUComposer instance to GPULayer(composer, params)."));
         }
-        // Check params.
-        var validKeys = ['name', 'dimensions', 'type', 'numComponents', 'array', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue'];
-        var requiredKeys = ['name', 'dimensions', 'type', 'numComponents'];
+        if (!params) {
+            throw new Error('Error initing GPULayer: must pass params to GPULayer(composer, params).');
+        }
+        if (!(0, checks_1.isObject)(params)) {
+            throw new Error("Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got ".concat(JSON.stringify(params), "."));
+        }
+        // Check params keys.
+        var validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue', 'array'];
+        var requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
         var keys = Object.keys(params);
         keys.forEach(function (key) {
             if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid params key \"".concat(key, "\" passed to GPULayer(composer, params) with name \"").concat(params.name, "\".  Valid keys are ").concat(validKeys.join(', '), "."));
+                throw new Error("Invalid params key \"".concat(key, "\" passed to GPULayer(composer, params) with name \"").concat(params.name, "\".  Valid keys are ").concat(JSON.stringify(validKeys), "."));
             }
         });
         // Check for required keys.
         requiredKeys.forEach(function (key) {
             if (keys.indexOf(key) < 0) {
-                throw new Error("Required params key \"".concat(key, "\" was not passed to GPUProgram(composer, params) with name \"").concat(name, "\"."));
+                throw new Error("Required params key \"".concat(key, "\" was not passed to GPULayer(composer, params) with name \"").concat(name, "\"."));
             }
         });
         var dimensions = params.dimensions, type = params.type, numComponents = params.numComponents;
@@ -3611,7 +3633,7 @@ var GPULayer = /** @class */ (function () {
         this.name = name;
         // numComponents must be between 1 and 4.
         if (!(0, checks_1.isPositiveInteger)(numComponents) || numComponents > 4) {
-            throw new Error("Invalid numComponents: ".concat(numComponents, " for GPULayer \"").concat(name, "\"."));
+            throw new Error("Invalid numComponents: ".concat(JSON.stringify(numComponents), " for GPULayer \"").concat(name, "\", must be number in range [1-4]."));
         }
         this.numComponents = numComponents;
         // Writable defaults to false.
@@ -3619,21 +3641,16 @@ var GPULayer = /** @class */ (function () {
         this.writable = writable;
         // Set dimensions, may be 1D or 2D.
         var _a = (0, GPULayerHelpers_1.calcGPULayerSize)(dimensions, name, composer.verboseLogging), length = _a.length, width = _a.width, height = _a.height;
+        // We already type checked length, width, and height in calcGPULayerSize.
         this._length = length;
-        if (!(0, checks_1.isPositiveInteger)(width)) {
-            throw new Error("Invalid width: ".concat(width, " for GPULayer \"").concat(name, "\"."));
-        }
         this._width = width;
-        if (!(0, checks_1.isPositiveInteger)(height)) {
-            throw new Error("Invalid length: ".concat(height, " for GPULayer \"").concat(name, "\"."));
-        }
         this._height = height;
         // Set filtering - if we are processing a 1D array, default to NEAREST filtering.
         // Else default to LINEAR (interpolation) filtering for float types and NEAREST for integer types.
         var defaultFilter = length ? constants_1.NEAREST : ((type === constants_1.FLOAT || type == constants_1.HALF_FLOAT) ? constants_1.LINEAR : constants_1.NEAREST);
         var filter = params.filter !== undefined ? params.filter : defaultFilter;
         if (!(0, checks_1.isValidFilter)(filter)) {
-            throw new Error("Invalid filter: ".concat(filter, " for GPULayer \"").concat(name, "\", must be one of [").concat(constants_1.validFilters.join(', '), "]."));
+            throw new Error("Invalid filter: ".concat(JSON.stringify(filter), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validFilters), "."));
         }
         // Don't allow LINEAR filtering on integer types, it is not supported.
         if (filter === constants_1.LINEAR && !(type === constants_1.FLOAT || type == constants_1.HALF_FLOAT)) {
@@ -3643,17 +3660,17 @@ var GPULayer = /** @class */ (function () {
         // Get wrap types, default to clamp to edge.
         var wrapS = params.wrapS !== undefined ? params.wrapS : constants_1.CLAMP_TO_EDGE;
         if (!(0, checks_1.isValidWrap)(wrapS)) {
-            throw new Error("Invalid wrapS: ".concat(wrapS, " for GPULayer \"").concat(name, "\", must be one of [").concat(constants_1.validWraps.join(', '), "]."));
+            throw new Error("Invalid wrapS: ".concat(JSON.stringify(wrapS), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validWraps), "."));
         }
         this.wrapS = wrapS;
         var wrapT = params.wrapT !== undefined ? params.wrapT : constants_1.CLAMP_TO_EDGE;
         if (!(0, checks_1.isValidWrap)(wrapT)) {
-            throw new Error("Invalid wrapT: ".concat(wrapT, " for GPULayer \"").concat(name, "\", must be one of [").concat(constants_1.validWraps.join(', '), "]."));
+            throw new Error("Invalid wrapT: ".concat(JSON.stringify(wrapT), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validWraps), "."));
         }
         this.wrapT = wrapT;
         // Set data type.
         if (!(0, checks_1.isValidDataType)(type)) {
-            throw new Error("Invalid type: ".concat(type, " for GPULayer \"").concat(name, "\", must be one of [").concat(constants_1.validDataTypes.join(', '), "]."));
+            throw new Error("Invalid type: ".concat(JSON.stringify(type), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validDataTypes), "."));
         }
         this.type = type;
         var internalType = (0, GPULayerHelpers_1.getGPULayerInternalType)({
@@ -3685,7 +3702,7 @@ var GPULayer = /** @class */ (function () {
         // Num buffers is the number of states to store for this data.
         var numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
         if (!(0, checks_1.isPositiveInteger)(numBuffers)) {
-            throw new Error("Invalid numBuffers: ".concat(numBuffers, " for GPULayer \"").concat(name, "\", must be positive integer."));
+            throw new Error("Invalid numBuffers: ".concat(JSON.stringify(numBuffers), " for GPULayer \"").concat(name, "\", must be positive integer."));
         }
         this.numBuffers = numBuffers;
         // Wait until after type has been set to set clearValue.
@@ -3757,7 +3774,7 @@ var GPULayer = /** @class */ (function () {
     // 	this.buffers[this.bufferIndex].texture = texture;
     // }
     /**
-     *
+     * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
      * @private
      */
     GPULayer.prototype.initBuffers = function (array) {
@@ -3807,6 +3824,9 @@ var GPULayer = /** @class */ (function () {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     };
     Object.defineProperty(GPULayer.prototype, "bufferIndex", {
+        /**
+         *
+         */
         get: function () {
             return this._bufferIndex;
         },
@@ -3816,14 +3836,6 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype.incrementBufferIndex = function () {
         // Increment bufferIndex.
         this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
-    };
-    GPULayer.prototype.getStateAtIndex = function (index) {
-        if (index < 0 || index >= this.numBuffers) {
-            throw new Error("Invalid buffer index: ".concat(index, " for GPULayer \"").concat(this.name, "\" with ").concat(this.numBuffers, " buffer").concat(this.numBuffers > 1 ? 's' : '', "."));
-        }
-        if (this.textureOverrides && this.textureOverrides[index])
-            return this.textureOverrides[index];
-        return this.buffers[index].texture;
     };
     Object.defineProperty(GPULayer.prototype, "currentState", {
         get: function () {
@@ -3842,8 +3854,16 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    GPULayer.prototype.getStateAtIndex = function (index) {
+        if (index < 0 || index >= this.numBuffers) {
+            throw new Error("Invalid buffer index: ".concat(index, " for GPULayer \"").concat(this.name, "\" with ").concat(this.numBuffers, " buffer").concat(this.numBuffers > 1 ? 's' : '', "."));
+        }
+        if (this.textureOverrides && this.textureOverrides[index])
+            return this.textureOverrides[index];
+        return this.buffers[index].texture;
+    };
     /**
-     *
+     * Binds this GPULayer's current framebuffer.
      * @private
      */
     GPULayer.prototype._bindOutputBuffer = function () {
@@ -4148,6 +4168,7 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Unable to read values from Buffer with status: ".concat(gl.checkFramebufferStatus(gl.FRAMEBUFFER), "."));
         }
     };
+    // TODO: this does not work on non-writable GPULayers, change this?
     /**
      * Save the current state of this GPULayer to png.
      * @param params - PNG parameters.
@@ -4257,6 +4278,8 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Must call dispose() on all GPULayers before calling dispose() on GPUComposer.");
         this.destroyBuffers();
         // @ts-ignore
+        delete this.buffers;
+        // @ts-ignore
         delete this.composer;
     };
     /**
@@ -4331,7 +4354,7 @@ exports.initArrayForType = initArrayForType;
 function calcGPULayerSize(size, name, verboseLogging) {
     if ((0, checks_1.isNumber)(size)) {
         if (!(0, checks_1.isPositiveInteger)(size)) {
-            throw new Error("Invalid length: ".concat(size, " for GPULayer \"").concat(name, "\", must be positive integer."));
+            throw new Error("Invalid length: ".concat(JSON.stringify(size), " for GPULayer \"").concat(name, "\", must be positive integer."));
         }
         var length_1 = size;
         // Calc power of two width and height for length.
@@ -4350,11 +4373,11 @@ function calcGPULayerSize(size, name, verboseLogging) {
     }
     var width = size[0];
     if (!(0, checks_1.isPositiveInteger)(width)) {
-        throw new Error("Invalid width: ".concat(width, " for GPULayer \"").concat(name, "\", must be positive integer."));
+        throw new Error("Invalid width: ".concat(JSON.stringify(width), " for GPULayer \"").concat(name, "\", must be positive integer."));
     }
     var height = size[1];
     if (!(0, checks_1.isPositiveInteger)(height)) {
-        throw new Error("Invalid height: ".concat(height, " for GPULayer \"").concat(name, "\", must be positive integer."));
+        throw new Error("Invalid height: ".concat(JSON.stringify(height), " for GPULayer \"").concat(name, "\", must be positive integer."));
     }
     return { width: width, height: height };
 }
@@ -5030,6 +5053,7 @@ var GPUProgram = /** @class */ (function () {
         if (!(0, checks_1.isObject)(params)) {
             throw new Error("Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got ".concat(JSON.stringify(params), "."));
         }
+        // Check params keys.
         var validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
         var requiredKeys = ['name', 'fragmentShader'];
         var keys = Object.keys(params);
@@ -5730,7 +5754,7 @@ exports.validDataTypes = [exports.HALF_FLOAT, exports.FLOAT, exports.UNSIGNED_BY
 /**
  * @private
  */
-exports.validFilters = [exports.LINEAR, exports.NEAREST];
+exports.validFilters = [exports.NEAREST, exports.LINEAR];
 /**
  * @private
  */

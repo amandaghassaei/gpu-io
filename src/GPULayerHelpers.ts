@@ -98,7 +98,7 @@ export function calcGPULayerSize(
 ) {
 	if (isNumber(size as number)) {
 		if (!isPositiveInteger(size)) {
-			throw new Error(`Invalid length: ${size} for GPULayer "${name}", must be positive integer.`);
+			throw new Error(`Invalid length: ${JSON.stringify(size)} for GPULayer "${name}", must be positive integer.`);
 		}
 		const length = size as number;
 		// Calc power of two width and height for length.
@@ -117,11 +117,11 @@ export function calcGPULayerSize(
 	}
 	const width = (size as [number, number])[0];
 	if (!isPositiveInteger(width)) {
-		throw new Error(`Invalid width: ${width} for GPULayer "${name}", must be positive integer.`);
+		throw new Error(`Invalid width: ${JSON.stringify(width)} for GPULayer "${name}", must be positive integer.`);
 	}
 	const height = (size as [number, number])[1];
 	if (!isPositiveInteger(height)) {
-		throw new Error(`Invalid height: ${height} for GPULayer "${name}", must be positive integer.`);
+		throw new Error(`Invalid height: ${JSON.stringify(height)} for GPULayer "${name}", must be positive integer.`);
 	}
 	return { width, height };
 }

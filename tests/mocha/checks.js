@@ -1,5 +1,4 @@
 {
-	global.self = global.window; // Weird fix to get WebGLcompute import to work.
 	const {
 		HALF_FLOAT,
 		FLOAT,
@@ -16,7 +15,7 @@
 		RGB,
 		RGBA,
 		_testing,
-	} = require('../../dist/webgl-compute');
+	} = WebGLCompute;
 	const {
 		isValidDataType,
 		isValidFilter,
@@ -34,7 +33,6 @@
 		isObject,
 		isBoolean,
 	} = _testing;
-	const { assert } = require('chai');
 
 	const typeChecks = [
 		0, -1, 5.7, 92, true,

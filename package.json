@@ -20,7 +20,7 @@
     "url": "https://github.com/amandaghassaei/webgl-compute.git"
   },
   "scripts": {
-    "test": "mocha tests/js/ & karma start --single-run --browsers ChromeHeadless karma.conf.js",
+    "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
     "build": "webpack",
     "docs": "rimraf docs/* && typedoc --options ./typedoc.json"
   },

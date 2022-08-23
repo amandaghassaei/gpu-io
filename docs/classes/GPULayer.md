@@ -49,11 +49,15 @@
 
 • `Readonly` **name**: `string`
 
+Name of GPULayer, used for error logging.
+
 ___
 
 ### type
 
 • `Readonly` **type**: [`GPULayerType`](../README.md#gpulayertype)
+
+Data type represented by GPULayer.
 
 ___
 
@@ -61,11 +65,15 @@ ___
 
 • `Readonly` **numComponents**: [`GPULayerNumComponents`](../README.md#gpulayernumcomponents)
 
+Number of RGBA elements represented by each pixel in the GPULayer (1-4).
+
 ___
 
 ### filter
 
 • `Readonly` **filter**: [`GPULayerFilter`](../README.md#gpulayerfilter)
+
+Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
 
 ___
 
@@ -73,17 +81,23 @@ ___
 
 • `Readonly` **wrapS**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
+Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+
 ___
 
 ### wrapT
 
 • `Readonly` **wrapT**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
+Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+
 ___
 
 ### writable
 
 • `Readonly` **writable**: `boolean`
+
+Sets GPULayer as readonly or readwrite, defaults to false.
 
 ___
 
@@ -97,23 +111,25 @@ ___
 
 • **new GPULayer**(`composer`, `params`)
 
+Create a GPULayer.
+
 #### Parameters
 
-| Name | Type |
-| :------ | :------ |
-| `composer` | [`GPUComposer`](GPUComposer.md) |
-| `params` | `Object` |
-| `params.name` | `string` |
-| `params.dimensions` | `number` \| [`number`, `number`] |
-| `params.type` | [`GPULayerType`](../README.md#gpulayertype) |
-| `params.numComponents` | [`GPULayerNumComponents`](../README.md#gpulayernumcomponents) |
-| `params.array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
-| `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) |
-| `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) |
-| `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) |
-| `params.writable?` | `boolean` |
-| `params.numBuffers?` | `number` |
-| `params.clearValue?` | `number` \| `number`[] |
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](GPUComposer.md) | The current GPUComposer instance. |
+| `params` | `Object` | GPULayer parameters. |
+| `params.name` | `string` | Name of GPULayer, used for error logging.  * |
+| `params.type` | [`GPULayerType`](../README.md#gpulayertype) | Data type represented by GPULayer. |
+| `params.numComponents` | [`GPULayerNumComponents`](../README.md#gpulayernumcomponents) | Number of RGBA elements represented by each pixel in the GPULayer (1-4). |
+| `params.dimensions` | `number` \| [`number`, `number`] | Dimensions of 1D or 2D GPULayer. |
+| `params.array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) | Array to initialize GPULayer. |
+| `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST. |
+| `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.writable?` | `boolean` | Sets GPULayer as readonly or readwrite, defaults to false. |
+| `params.numBuffers?` | `number` | How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers. |
+| `params.clearValue?` | `number` \| `number`[] | Value to write to GPULayer when GPULayer.clear() is called. |
 
 ## Accessors
 

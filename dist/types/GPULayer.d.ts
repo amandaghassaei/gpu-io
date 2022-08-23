@@ -3,12 +3,33 @@ import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPU
 import { Texture } from 'three';
 export declare class GPULayer {
     private readonly composer;
+    /**
+     * Name of GPULayer, used for error logging.
+     */
     readonly name: string;
+    /**
+     * Data type represented by GPULayer.
+     */
     readonly type: GPULayerType;
+    /**
+     * Number of RGBA elements represented by each pixel in the GPULayer (1-4).
+     */
     readonly numComponents: GPULayerNumComponents;
+    /**
+     * Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
+     */
     readonly filter: GPULayerFilter;
+    /**
+     * Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     */
     readonly wrapS: GPULayerWrap;
+    /**
+     * Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     */
     readonly wrapT: GPULayerWrap;
+    /**
+     * Sets GPULayer as readonly or readwrite, defaults to false.
+     */
     readonly writable: boolean;
     private _clearValue;
     private _bufferIndex;
@@ -62,11 +83,27 @@ export declare class GPULayer {
      */
     readonly glWrapT: number;
     private textureOverrides?;
+    /**
+     * Create a GPULayer.
+     * @param composer - The current GPUComposer instance.
+     * @param params  - GPULayer parameters.
+     * @param params.name - Name of GPULayer, used for error logging.
+     * @param params.type - Data type represented by GPULayer.
+     * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
+     * @param params.dimensions - Dimensions of 1D or 2D GPULayer.
+     * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
+     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
+     * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
+     * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
+     * @param params.array - Array to initialize GPULayer.
+     */
     constructor(composer: GPUComposer, params: {
         name: string;
-        dimensions: number | [number, number];
         type: GPULayerType;
         numComponents: GPULayerNumComponents;
+        dimensions: number | [number, number];
         array?: GPULayerArray | number[];
         filter?: GPULayerFilter;
         wrapS?: GPULayerWrap;
@@ -81,17 +118,20 @@ export declare class GPULayer {
      */
     _usingTextureOverrideForCurrentBuffer(): WebGLTexture | undefined;
     /**
-     *
+     * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
      * @private
      */
     private initBuffers;
-    get bufferIndex(): number;
-    incrementBufferIndex(): void;
-    getStateAtIndex(index: number): WebGLTexture;
-    get currentState(): WebGLTexture;
-    get lastState(): WebGLTexture;
     /**
      *
+     */
+    get bufferIndex(): number;
+    incrementBufferIndex(): void;
+    get currentState(): WebGLTexture;
+    get lastState(): WebGLTexture;
+    getStateAtIndex(index: number): WebGLTexture;
+    /**
+     * Binds this GPULayer's current framebuffer.
      * @private
      */
     _bindOutputBuffer(): void;
@@ -149,7 +189,7 @@ export declare class GPULayer {
         filename: string;
         dpi?: number;
         multiplier?: number;
-        callback: (data: string | Blob, filename?: string) => void;
+        callback: (blob: Blob, filename: string) => void;
     }): void;
     /**
      * Attach the output buffer of this GPULayer to a Threejs Texture object.
