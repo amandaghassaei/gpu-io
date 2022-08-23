@@ -7,7 +7,7 @@ This library supports rendering directly to the screen.  It also has some built-
 **This repo is under active development, really only posted here for internal use right now, but will have a more official release soon.  As it stands, the API may (and probably will) change at any moment and many features have not been fully tested.**
 
 - [Installation](#installation)
-- [Use](#use)
+- [API](#api)
 - [Examples](#examples)
 - [Compatibility with Threejs](#compatibility-with-threejs)
 - [Limitations/Caveats/Notes](#limitationscaveatsnotes)
@@ -47,14 +47,14 @@ WebGLCompute will be accessible globally.
 const { GPUComposer, GPULayer, GPUProgram } = WebGLCompute;
 ```
 
-## Use
+## API
 
-TODO: finish this.
+Full API documentation can be found in the [docs/](./docs/)
 
 
 ## Examples
 
-- [Conway's Game of Life](http://apps.amandaghassaei.com/webgl-compute/examples/gol/)
+- [Conway's Game of Life](http://apps.amandaghassaei.com/webgl-compute/examples/gol/) (simple)
 
 
 ## Compatibility with Threejs
