@@ -80,9 +80,15 @@ export class GPUComposer {
 	private height!: number;
 
 	private errorState = false;
+	/**
+	 * @private
+	 */
 	readonly errorCallback: ErrorCallback;
 
 	// Save threejs renderer if passed in.
+	/**
+	 * @private
+	 */
 	readonly renderer?: WebGLRenderer;
 	private readonly maxNumTextures!: number;
 	
@@ -99,6 +105,9 @@ export class GPUComposer {
 	private indexedLinesIndexBuffer?: WebGLBuffer;
 
 	// Keep track of all GL extensions that have been loaded.
+	/**
+	 * @private
+	 */
 	readonly extensions: { [key: string]: any } = {};
 
 	// Programs for copying data (these are needed for rendering partial screen geometries).
@@ -130,7 +139,10 @@ export class GPUComposer {
 		src: require('./glsl/frag/VectorMagnitudeFragShader.glsl'),
 	};
 
-	// Vertex shaders are shared across all GPUProgram instances.
+	/**
+	 * Vertex shaders are shared across all GPUProgram instances.
+	 * @private
+	 */
 	readonly _vertexShaders: {[key in PROGRAM_NAME_INTERNAL]: {
 		src: string,
 		shader?: WebGLProgram,
@@ -173,29 +185,6 @@ export class GPUComposer {
 	};
 
 	verboseLogging = false;
-
-	static initWithThreeRenderer(
-		renderer: WebGLRenderer,
-		params?: {
-			verboseLogging?: boolean,
-			errorCallback?: ErrorCallback,
-		},
-	) {
-		const composer = new GPUComposer(
-			{
-				floatPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
-				intPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
-				...params,
-				canvas: renderer.domElement,
-				context: renderer.getContext(),
-				glslVersion: renderer.capabilities.isWebGL2 ? GLSL3 : GLSL1,
-			},
-		);
-		// Attach renderer.
-		// @ts-ignore
-		composer.renderer = renderer;
-		return composer;
-	}
 
 	constructor(
 		params: {
@@ -312,6 +301,29 @@ export class GPUComposer {
 		if (this.verboseLogging) console.log(`${this.maxNumTextures} textures max.`);
 	}
 
+	static initWithThreeRenderer(
+		renderer: WebGLRenderer,
+		params?: {
+			verboseLogging?: boolean,
+			errorCallback?: ErrorCallback,
+		},
+	) {
+		const composer = new GPUComposer(
+			{
+				floatPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
+				intPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
+				...params,
+				canvas: renderer.domElement,
+				context: renderer.getContext(),
+				glslVersion: renderer.capabilities.isWebGL2 ? GLSL3 : GLSL1,
+			},
+		);
+		// Attach renderer.
+		// @ts-ignore
+		composer.renderer = renderer;
+		return composer;
+	}
+
 	isWebGL2() {
 		return isWebGL2(this.gl);
 	}
@@ -335,6 +347,10 @@ export class GPUComposer {
 		}
 	}
 
+	/**
+	 * 
+	 * @private
+	 */
 	_setValueProgramForType(type: GPULayerType) {
 		const key = this.glslKeyForType(type);
 		if (this.setValuePrograms[key] === undefined) {
@@ -452,7 +468,10 @@ export class GPUComposer {
 		return buffer;
 	}
 
-	// Used internally, see GPULayer.clone() for public API.
+	/**
+	 * Used internally, see GPULayer.clone() for public API.
+	 * @private
+	 */
 	_cloneGPULayer(gpuLayer: GPULayer, name?: string) {
 		let dimensions: number | [number, number] = 0;
 		try {
@@ -608,6 +627,10 @@ export class GPUComposer {
 		return texture;
 	}
 
+	/**
+	 * 
+	 * @private
+	 */
 	_getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string) {
 		const {
 			errorCallback,

@@ -345,7 +345,7 @@ Save the current state of this GPULayer to png.
 | `params.filename` | `string` | PNG filename (no extension). |
 | `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
 | `params.multiplier?` | `number` | Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types). |
-| `params.callback` | (`data`: `string` \| `Blob`, `filename?`: `string`) => `void` | - |
+| `params.callback` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
 
 #### Returns
 

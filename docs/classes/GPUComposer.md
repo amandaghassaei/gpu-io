@@ -11,20 +11,17 @@
 - [glslVersion](GPUComposer.md#glslversion)
 - [intPrecision](GPUComposer.md#intprecision)
 - [floatPrecision](GPUComposer.md#floatprecision)
-- [errorCallback](GPUComposer.md#errorcallback)
-- [renderer](GPUComposer.md#renderer)
-- [extensions](GPUComposer.md#extensions)
-- [\_vertexShaders](GPUComposer.md#_vertexshaders)
 - [verboseLogging](GPUComposer.md#verboselogging)
+
+### Constructors
+
+- [constructor](GPUComposer.md#constructor)
 
 ### Methods
 
 - [initWithThreeRenderer](GPUComposer.md#initwiththreerenderer)
 - [isWebGL2](GPUComposer.md#iswebgl2)
-- [\_setValueProgramForType](GPUComposer.md#_setvalueprogramfortype)
-- [\_cloneGPULayer](GPUComposer.md#_clonegpulayer)
 - [initTexture](GPUComposer.md#inittexture)
-- [\_getVertexShaderWithName](GPUComposer.md#_getvertexshaderwithname)
 - [resize](GPUComposer.md#resize)
 - [step](GPUComposer.md#step)
 - [stepBoundary](GPUComposer.md#stepboundary)
@@ -40,10 +37,6 @@
 - [drawLayerMagnitude](GPUComposer.md#drawlayermagnitude)
 - [resetThreeState](GPUComposer.md#resetthreestate)
 - [dispose](GPUComposer.md#dispose)
-
-### Constructors
-
-- [constructor](GPUComposer.md#constructor)
 
 ## Properties
 
@@ -77,74 +70,31 @@ ___
 
 ___
 
-### errorCallback
-
-• `Readonly` **errorCallback**: [`ErrorCallback`](../README.md#errorcallback)
-
-___
-
-### renderer
-
-• `Optional` `Readonly` **renderer**: `WebGLRenderer`
-
-___
-
-### extensions
-
-• `Readonly` **extensions**: `Object` = `{}`
-
-#### Index signature
-
-▪ [key: `string`]: `any`
-
-___
-
-### \_vertexShaders
-
-• `Readonly` **\_vertexShaders**: `Object`
-
-#### Type declaration
-
-| Name | Type |
-| :------ | :------ |
-| `DEFAULT` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `DEFAULT.src` | `string` |
-| `DEFAULT.shader?` | `WebGLProgram` |
-| `DEFAULT.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-| `DEFAULT_W_UV` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `DEFAULT_W_UV.src` | `string` |
-| `DEFAULT_W_UV.shader?` | `WebGLProgram` |
-| `DEFAULT_W_UV.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-| `DEFAULT_W_NORMAL` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `DEFAULT_W_NORMAL.src` | `string` |
-| `DEFAULT_W_NORMAL.shader?` | `WebGLProgram` |
-| `DEFAULT_W_NORMAL.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-| `DEFAULT_W_UV_NORMAL` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `DEFAULT_W_UV_NORMAL.src` | `string` |
-| `DEFAULT_W_UV_NORMAL.shader?` | `WebGLProgram` |
-| `DEFAULT_W_UV_NORMAL.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-| `SEGMENT` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `SEGMENT.src` | `string` |
-| `SEGMENT.shader?` | `WebGLProgram` |
-| `SEGMENT.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-| `LAYER_POINTS` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `LAYER_POINTS.src` | `string` |
-| `LAYER_POINTS.shader?` | `WebGLProgram` |
-| `LAYER_POINTS.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-| `LAYER_LINES` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `LAYER_LINES.src` | `string` |
-| `LAYER_LINES.shader?` | `WebGLProgram` |
-| `LAYER_LINES.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-| `LAYER_VECTOR_FIELD` | { `src`: `string` ; `shader?`: `WebGLProgram` ; `defines?`: [`CompileTimeVars`](../README.md#compiletimevars)  } |
-| `LAYER_VECTOR_FIELD.src` | `string` |
-| `LAYER_VECTOR_FIELD.shader?` | `WebGLProgram` |
-| `LAYER_VECTOR_FIELD.defines?` | [`CompileTimeVars`](../README.md#compiletimevars) |
-
-___
-
 ### verboseLogging
 
 • **verboseLogging**: `boolean` = `false`
+
+## Constructors
+
+### constructor
+
+• **new GPUComposer**(`params`)
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `params` | `Object` |
+| `params.canvas` | `HTMLCanvasElement` |
+| `params.context?` | ``null`` \| `WebGLRenderingContext` \| `WebGL2RenderingContext` |
+| `params.contextID?` | `string` |
+| `params.contextOptions?` | `Object` |
+| `params.contextOptions.antialias?` | `boolean` |
+| `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) |
+| `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) |
+| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) |
+| `params.verboseLogging?` | `boolean` |
+| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) |
 
 ## Methods
 
@@ -177,39 +127,6 @@ ___
 
 ___
 
-### \_setValueProgramForType
-
-▸ **_setValueProgramForType**(`type`): [`GPUProgram`](GPUProgram.md)
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `type` | [`GPULayerType`](../README.md#gpulayertype) |
-
-#### Returns
-
-[`GPUProgram`](GPUProgram.md)
-
-___
-
-### \_cloneGPULayer
-
-▸ **_cloneGPULayer**(`gpuLayer`, `name?`): [`GPULayer`](GPULayer.md)
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `gpuLayer` | [`GPULayer`](GPULayer.md) |
-| `name?` | `string` |
-
-#### Returns
-
-[`GPULayer`](GPULayer.md)
-
-___
-
 ### initTexture
 
 ▸ **initTexture**(`params`): `WebGLTexture`
@@ -231,23 +148,6 @@ ___
 #### Returns
 
 `WebGLTexture`
-
-___
-
-### \_getVertexShaderWithName
-
-▸ **_getVertexShaderWithName**(`name`, `programName`): `undefined` \| `WebGLProgram`
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `name` | `PROGRAM_NAME_INTERNAL` |
-| `programName` | `string` |
-
-#### Returns
-
-`undefined` \| `WebGLProgram`
 
 ___
 
@@ -568,25 +468,3 @@ ___
 #### Returns
 
 `void`
-
-## Constructors
-
-### constructor
-
-• **new GPUComposer**(`params`)
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `params` | `Object` |
-| `params.canvas` | `HTMLCanvasElement` |
-| `params.context?` | ``null`` \| `WebGLRenderingContext` \| `WebGL2RenderingContext` |
-| `params.contextID?` | `string` |
-| `params.contextOptions?` | `Object` |
-| `params.contextOptions.antialias?` | `boolean` |
-| `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) |
-| `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) |
-| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) |
-| `params.verboseLogging?` | `boolean` |
-| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) |
