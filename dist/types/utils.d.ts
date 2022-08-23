@@ -27,7 +27,7 @@ export declare function initGLProgram(gl: WebGLRenderingContext | WebGL2Renderin
 export declare function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext): boolean;
 /**
  * Returns whether WebGL2 is supported by the current browser.
- * @returns - true is WebGL2 is supported, else false.
+ * @returns - true if WebGL2 is supported, else false.
 */
 export declare function isWebGL2Supported(): boolean;
 /**

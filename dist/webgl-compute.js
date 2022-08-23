@@ -3694,7 +3694,10 @@ var GPULayer = /** @class */ (function () {
         }
         this.initBuffers(params.array);
     }
-    // This is used internally.
+    /**
+     *
+     * @private
+     */
     GPULayer.prototype._usingTextureOverrideForCurrentBuffer = function () {
         return this.textureOverrides && this.textureOverrides[this.bufferIndex];
     };
@@ -3753,6 +3756,10 @@ var GPULayer = /** @class */ (function () {
     // 	}
     // 	this.buffers[this.bufferIndex].texture = texture;
     // }
+    /**
+     *
+     * @private
+     */
     GPULayer.prototype.initBuffers = function (array) {
         var _a = this, name = _a.name, numBuffers = _a.numBuffers, composer = _a.composer, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
         var gl = composer.gl, errorCallback = composer.errorCallback;
@@ -3835,7 +3842,10 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    // This is used internally.
+    /**
+     *
+     * @private
+     */
     GPULayer.prototype._bindOutputBuffer = function () {
         var gl = this.composer.gl;
         var framebuffer = this.buffers[this.bufferIndex].framebuffer;
@@ -3844,7 +3854,10 @@ var GPULayer = /** @class */ (function () {
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     };
-    // This is used internally.
+    /**
+     *
+     * @private
+     */
     GPULayer.prototype._bindOutputBufferForWrite = function (incrementBufferIndex) {
         if (incrementBufferIndex) {
             this.incrementBufferIndex();
@@ -3884,9 +3897,15 @@ var GPULayer = /** @class */ (function () {
         this.initBuffers(array);
     };
     Object.defineProperty(GPULayer.prototype, "clearValue", {
+        /**
+         * Get the clearValue of the GPULayer.
+         */
         get: function () {
             return this._clearValue;
         },
+        /**
+         * Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
+         */
         set: function (clearValue) {
             var _a = this, numComponents = _a.numComponents, type = _a.type;
             if (!(0, checks_1.isValidClearValue)(clearValue, numComponents, type)) {
@@ -3897,6 +3916,10 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    /**
+     * Clear all data in GPULayer to GPULayer.clearValue.
+     * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
+     */
     GPULayer.prototype.clear = function (applyToAllBuffers) {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
         var _a = this, name = _a.name, composer = _a.composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type;
@@ -3955,6 +3978,9 @@ var GPULayer = /** @class */ (function () {
         }
     };
     Object.defineProperty(GPULayer.prototype, "width", {
+        /**
+         * The width of the GPULayer array.
+         */
         get: function () {
             return this._width;
         },
@@ -3962,6 +3988,9 @@ var GPULayer = /** @class */ (function () {
         configurable: true
     });
     Object.defineProperty(GPULayer.prototype, "height", {
+        /**
+         * The height of the GPULayer array.
+         */
         get: function () {
             return this._height;
         },
@@ -3969,6 +3998,9 @@ var GPULayer = /** @class */ (function () {
         configurable: true
     });
     Object.defineProperty(GPULayer.prototype, "length", {
+        /**
+         * The length of the GPULayer array (only available to 1D GPULayers).
+         */
         get: function () {
             if (!this._length) {
                 throw new Error("Cannot access length on 2D GPULayer \"".concat(this.name, "\"."));
@@ -3978,9 +4010,17 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    /**
+     * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
+     * @returns - true if GPULayer is 1D, else false.
+     */
     GPULayer.prototype.is1D = function () {
         return this._length !== undefined;
     };
+    /**
+     * Returns the current values of the GPULayer as a TypedArray.
+     * @returns - A TypedArray containing current state of GPULayer.
+     */
     GPULayer.prototype.getValues = function () {
         var _a = this, width = _a.width, height = _a.height, composer = _a.composer, numComponents = _a.numComponents, type = _a.type;
         var gl = composer.gl, glslVersion = composer.glslVersion;
@@ -4110,8 +4150,12 @@ var GPULayer = /** @class */ (function () {
     };
     /**
      * Save the current state of this GPULayer to png.
-     * @param {Object} params
-     */
+     * @param params - PNG parameters.
+     * @param params.filename - PNG filename (no extension).
+     * @param params.dpi - PNG dpi (defaults to 72dpi).
+     * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types).
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+    */
     GPULayer.prototype.savePNG = function (params) {
         var values = this.getValues();
         var _a = this, width = _a.width, height = _a.height, type = _a.type, name = _a.name, numComponents = _a.numComponents;
@@ -4217,8 +4261,8 @@ var GPULayer = /** @class */ (function () {
     };
     /**
      * Create a deep copy of GPULayer with current state copied over.
-     * @param {string} [name] - Name of new GPULayer as string.
-     * @returns {GPULayer} - Deep copy.
+     * @param name - Name of new GPULayer as string.
+     * @returns - Deep copy of GPULayer.
      */
     GPULayer.prototype.clone = function (name) {
         // Make a deep copy.
@@ -6159,7 +6203,7 @@ function isWebGL2(gl) {
 exports.isWebGL2 = isWebGL2;
 /**
  * Returns whether WebGL2 is supported by the current browser.
- * @returns - true is WebGL2 is supported, else false.
+ * @returns - true if WebGL2 is supported, else false.
 */
 function isWebGL2Supported() {
     if (results.supportsWebGL2 === undefined) {

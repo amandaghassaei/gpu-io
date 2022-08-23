@@ -7,5 +7,6 @@
 	"readme": "none",
 	"sort": "source-order",
 	"disableSources": true,
+	"githubPages": false,
     "out": "./docs"
 }

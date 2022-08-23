@@ -22,7 +22,7 @@
   "scripts": {
     "test": "mocha tests/js/ & karma start --single-run --browsers ChromeHeadless karma.conf.js",
     "build": "webpack",
-    "docs": "typedoc --options ./typedoc.json"
+    "docs": "rimraf docs/* && typedoc --options ./typedoc.json"
   },
   "author": "Amanda Ghassaei",
   "license": "MIT",
@@ -31,6 +31,7 @@
     "@types/offscreencanvas": "^2019.7.0",
     "@types/three": "^0.127.1",
     "chai": "^4.3.6",
+    "del-cli": "^5.0.0",
     "install": "^0.13.0",
     "karma": "^6.4.0",
     "karma-chai": "^0.1.0",
@@ -41,6 +42,7 @@
     "karma-safari-launcher": "^1.0.0",
     "mocha": "^10.0.0",
     "npm": "^8.18.0",
+    "rimraf": "^3.0.2",
     "ts-loader": "^8.1.0",
     "typedoc": "^0.23.10",
     "typedoc-plugin-markdown": "^3.13.4",
