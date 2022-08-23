@@ -3,5 +3,7 @@
     "tsconfig": "./tsconfig.json",
 	"cleanOutputDir": false,
 	"plugin": "typedoc-plugin-markdown",
+	"excludePrivate": true,
+	"readme": "none",
     "out": "./docs"
 }

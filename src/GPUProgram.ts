@@ -47,7 +47,9 @@ export class GPUProgram {
 	// Keep a reference to GPUComposer.
 	private readonly composer: GPUComposer;
 
-	// Name of GPUProgram, used for error logging.
+	/**
+	 * Name of GPUProgram, used for error logging.
+	 */
 	readonly name: string;
 
 	// Compiled fragment shader.
@@ -361,9 +363,9 @@ Error code: ${gl.getError()}.`);
 
 	/**
 	 * Set fragment shader uniform for GPUProgram.
-	 * @param {string} name - Uniform name as it appears in fragment shader.
-	 * @param {boolean|number|number[]} value - Uniform value.
-	 * @param {BOOL|INT|UINT|FLOAT} [type] - Uniform type.
+	 * @param name - Uniform name as it appears in fragment shader.
+	 * @param value - Uniform value.
+	 * @param type - Uniform type.
 	 */
 	setUniform(
 		name: string,

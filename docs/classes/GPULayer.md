@@ -1,4 +1,4 @@
-[webgl-compute](../README.md) / [Exports](../modules.md) / GPULayer
+[webgl-compute](../README.md) / GPULayer
 
 # Class: GPULayer
 
@@ -10,13 +10,6 @@
 
 ### Properties
 
-- [\_bufferIndex](GPULayer.md#_bufferindex)
-- [\_clearValue](GPULayer.md#_clearvalue)
-- [\_height](GPULayer.md#_height)
-- [\_length](GPULayer.md#_length)
-- [\_width](GPULayer.md#_width)
-- [buffers](GPULayer.md#buffers)
-- [composer](GPULayer.md#composer)
 - [filter](GPULayer.md#filter)
 - [glFilter](GPULayer.md#glfilter)
 - [glFormat](GPULayer.md#glformat)
@@ -32,7 +25,6 @@
 - [name](GPULayer.md#name)
 - [numBuffers](GPULayer.md#numbuffers)
 - [numComponents](GPULayer.md#numcomponents)
-- [textureOverrides](GPULayer.md#textureoverrides)
 - [type](GPULayer.md#type)
 - [wrapS](GPULayer.md#wraps)
 - [wrapT](GPULayer.md#wrapt)
@@ -56,12 +48,10 @@
 - [attachToThreeTexture](GPULayer.md#attachtothreetexture)
 - [clear](GPULayer.md#clear)
 - [clone](GPULayer.md#clone)
-- [destroyBuffers](GPULayer.md#destroybuffers)
 - [dispose](GPULayer.md#dispose)
 - [getStateAtIndex](GPULayer.md#getstateatindex)
 - [getValues](GPULayer.md#getvalues)
 - [incrementBufferIndex](GPULayer.md#incrementbufferindex)
-- [initBuffers](GPULayer.md#initbuffers)
 - [is1D](GPULayer.md#is1d)
 - [resize](GPULayer.md#resize)
 - [savePNG](GPULayer.md#savepng)
@@ -79,101 +69,31 @@
 | :------ | :------ |
 | `composer` | [`GPUComposer`](GPUComposer.md) |
 | `params` | `Object` |
-| `params.array?` | `number`[] \| [`GPULayerArray`](../modules.md#gpulayerarray) |
+| `params.array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
 | `params.clearValue?` | `number` \| `number`[] |
 | `params.dimensions` | `number` \| [`number`, `number`] |
-| `params.filter?` | [`GPULayerFilter`](../modules.md#gpulayerfilter) |
+| `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) |
 | `params.name` | `string` |
 | `params.numBuffers?` | `number` |
-| `params.numComponents` | [`GPULayerNumComponents`](../modules.md#gpulayernumcomponents) |
-| `params.type` | [`GPULayerType`](../modules.md#gpulayertype) |
-| `params.wrapS?` | [`GPULayerWrap`](../modules.md#gpulayerwrap) |
-| `params.wrapT?` | [`GPULayerWrap`](../modules.md#gpulayerwrap) |
+| `params.numComponents` | [`GPULayerNumComponents`](../README.md#gpulayernumcomponents) |
+| `params.type` | [`GPULayerType`](../README.md#gpulayertype) |
+| `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) |
+| `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) |
 | `params.writable?` | `boolean` |
 
 #### Defined in
 
-[GPULayer.ts:104](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L104)
+[GPULayer.ts:104](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L104)
 
 ## Properties
 
-### \_bufferIndex
-
-• `Private` **\_bufferIndex**: `number` = `0`
-
-#### Defined in
-
-[GPULayer.ts:66](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L66)
-
-___
-
-### \_clearValue
-
-• `Private` **\_clearValue**: `number` \| `number`[] = `0`
-
-#### Defined in
-
-[GPULayer.ts:62](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L62)
-
-___
-
-### \_height
-
-• `Private` **\_height**: `number`
-
-#### Defined in
-
-[GPULayer.ts:73](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L73)
-
-___
-
-### \_length
-
-• `Private` `Optional` **\_length**: `number`
-
-#### Defined in
-
-[GPULayer.ts:71](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L71)
-
-___
-
-### \_width
-
-• `Private` **\_width**: `number`
-
-#### Defined in
-
-[GPULayer.ts:72](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L72)
-
-___
-
-### buffers
-
-• `Private` `Readonly` **buffers**: [`GPULayerBuffer`](../modules.md#gpulayerbuffer)[] = `[]`
-
-#### Defined in
-
-[GPULayer.ts:68](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L68)
-
-___
-
-### composer
-
-• `Private` `Readonly` **composer**: [`GPUComposer`](GPUComposer.md)
-
-#### Defined in
-
-[GPULayer.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L53)
-
-___
-
 ### filter
 
-• `Readonly` **filter**: [`GPULayerFilter`](../modules.md#gpulayerfilter)
+• `Readonly` **filter**: [`GPULayerFilter`](../README.md#gpulayerfilter)
 
 #### Defined in
 
-[GPULayer.ts:58](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L58)
+[GPULayer.ts:58](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L58)
 
 ___
 
@@ -183,7 +103,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:92](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L92)
+[GPULayer.ts:92](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L92)
 
 ___
 
@@ -193,7 +113,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:83](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L83)
+[GPULayer.ts:83](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L83)
 
 ___
 
@@ -203,7 +123,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:82](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L82)
+[GPULayer.ts:82](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L82)
 
 ___
 
@@ -213,7 +133,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:89](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L89)
+[GPULayer.ts:89](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L89)
 
 ___
 
@@ -223,7 +143,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:86](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L86)
+[GPULayer.ts:86](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L86)
 
 ___
 
@@ -233,7 +153,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:95](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L95)
+[GPULayer.ts:95](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L95)
 
 ___
 
@@ -243,47 +163,47 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:98](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L98)
+[GPULayer.ts:98](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L98)
 
 ___
 
 ### internalFilter
 
-• `Readonly` **internalFilter**: [`GPULayerFilter`](../modules.md#gpulayerfilter)
+• `Readonly` **internalFilter**: [`GPULayerFilter`](../README.md#gpulayerfilter)
 
 #### Defined in
 
-[GPULayer.ts:91](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L91)
+[GPULayer.ts:91](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L91)
 
 ___
 
 ### internalType
 
-• `Readonly` **internalType**: [`GPULayerType`](../modules.md#gpulayertype)
+• `Readonly` **internalType**: [`GPULayerType`](../README.md#gpulayertype)
 
 #### Defined in
 
-[GPULayer.ts:85](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L85)
+[GPULayer.ts:85](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L85)
 
 ___
 
 ### internalWrapS
 
-• `Readonly` **internalWrapS**: [`GPULayerWrap`](../modules.md#gpulayerwrap)
+• `Readonly` **internalWrapS**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
 #### Defined in
 
-[GPULayer.ts:94](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L94)
+[GPULayer.ts:94](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L94)
 
 ___
 
 ### internalWrapT
 
-• `Readonly` **internalWrapT**: [`GPULayerWrap`](../modules.md#gpulayerwrap)
+• `Readonly` **internalWrapT**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
 #### Defined in
 
-[GPULayer.ts:97](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L97)
+[GPULayer.ts:97](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L97)
 
 ___
 
@@ -293,7 +213,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:55](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L55)
+[GPULayer.ts:55](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L55)
 
 ___
 
@@ -303,57 +223,47 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:67](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L67)
+[GPULayer.ts:67](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L67)
 
 ___
 
 ### numComponents
 
-• `Readonly` **numComponents**: [`GPULayerNumComponents`](../modules.md#gpulayernumcomponents)
+• `Readonly` **numComponents**: [`GPULayerNumComponents`](../README.md#gpulayernumcomponents)
 
 #### Defined in
 
-[GPULayer.ts:57](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L57)
-
-___
-
-### textureOverrides
-
-• `Private` `Optional` **textureOverrides**: (`undefined` \| `WebGLTexture`)[]
-
-#### Defined in
-
-[GPULayer.ts:102](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L102)
+[GPULayer.ts:57](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L57)
 
 ___
 
 ### type
 
-• `Readonly` **type**: [`GPULayerType`](../modules.md#gpulayertype)
+• `Readonly` **type**: [`GPULayerType`](../README.md#gpulayertype)
 
 #### Defined in
 
-[GPULayer.ts:56](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L56)
+[GPULayer.ts:56](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L56)
 
 ___
 
 ### wrapS
 
-• `Readonly` **wrapS**: [`GPULayerWrap`](../modules.md#gpulayerwrap)
+• `Readonly` **wrapS**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
 #### Defined in
 
-[GPULayer.ts:59](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L59)
+[GPULayer.ts:59](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L59)
 
 ___
 
 ### wrapT
 
-• `Readonly` **wrapT**: [`GPULayerWrap`](../modules.md#gpulayerwrap)
+• `Readonly` **wrapT**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
 #### Defined in
 
-[GPULayer.ts:60](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L60)
+[GPULayer.ts:60](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L60)
 
 ___
 
@@ -363,7 +273,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L61)
+[GPULayer.ts:61](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L61)
 
 ## Accessors
 
@@ -377,7 +287,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:384](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L384)
+[GPULayer.ts:384](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L384)
 
 ___
 
@@ -391,7 +301,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:468](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L468)
+[GPULayer.ts:468](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L468)
 
 • `set` **clearValue**(`clearValue`): `void`
 
@@ -407,7 +317,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:472](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L472)
+[GPULayer.ts:472](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L472)
 
 ___
 
@@ -421,7 +331,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:401](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L401)
+[GPULayer.ts:401](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L401)
 
 ___
 
@@ -435,7 +345,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:542](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L542)
+[GPULayer.ts:542](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L542)
 
 ___
 
@@ -449,7 +359,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:405](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L405)
+[GPULayer.ts:405](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L405)
 
 ___
 
@@ -463,7 +373,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:546](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L546)
+[GPULayer.ts:546](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L546)
 
 ___
 
@@ -477,7 +387,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:538](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L538)
+[GPULayer.ts:538](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L538)
 
 ## Methods
 
@@ -491,7 +401,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:413](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L413)
+[GPULayer.ts:413](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L413)
 
 ___
 
@@ -511,7 +421,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:423](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L423)
+[GPULayer.ts:423](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L423)
 
 ___
 
@@ -525,7 +435,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:249](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L249)
+[GPULayer.ts:249](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L249)
 
 ___
 
@@ -547,7 +457,7 @@ Attach the output buffer of this GPULayer to a Threejs Texture object.
 
 #### Defined in
 
-[GPULayer.ts:752](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L752)
+[GPULayer.ts:752](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L752)
 
 ___
 
@@ -567,7 +477,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:480](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L480)
+[GPULayer.ts:480](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L480)
 
 ___
 
@@ -591,23 +501,7 @@ Create a deep copy of GPULayer with current state copied over.
 
 #### Defined in
 
-[GPULayer.ts:813](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L813)
-
-___
-
-### destroyBuffers
-
-▸ `Private` **destroyBuffers**(): `void`
-
-Delete this GPULayer's framebuffers and textures.
-
-#### Returns
-
-`void`
-
-#### Defined in
-
-[GPULayer.ts:772](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L772)
+[GPULayer.ts:813](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L813)
 
 ___
 
@@ -623,7 +517,7 @@ Deallocate GPULayer instance and associated WebGL properties.
 
 #### Defined in
 
-[GPULayer.ts:795](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L795)
+[GPULayer.ts:795](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L795)
 
 ___
 
@@ -643,21 +537,21 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:393](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L393)
+[GPULayer.ts:393](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L393)
 
 ___
 
 ### getValues
 
-▸ **getValues**(): [`GPULayerArray`](../modules.md#gpulayerarray)
+▸ **getValues**(): [`GPULayerArray`](../README.md#gpulayerarray)
 
 #### Returns
 
-[`GPULayerArray`](../modules.md#gpulayerarray)
+[`GPULayerArray`](../README.md#gpulayerarray)
 
 #### Defined in
 
-[GPULayer.ts:557](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L557)
+[GPULayer.ts:557](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L557)
 
 ___
 
@@ -671,27 +565,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:388](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L388)
-
-___
-
-### initBuffers
-
-▸ `Private` **initBuffers**(`array?`): `void`
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `array?` | `number`[] \| [`GPULayerArray`](../modules.md#gpulayerarray) |
-
-#### Returns
-
-`void`
-
-#### Defined in
-
-[GPULayer.ts:313](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L313)
+[GPULayer.ts:388](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L388)
 
 ___
 
@@ -705,7 +579,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:553](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L553)
+[GPULayer.ts:553](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L553)
 
 ___
 
@@ -718,7 +592,7 @@ ___
 | Name | Type |
 | :------ | :------ |
 | `dimensions` | `number` \| [`number`, `number`] |
-| `array?` | `number`[] \| [`GPULayerArray`](../modules.md#gpulayerarray) |
+| `array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
 
 #### Returns
 
@@ -726,7 +600,7 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:453](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L453)
+[GPULayer.ts:453](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L453)
 
 ___
 
@@ -752,7 +626,7 @@ Save the current state of this GPULayer to png.
 
 #### Defined in
 
-[GPULayer.ts:692](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L692)
+[GPULayer.ts:692](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L692)
 
 ___
 
@@ -764,7 +638,7 @@ ___
 
 | Name | Type | Default value |
 | :------ | :------ | :------ |
-| `array` | `number`[] \| [`GPULayerArray`](../modules.md#gpulayerarray) | `undefined` |
+| `array` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) | `undefined` |
 | `applyToAllBuffers` | `boolean` | `false` |
 
 #### Returns
@@ -773,4 +647,4 @@ ___
 
 #### Defined in
 
-[GPULayer.ts:437](https://github.com/amandaghassaei/webgl-compute/blob/a45a425/src/GPULayer.ts#L437)
+[GPULayer.ts:437](https://github.com/amandaghassaei/webgl-compute/blob/f0fc5cd/src/GPULayer.ts#L437)
