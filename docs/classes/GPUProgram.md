@@ -27,7 +27,7 @@ Name of GPUProgram, used for error logging.
 
 #### Defined in
 
-[GPUProgram.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/d028d52/src/GPUProgram.ts#L53)
+[GPUProgram.ts:53](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L53)
 
 ## Constructors
 
@@ -50,7 +50,7 @@ Create a GPUProgram.
 
 #### Defined in
 
-[GPUProgram.ts:79](https://github.com/amandaghassaei/webgl-compute/blob/d028d52/src/GPUProgram.ts#L79)
+[GPUProgram.ts:79](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L79)
 
 ## Methods
 
@@ -74,7 +74,7 @@ Set fragment shader uniform for GPUProgram.
 
 #### Defined in
 
-[GPUProgram.ts:374](https://github.com/amandaghassaei/webgl-compute/blob/d028d52/src/GPUProgram.ts#L374)
+[GPUProgram.ts:374](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L374)
 
 ___
 
@@ -90,4 +90,4 @@ Deallocate GPUProgram instance and associated WebGL properties.
 
 #### Defined in
 
-[GPUProgram.ts:464](https://github.com/amandaghassaei/webgl-compute/blob/d028d52/src/GPUProgram.ts#L464)
+[GPUProgram.ts:464](https://github.com/amandaghassaei/webgl-compute/blob/f957fec/src/GPUProgram.ts#L464)

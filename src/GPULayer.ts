@@ -79,22 +79,55 @@ export class GPULayer {
 	// All "gl" variables are used to initialize internal WebGLTexture.
 	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
 	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texParameter
+	/**
+	 * @private
+	 */
 	readonly glInternalFormat: number;
+	/**
+	 * @private
+	 */
 	readonly glFormat: number;
 	// GPULayer.internalType corresponds to GPULayer.glType, may be different from GPULayer.type.
-	readonly internalType: GPULayerType; 
+	/**
+	 * @private
+	 */
+	readonly internalType: GPULayerType;
+	/**
+	 * @private
+	 */
 	readonly glType: number;
 	// Internally, GPULayer.glNumChannels may represent a larger number of channels than GPULayer.numComponents.
 	// For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
+	/**
+	 * @private
+	 */
 	readonly glNumChannels: number;
 	// GPULayer.internalFilter corresponds to GPULayer.glFilter, may be different from GPULayer.filter.
+	/**
+	 * @private
+	 */
 	readonly internalFilter: GPULayerFilter;
+	/**
+	 * @private
+	 */
 	readonly glFilter: number;
 	// GPULayer.internalWrapS corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapS.
+	/**
+	 * @private
+	 */
 	readonly internalWrapS: GPULayerWrap;
+	/**
+	 * @private
+	 */
 	readonly glWrapS: number;
 	// GPULayer.internalWrapT corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapT.
+	/**
+	 * @private
+	 */
 	readonly internalWrapT: GPULayerWrap;
+	/**
+	 * @private
+	 */
 	readonly glWrapT: number;
 	
 	// Optimizations so that "copying" can happen without draw calls.
@@ -245,7 +278,10 @@ export class GPULayer {
 		this.initBuffers(params.array);
 	}
 
-	// This is used internally.
+	/**
+	 * 
+	 * @private
+	 */
 	_usingTextureOverrideForCurrentBuffer() {
 		return this.textureOverrides && this.textureOverrides[this.bufferIndex];
 	}
@@ -310,6 +346,10 @@ export class GPULayer {
 	// 	this.buffers[this.bufferIndex].texture = texture;
 	// }
 
+	/**
+	 * 
+	 * @private
+	 */
 	private initBuffers(
 		array?: GPULayerArray | number[],
 	) {
@@ -409,7 +449,10 @@ export class GPULayer {
 		return this.getStateAtIndex((this.bufferIndex - 1 + this.numBuffers) % this.numBuffers);
 	}
 
-	// This is used internally.
+	/**
+	 * 
+	 * @private
+	 */
 	_bindOutputBuffer() {
 		const { gl } = this.composer;
 		const { framebuffer } = this.buffers[this.bufferIndex];
@@ -419,7 +462,10 @@ export class GPULayer {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	}
 
-	// This is used internally.
+	/**
+	 * 
+	 * @private
+	 */
 	_bindOutputBufferForWrite(
 		incrementBufferIndex: boolean,
 	) {
@@ -465,11 +511,10 @@ export class GPULayer {
 		this.initBuffers(array);
 	}
 
-	get clearValue() {
-		return this._clearValue;
-	}
-
-	set clearValue(clearValue: number | number[]) {
+	/**
+	 * Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
+	 */
+	 set clearValue(clearValue: number | number[]) {
 		const { numComponents, type } = this;
 		if (!isValidClearValue(clearValue, numComponents, type)) {
 			throw new Error(`Invalid clearValue: ${JSON.stringify(clearValue)} for GPULayer "${this.name}", expected ${type} or array of ${type} of length ${numComponents}.`);
@@ -477,6 +522,19 @@ export class GPULayer {
 		this._clearValue = clearValue;
 	}
 
+	/**
+	 * Get the clearValue of the GPULayer.
+	 */
+	get clearValue() {
+		return this._clearValue;
+	}
+
+	
+
+	/**
+	 * Clear all data in GPULayer to GPULayer.clearValue.
+	 * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
+	 */
 	clear(applyToAllBuffers = false) {
 		const { name, composer, clearValue, numBuffers, bufferIndex, type } = this;
 		const { verboseLogging } = composer;
@@ -535,14 +593,23 @@ export class GPULayer {
 		}
 	}
 
+	/**
+	 * The width of the GPULayer array.
+	 */
 	get width() {
 		return this._width;
 	}
 
+	/**
+	 * The height of the GPULayer array.
+	 */
 	get height() {
 		return this._height;
 	}
 
+	/**
+	 * The length of the GPULayer array (only available to 1D GPULayers).
+	 */
 	get length() {
 		if (!this._length) {
 			throw new Error(`Cannot access length on 2D GPULayer "${this.name}".`);
@@ -550,10 +617,18 @@ export class GPULayer {
 		return this._length;
 	}
 
+	/**
+	 * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
+	 * @returns - true if GPULayer is 1D, else false.
+	 */
 	is1D() {
 		return this._length !== undefined;
 	}
 
+	/**
+	 * Returns the current values of the GPULayer as a TypedArray.
+	 * @returns - A TypedArray containing current state of GPULayer.
+	 */
 	getValues() {
 		const { width, height, composer, numComponents, type } = this;
 		const { gl, glslVersion } = composer;
@@ -687,8 +762,12 @@ export class GPULayer {
 
 	/**
 	 * Save the current state of this GPULayer to png.
-	 * @param {Object} params 
-	 */
+	 * @param params - PNG parameters.
+	 * @param params.filename - PNG filename (no extension).
+	 * @param params.dpi - PNG dpi (defaults to 72dpi).
+	 * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types).
+	 * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js. 
+	*/
 	savePNG(params: {
 		filename: string,
 		dpi?: number,
@@ -807,8 +886,8 @@ export class GPULayer {
 
 	/**
 	 * Create a deep copy of GPULayer with current state copied over.
-	 * @param {string} [name] - Name of new GPULayer as string.
-	 * @returns {GPULayer} - Deep copy.
+	 * @param name - Name of new GPULayer as string.
+	 * @returns - Deep copy of GPULayer.
 	 */
 	clone(name?: string) {
 		// Make a deep copy.

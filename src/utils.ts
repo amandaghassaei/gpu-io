@@ -194,7 +194,7 @@ export function isWebGL2(gl: WebGLRenderingContext | WebGL2RenderingContext) {
 
 /**
  * Returns whether WebGL2 is supported by the current browser.
- * @returns - true is WebGL2 is supported, else false.
+ * @returns - true if WebGL2 is supported, else false.
 */
 export function isWebGL2Supported() {
 	if (results.supportsWebGL2 === undefined) {
