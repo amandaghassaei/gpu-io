@@ -2262,23 +2262,23 @@ var defaultVertexShaderSource = __webpack_require__(288);
 var GPUComposer = /** @class */ (function () {
     function GPUComposer(params) {
         var _a;
-        this.errorState = false;
+        this._errorState = false;
         // Store multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
         // Keep track of all GL extensions that have been loaded.
         /**
          * @private
          */
-        this.extensions = {};
+        this._extensions = {};
         // Programs for copying data (these are needed for rendering partial screen geometries).
-        this.copyPrograms = {
+        this._copyPrograms = {
             src: __webpack_require__(158),
         };
         // Other util programs.
-        this.setValuePrograms = {
+        this._setValuePrograms = {
             src: __webpack_require__(148),
         };
-        this.vectorMagnitudePrograms = {
+        this._vectorMagnitudePrograms = {
             src: __webpack_require__(723),
         };
         /**
@@ -2341,11 +2341,11 @@ var GPUComposer = /** @class */ (function () {
             this.verboseLogging = params.verboseLogging;
         // Save callback in case we run into an error.
         var self = this;
-        this.errorCallback = function (message) {
-            if (self.errorState) {
+        this._errorCallback = function (message) {
+            if (self._errorState) {
                 return;
             }
-            self.errorState = true;
+            self._errorState = true;
             params.errorCallback ? params.errorCallback(message) : (0, constants_1.DEFAULT_ERROR_CALLBACK)(message);
         };
         var canvas = params.canvas;
@@ -2372,7 +2372,7 @@ var GPUComposer = /** @class */ (function () {
                 }
             }
             if (!gl) {
-                this.errorCallback('Unable to initialize WebGL context.');
+                this._errorCallback('Unable to initialize WebGL context.');
                 return;
             }
         }
@@ -2415,9 +2415,9 @@ var GPUComposer = /** @class */ (function () {
         // Canvas setup.
         this.resize(canvas.clientWidth, canvas.clientHeight);
         // Log number of textures available.
-        this.maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
+        this._maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         if (this.verboseLogging)
-            console.log("".concat(this.maxNumTextures, " textures max."));
+            console.log("".concat(this._maxNumTextures, " textures max."));
     }
     GPUComposer.initWithThreeRenderer = function (renderer, params) {
         var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision || constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || constants_1.PRECISION_HIGH_P }, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? constants_1.GLSL3 : constants_1.GLSL1 }));
@@ -2454,11 +2454,12 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype._setValueProgramForType = function (type) {
         var _a;
+        var _setValuePrograms = this._setValuePrograms;
         var key = this.glslKeyForType(type);
-        if (this.setValuePrograms[key] === undefined) {
+        if (_setValuePrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "setValue-".concat(key),
-                fragmentShader: this.setValuePrograms.src,
+                fragmentShader: _setValuePrograms.src,
                 uniforms: [
                     {
                         name: 'u_value',
@@ -2470,17 +2471,18 @@ var GPUComposer = /** @class */ (function () {
                     _a["WEBGLCOMPUTE_".concat(key)] = '1',
                     _a),
             });
-            this.setValuePrograms[key] = program;
+            _setValuePrograms[key] = program;
         }
-        return this.setValuePrograms[key];
+        return _setValuePrograms[key];
     };
     GPUComposer.prototype.copyProgramForType = function (type) {
         var _a;
+        var _copyPrograms = this._copyPrograms;
         var key = this.glslKeyForType(type);
-        if (this.copyPrograms[key] === undefined) {
+        if (_copyPrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "copy-".concat(key),
-                fragmentShader: this.copyPrograms.src,
+                fragmentShader: _copyPrograms.src,
                 uniforms: [
                     {
                         name: 'u_state',
@@ -2492,9 +2494,9 @@ var GPUComposer = /** @class */ (function () {
                     _a["WEBGLCOMPUTE_".concat(key)] = '1',
                     _a),
             });
-            this.copyPrograms[key] = program;
+            _copyPrograms[key] = program;
         }
-        return this.copyPrograms[key];
+        return _copyPrograms[key];
     };
     Object.defineProperty(GPUComposer.prototype, "wrappedLineColorProgram", {
         get: function () {
@@ -2512,18 +2514,19 @@ var GPUComposer = /** @class */ (function () {
     });
     GPUComposer.prototype.vectorMagnitudeProgramForType = function (type) {
         var _a;
+        var _vectorMagnitudePrograms = this._vectorMagnitudePrograms;
         var key = this.glslKeyForType(type);
-        if (this.vectorMagnitudePrograms[key] === undefined) {
+        if (_vectorMagnitudePrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "vectorMagnitude-".concat(key),
-                fragmentShader: this.vectorMagnitudePrograms.src,
+                fragmentShader: _vectorMagnitudePrograms.src,
                 defines: (_a = {},
                     _a["WEBGLCOMPUTE_".concat(key)] = '1',
                     _a),
             });
-            this.vectorMagnitudePrograms[key] = program;
+            _vectorMagnitudePrograms[key] = program;
         }
-        return this.vectorMagnitudePrograms[key];
+        return _vectorMagnitudePrograms[key];
     };
     Object.defineProperty(GPUComposer.prototype, "quadPositionsBuffer", {
         get: function () {
@@ -2548,22 +2551,23 @@ var GPUComposer = /** @class */ (function () {
         configurable: true
     });
     GPUComposer.prototype.getCirclePositionsBuffer = function (numSegments) {
-        if (this._circlePositionsBuffer[numSegments] == undefined) {
+        var _circlePositionsBuffer = this._circlePositionsBuffer;
+        if (_circlePositionsBuffer[numSegments] == undefined) {
             var unitCirclePoints = [0, 0];
             for (var i = 0; i <= numSegments; i++) { // TODO: should this be just less than?
                 unitCirclePoints.push(Math.cos(2 * Math.PI * i / numSegments), Math.sin(2 * Math.PI * i / numSegments));
             }
             var circlePositions = new Float32Array(unitCirclePoints);
             var buffer = this.initVertexBuffer(circlePositions);
-            this._circlePositionsBuffer[numSegments] = buffer;
+            _circlePositionsBuffer[numSegments] = buffer;
         }
-        return this._circlePositionsBuffer[numSegments];
+        return _circlePositionsBuffer[numSegments];
     };
     GPUComposer.prototype.initVertexBuffer = function (data) {
-        var _a = this, errorCallback = _a.errorCallback, gl = _a.gl;
+        var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl;
         var buffer = gl.createBuffer();
         if (!buffer) {
-            errorCallback('Unable to allocate gl buffer.');
+            _errorCallback('Unable to allocate gl buffer.');
             return;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -2590,13 +2594,15 @@ var GPUComposer = /** @class */ (function () {
             dimensions: dimensions,
             type: gpuLayer.type,
             numComponents: gpuLayer.numComponents,
-            array: array,
             filter: gpuLayer.filter,
             wrapS: gpuLayer.wrapS,
             wrapT: gpuLayer.wrapT,
             writable: gpuLayer.writable,
             numBuffers: gpuLayer.numBuffers,
+            clearValue: gpuLayer.clearValue,
+            array: array,
         });
+        // TODO: check this.
         // If writable, copy current state with a draw call.
         if (gpuLayer.writable) {
             for (var i = 0; i < gpuLayer.numBuffers - 1; i++) {
@@ -2612,6 +2618,7 @@ var GPUComposer = /** @class */ (function () {
                 output: clone,
             });
         }
+        // TODO: Increment clone's buffer index until it is identical to the original layer.
         return clone;
     };
     GPUComposer.prototype.initTexture = function (params) {
@@ -2653,7 +2660,7 @@ var GPUComposer = /** @class */ (function () {
         if (!(0, checks_1.isValidTextureType)(type)) {
             throw new Error("Invalid type: ".concat(type, " for GPULayer \"").concat(name, "\", must be ").concat(constants_1.validTextureTypes.join(', '), "."));
         }
-        var _a = this, gl = _a.gl, errorCallback = _a.errorCallback;
+        var _a = this, gl = _a.gl, _errorCallback = _a._errorCallback;
         var texture = gl.createTexture();
         if (texture === null) {
             throw new Error("Unable to init glTexture.");
@@ -2701,7 +2708,7 @@ var GPUComposer = /** @class */ (function () {
                 params.onLoad(texture);
         };
         image.onerror = function (e) {
-            errorCallback("Error loading image ".concat(name, ": ").concat(e));
+            _errorCallback("Error loading image ".concat(name, ": ").concat(e));
         };
         image.src = url;
         return texture;
@@ -2711,7 +2718,7 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._getVertexShaderWithName = function (name, programName) {
-        var _a = this, errorCallback = _a.errorCallback, _vertexShaders = _a._vertexShaders, gl = _a.gl, glslVersion = _a.glslVersion, intPrecision = _a.intPrecision, floatPrecision = _a.floatPrecision;
+        var _a = this, _errorCallback = _a._errorCallback, _vertexShaders = _a._vertexShaders, gl = _a.gl, glslVersion = _a.glslVersion, intPrecision = _a.intPrecision, floatPrecision = _a.floatPrecision;
         var vertexShader = _vertexShaders[name];
         if (vertexShader.shader === undefined) {
             // Init a vertex shader (this only happens once for each possible vertex shader across all GPUPrograms).
@@ -2719,9 +2726,9 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("Error compiling GPUProgram \"".concat(programName, "\": no source for vertex shader with name \"").concat(name, "\"."));
             }
             var preprocessedSrc = (0, utils_1.preprocessVertexShader)(vertexShader.src, glslVersion);
-            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, errorCallback, vertexShader.defines);
+            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexShader.defines);
             if (!shader) {
-                errorCallback("Unable to compile \"".concat(name, "\" vertex shader for GPUProgram \"").concat(programName, "\"."));
+                _errorCallback("Unable to compile \"".concat(name, "\" vertex shader for GPUProgram \"").concat(programName, "\"."));
                 return;
             }
             // Save the results so this does not have to be repeated.
@@ -2736,8 +2743,8 @@ var GPUComposer = /** @class */ (function () {
         canvas.width = width;
         canvas.height = height;
         // Save dimensions.
-        this.width = width;
-        this.height = height;
+        this._width = width;
+        this._height = height;
     };
     ;
     GPUComposer.prototype.drawSetup = function (program, fullscreenRender, input, output) {
@@ -2807,7 +2814,7 @@ var GPUComposer = /** @class */ (function () {
     };
     GPUComposer.prototype.passThroughLayerDataFromInputToOutput = function (state) {
         // TODO: figure out the fastest way to copy a texture.
-        var copyProgram = this.copyProgramForType(state.internalType);
+        var copyProgram = this.copyProgramForType(state._internalType);
         this.step({
             program: copyProgram,
             input: state,
@@ -2820,8 +2827,8 @@ var GPUComposer = /** @class */ (function () {
         if (!output) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             // Resize viewport.
-            var _a = this, width_1 = _a.width, height_1 = _a.height;
-            gl.viewport(0, 0, width_1, height_1);
+            var _a = this, _width = _a._width, _height = _a._height;
+            gl.viewport(0, 0, _width, _height);
             return;
         }
         // Check if output is same as one of input layers.
@@ -2884,10 +2891,10 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step for entire fullscreen quad.
     GPUComposer.prototype.step = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         var program = params.program, input = params.input, output = params.output;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         var glProgram = program._defaultProgram;
@@ -2905,12 +2912,12 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program only for a strip of px along the boundary.
     GPUComposer.prototype.stepBoundary = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer;
         var program = params.program, input = params.input, output = params.output;
-        var width = output ? output.width : this.width;
-        var height = output ? output.height : this.height;
+        var width = output ? output.width : this._width;
+        var height = output ? output.height : this._height;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         var glProgram = program._defaultProgram;
@@ -2950,12 +2957,12 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program for all but a strip of px along the boundary.
     GPUComposer.prototype.stepNonBoundary = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         var program = params.program, input = params.input, output = params.output;
-        var width = output ? output.width : this.width;
-        var height = output ? output.height : this.height;
+        var width = output ? output.width : this._width;
+        var height = output ? output.height : this._height;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         var glProgram = program._defaultProgram;
@@ -2974,18 +2981,18 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program only for a circular spot.
     GPUComposer.prototype.stepCircle = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, width = _a.width, height = _a.height;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, _width = _a._width, _height = _a._height;
         var program = params.program, position = params.position, radius = params.radius, input = params.input, output = params.output;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / width, radius * 2 / height], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
         var numSegments = params.numSegments ? params.numSegments : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (numSegments < 3) {
             throw new Error("numSegments for GPUComposer.stepCircle must be greater than 2, got ".concat(numSegments, "."));
@@ -2999,12 +3006,12 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program only for a thickened line segment (rounded end caps available).
     GPUComposer.prototype.stepSegment = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
-        var width = output ? output.width : this.width;
-        var height = output ? output.height : this.height;
+        var width = output ? output.width : this._width;
+        var height = output ? output.height : this._height;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         var glProgram = program._segmentProgram;
@@ -3019,7 +3026,7 @@ var GPUComposer = /** @class */ (function () {
         program._setVertexUniform(glProgram, 'u_internal_rotation', angle, constants_1.FLOAT);
         var centerX = (position1[0] + position2[0]) / 2;
         var centerY = (position1[1] + position2[1]) / 2;
-        program._setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this.width - 1, 2 * centerY / this.height - 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this._width - 1, 2 * centerY / this._height - 1], constants_1.FLOAT);
         var length = Math.sqrt(diffX * diffX + diffY * diffY);
         var numSegments = params.numCapSegments ? params.numCapSegments * 2 : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (params.endCaps) {
@@ -3051,9 +3058,9 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, input = params.input, output = params.output;
         var vertices = params.positions;
         var closeLoop = !!params.closeLoop;
-        var _a = this, gl = _a.gl, width = _a.width, height = _a.height, errorState = _a.errorState;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, _errorState = _a._errorState;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         // Offset vertices.
@@ -3194,7 +3201,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
         // Init positions buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions));
@@ -3216,9 +3223,9 @@ var GPUComposer = /** @class */ (function () {
     };
     GPUComposer.prototype.stepTriangleStrip = function (params) {
         var program = params.program, input = params.input, output = params.output, positions = params.positions, uvs = params.uvs, normals = params.normals;
-        var _a = this, gl = _a.gl, width = _a.width, height = _a.height, errorState = _a.errorState;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, _errorState = _a._errorState;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         var glProgram = (uvs ?
@@ -3227,7 +3234,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
         // Init positions buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions));
@@ -3249,10 +3256,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.stepLines = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, width = _a.width, height = _a.height;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, _width = _a._width, _height = _a._height;
         var indices = params.indices, uvs = params.uvs, normals = params.normals, input = params.input, output = params.output, program = params.program;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         // Check that params are valid.
@@ -3266,7 +3273,7 @@ var GPUComposer = /** @class */ (function () {
         this.drawSetup(glProgram, false, input, output);
         var count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
         if (indices) {
             // Reorder positions array to match indices.
@@ -3308,10 +3315,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, pointIndexArray = _a.pointIndexArray, width = _a.width, height = _a.height;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height;
         var positions = params.positions, output = params.output;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         // Check that numPoints is valid.
@@ -3336,7 +3343,7 @@ var GPUComposer = /** @class */ (function () {
         this.drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
         program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, constants_1.INT);
         // Set default pointSize.
@@ -3346,13 +3353,13 @@ var GPUComposer = /** @class */ (function () {
         program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, constants_1.INT);
-        if (this.pointIndexBuffer === undefined || (pointIndexArray && pointIndexArray.length < count)) {
+        if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = (0, utils_1.initSequentialFloatArray)(length);
-            this.pointIndexArray = indices;
-            this.pointIndexBuffer = this.initVertexBuffer(indices);
+            this._pointIndexArray = indices;
+            this._pointIndexBuffer = this.initVertexBuffer(indices);
         }
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.pointIndexBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIndexBuffer);
         this.setIndexAttribute(glProgram, program.name);
         // Draw.
         this.setBlendMode(params.shouldBlendAlpha);
@@ -3360,10 +3367,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsLines = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, width = _a.width, height = _a.height;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, _width = _a._width, _height = _a._height;
         var positions = params.positions, output = params.output;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         // Check that positions is valid.
@@ -3391,14 +3398,14 @@ var GPUComposer = /** @class */ (function () {
         var count = params.count ? params.count : indices.length;
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1 / width, 1 / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
         program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, constants_1.INT);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, constants_1.INT);
-        if (this.indexedLinesIndexBuffer === undefined) {
+        if (this._indexedLinesIndexBuffer === undefined) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var floatArray = void 0;
             if (indices.constructor !== Float32Array) {
@@ -3412,10 +3419,10 @@ var GPUComposer = /** @class */ (function () {
             else {
                 floatArray = indices;
             }
-            this.indexedLinesIndexBuffer = this.initVertexBuffer(floatArray);
+            this._indexedLinesIndexBuffer = this.initVertexBuffer(floatArray);
         }
         else {
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.indexedLinesIndexBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._indexedLinesIndexBuffer);
             // Copy buffer data.
             gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
         }
@@ -3436,10 +3443,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsVectorField = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, vectorFieldIndexArray = _a.vectorFieldIndexArray, width = _a.width, height = _a.height;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height;
         var data = params.data, output = params.output;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         // Check that field is valid.
@@ -3467,18 +3474,18 @@ var GPUComposer = /** @class */ (function () {
         program._setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), constants_1.INT);
         // Set default scale.
         var vectorScale = params.vectorScale || 1;
-        program._setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / width, vectorScale / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / _width, vectorScale / _height], constants_1.FLOAT);
         var vectorSpacing = params.vectorSpacing || 10;
-        var spacedDimensions = [Math.floor(width / vectorSpacing), Math.floor(height / vectorSpacing)];
+        var spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)];
         program._setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, constants_1.FLOAT);
         var length = 2 * spacedDimensions[0] * spacedDimensions[1];
-        if (this.vectorFieldIndexBuffer === undefined || (vectorFieldIndexArray && vectorFieldIndexArray.length < length)) {
+        if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = (0, utils_1.initSequentialFloatArray)(length);
-            this.vectorFieldIndexArray = indices;
-            this.vectorFieldIndexBuffer = this.initVertexBuffer(indices);
+            this._vectorFieldIndexArray = indices;
+            this._vectorFieldIndexBuffer = this.initVertexBuffer(indices);
         }
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vectorFieldIndexBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer);
         this.setIndexAttribute(glProgram, program.name);
         // Draw.
         this.setBlendMode(params.shouldBlendAlpha);
@@ -3486,10 +3493,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerMagnitude = function (params) {
-        var _a = this, gl = _a.gl, errorState = _a.errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
         var data = params.data, output = params.output;
         // Ignore if we are in error state.
-        if (errorState) {
+        if (_errorState) {
             return;
         }
         var program = this.vectorMagnitudeProgramForType(data.type);
@@ -3515,21 +3522,21 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.resetThreeState = function () {
-        if (!this.renderer) {
+        if (!this._renderer) {
             throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
         }
         var gl = this.gl;
         // Reset viewport.
-        var viewport = this.renderer.getViewport(new utils.Vector4());
+        var viewport = this._renderer.getViewport(new utils.Vector4());
         gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         // Unbind framebuffer (render to screen).
-        this.renderer.setRenderTarget(null);
+        this._renderer.setRenderTarget(null);
         // Reset texture bindings.
-        this.renderer.resetState();
+        this._renderer.resetState();
     };
     GPUComposer.prototype.dispose = function () {
         var _a;
-        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, copyPrograms = _b.copyPrograms, setValuePrograms = _b.setValuePrograms, vectorMagnitudePrograms = _b.vectorMagnitudePrograms;
+        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, _copyPrograms = _b._copyPrograms, _setValuePrograms = _b._setValuePrograms, _vectorMagnitudePrograms = _b._vectorMagnitudePrograms;
         if (verboseLogging)
             console.log("Deallocating GPUComposer.");
         // TODO: delete buffers.
@@ -3541,37 +3548,37 @@ var GPUComposer = /** @class */ (function () {
             }
         });
         // Delete fragment shaders.
-        Object.values(copyPrograms).forEach(function (program) {
+        Object.values(_copyPrograms).forEach(function (program) {
             // @ts-ignore
             if (program.dispose)
                 program.dispose();
         });
-        Object.keys(copyPrograms).forEach(function (key) {
+        Object.keys(_copyPrograms).forEach(function (key) {
             // @ts-ignore
-            delete copyPrograms[key];
+            delete _copyPrograms[key];
         });
-        Object.values(setValuePrograms).forEach(function (program) {
+        Object.values(_setValuePrograms).forEach(function (program) {
             // @ts-ignore
             if (program.dispose)
                 program.dispose();
         });
-        Object.keys(setValuePrograms).forEach(function (key) {
+        Object.keys(_setValuePrograms).forEach(function (key) {
             // @ts-ignore
-            delete setValuePrograms[key];
+            delete _setValuePrograms[key];
         });
-        Object.values(vectorMagnitudePrograms).forEach(function (program) {
+        Object.values(_vectorMagnitudePrograms).forEach(function (program) {
             // @ts-ignore
             if (program.dispose)
                 program.dispose();
         });
-        Object.keys(vectorMagnitudePrograms).forEach(function (key) {
+        Object.keys(_vectorMagnitudePrograms).forEach(function (key) {
             // @ts-ignore
-            delete vectorMagnitudePrograms[key];
+            delete _vectorMagnitudePrograms[key];
         });
         (_a = this._wrappedLineColorProgram) === null || _a === void 0 ? void 0 : _a.dispose();
         delete this._wrappedLineColorProgram;
         // @ts-ignore
-        delete this.renderer;
+        delete this._renderer;
         // @ts-ignore
         delete this.gl;
         // @ts-ignore;
@@ -3624,7 +3631,7 @@ var GPULayer = /** @class */ (function () {
         // Each GPULayer may contain a number of buffers to store different instances of the state.
         // e.g [currentState, previousState]
         this._bufferIndex = 0;
-        this.buffers = [];
+        this._buffers = [];
         // Check constructor parameters.
         var name = (params || {}).name;
         if (!composer) {
@@ -3654,7 +3661,7 @@ var GPULayer = /** @class */ (function () {
         var dimensions = params.dimensions, type = params.type, numComponents = params.numComponents;
         var gl = composer.gl;
         // Save params.
-        this.composer = composer;
+        this._composer = composer;
         this.name = name;
         // numComponents must be between 1 and 4.
         if (!(0, checks_1.isPositiveInteger)(numComponents) || numComponents > 4) {
@@ -3704,7 +3711,7 @@ var GPULayer = /** @class */ (function () {
             writable: writable,
             name: name,
         });
-        this.internalType = internalType;
+        this._internalType = internalType;
         // Set gl texture parameters.
         var _b = (0, GPULayerHelpers_1.getGLTextureParameters)({
             composer: composer,
@@ -3713,17 +3720,17 @@ var GPULayer = /** @class */ (function () {
             writable: writable,
             internalType: internalType,
         }), glFormat = _b.glFormat, glInternalFormat = _b.glInternalFormat, glType = _b.glType, glNumChannels = _b.glNumChannels;
-        this.glInternalFormat = glInternalFormat;
-        this.glFormat = glFormat;
-        this.glType = glType;
-        this.glNumChannels = glNumChannels;
+        this._glInternalFormat = glInternalFormat;
+        this._glFormat = glFormat;
+        this._glType = glType;
+        this._glNumChannels = glNumChannels;
         // Set internal filtering/wrap types.
-        this.internalFilter = (0, GPULayerHelpers_1.getGPULayerInternalFilter)({ composer: composer, filter: filter, internalType: internalType, name: name });
-        this.glFilter = gl[this.internalFilter];
-        this.internalWrapS = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapS, name: name });
-        this.glWrapS = gl[this.internalWrapS];
-        this.internalWrapT = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapT, name: name });
-        this.glWrapT = gl[this.internalWrapT];
+        this._internalFilter = (0, GPULayerHelpers_1.getGPULayerInternalFilter)({ composer: composer, filter: filter, internalType: internalType, name: name });
+        this._glFilter = gl[this._internalFilter];
+        this._internalWrapS = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapS, name: name });
+        this._glWrapS = gl[this._internalWrapS];
+        this._internalWrapT = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapT, name: name });
+        this._glWrapT = gl[this._internalWrapT];
         // Num buffers is the number of states to store for this data.
         var numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
         if (!(0, checks_1.isPositiveInteger)(numBuffers)) {
@@ -3734,14 +3741,54 @@ var GPULayer = /** @class */ (function () {
         if (params.clearValue !== undefined) {
             this.clearValue = params.clearValue; // Setter can only be called after this.numComponents has been set.
         }
-        this.initBuffers(params.array);
+        this._initBuffers(params.array);
     }
+    Object.defineProperty(GPULayer.prototype, "width", {
+        /**
+         * The width of the GPULayer array.
+         */
+        get: function () {
+            return this._width;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GPULayer.prototype, "height", {
+        /**
+         * The height of the GPULayer array.
+         */
+        get: function () {
+            return this._height;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GPULayer.prototype, "length", {
+        /**
+         * The length of the GPULayer array (only available to 1D GPULayers).
+         */
+        get: function () {
+            if (!this._length) {
+                throw new Error("Cannot access length on 2D GPULayer \"".concat(this.name, "\"."));
+            }
+            return this._length;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
+     * @returns - true if GPULayer is 1D, else false.
+     */
+    GPULayer.prototype.is1D = function () {
+        return this._length !== undefined;
+    };
     /**
      *
      * @private
      */
     GPULayer.prototype._usingTextureOverrideForCurrentBuffer = function () {
-        return this.textureOverrides && this.textureOverrides[this.bufferIndex];
+        return this._textureOverrides && this._textureOverrides[this.bufferIndex];
     };
     // saveCurrentStateToGPULayer(layer: GPULayer) {
     // 	// A method for saving a copy of the current state without a draw call.
@@ -3802,25 +3849,25 @@ var GPULayer = /** @class */ (function () {
      * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
      * @private
      */
-    GPULayer.prototype.initBuffers = function (array) {
-        var _a = this, name = _a.name, numBuffers = _a.numBuffers, composer = _a.composer, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glFilter = _a.glFilter, glWrapS = _a.glWrapS, glWrapT = _a.glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
-        var gl = composer.gl, errorCallback = composer.errorCallback;
+    GPULayer.prototype._initBuffers = function (array) {
+        var _a = this, name = _a.name, numBuffers = _a.numBuffers, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, _glFilter = _a._glFilter, _glWrapS = _a._glWrapS, _glWrapT = _a._glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
+        var gl = _composer.gl, _errorCallback = _composer._errorCallback;
         var validatedArray = array ? (0, GPULayerHelpers_1.validateGPULayerArray)(array, this) : undefined;
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
             if (!texture) {
-                errorCallback("Could not init texture for GPULayer \"".concat(name, "\": ").concat(gl.getError(), "."));
+                _errorCallback("Could not init texture for GPULayer \"".concat(name, "\": ").concat(gl.getError(), "."));
                 return;
             }
             gl.bindTexture(gl.TEXTURE_2D, texture);
             // TODO: are there other params to look into:
             // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texParameter
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glWrapS);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrapT);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
-            gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, validatedArray ? validatedArray : null);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, _glWrapS);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, _glWrapT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, _glFilter);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, _glFilter);
+            gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray ? validatedArray : null);
             var buffer = {
                 texture: texture,
             };
@@ -3828,7 +3875,7 @@ var GPULayer = /** @class */ (function () {
                 // Init a framebuffer for this texture so we can write to it.
                 var framebuffer = gl.createFramebuffer();
                 if (!framebuffer) {
-                    errorCallback("Could not init framebuffer for GPULayer \"".concat(name, "\": ").concat(gl.getError(), "."));
+                    _errorCallback("Could not init framebuffer for GPULayer \"".concat(name, "\": ").concat(gl.getError(), "."));
                     return;
                 }
                 gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -3836,13 +3883,13 @@ var GPULayer = /** @class */ (function () {
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
                 var status_1 = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
                 if (status_1 != gl.FRAMEBUFFER_COMPLETE) {
-                    errorCallback("Invalid status for framebuffer for GPULayer \"".concat(name, "\": ").concat(status_1, "."));
+                    _errorCallback("Invalid status for framebuffer for GPULayer \"".concat(name, "\": ").concat(status_1, "."));
                 }
                 // Add framebuffer.
                 buffer.framebuffer = framebuffer;
             }
             // Save this buffer to the list.
-            this.buffers.push(buffer);
+            this._buffers.push(buffer);
         }
         // Unbind.
         gl.bindTexture(gl.TEXTURE_2D, null);
@@ -3895,16 +3942,16 @@ var GPULayer = /** @class */ (function () {
         if (index < 0 || index >= this.numBuffers) {
             throw new Error("Invalid buffer index: ".concat(index, " for GPULayer \"").concat(this.name, "\" with ").concat(this.numBuffers, " buffer").concat(this.numBuffers > 1 ? 's' : '', "."));
         }
-        if (this.textureOverrides && this.textureOverrides[index])
-            return this.textureOverrides[index];
-        return this.buffers[index].texture;
+        if (this._textureOverrides && this._textureOverrides[index])
+            return this._textureOverrides[index];
+        return this._buffers[index].texture;
     };
     /**
      * Binds this GPULayer's current framebuffer as the draw target.
      */
-    GPULayer.prototype.bindFramebuffer = function () {
-        var gl = this.composer.gl;
-        var framebuffer = this.buffers[this.bufferIndex].framebuffer;
+    GPULayer.prototype._bindFramebuffer = function () {
+        var gl = this._composer.gl;
+        var framebuffer = this._buffers[this.bufferIndex].framebuffer;
         if (!framebuffer) {
             throw new Error("GPULayer \"".concat(this.name, "\" is not writable."));
         }
@@ -3918,16 +3965,16 @@ var GPULayer = /** @class */ (function () {
         if (incrementBufferIndex) {
             this.incrementBufferIndex();
         }
-        this.bindFramebuffer();
+        this._bindFramebuffer();
         // We are going to do a data write, if we have overrides enabled, we can remove them.
-        if (this.textureOverrides) {
-            this.textureOverrides[this.bufferIndex] = undefined;
+        if (this._textureOverrides) {
+            this._textureOverrides[this.bufferIndex] = undefined;
         }
     };
     GPULayer.prototype.setFromArray = function (array, applyToAllBuffers) {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
-        var _a = this, composer = _a.composer, glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, numBuffers = _a.numBuffers, width = _a.width, height = _a.height, bufferIndex = _a.bufferIndex;
-        var gl = composer.gl;
+        var _a = this, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, numBuffers = _a.numBuffers, width = _a.width, height = _a.height, bufferIndex = _a.bufferIndex;
+        var gl = _composer.gl;
         var validatedArray = (0, GPULayerHelpers_1.validateGPULayerArray)(array, this);
         // TODO: check that this is working.
         var startIndex = applyToAllBuffers ? 0 : bufferIndex;
@@ -3935,22 +3982,22 @@ var GPULayer = /** @class */ (function () {
         for (var i = startIndex; i < endIndex; i++) {
             var texture = this.getStateAtIndex(i);
             gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, validatedArray);
+            gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
         }
         // Unbind texture.
         gl.bindTexture(gl.TEXTURE_2D, null);
     };
     GPULayer.prototype.resize = function (dimensions, array) {
-        var _a = this, name = _a.name, composer = _a.composer;
-        var verboseLogging = composer.verboseLogging;
+        var _a = this, name = _a.name, _composer = _a._composer;
+        var verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Resizing GPULayer \"".concat(name, "\" to ").concat(JSON.stringify(dimensions), "."));
         var _b = (0, GPULayerHelpers_1.calcGPULayerSize)(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
         this._length = length;
         this._width = width;
         this._height = height;
-        this.destroyBuffers();
-        this.initBuffers(array);
+        this._destroyBuffers();
+        this._initBuffers(array);
     };
     Object.defineProperty(GPULayer.prototype, "clearValue", {
         /**
@@ -3967,7 +4014,8 @@ var GPULayer = /** @class */ (function () {
             if (!(0, checks_1.isValidClearValue)(clearValue, numComponents, type)) {
                 throw new Error("Invalid clearValue: ".concat(JSON.stringify(clearValue), " for GPULayer \"").concat(this.name, "\", expected ").concat(type, " or array of ").concat(type, " of length ").concat(numComponents, "."));
             }
-            this._clearValue = clearValue;
+            // Make deep copy if needed.
+            this._clearValue = (0, checks_1.isArray)(clearValue) ? clearValue.slice() : clearValue;
         },
         enumerable: false,
         configurable: true
@@ -3978,8 +4026,8 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.clear = function (applyToAllBuffers) {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
-        var _a = this, name = _a.name, composer = _a.composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type;
-        var verboseLogging = composer.verboseLogging;
+        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type;
+        var verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Clearing GPULayer \"".concat(name, "\"."));
         var value = [];
@@ -3995,11 +4043,11 @@ var GPULayer = /** @class */ (function () {
         var startIndex = applyToAllBuffers ? 0 : bufferIndex;
         var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
         if (this.writable) {
-            var program = composer._setValueProgramForType(type);
+            var program = _composer._setValueProgramForType(type);
             program.setUniform('u_value', value);
             for (var i = startIndex; i < endIndex; i++) {
                 // Write clear value to buffers.
-                composer.step({
+                _composer.step({
                     program: program,
                     output: this,
                 });
@@ -4007,15 +4055,15 @@ var GPULayer = /** @class */ (function () {
         }
         else {
             // Init a typed array containing clearValue and pass to buffers.
-            var _b = this, width = _b.width, height = _b.height, glNumChannels = _b.glNumChannels, internalType = _b.internalType, glInternalFormat = _b.glInternalFormat, glFormat = _b.glFormat, glType = _b.glType;
-            var gl = composer.gl;
+            var _b = this, width = _b.width, height = _b.height, _glNumChannels = _b._glNumChannels, _internalType = _b._internalType, _glInternalFormat = _b._glInternalFormat, _glFormat = _b._glFormat, _glType = _b._glType;
+            var gl = _composer.gl;
             var fillLength = this._length ? this._length : width * height;
-            var array = (0, GPULayerHelpers_1.initArrayForType)(internalType, width * height * glNumChannels);
-            var float16View = internalType === constants_1.HALF_FLOAT ? new DataView(array.buffer) : null;
+            var array = (0, GPULayerHelpers_1.initArrayForType)(_internalType, width * height * _glNumChannels);
+            var float16View = _internalType === constants_1.HALF_FLOAT ? new DataView(array.buffer) : null;
             for (var j = 0; j < fillLength; j++) {
-                for (var k = 0; k < glNumChannels; k++) {
-                    var index = j * glNumChannels + k;
-                    if (internalType === constants_1.HALF_FLOAT) {
+                for (var k = 0; k < _glNumChannels; k++) {
+                    var index = j * _glNumChannels + k;
+                    if (_internalType === constants_1.HALF_FLOAT) {
                         // Float16s need to be handled separately.
                         (0, float16_1.setFloat16)(float16View, 2 * index, value[k], true);
                     }
@@ -4027,51 +4075,11 @@ var GPULayer = /** @class */ (function () {
             for (var i = startIndex; i < endIndex; i++) {
                 var texture = this.getStateAtIndex(i);
                 gl.bindTexture(gl.TEXTURE_2D, texture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, array);
+                gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, array);
             }
             // Unbind texture.
             gl.bindTexture(gl.TEXTURE_2D, null);
         }
-    };
-    Object.defineProperty(GPULayer.prototype, "width", {
-        /**
-         * The width of the GPULayer array.
-         */
-        get: function () {
-            return this._width;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPULayer.prototype, "height", {
-        /**
-         * The height of the GPULayer array.
-         */
-        get: function () {
-            return this._height;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPULayer.prototype, "length", {
-        /**
-         * The length of the GPULayer array (only available to 1D GPULayers).
-         */
-        get: function () {
-            if (!this._length) {
-                throw new Error("Cannot access length on 2D GPULayer \"".concat(this.name, "\"."));
-            }
-            return this._length;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    /**
-     * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
-     * @returns - true if GPULayer is 1D, else false.
-     */
-    GPULayer.prototype.is1D = function () {
-        return this._length !== undefined;
     };
     // TODO: this does not work on non-writable GPULayers, change this?
     /**
@@ -4079,23 +4087,23 @@ var GPULayer = /** @class */ (function () {
      * @returns - A TypedArray containing current state of GPULayer.
      */
     GPULayer.prototype.getValues = function () {
-        var _a = this, width = _a.width, height = _a.height, composer = _a.composer, numComponents = _a.numComponents, type = _a.type;
-        var gl = composer.gl, glslVersion = composer.glslVersion;
+        var _a = this, width = _a.width, height = _a.height, _composer = _a._composer, numComponents = _a.numComponents, type = _a.type;
+        var gl = _composer.gl, glslVersion = _composer.glslVersion;
         // In case GPULayer was not the last output written to.
-        this.bindFramebuffer();
-        var _b = this, glNumChannels = _b.glNumChannels, glType = _b.glType, glFormat = _b.glFormat, internalType = _b.internalType;
+        this._bindFramebuffer();
+        var _b = this, _glNumChannels = _b._glNumChannels, _glType = _b._glType, _glFormat = _b._glFormat, _internalType = _b._internalType;
         var values;
-        switch (internalType) {
+        switch (_internalType) {
             case constants_1.HALF_FLOAT:
                 if (gl.FLOAT !== undefined) {
                     // Firefox requires that RGBA/FLOAT is used for readPixels of float16 types.
-                    glNumChannels = 4;
-                    glFormat = gl.RGBA;
-                    glType = gl.FLOAT;
-                    values = new Float32Array(width * height * glNumChannels);
+                    _glNumChannels = 4;
+                    _glFormat = gl.RGBA;
+                    _glType = gl.FLOAT;
+                    values = new Float32Array(width * height * _glNumChannels);
                 }
                 else {
-                    values = new Uint16Array(width * height * glNumChannels);
+                    values = new Uint16Array(width * height * _glNumChannels);
                 }
                 // // The following works in Chrome.
                 // values = new Uint16Array(width * height * glNumChannels);
@@ -4103,86 +4111,86 @@ var GPULayer = /** @class */ (function () {
             case constants_1.FLOAT:
                 // Chrome and Firefox require that RGBA/FLOAT is used for readPixels of float32 types.
                 // https://github.com/KhronosGroup/WebGL/issues/2747
-                glNumChannels = 4;
-                glFormat = gl.RGBA;
-                values = new Float32Array(width * height * glNumChannels);
+                _glNumChannels = 4;
+                _glFormat = gl.RGBA;
+                values = new Float32Array(width * height * _glNumChannels);
                 break;
             case constants_1.UNSIGNED_BYTE:
                 if (glslVersion === constants_1.GLSL1) {
                     // Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
-                    glNumChannels = 4;
-                    glFormat = gl.RGBA;
-                    values = new Uint8Array(width * height * glNumChannels);
+                    _glNumChannels = 4;
+                    _glFormat = gl.RGBA;
+                    values = new Uint8Array(width * height * _glNumChannels);
                     break;
                 }
                 // Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-                glNumChannels = 4;
-                glFormat = gl.RGBA_INTEGER;
-                glType = gl.UNSIGNED_INT;
-                values = new Uint32Array(width * height * glNumChannels);
+                _glNumChannels = 4;
+                _glFormat = gl.RGBA_INTEGER;
+                _glType = gl.UNSIGNED_INT;
+                values = new Uint32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
                 // values = new Uint8Array(width * height * glNumChannels);
                 break;
             case constants_1.UNSIGNED_SHORT:
                 // Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-                glNumChannels = 4;
-                glFormat = gl.RGBA_INTEGER;
-                glType = gl.UNSIGNED_INT;
-                values = new Uint32Array(width * height * glNumChannels);
+                _glNumChannels = 4;
+                _glFormat = gl.RGBA_INTEGER;
+                _glType = gl.UNSIGNED_INT;
+                values = new Uint32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
                 // values = new Uint16Array(width * height * glNumChannels);
                 break;
             case constants_1.UNSIGNED_INT:
                 // Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-                glNumChannels = 4;
-                glFormat = gl.RGBA_INTEGER;
-                values = new Uint32Array(width * height * glNumChannels);
+                _glNumChannels = 4;
+                _glFormat = gl.RGBA_INTEGER;
+                values = new Uint32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
                 // values = new Uint32Array(width * height * glNumChannels);
                 break;
             case constants_1.BYTE:
                 // Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-                glNumChannels = 4;
-                glFormat = gl.RGBA_INTEGER;
-                glType = gl.INT;
-                values = new Int32Array(width * height * glNumChannels);
+                _glNumChannels = 4;
+                _glFormat = gl.RGBA_INTEGER;
+                _glType = gl.INT;
+                values = new Int32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
                 // values = new Int8Array(width * height * glNumChannels);
                 break;
             case constants_1.SHORT:
                 // Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-                glNumChannels = 4;
-                glFormat = gl.RGBA_INTEGER;
-                glType = gl.INT;
-                values = new Int32Array(width * height * glNumChannels);
+                _glNumChannels = 4;
+                _glFormat = gl.RGBA_INTEGER;
+                _glType = gl.INT;
+                values = new Int32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
                 // values = new Int16Array(width * height * glNumChannels);
                 break;
             case constants_1.INT:
                 // Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-                glNumChannels = 4;
-                glFormat = gl.RGBA_INTEGER;
-                values = new Int32Array(width * height * glNumChannels);
+                _glNumChannels = 4;
+                _glFormat = gl.RGBA_INTEGER;
+                values = new Int32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
                 // values = new Int32Array(width * height * glNumChannels);
                 break;
             default:
-                throw new Error("Unsupported internalType ".concat(internalType, " for getValues()."));
+                throw new Error("Unsupported internalType ".concat(_internalType, " for getValues()."));
         }
         if ((0, utils_1.readyToRead)(gl)) {
             // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
-            gl.readPixels(0, 0, width, height, glFormat, glType, values);
+            gl.readPixels(0, 0, width, height, _glFormat, _glType, values);
             var OUTPUT_LENGTH = (this._length ? this._length : width * height) * numComponents;
             // Convert uint16 to float32 if needed.
-            var handleFloat16Conversion = internalType === constants_1.HALF_FLOAT && values.constructor === Uint16Array;
+            var handleFloat16Conversion = _internalType === constants_1.HALF_FLOAT && values.constructor === Uint16Array;
             // @ts-ignore
             var view = handleFloat16Conversion ? new DataView(values.buffer) : undefined;
             // We may use a different internal type than the assigned type of the GPULayer.
-            var output = internalType === type ? values : (0, GPULayerHelpers_1.initArrayForType)(type, OUTPUT_LENGTH, true);
+            var output = _internalType === type ? values : (0, GPULayerHelpers_1.initArrayForType)(type, OUTPUT_LENGTH, true);
             // In some cases glNumChannels may be > numComponents.
-            if (view || output !== values || numComponents !== glNumChannels) {
+            if (view || output !== values || numComponents !== _glNumChannels) {
                 for (var i = 0, length_1 = width * height; i < length_1; i++) {
-                    var index1 = i * glNumChannels;
+                    var index1 = i * _glNumChannels;
                     var index2 = i * numComponents;
                     if (index2 >= OUTPUT_LENGTH)
                         break;
@@ -4267,9 +4275,9 @@ var GPULayer = /** @class */ (function () {
      * @param {Texture} texture - Threejs texture object.
      */
     GPULayer.prototype.attachToThreeTexture = function (texture) {
-        var _a = this, composer = _a.composer, numBuffers = _a.numBuffers, currentState = _a.currentState, name = _a.name;
-        var renderer = composer.renderer;
-        if (!renderer) {
+        var _a = this, _composer = _a._composer, numBuffers = _a.numBuffers, currentState = _a.currentState, name = _a.name;
+        var _renderer = _composer._renderer;
+        if (!_renderer) {
             throw new Error('GPUComposer was not inited with a renderer.');
         }
         // Link webgl texture to threejs object.
@@ -4277,7 +4285,7 @@ var GPULayer = /** @class */ (function () {
         if (numBuffers > 1) {
             throw new Error("GPULayer \"".concat(name, "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer."));
         }
-        var offsetTextureProperties = renderer.properties.get(texture);
+        var offsetTextureProperties = _renderer.properties.get(texture);
         offsetTextureProperties.__webglTexture = currentState;
         offsetTextureProperties.__webglInit = true;
     };
@@ -4285,10 +4293,10 @@ var GPULayer = /** @class */ (function () {
      * Delete this GPULayer's framebuffers and textures.
      * @private
      */
-    GPULayer.prototype.destroyBuffers = function () {
-        var _a = this, composer = _a.composer, buffers = _a.buffers;
-        var gl = composer.gl;
-        buffers.forEach(function (buffer) {
+    GPULayer.prototype._destroyBuffers = function () {
+        var _a = this, _composer = _a._composer, _buffers = _a._buffers;
+        var gl = _composer.gl;
+        _buffers.forEach(function (buffer) {
             var framebuffer = buffer.framebuffer, texture = buffer.texture;
             gl.deleteTexture(texture);
             if (framebuffer) {
@@ -4298,26 +4306,10 @@ var GPULayer = /** @class */ (function () {
             delete buffer.texture;
             delete buffer.framebuffer;
         });
-        buffers.length = 0;
+        _buffers.length = 0;
         // These are technically owned by another GPULayer,
         // so we are not responsible for deleting them from gl context.
-        delete this.textureOverrides;
-    };
-    /**
-     * Deallocate GPULayer instance and associated WebGL properties.
-     */
-    GPULayer.prototype.dispose = function () {
-        var _a = this, name = _a.name, composer = _a.composer;
-        var gl = composer.gl, verboseLogging = composer.verboseLogging;
-        if (verboseLogging)
-            console.log("Deallocating GPULayer \"".concat(name, "\"."));
-        if (!gl)
-            throw new Error("Must call dispose() on all GPULayers before calling dispose() on GPUComposer.");
-        this.destroyBuffers();
-        // @ts-ignore
-        delete this.buffers;
-        // @ts-ignore
-        delete this.composer;
+        delete this._textureOverrides;
     };
     /**
      * Create a deep copy of GPULayer with current state copied over.
@@ -4326,7 +4318,23 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.clone = function (name) {
         // Make a deep copy.
-        return this.composer._cloneGPULayer(this, name);
+        return this._composer._cloneGPULayer(this, name);
+    };
+    /**
+     * Deallocate GPULayer instance and associated WebGL properties.
+     */
+    GPULayer.prototype.dispose = function () {
+        var _a = this, name = _a.name, _composer = _a._composer;
+        var gl = _composer.gl, verboseLogging = _composer.verboseLogging;
+        if (verboseLogging)
+            console.log("Deallocating GPULayer \"".concat(name, "\"."));
+        if (!gl)
+            throw new Error("Must call dispose() on all GPULayers before calling dispose() on GPUComposer.");
+        this._destroyBuffers();
+        // @ts-ignore
+        delete this._buffers;
+        // @ts-ignore
+        delete this._composer;
     };
     return GPULayer;
 }());
@@ -4341,7 +4349,7 @@ exports.GPULayer = GPULayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateGPULayerArray = exports.getGPULayerInternalType = exports.testFramebufferAttachment = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFramebufferAttachment = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
 var float16_1 = __webpack_require__(533);
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
@@ -4866,7 +4874,7 @@ exports.testFramebufferAttachment = testFramebufferAttachment;
  */
 function getGPULayerInternalType(params) {
     var composer = params.composer, writable = params.writable, name = params.name;
-    var gl = composer.gl, errorCallback = composer.errorCallback;
+    var gl = composer.gl, _errorCallback = composer._errorCallback;
     var type = params.type;
     var internalType = type;
     // Check if int types are supported.
@@ -4913,7 +4921,7 @@ function getGPULayerInternalType(params) {
             if (writable) {
                 var valid = testFramebufferAttachment({ composer: composer, internalType: internalType });
                 if (!valid) {
-                    errorCallback("This browser does not support rendering to HALF_FLOAT textures.");
+                    _errorCallback("This browser does not support rendering to HALF_FLOAT textures.");
                 }
             }
         }
@@ -4926,11 +4934,54 @@ function getGPULayerInternalType(params) {
 }
 exports.getGPULayerInternalType = getGPULayerInternalType;
 /**
+ * Min and max values for types.
+ * @private
+ */
+function minMaxValuesForType(type) {
+    // Get min and max values for int types.
+    var min = -Infinity;
+    var max = Infinity;
+    switch (type) {
+        // TODO: handle float types?
+        case constants_1.UNSIGNED_BYTE:
+            min = constants_1.MIN_UNSIGNED_BYTE;
+            max = constants_1.MAX_UNSIGNED_BYTE;
+            break;
+        case constants_1.BYTE:
+            min = constants_1.MIN_BYTE;
+            max = constants_1.MAX_BYTE;
+            break;
+        case constants_1.UNSIGNED_SHORT:
+            min = constants_1.MIN_UNSIGNED_SHORT;
+            max = constants_1.MAX_UNSIGNED_SHORT;
+            break;
+        case constants_1.SHORT:
+            min = constants_1.MIN_SHORT;
+            max = constants_1.MAX_SHORT;
+            break;
+        case constants_1.UNSIGNED_INT:
+            min = constants_1.MIN_UNSIGNED_INT;
+            max = constants_1.MAX_UNSIGNED_INT;
+            break;
+        case constants_1.INT:
+            min = constants_1.MIN_INT;
+            max = constants_1.MAX_INT;
+            break;
+    }
+    return {
+        min: min,
+        max: max,
+    };
+}
+exports.minMaxValuesForType = minMaxValuesForType;
+/**
  * Recasts typed array to match GPULayer.internalType.
  * @private
  */
 function validateGPULayerArray(array, layer) {
-    var numComponents = layer.numComponents, glNumChannels = layer.glNumChannels, internalType = layer.internalType, width = layer.width, height = layer.height, name = layer.name;
+    var numComponents = layer.numComponents, width = layer.width, height = layer.height, name = layer.name;
+    var glNumChannels = layer._glNumChannels;
+    var internalType = layer._internalType;
     var length = layer.is1D() ? layer.length : null;
     // Check that data is correct length (user error).
     if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
@@ -4978,35 +5029,8 @@ function validateGPULayerArray(array, layer) {
         default:
             throw new Error("Invalid array type: ".concat(array.constructor.name, " for GPULayer \"").concat(name, "\", please use one of [").concat(constants_1.validArrayTypes.map(function (constructor) { return constructor.name; }).join(', '), "]."));
     }
-    // Get min and max values for int types.
-    var min = -Infinity;
-    var max = Infinity;
-    switch (internalType) {
-        case constants_1.UNSIGNED_BYTE:
-            min = constants_1.MIN_UNSIGNED_BYTE;
-            max = constants_1.MAX_UNSIGNED_BYTE;
-            break;
-        case constants_1.BYTE:
-            min = constants_1.MIN_BYTE;
-            max = constants_1.MAX_BYTE;
-            break;
-        case constants_1.UNSIGNED_SHORT:
-            min = constants_1.MIN_UNSIGNED_SHORT;
-            max = constants_1.MAX_UNSIGNED_SHORT;
-            break;
-        case constants_1.SHORT:
-            min = constants_1.MIN_SHORT;
-            max = constants_1.MAX_SHORT;
-            break;
-        case constants_1.UNSIGNED_INT:
-            min = constants_1.MIN_UNSIGNED_INT;
-            max = constants_1.MAX_UNSIGNED_INT;
-            break;
-        case constants_1.INT:
-            min = constants_1.MIN_INT;
-            max = constants_1.MAX_INT;
-            break;
-    }
+    // Get min and max values for internalType.
+    var _a = minMaxValuesForType(internalType), min = _a.min, max = _a.max;
     // Then check if array needs to be lengthened.
     // This could be because glNumChannels !== numComponents or because length !== width * height.
     var arrayLength = width * height * glNumChannels;
@@ -5072,13 +5096,13 @@ var GPUProgram = /** @class */ (function () {
      */
     function GPUProgram(composer, params) {
         // #define variables for fragment shader program.
-        this.defines = {};
+        this._defines = {};
         // Uniform locations, values, and types.
-        this.uniforms = {};
+        this._uniforms = {};
         // Store WebGLProgram's - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
         // Each combination of vertex + fragment shader requires a separate WebGLProgram.
         // These programs are compiled on the fly as needed.
-        this.programs = {};
+        this._programs = {};
         // Check constructor parameters.
         var name = (params || {}).name;
         if (!composer) {
@@ -5107,14 +5131,14 @@ var GPUProgram = /** @class */ (function () {
         });
         var fragmentShader = params.fragmentShader, uniforms = params.uniforms, defines = params.defines;
         // Save arguments.
-        this.composer = composer;
+        this._composer = composer;
         this.name = name;
         // Compile fragment shader.
         var fragmentShaderSource = (0, checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
-        this.fragmentShaderSource = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion);
-        this.compile(defines); // Compiling also saves defines.
+        this._fragmentShaderSource = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion);
+        this._compile(defines); // Compiling also saves defines.
         // Set program uniforms.
         if (uniforms) {
             for (var i = 0; i < uniforms.length; i++) {
@@ -5128,9 +5152,9 @@ var GPUProgram = /** @class */ (function () {
      * Used internally, called only one.
      * @private
      */
-    GPUProgram.prototype.compile = function (defines) {
-        var _a = this, composer = _a.composer, name = _a.name, fragmentShaderSource = _a.fragmentShaderSource;
-        var gl = composer.gl, errorCallback = composer.errorCallback, verboseLogging = composer.verboseLogging, glslVersion = composer.glslVersion, floatPrecision = composer.floatPrecision, intPrecision = composer.intPrecision;
+    GPUProgram.prototype._compile = function (defines) {
+        var _a = this, _composer = _a._composer, name = _a.name, _fragmentShaderSource = _a._fragmentShaderSource, _fragmentShader = _a._fragmentShader, _defines = _a._defines;
+        var gl = _composer.gl, _errorCallback = _composer._errorCallback, verboseLogging = _composer.verboseLogging, glslVersion = _composer.glslVersion, floatPrecision = _composer.floatPrecision, intPrecision = _composer.intPrecision;
         // Update this.defines if needed.
         // Passed in defines param may only be a partial list.
         var definesNeedUpdate = false;
@@ -5138,56 +5162,56 @@ var GPUProgram = /** @class */ (function () {
             var keys = Object.keys(defines);
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
-                if (this.defines[key] !== defines[key]) {
+                if (_defines[key] !== defines[key]) {
                     definesNeedUpdate = true;
-                    this.defines[key] = defines[key];
+                    _defines[key] = defines[key];
                 }
             }
         }
-        if (this.fragmentShader && !definesNeedUpdate) {
+        if (_fragmentShader && !definesNeedUpdate) {
             // No need to recompile.
             return;
         }
         if (verboseLogging)
-            console.log("Compiling fragment shader for GPUProgram \"".concat(name, "\" with defines: ").concat(JSON.stringify(this.defines)));
-        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, fragmentShaderSource, gl.FRAGMENT_SHADER, name, errorCallback, this.defines);
+            console.log("Compiling fragment shader for GPUProgram \"".concat(name, "\" with defines: ").concat(JSON.stringify(_defines)));
+        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _defines);
         if (!shader) {
-            errorCallback("Unable to compile fragment shader for GPUProgram \"".concat(name, "\"."));
+            _errorCallback("Unable to compile fragment shader for GPUProgram \"".concat(name, "\"."));
             return;
         }
-        this.fragmentShader = shader;
+        this._fragmentShader = shader;
         // If we decided to call this multiple times, we will need to attach the shader to all existing programs.
     };
     /**
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    GPUProgram.prototype.getProgramWithName = function (name) {
+    GPUProgram.prototype._getProgramWithName = function (name) {
         // Check if we've already compiled program.
-        if (this.programs[name])
-            return this.programs[name];
+        if (this._programs[name])
+            return this._programs[name];
         // Otherwise, we need to compile a new program on the fly.
-        var _a = this, composer = _a.composer, uniforms = _a.uniforms, fragmentShader = _a.fragmentShader;
-        var gl = composer.gl, errorCallback = composer.errorCallback;
-        var vertexShader = composer._getVertexShaderWithName(name, this.name);
+        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _fragmentShader = _a._fragmentShader, _programs = _a._programs;
+        var gl = _composer.gl, _errorCallback = _composer._errorCallback;
+        var vertexShader = _composer._getVertexShaderWithName(name, this.name);
         if (vertexShader === undefined) {
-            errorCallback("Unable to init vertex shader \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
+            _errorCallback("Unable to init vertex shader \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
         }
-        var program = (0, utils_1.initGLProgram)(gl, vertexShader, fragmentShader, this.name, errorCallback);
+        var program = (0, utils_1.initGLProgram)(gl, vertexShader, _fragmentShader, this.name, _errorCallback);
         if (program === undefined) {
-            errorCallback("Unable to init program \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
+            _errorCallback("Unable to init program \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
         }
         // If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
-        var uniformNames = Object.keys(uniforms);
+        var uniformNames = Object.keys(_uniforms);
         for (var i = 0; i < uniformNames.length; i++) {
             var uniformName = uniformNames[i];
-            var uniform = uniforms[uniformName];
+            var uniform = _uniforms[uniformName];
             var value = uniform.value, type = uniform.type;
-            this.setProgramUniform(program, name, uniformName, value, type);
+            this._setProgramUniform(program, name, uniformName, value, type);
         }
-        this.programs[name] = program;
+        _programs[name] = program;
         return program;
     };
     Object.defineProperty(GPUProgram.prototype, "_defaultProgram", {
@@ -5195,7 +5219,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.DEFAULT_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.DEFAULT_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5205,7 +5229,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.DEFAULT_W_UV_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.DEFAULT_W_UV_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5215,7 +5239,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5225,7 +5249,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5235,7 +5259,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.SEGMENT_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.SEGMENT_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5245,7 +5269,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.LAYER_POINTS_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.LAYER_POINTS_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5255,7 +5279,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5265,7 +5289,7 @@ var GPUProgram = /** @class */ (function () {
          * @private
          */
         get: function () {
-            return this.getProgramWithName(constants_1.LAYER_LINES_PROGRAM_NAME);
+            return this._getProgramWithName(constants_1.LAYER_LINES_PROGRAM_NAME);
         },
         enumerable: false,
         configurable: true
@@ -5274,24 +5298,24 @@ var GPUProgram = /** @class */ (function () {
      * Set uniform for GLProgram.
      * @private
      */
-    GPUProgram.prototype.setProgramUniform = function (program, programName, name, value, type) {
+    GPUProgram.prototype._setProgramUniform = function (program, programName, name, value, type) {
         var _a;
-        var _b = this, composer = _b.composer, uniforms = _b.uniforms;
-        var gl = composer.gl, errorCallback = composer.errorCallback;
+        var _b = this, _composer = _b._composer, _uniforms = _b._uniforms;
+        var gl = _composer.gl, _errorCallback = _composer._errorCallback;
         // Set active program.
         gl.useProgram(program);
-        var location = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.location[programName];
+        var location = (_a = _uniforms[name]) === null || _a === void 0 ? void 0 : _a.location[programName];
         // Init a location for WebGLProgram if needed.
         if (location === undefined) {
             var _location = gl.getUniformLocation(program, name);
             if (!_location) {
-                errorCallback("Could not init uniform \"".concat(name, "\" for program \"").concat(this.name, "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type ").concat(type, ".\nError code: ").concat(gl.getError(), "."));
+                _errorCallback("Could not init uniform \"".concat(name, "\" for program \"").concat(this.name, "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type ").concat(type, ".\nError code: ").concat(gl.getError(), "."));
                 return;
             }
             location = _location;
             // Save location for future use.
-            if (uniforms[name]) {
-                uniforms[name].location[programName] = location;
+            if (_uniforms[name]) {
+                _uniforms[name].location[programName] = location;
             }
         }
         // Set uniform.
@@ -5347,14 +5371,14 @@ var GPUProgram = /** @class */ (function () {
      * Set fragment shader uniform for GPUProgram.
      * @param name - Uniform name as it appears in fragment shader.
      * @param value - Uniform value.
-     * @param type - Uniform type.
+     * @param type - Uniform type (this only needs to be set once).
      */
     GPUProgram.prototype.setUniform = function (name, value, type) {
         var _a;
-        var _b = this, programs = _b.programs, uniforms = _b.uniforms, composer = _b.composer;
-        var verboseLogging = composer.verboseLogging;
+        var _b = this, _programs = _b._programs, _uniforms = _b._uniforms, _composer = _b._composer;
+        var verboseLogging = _composer.verboseLogging;
         // Uint is not supported in webgl1.
-        if (!(0, utils_1.isWebGL2)(composer.gl) && type === constants_1.UINT) {
+        if (!(0, utils_1.isWebGL2)(_composer.gl) && type === constants_1.UINT) {
             type = constants_1.INT;
         }
         // Check that length of value is correct.
@@ -5363,7 +5387,7 @@ var GPUProgram = /** @class */ (function () {
             if (length_1 > 4)
                 throw new Error("Invalid uniform value: [".concat(value.join(', '), "] passed to GPUProgram \"").concat(this.name, ", uniforms must be of type number[] with length <= 4, number, or boolean.\""));
         }
-        var currentType = (_a = uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
+        var currentType = (_a = _uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
         if (type) {
             var internalType = (0, utils_1.uniformInternalTypeForValue)(value, type, name, this.name);
             if (currentType === undefined)
@@ -5379,16 +5403,16 @@ var GPUProgram = /** @class */ (function () {
         if (currentType === undefined) {
             throw new Error("Unknown type for uniform \"".concat(name, "\", please pass in type to GPUProgram.setUniform(name, value, type) when initing a new uniform."));
         }
-        if (!uniforms[name]) {
+        if (!_uniforms[name]) {
             // Init uniform if needed.
-            uniforms[name] = { type: currentType, location: {}, value: value };
+            _uniforms[name] = { type: currentType, location: {}, value: value };
         }
         else {
             // Deep check is value has changed.
             if ((0, checks_1.isArray)(value)) {
                 var isChanged = true;
                 for (var i = 0; i < value.length; i++) {
-                    if (uniforms[name].value !== value) {
+                    if (_uniforms[name].value !== value) {
                         isChanged = true;
                         break;
                     }
@@ -5396,19 +5420,19 @@ var GPUProgram = /** @class */ (function () {
                 if (!isChanged)
                     return; // No change.
             }
-            else if (uniforms[name].value === value) {
+            else if (_uniforms[name].value === value) {
                 return; // No change.
             }
             // Update value.
-            uniforms[name].value = value;
+            _uniforms[name].value = value;
         }
         if (verboseLogging)
             console.log("Setting uniform \"".concat(name, "\" for program \"").concat(this.name, "\" to value ").concat(JSON.stringify(value), " with type ").concat(currentType, "."));
         // Update any active programs.
-        var keys = Object.keys(programs);
+        var keys = Object.keys(_programs);
         for (var i = 0; i < keys.length; i++) {
             var programName = keys[i];
-            this.setProgramUniform(programs[programName], programName, name, value, currentType);
+            this._setProgramUniform(_programs[programName], programName, name, value, currentType);
         }
     };
     ;
@@ -5421,50 +5445,50 @@ var GPUProgram = /** @class */ (function () {
         if (!program) {
             throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
         }
-        var programName = Object.keys(this.programs).find(function (key) { return _this.programs[key] === program; });
+        var programName = Object.keys(this._programs).find(function (key) { return _this._programs[key] === program; });
         if (!programName) {
             throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
         var internalType = (0, utils_1.uniformInternalTypeForValue)(value, type, uniformName, this.name);
-        this.setProgramUniform(program, programName, uniformName, value, internalType);
+        this._setProgramUniform(program, programName, uniformName, value, internalType);
     };
     /**
      * Deallocate GPUProgram instance and associated WebGL properties.
      */
     GPUProgram.prototype.dispose = function () {
         var _this = this;
-        var _a = this, composer = _a.composer, fragmentShader = _a.fragmentShader, programs = _a.programs;
-        var gl = composer.gl, verboseLogging = composer.verboseLogging;
+        var _a = this, _composer = _a._composer, _fragmentShader = _a._fragmentShader, _programs = _a._programs;
+        var gl = _composer.gl, verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Deallocating GPUProgram \"".concat(this.name, "\"."));
         if (!gl)
             throw new Error("Must call dispose() on all GPUPrograms before calling dispose() on GPUComposer.");
         // Unbind all gl data before deleting.
-        Object.values(programs).forEach(function (program) {
+        Object.values(_programs).forEach(function (program) {
             if (program)
                 gl.deleteProgram(program);
         });
-        Object.keys(this.programs).forEach(function (key) {
-            delete _this.programs[key];
+        Object.keys(_programs).forEach(function (key) {
+            delete _this._programs[key];
         });
         // Delete fragment shader.
-        gl.deleteShader(fragmentShader);
+        gl.deleteShader(_fragmentShader);
         // @ts-ignore
-        delete this.fragmentShader;
+        delete this._fragmentShader;
         // Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
         // Delete all references.
         // @ts-ignore
-        delete this.composer;
+        delete this._composer;
         // @ts-ignore
         delete this.name;
         // @ts-ignore
-        delete this.fragmentShaderSource;
+        delete this._fragmentShaderSource;
         // @ts-ignore
-        delete this.defines;
+        delete this._defines;
         // @ts-ignore
-        delete this.uniforms;
+        delete this._uniforms;
         // @ts-ignore
-        delete this.programs;
+        delete this._programs;
     };
     return GPUProgram;
 }());
@@ -6043,9 +6067,9 @@ exports.EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 function getExtension(composer, extensionName, optional) {
     if (optional === void 0) { optional = false; }
     // Check if we've already loaded the extension.
-    if (composer.extensions[extensionName] !== undefined)
-        return composer.extensions[extensionName];
-    var gl = composer.gl, errorCallback = composer.errorCallback;
+    if (composer._extensions[extensionName] !== undefined)
+        return composer._extensions[extensionName];
+    var gl = composer.gl, _errorCallback = composer._errorCallback, _extensions = composer._extensions;
     var extension;
     try {
         extension = gl.getExtension(extensionName);
@@ -6053,16 +6077,16 @@ function getExtension(composer, extensionName, optional) {
     catch (e) { }
     if (extension) {
         // Cache this extension.
-        composer.extensions[extensionName] = extension;
+        _extensions[extensionName] = extension;
         console.log("Loaded extension: ".concat(extensionName, "."));
     }
     else {
-        composer.extensions[extensionName] = false; // Cache the bad extension lookup.
+        _extensions[extensionName] = false; // Cache the bad extension lookup.
         console.warn("Unsupported ".concat(optional ? 'optional ' : '', "extension: ").concat(extensionName, "."));
     }
     // If the extension is not optional, throw error.
     if (!extension && !optional) {
-        errorCallback("Required extension unsupported by this device / browser: ".concat(extensionName, "."));
+        _errorCallback("Required extension unsupported by this device / browser: ".concat(extensionName, "."));
     }
     return extension;
 }
@@ -6103,13 +6127,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports._testing = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
-var utils_1 = __webpack_require__(593);
-Object.defineProperty(exports, "isWebGL2", ({ enumerable: true, get: function () { return utils_1.isWebGL2; } }));
-Object.defineProperty(exports, "isWebGL2Supported", ({ enumerable: true, get: function () { return utils_1.isWebGL2Supported; } }));
-Object.defineProperty(exports, "isHighpSupportedInVertexShader", ({ enumerable: true, get: function () { return utils_1.isHighpSupportedInVertexShader; } }));
-Object.defineProperty(exports, "isHighpSupportedInFragmentShader", ({ enumerable: true, get: function () { return utils_1.isHighpSupportedInFragmentShader; } }));
-Object.defineProperty(exports, "getVertexShaderMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getVertexShaderMediumpPrecision; } }));
-Object.defineProperty(exports, "getFragmentShaderMediumpPrecision", ({ enumerable: true, get: function () { return utils_1.getFragmentShaderMediumpPrecision; } }));
+var utils = __webpack_require__(593);
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
 var GPULayer_1 = __webpack_require__(355);
@@ -6122,10 +6140,17 @@ var GPULayerHelpers = __webpack_require__(191);
 /**
  * @private
  */
-var _testing = __assign(__assign({ makeShaderHeader: utils_1.makeShaderHeader, compileShader: utils_1.compileShader, initGLProgram: utils_1.initGLProgram, readyToRead: utils_1.readyToRead, preprocessVertexShader: utils_1.preprocessVertexShader, preprocessFragmentShader: utils_1.preprocessFragmentShader, isPowerOf2: utils_1.isPowerOf2, initSequentialFloatArray: utils_1.initSequentialFloatArray, uniformInternalTypeForValue: utils_1.uniformInternalTypeForValue }, checks), GPULayerHelpers);
+var _testing = __assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, checks), GPULayerHelpers);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
+var isWebGL2 = utils.isWebGL2, isWebGL2Supported = utils.isWebGL2Supported, isHighpSupportedInVertexShader = utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader = utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision = utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision = utils.getFragmentShaderMediumpPrecision;
+exports.isWebGL2 = isWebGL2;
+exports.isWebGL2Supported = isWebGL2Supported;
+exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
+exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
+exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
+exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 
 
 /***/ }),
@@ -6136,7 +6161,7 @@ __exportStar(__webpack_require__(601), exports);
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = void 0;
+exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var precisionSource = __webpack_require__(937);
@@ -6151,6 +6176,38 @@ var results = {
     mediumpVertexPrecision: undefined,
     mediumpFragmentPrecision: undefined,
 };
+/**
+ * Test whether a GPULayer type is a float type.
+ * @private
+ */
+function isFloatType(type) {
+    return type === constants_1.FLOAT || type === constants_1.HALF_FLOAT;
+}
+exports.isFloatType = isFloatType;
+/**
+ * Test whether a GPULayer type is an unsigned int type.
+ * @private
+ */
+function isUnsignedIntType(type) {
+    return type === constants_1.UNSIGNED_BYTE || type === constants_1.UNSIGNED_SHORT || type === constants_1.UNSIGNED_INT;
+}
+exports.isUnsignedIntType = isUnsignedIntType;
+/**
+ * Test whether a GPULayer type is a signed int type.
+ * @private
+ */
+function isSignedIntType(type) {
+    return type === constants_1.BYTE || type === constants_1.SHORT || type === constants_1.INT;
+}
+exports.isSignedIntType = isSignedIntType;
+/**
+ * Test whether a GPULayer type is a int type.
+ * @private
+ */
+function isIntType(type) {
+    return isUnsignedIntType(type) || isSignedIntType(type);
+}
+exports.isIntType = isIntType;
 /**
  * Enum for precision values.
  * See src/glsl/common/precision.glsl for more info.

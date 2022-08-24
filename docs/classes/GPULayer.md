@@ -21,27 +21,27 @@
 
 ### Accessors
 
+- [width](GPULayer.md#width)
+- [height](GPULayer.md#height)
+- [length](GPULayer.md#length)
 - [bufferIndex](GPULayer.md#bufferindex)
 - [currentState](GPULayer.md#currentstate)
 - [lastState](GPULayer.md#laststate)
 - [clearValue](GPULayer.md#clearvalue)
-- [width](GPULayer.md#width)
-- [height](GPULayer.md#height)
-- [length](GPULayer.md#length)
 
 ### Methods
 
+- [is1D](GPULayer.md#is1d)
 - [incrementBufferIndex](GPULayer.md#incrementbufferindex)
 - [getStateAtIndex](GPULayer.md#getstateatindex)
 - [setFromArray](GPULayer.md#setfromarray)
 - [resize](GPULayer.md#resize)
 - [clear](GPULayer.md#clear)
-- [is1D](GPULayer.md#is1d)
 - [getValues](GPULayer.md#getvalues)
 - [savePNG](GPULayer.md#savepng)
 - [attachToThreeTexture](GPULayer.md#attachtothreetexture)
-- [dispose](GPULayer.md#dispose)
 - [clone](GPULayer.md#clone)
+- [dispose](GPULayer.md#dispose)
 
 ## Properties
 
@@ -133,6 +133,42 @@ Create a GPULayer.
 
 ## Accessors
 
+### width
+
+• `get` **width**(): `number`
+
+The width of the GPULayer array.
+
+#### Returns
+
+`number`
+
+___
+
+### height
+
+• `get` **height**(): `number`
+
+The height of the GPULayer array.
+
+#### Returns
+
+`number`
+
+___
+
+### length
+
+• `get` **length**(): `number`
+
+The length of the GPULayer array (only available to 1D GPULayers).
+
+#### Returns
+
+`number`
+
+___
+
 ### bufferIndex
 
 • `get` **bufferIndex**(): `number`
@@ -193,43 +229,21 @@ Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
 
 `void`
 
-___
-
-### width
-
-• `get` **width**(): `number`
-
-The width of the GPULayer array.
-
-#### Returns
-
-`number`
-
-___
-
-### height
-
-• `get` **height**(): `number`
-
-The height of the GPULayer array.
-
-#### Returns
-
-`number`
-
-___
-
-### length
-
-• `get` **length**(): `number`
-
-The length of the GPULayer array (only available to 1D GPULayers).
-
-#### Returns
-
-`number`
-
 ## Methods
+
+### is1D
+
+▸ **is1D**(): `boolean`
+
+Returns whether the GPULayer was inited as a 1D array (rather than 2D).
+
+#### Returns
+
+`boolean`
+
+- true if GPULayer is 1D, else false.
+
+___
 
 ### incrementBufferIndex
 
@@ -313,20 +327,6 @@ Clear all data in GPULayer to GPULayer.clearValue.
 
 ___
 
-### is1D
-
-▸ **is1D**(): `boolean`
-
-Returns whether the GPULayer was inited as a 1D array (rather than 2D).
-
-#### Returns
-
-`boolean`
-
-- true if GPULayer is 1D, else false.
-
-___
-
 ### getValues
 
 ▸ **getValues**(): [`GPULayerArray`](../README.md#gpulayerarray)
@@ -381,18 +381,6 @@ Attach the output buffer of this GPULayer to a Threejs Texture object.
 
 ___
 
-### dispose
-
-▸ **dispose**(): `void`
-
-Deallocate GPULayer instance and associated WebGL properties.
-
-#### Returns
-
-`void`
-
-___
-
 ### clone
 
 ▸ **clone**(`name?`): [`GPULayer`](GPULayer.md)
@@ -410,3 +398,15 @@ Create a deep copy of GPULayer with current state copied over.
 [`GPULayer`](GPULayer.md)
 
 - Deep copy of GPULayer.
+
+___
+
+### dispose
+
+▸ **dispose**(): `void`
+
+Deallocate GPULayer instance and associated WebGL properties.
+
+#### Returns
+
+`void`

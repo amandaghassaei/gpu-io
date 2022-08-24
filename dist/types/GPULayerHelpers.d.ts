@@ -84,6 +84,14 @@ export declare function getGPULayerInternalType(params: {
     name: string;
 }): GPULayerType;
 /**
+ * Min and max values for types.
+ * @private
+ */
+export declare function minMaxValuesForType(type: GPULayerType): {
+    min: number;
+    max: number;
+};
+/**
  * Recasts typed array to match GPULayer.internalType.
  * @private
  */

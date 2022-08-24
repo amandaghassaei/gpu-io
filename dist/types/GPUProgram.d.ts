@@ -1,16 +1,16 @@
 import { GPUComposer } from './GPUComposer';
-import { UniformType, UniformValue, CompileTimeVars } from './constants';
+import { UniformType, UniformValue, CompileTimeVars, UniformParams } from './constants';
 export declare class GPUProgram {
-    private readonly composer;
+    private readonly _composer;
     /**
      * Name of GPUProgram, used for error logging.
      */
     readonly name: string;
-    private fragmentShader;
-    private readonly fragmentShaderSource;
-    private readonly defines;
-    private readonly uniforms;
-    private readonly programs;
+    private _fragmentShader;
+    private readonly _fragmentShaderSource;
+    private readonly _defines;
+    private readonly _uniforms;
+    private readonly _programs;
     /**
      * Create a GPUProgram.
      * @param composer - The current GPUComposer instance.
@@ -23,11 +23,7 @@ export declare class GPUProgram {
     constructor(composer: GPUComposer, params: {
         name: string;
         fragmentShader: string | string[];
-        uniforms?: {
-            name: string;
-            value: UniformValue;
-            type: UniformType;
-        }[];
+        uniforms?: UniformParams[];
         defines?: CompileTimeVars;
     });
     /**
@@ -35,12 +31,12 @@ export declare class GPUProgram {
      * Used internally, called only one.
      * @private
      */
-    private compile;
+    private _compile;
     /**
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    private getProgramWithName;
+    private _getProgramWithName;
     /**
      * @private
      */
@@ -77,12 +73,12 @@ export declare class GPUProgram {
      * Set uniform for GLProgram.
      * @private
      */
-    private setProgramUniform;
+    private _setProgramUniform;
     /**
      * Set fragment shader uniform for GPUProgram.
      * @param name - Uniform name as it appears in fragment shader.
      * @param value - Uniform value.
-     * @param type - Uniform type.
+     * @param type - Uniform type (this only needs to be set once).
      */
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
     /**

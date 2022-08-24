@@ -42,6 +42,7 @@
 		getGLTextureParameters,
 		testFramebufferAttachment,
 		getGPULayerInternalType,
+		minMaxValuesForType,
 		validateGPULayerArray,
 		initSequentialFloatArray,
 		isArray,
@@ -292,6 +293,22 @@
 				});
 			});
 		});
+		describe('minMaxValuesForType', () => {
+			it('should return valid min/max values for int types', () => {
+				assert.equal(minMaxValuesForType(UNSIGNED_BYTE).min, 0);
+				assert.equal(minMaxValuesForType(UNSIGNED_SHORT).min, 0);
+				assert.equal(minMaxValuesForType(UNSIGNED_INT).min, 0);
+				assert.equal(minMaxValuesForType(UNSIGNED_BYTE).max, 2**8 - 1);
+				assert.equal(minMaxValuesForType(UNSIGNED_SHORT).max, 2**16 - 1);
+				assert.equal(minMaxValuesForType(UNSIGNED_INT).max, 2**32 - 1);
+				assert.equal(minMaxValuesForType(BYTE).min, -(2 ** 7));
+				assert.equal(minMaxValuesForType(SHORT).min, -(2 ** 15));
+				assert.equal(minMaxValuesForType(INT).min, -(2 ** 31));
+				assert.equal(minMaxValuesForType(BYTE).max, 2**7 - 1);
+				assert.equal(minMaxValuesForType(SHORT).max, 2**15 - 1);
+				assert.equal(minMaxValuesForType(INT).max, 2**31 - 1);
+			});
+		});
 		describe('validateGPULayerArray', () => {
 			const size = [10, 12];
 			const length = 100;
@@ -314,7 +331,7 @@
 							assert.isAtLeast(validated1.length, array1.length);
 
 							// Array2 is correct size and type, should pass through for 2D and 1D power of 2 cases.
-							const array2 = initArrayForType(type, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer.glNumChannels);
+							const array2 = initArrayForType(type, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer._glNumChannels);
 							const validated2 = validateGPULayerArray(array2, layer);
 							if (isArray(dimensions) || isPowerOf2(dimensions)) assert.equal(validated2, array2);
 							else assert.isAtLeast(validated2.length, array2.length);
@@ -324,35 +341,9 @@
 							const validated3 = validateGPULayerArray(array3, layer);
 							assert.typeOf(validated3, array1.constructor.name); // Intentionally comparing with array1 constructor here.
 							assert.isAtLeast(validated3.length, array3.length);
-							// Get min and max values for int types.
-							let min = -Infinity;
-							let max = Infinity;
-							switch(type) {
-								case UNSIGNED_BYTE:
-									min = MIN_UNSIGNED_BYTE;
-									max = MAX_UNSIGNED_BYTE;
-									break;
-								case BYTE:
-									min = MIN_BYTE;
-									max = MAX_BYTE;
-									break;
-								case UNSIGNED_SHORT:
-									min = MIN_UNSIGNED_SHORT;
-									max = MAX_UNSIGNED_SHORT;
-									break;
-								case SHORT:
-									min = MIN_SHORT;
-									max = MAX_SHORT;
-									break;
-								case UNSIGNED_INT:
-									min = MIN_UNSIGNED_INT;
-									max = MAX_UNSIGNED_INT;
-									break;
-								case INT:
-									min = MIN_INT;
-									max = MAX_INT;
-									break;
-							}
+							// Get min and max values for type.
+							const { min, max } = minMaxValuesForType(type);
+
 							// Check that values are passed through.
 							for (let i = 0; i < (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions); i++) {
 								for (let j = 0; j < layer.glNumChannels; j++) {
@@ -387,7 +378,7 @@
 						assert.isAtLeast(validated1.length, array1.length);
 
 						// Array2 is correct size and type, should still type cast.
-						const array2 = initArrayForType(HALF_FLOAT, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer.glNumChannels, true);
+						const array2 = initArrayForType(HALF_FLOAT, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer._glNumChannels, true);
 						assert.typeOf(array2, 'Float32Array');
 						const validated2 = validateGPULayerArray(array2, layer);
 						assert.typeOf(validated2, 'Uint16Array');

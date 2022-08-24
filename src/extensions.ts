@@ -29,24 +29,24 @@ export function getExtension(
 	optional = false,
 ) {
 	// Check if we've already loaded the extension.
-	if (composer.extensions[extensionName] !== undefined) return composer.extensions[extensionName];
+	if (composer._extensions[extensionName] !== undefined) return composer._extensions[extensionName];
 
-	const { gl, errorCallback } = composer;
+	const { gl, _errorCallback, _extensions } = composer;
 	let extension;
 	try {
 		extension = gl.getExtension(extensionName);
 	} catch (e) {}
 	if (extension) {
 		// Cache this extension.
-		composer.extensions[extensionName] = extension;
+		_extensions[extensionName] = extension;
 		console.log(`Loaded extension: ${extensionName}.`);
 	} else {
-		composer.extensions[extensionName] = false; // Cache the bad extension lookup.
+		_extensions[extensionName] = false; // Cache the bad extension lookup.
 		console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extensionName}.`);
 	}
 	// If the extension is not optional, throw error.
 	if (!extension && !optional) {
-		errorCallback(`Required extension unsupported by this device / browser: ${extensionName}.`);
+		_errorCallback(`Required extension unsupported by this device / browser: ${extensionName}.`);
 	}
 	return extension;
 }

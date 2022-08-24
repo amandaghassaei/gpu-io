@@ -2,7 +2,7 @@ import { GPUComposer } from './GPUComposer';
 import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap } from './constants';
 import { Texture } from 'three';
 export declare class GPULayer {
-    private readonly composer;
+    private readonly _composer;
     /**
      * Name of GPULayer, used for error logging.
      */
@@ -34,55 +34,55 @@ export declare class GPULayer {
     private _clearValue;
     private _bufferIndex;
     readonly numBuffers: number;
-    private readonly buffers;
+    private readonly _buffers;
     private _length?;
     private _width;
     private _height;
     /**
      * @private
      */
-    readonly glInternalFormat: number;
+    readonly _glInternalFormat: number;
     /**
      * @private
      */
-    readonly glFormat: number;
+    readonly _glFormat: number;
     /**
      * @private
      */
-    readonly internalType: GPULayerType;
+    readonly _internalType: GPULayerType;
     /**
      * @private
      */
-    readonly glType: number;
+    readonly _glType: number;
     /**
      * @private
      */
-    readonly glNumChannels: number;
+    readonly _glNumChannels: number;
     /**
      * @private
      */
-    readonly internalFilter: GPULayerFilter;
+    readonly _internalFilter: GPULayerFilter;
     /**
      * @private
      */
-    readonly glFilter: number;
+    readonly _glFilter: number;
     /**
      * @private
      */
-    readonly internalWrapS: GPULayerWrap;
+    readonly _internalWrapS: GPULayerWrap;
     /**
      * @private
      */
-    readonly glWrapS: number;
+    readonly _glWrapS: number;
     /**
      * @private
      */
-    readonly internalWrapT: GPULayerWrap;
+    readonly _internalWrapT: GPULayerWrap;
     /**
      * @private
      */
-    readonly glWrapT: number;
-    private textureOverrides?;
+    readonly _glWrapT: number;
+    private _textureOverrides?;
     /**
      * Create a GPULayer.
      * @param composer - The current GPUComposer instance.
@@ -113,6 +113,23 @@ export declare class GPULayer {
         clearValue?: number | number[];
     });
     /**
+     * The width of the GPULayer array.
+     */
+    get width(): number;
+    /**
+     * The height of the GPULayer array.
+     */
+    get height(): number;
+    /**
+     * The length of the GPULayer array (only available to 1D GPULayers).
+     */
+    get length(): number;
+    /**
+     * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
+     * @returns - true if GPULayer is 1D, else false.
+     */
+    is1D(): boolean;
+    /**
      *
      * @private
      */
@@ -121,7 +138,7 @@ export declare class GPULayer {
      * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
      * @private
      */
-    private initBuffers;
+    private _initBuffers;
     /**
      * Get buffer index of the current state.
      */
@@ -145,7 +162,7 @@ export declare class GPULayer {
     /**
      * Binds this GPULayer's current framebuffer as the draw target.
      */
-    private bindFramebuffer;
+    private _bindFramebuffer;
     /**
      * Increments the buffer index (if needed) and binds next framebuffer as draw target.
      * @private
@@ -166,23 +183,6 @@ export declare class GPULayer {
      * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
      */
     clear(applyToAllBuffers?: boolean): void;
-    /**
-     * The width of the GPULayer array.
-     */
-    get width(): number;
-    /**
-     * The height of the GPULayer array.
-     */
-    get height(): number;
-    /**
-     * The length of the GPULayer array (only available to 1D GPULayers).
-     */
-    get length(): number;
-    /**
-     * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
-     * @returns - true if GPULayer is 1D, else false.
-     */
-    is1D(): boolean;
     /**
      * Returns the current values of the GPULayer as a TypedArray.
      * @returns - A TypedArray containing current state of GPULayer.
@@ -211,15 +211,15 @@ export declare class GPULayer {
      * Delete this GPULayer's framebuffers and textures.
      * @private
      */
-    private destroyBuffers;
-    /**
-     * Deallocate GPULayer instance and associated WebGL properties.
-     */
-    dispose(): void;
+    private _destroyBuffers;
     /**
      * Create a deep copy of GPULayer with current state copied over.
      * @param name - Name of new GPULayer as string.
      * @returns - Deep copy of GPULayer.
      */
     clone(name?: string): GPULayer;
+    /**
+     * Deallocate GPULayer instance and associated WebGL properties.
+     */
+    dispose(): void;
 }

@@ -8,36 +8,36 @@ export declare class GPUComposer {
     readonly glslVersion: GLSLVersion;
     readonly intPrecision: GLSLPrecision;
     readonly floatPrecision: GLSLPrecision;
-    private width;
-    private height;
-    private errorState;
+    private _width;
+    private _height;
+    private _errorState;
     /**
      * @private
      */
-    readonly errorCallback: ErrorCallback;
+    readonly _errorCallback: ErrorCallback;
     /**
      * @private
      */
-    readonly renderer?: WebGLRenderer;
-    private readonly maxNumTextures;
+    readonly _renderer?: WebGLRenderer;
+    private readonly _maxNumTextures;
     private _quadPositionsBuffer?;
     private _boundaryPositionsBuffer?;
     private _circlePositionsBuffer;
-    private pointIndexArray?;
-    private pointIndexBuffer?;
-    private vectorFieldIndexArray?;
-    private vectorFieldIndexBuffer?;
-    private indexedLinesIndexBuffer?;
+    private _pointIndexArray?;
+    private _pointIndexBuffer?;
+    private _vectorFieldIndexArray?;
+    private _vectorFieldIndexBuffer?;
+    private _indexedLinesIndexBuffer?;
     /**
      * @private
      */
-    readonly extensions: {
+    readonly _extensions: {
         [key: string]: any;
     };
-    private readonly copyPrograms;
-    private readonly setValuePrograms;
+    private readonly _copyPrograms;
+    private readonly _setValuePrograms;
     private _wrappedLineColorProgram?;
-    private readonly vectorMagnitudePrograms;
+    private readonly _vectorMagnitudePrograms;
     /**
      * Vertex shaders are shared across all GPUProgram instances.
      * @private

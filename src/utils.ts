@@ -8,6 +8,7 @@ import {
 } from './checks';
 import {
 	BOOL,
+	BYTE,
 	CompileTimeVars,
 	DEFAULT_ERROR_CALLBACK,
 	ErrorCallback,
@@ -20,6 +21,8 @@ import {
 	GLSL3,
 	GLSLPrecision,
 	GLSLVersion,
+	GPULayerType,
+	HALF_FLOAT,
 	INT,
 	INT_1D_UNIFORM,
 	INT_2D_UNIFORM,
@@ -28,6 +31,7 @@ import {
 	PRECISION_HIGH_P,
 	PRECISION_LOW_P,
 	PRECISION_MEDIUM_P,
+	SHORT,
 	UINT,
 	UINT_1D_UNIFORM,
 	UINT_2D_UNIFORM,
@@ -35,6 +39,9 @@ import {
 	UINT_4D_UNIFORM,
 	UniformType,
 	UniformValue,
+	UNSIGNED_BYTE,
+	UNSIGNED_INT,
+	UNSIGNED_SHORT,
 	WEBGL1,
 	WEBGL2,
 } from './constants';
@@ -50,6 +57,38 @@ const results = {
 	supportsHighpFragment: undefined as undefined | boolean,
 	mediumpVertexPrecision: undefined as undefined | typeof PRECISION_HIGH_P | typeof PRECISION_MEDIUM_P,
 	mediumpFragmentPrecision: undefined as undefined | typeof PRECISION_HIGH_P | typeof PRECISION_MEDIUM_P,
+}
+
+/**
+ * Test whether a GPULayer type is a float type.
+ * @private
+ */
+export function isFloatType(type: GPULayerType) {
+	return type === FLOAT || type === HALF_FLOAT;
+}
+
+/**
+ * Test whether a GPULayer type is an unsigned int type.
+ * @private
+ */
+ export function isUnsignedIntType(type: GPULayerType) {
+	return type === UNSIGNED_BYTE || type === UNSIGNED_SHORT || type === UNSIGNED_INT;
+}
+
+/**
+ * Test whether a GPULayer type is a signed int type.
+ * @private
+ */
+ export function isSignedIntType(type: GPULayerType) {
+	return type === BYTE || type === SHORT || type === INT;
+}
+
+/**
+ * Test whether a GPULayer type is a int type.
+ * @private
+ */
+ export function isIntType(type: GPULayerType) {
+	return isUnsignedIntType(type) || isSignedIntType(type);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { makeShaderHeader, compileShader, initGLProgram, isWebGL2, isWebGL2Supported, readyToRead, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, preprocessFragmentShader, preprocessVertexShader, isPowerOf2, initSequentialFloatArray, uniformInternalTypeForValue } from './utils';
+import * as utils from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
@@ -53,6 +53,10 @@ declare const _testing: {
         writable: boolean;
         name: string;
     }): import("./constants").GPULayerType;
+    minMaxValuesForType(type: import("./constants").GPULayerType): {
+        min: number;
+        max: number;
+    };
     validateGPULayerArray(array: number[] | import("./constants").GPULayerArray, layer: GPULayer): import("./constants").GPULayerArray;
     isValidDataType(type: string): boolean;
     isValidFilter(type: string): boolean;
@@ -69,15 +73,20 @@ declare const _testing: {
     isArray(value: any): boolean;
     isObject(value: any): boolean;
     isBoolean(value: any): boolean;
-    makeShaderHeader: typeof makeShaderHeader;
-    compileShader: typeof compileShader;
-    initGLProgram: typeof initGLProgram;
-    readyToRead: typeof readyToRead;
-    preprocessVertexShader: typeof preprocessVertexShader;
-    preprocessFragmentShader: typeof preprocessFragmentShader;
-    isPowerOf2: typeof isPowerOf2;
-    initSequentialFloatArray: typeof initSequentialFloatArray;
-    uniformInternalTypeForValue: typeof uniformInternalTypeForValue;
+    isFloatType: typeof utils.isFloatType;
+    isUnsignedIntType: typeof utils.isUnsignedIntType;
+    isSignedIntType: typeof utils.isSignedIntType;
+    isIntType: typeof utils.isIntType;
+    makeShaderHeader: typeof utils.makeShaderHeader;
+    compileShader: typeof utils.compileShader;
+    initGLProgram: typeof utils.initGLProgram;
+    readyToRead: typeof utils.readyToRead;
+    preprocessVertexShader: typeof utils.preprocessVertexShader;
+    preprocessFragmentShader: typeof utils.preprocessFragmentShader;
+    isPowerOf2: typeof utils.isPowerOf2;
+    initSequentialFloatArray: typeof utils.initSequentialFloatArray;
+    uniformInternalTypeForValue: typeof utils.uniformInternalTypeForValue;
 };
 export * from './constants';
+declare const isWebGL2: typeof utils.isWebGL2, isWebGL2Supported: typeof utils.isWebGL2Supported, isHighpSupportedInVertexShader: typeof utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader: typeof utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision: typeof utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision: typeof utils.getFragmentShaderMediumpPrecision;
 export { GPUComposer, GPULayer, GPUProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, _testing, };

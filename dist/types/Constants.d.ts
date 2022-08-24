@@ -218,6 +218,14 @@ export declare type UniformInternalType = typeof FLOAT_1D_UNIFORM | typeof FLOAT
  */
 export declare type UniformValue = boolean | number | number[];
 /**
+ * GPUProgram uniform parameters.
+ */
+export declare type UniformParams = {
+    name: string;
+    value: UniformValue;
+    type: UniformType;
+};
+/**
  * @private
  */
 export declare type Uniform = {

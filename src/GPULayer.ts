@@ -4,6 +4,7 @@ import { changeDpiBlob } from 'changedpi';
 import { saveAs } from 'file-saver';
 import { GPUComposer } from './GPUComposer';
 import {
+	isArray,
 	isNumber,
 	isObject,
 	isPositiveInteger,
@@ -51,7 +52,7 @@ import { Texture } from 'three';
 
 export class GPULayer {
 	// Keep a reference to GPUComposer.
-	private readonly composer: GPUComposer;
+	private readonly _composer: GPUComposer;
 
 	/**
 	 * Name of GPULayer, used for error logging.
@@ -89,7 +90,7 @@ export class GPULayer {
 	// e.g [currentState, previousState]
 	private _bufferIndex = 0;
 	readonly numBuffers;
-	private readonly buffers: GPULayerBuffer[] = [];
+	private readonly _buffers: GPULayerBuffer[] = [];
 
 	// Texture sizes.
 	private _length?: number; // This is only used for 1D data layers, access with GPULayer.length.
@@ -106,62 +107,62 @@ export class GPULayer {
 	/**
 	 * @private
 	 */
-	readonly glInternalFormat: number;
+	readonly _glInternalFormat: number;
 	/**
 	 * @private
 	 */
-	readonly glFormat: number;
+	readonly _glFormat: number;
 
 	// GPULayer.internalType corresponds to GPULayer.glType, may be different from GPULayer.type.
 	/**
 	 * @private
 	 */
-	readonly internalType: GPULayerType;
+	readonly _internalType: GPULayerType;
 	/**
 	 * @private
 	 */
-	readonly glType: number;
+	readonly _glType: number;
 
 	// Internally, GPULayer.glNumChannels may represent a larger number of channels than GPULayer.numComponents.
 	// For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
 	/**
 	 * @private
 	 */
-	readonly glNumChannels: number;
+	readonly _glNumChannels: number;
 
 	// GPULayer.internalFilter corresponds to GPULayer.glFilter, may be different from GPULayer.filter.
 	/**
 	 * @private
 	 */
-	readonly internalFilter: GPULayerFilter;
+	readonly _internalFilter: GPULayerFilter;
 	/**
 	 * @private
 	 */
-	readonly glFilter: number;
+	readonly _glFilter: number;
 
 	// GPULayer.internalWrapS corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapS.
 	/**
 	 * @private
 	 */
-	readonly internalWrapS: GPULayerWrap;
+	readonly _internalWrapS: GPULayerWrap;
 	/**
 	 * @private
 	 */
-	readonly glWrapS: number;
+	readonly _glWrapS: number;
 
 	// GPULayer.internalWrapT corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapT.
 	/**
 	 * @private
 	 */
-	readonly internalWrapT: GPULayerWrap;
+	readonly _internalWrapT: GPULayerWrap;
 	/**
 	 * @private
 	 */
-	readonly glWrapT: number;
+	readonly _glWrapT: number;
 	
 	// Optimizations so that "copying" can happen without draw calls.
 	// TODO: take a second look at this.
-	private textureOverrides?: (WebGLTexture | undefined)[];
+	private _textureOverrides?: (WebGLTexture | undefined)[];
 
 	/**
 	 * Create a GPULayer.
@@ -226,7 +227,7 @@ export class GPULayer {
 		const { gl } = composer;
 
 		// Save params.
-		this.composer = composer;
+		this._composer = composer;
 		this.name = name;
 
 		// numComponents must be between 1 and 4.
@@ -282,7 +283,7 @@ export class GPULayer {
 			writable,
 			name,
 		});
-		this.internalType = internalType;
+		this._internalType = internalType;
 		// Set gl texture parameters.
 		const {
 			glFormat,
@@ -296,18 +297,18 @@ export class GPULayer {
 			writable,
 			internalType,
 		});
-		this.glInternalFormat = glInternalFormat;
-		this.glFormat = glFormat;
-		this.glType = glType;
-		this.glNumChannels = glNumChannels;
+		this._glInternalFormat = glInternalFormat;
+		this._glFormat = glFormat;
+		this._glType = glType;
+		this._glNumChannels = glNumChannels;
 
 		// Set internal filtering/wrap types.
-		this.internalFilter = getGPULayerInternalFilter({ composer, filter, internalType, name });
-		this.glFilter = gl[this.internalFilter];
-		this.internalWrapS = getGPULayerInternalWrap({ composer, wrap: wrapS, name });
-		this.glWrapS = gl[this.internalWrapS];
-		this.internalWrapT = getGPULayerInternalWrap({ composer, wrap: wrapT, name });
-		this.glWrapT = gl[this.internalWrapT];
+		this._internalFilter = getGPULayerInternalFilter({ composer, filter, internalType, name });
+		this._glFilter = gl[this._internalFilter];
+		this._internalWrapS = getGPULayerInternalWrap({ composer, wrap: wrapS, name });
+		this._glWrapS = gl[this._internalWrapS];
+		this._internalWrapT = getGPULayerInternalWrap({ composer, wrap: wrapT, name });
+		this._glWrapT = gl[this._internalWrapT];
 
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -321,7 +322,39 @@ export class GPULayer {
 			this.clearValue = params.clearValue; // Setter can only be called after this.numComponents has been set.
 		}
 
-		this.initBuffers(params.array);
+		this._initBuffers(params.array);
+	}
+
+	/**
+	 * The width of the GPULayer array.
+	 */
+	 get width() {
+		return this._width;
+	}
+
+	/**
+	 * The height of the GPULayer array.
+	 */
+	get height() {
+		return this._height;
+	}
+
+	/**
+	 * The length of the GPULayer array (only available to 1D GPULayers).
+	 */
+	get length() {
+		if (!this._length) {
+			throw new Error(`Cannot access length on 2D GPULayer "${this.name}".`);
+		}
+		return this._length;
+	}
+
+	/**
+	 * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
+	 * @returns - true if GPULayer is 1D, else false.
+	 */
+	is1D() {
+		return this._length !== undefined;
 	}
 
 	/**
@@ -329,7 +362,7 @@ export class GPULayer {
 	 * @private
 	 */
 	_usingTextureOverrideForCurrentBuffer() {
-		return this.textureOverrides && this.textureOverrides[this.bufferIndex];
+		return this._textureOverrides && this._textureOverrides[this.bufferIndex];
 	}
 
 	// saveCurrentStateToGPULayer(layer: GPULayer) {
@@ -396,24 +429,24 @@ export class GPULayer {
 	 * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
 	 * @private
 	 */
-	private initBuffers(
+	private _initBuffers(
 		array?: GPULayerArray | number[],
 	) {
 		const {
 			name,
 			numBuffers,
-			composer,
-			glInternalFormat,
-			glFormat,
-			glType,
-			glFilter,
-			glWrapS,
-			glWrapT,
+			_composer,
+			_glInternalFormat,
+			_glFormat,
+			_glType,
+			_glFilter,
+			_glWrapS,
+			_glWrapT,
 			writable,
 			width,
 			height,
 		} = this;
-		const { gl, errorCallback } = composer;
+		const { gl, _errorCallback } = _composer;
 
 		const validatedArray = array ? validateGPULayerArray(array, this) : undefined;
 
@@ -421,19 +454,19 @@ export class GPULayer {
 		for (let i = 0; i < numBuffers; i++) {
 			const texture = gl.createTexture();
 			if (!texture) {
-				errorCallback(`Could not init texture for GPULayer "${name}": ${gl.getError()}.`);
+				_errorCallback(`Could not init texture for GPULayer "${name}": ${gl.getError()}.`);
 				return;
 			}
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 
 			// TODO: are there other params to look into:
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texParameter
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glWrapS);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrapT);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, _glWrapS);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, _glWrapT);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, _glFilter);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, _glFilter);
 
-			gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, validatedArray ? validatedArray : null);
+			gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray ? validatedArray : null);
 			
 			const buffer: GPULayerBuffer = {
 				texture,
@@ -443,7 +476,7 @@ export class GPULayer {
 				// Init a framebuffer for this texture so we can write to it.
 				const framebuffer = gl.createFramebuffer();
 				if (!framebuffer) {
-					errorCallback(`Could not init framebuffer for GPULayer "${name}": ${gl.getError()}.`);
+					_errorCallback(`Could not init framebuffer for GPULayer "${name}": ${gl.getError()}.`);
 					return;
 				}
 				gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -452,7 +485,7 @@ export class GPULayer {
 
 				const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 				if(status != gl.FRAMEBUFFER_COMPLETE){
-					errorCallback(`Invalid status for framebuffer for GPULayer "${name}": ${status}.`);
+					_errorCallback(`Invalid status for framebuffer for GPULayer "${name}": ${status}.`);
 				}
 
 				// Add framebuffer.
@@ -460,7 +493,7 @@ export class GPULayer {
 			}
 			
 			// Save this buffer to the list.
-			this.buffers.push(buffer);
+			this._buffers.push(buffer);
 		}
 		// Unbind.
 		gl.bindTexture(gl.TEXTURE_2D, null);
@@ -506,16 +539,16 @@ export class GPULayer {
 		if (index < 0 || index >= this.numBuffers) {
 			throw new Error(`Invalid buffer index: ${index} for GPULayer "${this.name}" with ${this.numBuffers} buffer${this.numBuffers > 1 ? 's' : ''}.`)
 		}
-		if (this.textureOverrides && this.textureOverrides[index]) return this.textureOverrides[index]!;
-		return this.buffers[index].texture;
+		if (this._textureOverrides && this._textureOverrides[index]) return this._textureOverrides[index]!;
+		return this._buffers[index].texture;
 	}
 
 	/**
 	 * Binds this GPULayer's current framebuffer as the draw target.
 	 */
-	private bindFramebuffer() {
-		const { gl } = this.composer;
-		const { framebuffer } = this.buffers[this.bufferIndex];
+	private _bindFramebuffer() {
+		const { gl } = this._composer;
+		const { framebuffer } = this._buffers[this.bufferIndex];
 		if (!framebuffer) {
 			throw new Error(`GPULayer "${this.name}" is not writable.`);
 		}
@@ -532,17 +565,17 @@ export class GPULayer {
 		if (incrementBufferIndex) {
 			this.incrementBufferIndex();
 		}
-		this.bindFramebuffer();
+		this._bindFramebuffer();
 
 		// We are going to do a data write, if we have overrides enabled, we can remove them.
-		if (this.textureOverrides) {
-			this.textureOverrides[this.bufferIndex] = undefined;
+		if (this._textureOverrides) {
+			this._textureOverrides[this.bufferIndex] = undefined;
 		}
 	}
 
 	setFromArray(array: GPULayerArray | number[], applyToAllBuffers = false) {
-		const { composer, glInternalFormat, glFormat, glType, numBuffers, width, height, bufferIndex } = this;
-		const { gl } = composer;
+		const { _composer, _glInternalFormat, _glFormat, _glType, numBuffers, width, height, bufferIndex } = this;
+		const { gl } = _composer;
 		const validatedArray = validateGPULayerArray(array, this);
 		// TODO: check that this is working.
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
@@ -550,7 +583,7 @@ export class GPULayer {
 		for (let i = startIndex; i < endIndex; i++) {
 			const texture = this.getStateAtIndex(i);
 			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, validatedArray);
+			gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
 		}
 		// Unbind texture.
 		gl.bindTexture(gl.TEXTURE_2D, null);
@@ -560,26 +593,27 @@ export class GPULayer {
 		dimensions: number | [number, number],
 		array?: GPULayerArray | number[],
 	) {
-		const { name, composer } = this;
-		const { verboseLogging } = composer;
+		const { name, _composer } = this;
+		const { verboseLogging } = _composer;
 		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
 		const { length, width, height } = calcGPULayerSize(dimensions, name, verboseLogging);
 		this._length = length;
 		this._width = width;
 		this._height = height;
-		this.destroyBuffers();
-		this.initBuffers(array);
+		this._destroyBuffers();
+		this._initBuffers(array);
 	}
 
 	/**
 	 * Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
 	 */
-	 set clearValue(clearValue: number | number[]) {
+	set clearValue(clearValue: number | number[]) {
 		const { numComponents, type } = this;
 		if (!isValidClearValue(clearValue, numComponents, type)) {
 			throw new Error(`Invalid clearValue: ${JSON.stringify(clearValue)} for GPULayer "${this.name}", expected ${type} or array of ${type} of length ${numComponents}.`);
 		}
-		this._clearValue = clearValue;
+		// Make deep copy if needed.
+		this._clearValue = isArray(clearValue) ? (clearValue as number[]).slice() : clearValue;
 	}
 
 	/**
@@ -589,14 +623,13 @@ export class GPULayer {
 		return this._clearValue;
 	}
 
-
 	/**
 	 * Clear all data in GPULayer to GPULayer.clearValue.
 	 * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
 	 */
 	clear(applyToAllBuffers = false) {
-		const { name, composer, clearValue, numBuffers, bufferIndex, type } = this;
-		const { verboseLogging } = composer;
+		const { name, _composer, clearValue, numBuffers, bufferIndex, type } = this;
+		const { verboseLogging } = _composer;
 		if (verboseLogging) console.log(`Clearing GPULayer "${name}".`);
 
 		const value: number[] = [];
@@ -612,11 +645,11 @@ export class GPULayer {
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
 		if (this.writable) {
-			const program = composer._setValueProgramForType(type);
+			const program = _composer._setValueProgramForType(type);
 			program.setUniform('u_value', value as [number, number, number, number]);
 			for (let i = startIndex; i < endIndex; i++) {
 				// Write clear value to buffers.
-				composer.step({
+				_composer.step({
 					program,
 					output: this,
 				});
@@ -624,17 +657,17 @@ export class GPULayer {
 		} else {
 			// Init a typed array containing clearValue and pass to buffers.
 			const {
-				width, height, glNumChannels, internalType,
-				glInternalFormat, glFormat, glType,
+				width, height, _glNumChannels, _internalType,
+				_glInternalFormat, _glFormat, _glType,
 			} = this;
-			const { gl } = composer;
+			const { gl } = _composer;
 			const fillLength = this._length ? this._length : width * height;
-			const array = initArrayForType(internalType, width * height * glNumChannels);
-			const float16View = internalType === HALF_FLOAT ? new DataView(array.buffer) : null;
+			const array = initArrayForType(_internalType, width * height * _glNumChannels);
+			const float16View = _internalType === HALF_FLOAT ? new DataView(array.buffer) : null;
 			for (let j = 0; j < fillLength; j++) {
-				for (let k = 0; k < glNumChannels; k++) {
-					const index = j * glNumChannels + k;
-					if (internalType === HALF_FLOAT) {
+				for (let k = 0; k < _glNumChannels; k++) {
+					const index = j * _glNumChannels + k;
+					if (_internalType === HALF_FLOAT) {
 						// Float16s need to be handled separately.
 						setFloat16(float16View!, 2 * index, value[k], true);
 					} else {
@@ -645,43 +678,11 @@ export class GPULayer {
 			for (let i = startIndex; i < endIndex; i++) {
 				const texture = this.getStateAtIndex(i);
 				gl.bindTexture(gl.TEXTURE_2D, texture);
-				gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, array);
+				gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, array);
 			}
 			// Unbind texture.
 			gl.bindTexture(gl.TEXTURE_2D, null);
 		}
-	}
-
-	/**
-	 * The width of the GPULayer array.
-	 */
-	get width() {
-		return this._width;
-	}
-
-	/**
-	 * The height of the GPULayer array.
-	 */
-	get height() {
-		return this._height;
-	}
-
-	/**
-	 * The length of the GPULayer array (only available to 1D GPULayers).
-	 */
-	get length() {
-		if (!this._length) {
-			throw new Error(`Cannot access length on 2D GPULayer "${this.name}".`);
-		}
-		return this._length;
-	}
-
-	/**
-	 * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
-	 * @returns - true if GPULayer is 1D, else false.
-	 */
-	is1D() {
-		return this._length !== undefined;
 	}
 
 	// TODO: this does not work on non-writable GPULayers, change this?
@@ -690,24 +691,24 @@ export class GPULayer {
 	 * @returns - A TypedArray containing current state of GPULayer.
 	 */
 	getValues() {
-		const { width, height, composer, numComponents, type } = this;
-		const { gl, glslVersion } = composer;
+		const { width, height, _composer, numComponents, type } = this;
+		const { gl, glslVersion } = _composer;
 
 		// In case GPULayer was not the last output written to.
-		this.bindFramebuffer();
+		this._bindFramebuffer();
 
-		let { glNumChannels, glType, glFormat, internalType } = this;
+		let { _glNumChannels, _glType, _glFormat, _internalType } = this;
 		let values;
-		switch (internalType) {
+		switch (_internalType) {
 			case HALF_FLOAT:
 				if (gl.FLOAT !== undefined) {
 					// Firefox requires that RGBA/FLOAT is used for readPixels of float16 types.
-					glNumChannels = 4;
-					glFormat = gl.RGBA;
-					glType = gl.FLOAT;
-					values = new Float32Array(width * height * glNumChannels);
+					_glNumChannels = 4;
+					_glFormat = gl.RGBA;
+					_glType = gl.FLOAT;
+					values = new Float32Array(width * height * _glNumChannels);
 				} else {
-					values = new Uint16Array(width * height * glNumChannels);
+					values = new Uint16Array(width * height * _glNumChannels);
 				}
 				// // The following works in Chrome.
 				// values = new Uint16Array(width * height * glNumChannels);
@@ -715,90 +716,90 @@ export class GPULayer {
 			case FLOAT:
 				// Chrome and Firefox require that RGBA/FLOAT is used for readPixels of float32 types.
 				// https://github.com/KhronosGroup/WebGL/issues/2747
-				glNumChannels = 4;
-				glFormat = gl.RGBA;
-				values = new Float32Array(width * height * glNumChannels);
+				_glNumChannels = 4;
+				_glFormat = gl.RGBA;
+				values = new Float32Array(width * height * _glNumChannels);
 				break;
 			case UNSIGNED_BYTE:
 				if (glslVersion === GLSL1) {
 					// Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
-					glNumChannels = 4;
-					glFormat = gl.RGBA;
-					values = new Uint8Array(width * height * glNumChannels);
+					_glNumChannels = 4;
+					_glFormat = gl.RGBA;
+					values = new Uint8Array(width * height * _glNumChannels);
 					break;
 				}
 				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.UNSIGNED_INT;
-				values = new Uint32Array(width * height * glNumChannels);
+				_glNumChannels = 4;
+				_glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				_glType = gl.UNSIGNED_INT;
+				values = new Uint32Array(width * height * _glNumChannels);
 				// // The following works in Chrome.
 				// values = new Uint8Array(width * height * glNumChannels);
 				break;
 			case UNSIGNED_SHORT:
 				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.UNSIGNED_INT;
-				values = new Uint32Array(width * height * glNumChannels);
+				_glNumChannels = 4;
+				_glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				_glType = gl.UNSIGNED_INT;
+				values = new Uint32Array(width * height * _glNumChannels);
 				// // The following works in Chrome.
 				// values = new Uint16Array(width * height * glNumChannels);
 				break;
 			case UNSIGNED_INT:
 				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				values = new Uint32Array(width * height * glNumChannels);
+				_glNumChannels = 4;
+				_glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				values = new Uint32Array(width * height * _glNumChannels);
 				// // The following works in Chrome.
 				// values = new Uint32Array(width * height * glNumChannels);
 				break;
 			case BYTE:
 				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.INT;
-				values = new Int32Array(width * height * glNumChannels);
+				_glNumChannels = 4;
+				_glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				_glType = gl.INT;
+				values = new Int32Array(width * height * _glNumChannels);
 				// // The following works in Chrome.
 				// values = new Int8Array(width * height * glNumChannels);
 				break;
 			case SHORT:
 				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				glType = gl.INT;
-				values = new Int32Array(width * height * glNumChannels);
+				_glNumChannels = 4;
+				_glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				_glType = gl.INT;
+				values = new Int32Array(width * height * _glNumChannels);
 				// // The following works in Chrome.
 				// values = new Int16Array(width * height * glNumChannels);
 				break;
 			case INT:
 				// Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
-				glNumChannels = 4;
-				glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
-				values = new Int32Array(width * height * glNumChannels);
+				_glNumChannels = 4;
+				_glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
+				values = new Int32Array(width * height * _glNumChannels);
 				// // The following works in Chrome.
 				// values = new Int32Array(width * height * glNumChannels);
 				break;
 			default:
-				throw new Error(`Unsupported internalType ${internalType} for getValues().`);
+				throw new Error(`Unsupported internalType ${_internalType} for getValues().`);
 		}
 
 		if (readyToRead(gl)) {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
-			gl.readPixels(0, 0, width, height, glFormat, glType, values);
+			gl.readPixels(0, 0, width, height, _glFormat, _glType, values);
 			const OUTPUT_LENGTH = (this._length ? this._length : width * height) * numComponents;
 
 			// Convert uint16 to float32 if needed.
-			const handleFloat16Conversion = internalType === HALF_FLOAT && values.constructor === Uint16Array;
+			const handleFloat16Conversion = _internalType === HALF_FLOAT && values.constructor === Uint16Array;
 			// @ts-ignore
 			const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
 
 			// We may use a different internal type than the assigned type of the GPULayer.
-			let output: GPULayerArray = internalType === type ? values : initArrayForType(type, OUTPUT_LENGTH, true);
+			let output: GPULayerArray = _internalType === type ? values : initArrayForType(type, OUTPUT_LENGTH, true);
 
 			// In some cases glNumChannels may be > numComponents.
-			if (view || output !== values || numComponents !== glNumChannels) {
+			if (view || output !== values || numComponents !== _glNumChannels) {
 				for (let i = 0, length = width * height; i < length; i++) {
-					const index1 = i * glNumChannels;
+					const index1 = i * _glNumChannels;
 					const index2 = i * numComponents;
 					if (index2 >= OUTPUT_LENGTH) break;
 					for (let j = 0; j < numComponents; j++) {
@@ -890,9 +891,9 @@ export class GPULayer {
 	 * @param {Texture} texture - Threejs texture object.
 	 */
 	attachToThreeTexture(texture: Texture) {
-		const { composer, numBuffers, currentState, name } = this;
-		const { renderer } = composer;
-		if (!renderer) {
+		const { _composer, numBuffers, currentState, name } = this;
+		const { _renderer } = _composer;
+		if (!_renderer) {
 			throw new Error('GPUComposer was not inited with a renderer.');
 		}
 		// Link webgl texture to threejs object.
@@ -900,7 +901,7 @@ export class GPULayer {
 		if (numBuffers > 1) {
 			throw new Error(`GPULayer "${name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
 		}
-		const offsetTextureProperties = renderer.properties.get(texture);
+		const offsetTextureProperties = _renderer.properties.get(texture);
 		offsetTextureProperties.__webglTexture = currentState;
 		offsetTextureProperties.__webglInit = true;
 	}
@@ -909,10 +910,10 @@ export class GPULayer {
 	 * Delete this GPULayer's framebuffers and textures.
 	 * @private
 	 */
-	private destroyBuffers() {
-		const { composer, buffers } = this;
-		const { gl } = composer;
-		buffers.forEach(buffer => {
+	private _destroyBuffers() {
+		const { _composer, _buffers } = this;
+		const { gl } = _composer;
+		_buffers.forEach(buffer => {
 			const { framebuffer, texture } = buffer;
 			gl.deleteTexture(texture);
 			if (framebuffer) {
@@ -922,29 +923,11 @@ export class GPULayer {
 			delete buffer.texture;
 			delete buffer.framebuffer;
 		});
-		buffers.length = 0;
+		_buffers.length = 0;
 
 		// These are technically owned by another GPULayer,
 		// so we are not responsible for deleting them from gl context.
-		delete this.textureOverrides;
-	}
-
-	/**
-	 * Deallocate GPULayer instance and associated WebGL properties.
-	 */
-	dispose() {
-		const { name, composer } = this;
-		const { gl, verboseLogging } = composer;
-
-		if (verboseLogging) console.log(`Deallocating GPULayer "${name}".`);
-
-		if (!gl) throw new Error(`Must call dispose() on all GPULayers before calling dispose() on GPUComposer.`);
-	
-		this.destroyBuffers();
-		// @ts-ignore
-		delete this.buffers;
-		// @ts-ignore
-		delete this.composer;
+		delete this._textureOverrides;
 	}
 
 	/**
@@ -954,6 +937,24 @@ export class GPULayer {
 	 */
 	clone(name?: string) {
 		// Make a deep copy.
-		return this.composer._cloneGPULayer(this, name);
+		return this._composer._cloneGPULayer(this, name);
+	}
+
+	/**
+	 * Deallocate GPULayer instance and associated WebGL properties.
+	 */
+	dispose() {
+		const { name, _composer } = this;
+		const { gl, verboseLogging } = _composer;
+
+		if (verboseLogging) console.log(`Deallocating GPULayer "${name}".`);
+
+		if (!gl) throw new Error(`Must call dispose() on all GPULayers before calling dispose() on GPUComposer.`);
+	
+		this._destroyBuffers();
+		// @ts-ignore
+		delete this._buffers;
+		// @ts-ignore
+		delete this._composer;
 	}
 }

@@ -1,4 +1,24 @@
-import { CompileTimeVars, ErrorCallback, GLSLPrecision, GLSLVersion, UniformType, UniformValue } from './constants';
+import { CompileTimeVars, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerType, UniformType, UniformValue } from './constants';
+/**
+ * Test whether a GPULayer type is a float type.
+ * @private
+ */
+export declare function isFloatType(type: GPULayerType): boolean;
+/**
+ * Test whether a GPULayer type is an unsigned int type.
+ * @private
+ */
+export declare function isUnsignedIntType(type: GPULayerType): boolean;
+/**
+ * Test whether a GPULayer type is a signed int type.
+ * @private
+ */
+export declare function isSignedIntType(type: GPULayerType): boolean;
+/**
+ * Test whether a GPULayer type is a int type.
+ * @private
+ */
+export declare function isIntType(type: GPULayerType): boolean;
 /**
  * Create header string for fragment and vertex shaders.
  * Export this for testing purposes.

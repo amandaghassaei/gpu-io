@@ -58,7 +58,7 @@ Set fragment shader uniform for GPUProgram.
 | :------ | :------ | :------ |
 | `name` | `string` | Uniform name as it appears in fragment shader. |
 | `value` | [`UniformValue`](../README.md#uniformvalue) | Uniform value. |
-| `type?` | [`UniformType`](../README.md#uniformtype) | Uniform type. |
+| `type?` | [`UniformType`](../README.md#uniformtype) | Uniform type (this only needs to be set once). |
 
 #### Returns
 

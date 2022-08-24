@@ -24,7 +24,8 @@
 		isNumber,
 		isString,
 		isBoolean,
-		initArrayForType,
+		isFloatType,
+		isUnsignedIntType,
 	} = _testing;
 
 	let composer1;
@@ -102,7 +103,62 @@
 					'Invalid numBuffers: "test" for GPULayer "test-layer", must be positive integer.');
 			});
 			it('should set parameters', () => {
-				// TODO:
+				const clearValue = [0, 4, 2];
+				const layer = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [34, 56],
+					filter: LINEAR,
+					wrapS: REPEAT,
+					wrapT: REPEAT,
+					writable: true,
+					numBuffers: 5,
+					clearValue,
+					array: (new Float32Array(34 * 56 * 3)).fill(-5),
+				});
+				assert.equal(layer.name, 'test-layer');
+				assert.equal(layer.type, FLOAT);
+				assert.equal(layer.numComponents, 3);
+				assert.equal(layer.width, 34);
+				assert.equal(layer.height, 56);
+				assert.equal(layer.filter, LINEAR);
+				assert.equal(layer.wrapS, REPEAT);
+				assert.equal(layer.wrapT, REPEAT);
+				assert.equal(layer.writable, true);
+				assert.equal(layer.numBuffers, 5);
+				assert.deepEqual(layer.clearValue, clearValue.slice());
+				assert.notEqual(layer.clearValue, clearValue); // Make deep copy.
+				const values = layer.getValues();
+				for (let i = 0; i < values.length; i++) {
+					assert.equal(values[i], -5);
+				}
+				layer.dispose();
+			});
+		});
+		describe('get width, height, length', () => {
+			it('should return correct dimensions', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: 245});
+				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56]});
+				assert.equal(layer2.width, 34);
+				assert.equal(layer2.height, 56);
+				assert.throws(() => { layer2.length; }, 'Cannot access length on 2D GPULayer "test-layer".');
+				assert.equal(layer1.length, 245);
+				assert.equal(layer1.width, 16);
+				assert.equal(layer1.height, 16);
+				assert.isAtLeast(layer1.width * layer1.height, layer1.length);
+				layer1.dispose();
+				layer2.dispose();
+			});
+		});
+		describe('is1D', () => {
+			it('should distinguish between 1D and 2D GPULayers', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: 245});
+				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56]});
+				assert.equal(layer1.is1D(), true);
+				assert.equal(layer2.is1D(), false);
+				layer1.dispose();
+				layer2.dispose();
 			});
 		});
 		describe('incrementBufferIndex', () => {
@@ -147,18 +203,18 @@
 				layer2.dispose();
 			});
 		});
-		describe('bindFramebuffer', () => {
+		describe('_bindFramebuffer', () => {
 			it('should bind GPULayer framebuffer for draw', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3, writable: true});
 				const { gl } = composer1;
 				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
-				layer1.bindFramebuffer();
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1.buffers[layer1.bufferIndex].framebuffer);
+				layer1._bindFramebuffer();
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1._buffers[layer1.bufferIndex].framebuffer);
 				layer1.dispose();
 			});
 			it('should throw error for readonly GPULayer', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 1});
-				assert.throws(() => { layer1.bindFramebuffer(); }, 'GPULayer "test-layer" is not writable.');
+				assert.throws(() => { layer1._bindFramebuffer(); }, 'GPULayer "test-layer" is not writable.');
 				layer1.dispose();
 			});
 		});
@@ -170,10 +226,10 @@
 				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
 				layer1._prepareForWrite();
 				assert.equal(layer1.bufferIndex, 0);
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1.buffers[layer1.bufferIndex].framebuffer);
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1._buffers[layer1.bufferIndex].framebuffer);
 				layer1._prepareForWrite(true);
 				assert.equal(layer1.bufferIndex, 1);
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1.buffers[layer1.bufferIndex].framebuffer);
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1._buffers[layer1.bufferIndex].framebuffer);
 				layer1.dispose();
 			});
 			it('should remove texture overrides at current buffer index', () => {
@@ -190,37 +246,68 @@
 				// TODO:
 			});
 		});
-		describe('set clearValue, get clearValue', () => {
-			it('should ', () => {
-				// TODO:
-			});
-		});
-		describe('clear', () => {
-			it('should ', () => {
-				// TODO:
-			});
-		});
-		describe('get width, height, length', () => {
-			it('should return correct dimensions', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: 245});
-				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56]});
-				assert.equal(layer2.width, 34);
-				assert.equal(layer2.height, 56);
-				assert.throws(() => { layer2.length; }, 'Cannot access length on 2D GPULayer "test-layer".');
-				assert.equal(layer1.length, 245);
-				assert.equal(layer1.width, 16);
-				assert.equal(layer1.height, 16);
-				assert.isAtLeast(layer1.width * layer1.height, layer1.length);
+		describe('set clearValue, get clearValue, clear', () => {
+			it('should set/get clear value and clear to value', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], writable: true, numBuffers: 2 });
+				assert.equal(layer1.clearValue, 0);
+				layer1.clearValue = 10.4;
+				assert.equal(layer1.clearValue, 10.4);
+				layer1.clear();
+				const values1 = layer1.getValues();
+				for (let i = 0; i < values1.length; i++) {
+					assert.closeTo(values1[i], 10.4, 1e-6); // There is some float precision delta with this value.
+				}
+				const vec = [-45, 0, 10.75];
+				layer1.clearValue = vec;
+				assert.deepEqual(layer1.clearValue, vec.slice());
+				assert.notEqual(layer1.clearValue, vec); // Check that it makes a copy.
+				layer1.clear();
+				const values2 = layer1.getValues();
+				for (let i = 0; i < values2.length / vec.length; i++) {
+					for (let j = 0; j < vec.length; j++) {
+						assert.equal(values2[i * vec.length + j], vec[j]);
+					}
+				}
+				// Clear with no argument will not clear all layers.
+				layer1.incrementBufferIndex();
+				const values3 = layer1.getValues();
+				for (let i = 0; i < values3.length / vec.length; i++) {
+					for (let j = 0; j < vec.length; j++) {
+						assert.equal(values3[i * vec.length + j], 0);
+					}
+				}
+				// Test clear all layers.
+				layer1.clear(true);
+				const values4 = layer1.getValues();
+				for (let i = 0; i < values4.length / vec.length; i++) {
+					for (let j = 0; j < vec.length; j++) {
+						assert.equal(values4[i * vec.length + j], vec[j]);
+					}
+				}
+				layer1.incrementBufferIndex();
+				const values5 = layer1.getValues();
+				for (let i = 0; i < values5.length / vec.length; i++) {
+					for (let j = 0; j < vec.length; j++) {
+						assert.equal(values5[i * vec.length + j], vec[j]);
+					}
+				}
 				layer1.dispose();
-				layer2.dispose();
 			});
-		});
-		describe('is1D', () => {
-			it('should distinguish between 1D and 2D GPULayers', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: 245});
-				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56]});
-				assert.equal(layer1.is1D(), true);
-				assert.equal(layer2.is1D(), false);
+			it('should throw errors for bad clear values', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], writable: true });
+				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 3, dimensions: [34, 56], writable: true });
+				// Wrong length.
+				assert.throws(() => { layer1.clearValue = [4, -97.5]; },
+					'Invalid clearValue: [4,-97.5] for GPULayer "test-layer", expected FLOAT or array of FLOAT of length 3.');
+				assert.throws(() => { layer1.clearValue = [4, -97.5, 0, 3.4]; },
+					'Invalid clearValue: [4,-97.5,0,3.4] for GPULayer "test-layer", expected FLOAT or array of FLOAT of length 3.');
+				// Wrong type.
+				assert.throws(() => { layer2.clearValue = [4, -97.5, 0]; },
+					'Invalid clearValue: [4,-97.5,0] for GPULayer "test-layer", expected UNSIGNED_BYTE or array of UNSIGNED_BYTE of length 3.');
+				assert.throws(() => { layer2.clearValue = [4, -97, 0]; },
+					'Invalid clearValue: [4,-97,0] for GPULayer "test-layer", expected UNSIGNED_BYTE or array of UNSIGNED_BYTE of length 3.');
+				assert.throws(() => { layer2.clearValue = [4, 4000, 0]; },
+					'Invalid clearValue: [4,4000,0] for GPULayer "test-layer", expected UNSIGNED_BYTE or array of UNSIGNED_BYTE of length 3.');
 				layer1.dispose();
 				layer2.dispose();
 			});
@@ -236,13 +323,11 @@
 					const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245, writable: true});
 					assert.notEqual(layer1.length, layer1.width * layer1.height);
 					const values = layer1.getValues();
-					// TODO: isFloatType, isIntType, IsUnsignedIntType, IsSignedIntType
-					assert.typeOf(values, (type === FLOAT || type === HALF_FLOAT) ? 'Float32Array' : 'Int32Array');
+					// Due to some annoying browser things, this is currently returning one of Float32Array, Int32Array, or Uint32Array.
+					assert.typeOf(values, isFloatType(type) ? 'Float32Array' : (isUnsignedIntType(type) ? 'UInt32Array' : 'Int32Array'));
 					assert.equal(values.length, layer1.length * layer1.numComponents);
 					layer1.dispose();
-					// TODO:
 				});
-				
 			});
 			// This is tested extensively in pipeline.js.
 		});
@@ -270,6 +355,46 @@
 				// TODO:
 			});
 		});
+		describe('clone', () => {
+			it('should deep copy all properties to clone', () => {
+				const clearValue = [0, 4, 2];
+				const layer = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [34, 56],
+					filter: LINEAR,
+					wrapS: REPEAT,
+					wrapT: REPEAT,
+					writable: true,
+					numBuffers: 5,
+					clearValue,
+					array: (new Float32Array(34 * 56 * 3)).fill(-5),
+				});
+				layer.incrementBufferIndex();
+				const clone = layer.clone('clone')
+				assert.equal(clone.name, 'clone');
+				assert.equal(clone.type, FLOAT);
+				assert.equal(clone.numComponents, 3);
+				assert.equal(clone.width, 34);
+				assert.equal(clone.height, 56);
+				assert.equal(clone.filter, LINEAR);
+				assert.equal(clone.wrapS, REPEAT);
+				assert.equal(clone.wrapT, REPEAT);
+				assert.equal(clone.writable, true);
+				assert.equal(clone.numBuffers, 5);
+				assert.deepEqual(clone.clearValue, clearValue.slice());
+				assert.notEqual(clone.clearValue, layer.clearValue); // Make deep copy.
+				const values = clone.getValues();
+				for (let i = 0; i < values.length; i++) {
+					assert.equal(values[i], -5);
+				}
+				assert.equal(clone.bufferIndex, layer.bufferIndex);
+				// TODO: check that all buffers were copied.
+				layer.dispose();
+				clone.dispose();
+			});
+		});
 		describe('dispose', () => {
 			it('should delete all object/array keys', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: false});
@@ -281,11 +406,6 @@
 				assert.equal(keys.length, 0, `remaining keys: ${JSON.stringify(keys)}.`);
 				// We don't really have a way to test if WebGL things were actually deleted.
 				// dispose() marks them for deletion, but they are garbage collected later.
-			});
-		});
-		describe('clone', () => {
-			it('should deep copy all properties to clone', () => {
-				// TODO:
 			});
 		});
 	});

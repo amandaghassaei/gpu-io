@@ -2,6 +2,12 @@
 	const {
 		_testing,
 		FLOAT,
+		HALF_FLOAT,
+		UNSIGNED_BYTE,
+		BYTE,
+		UNSIGNED_SHORT,
+		SHORT,
+		UNSIGNED_INT,
 		INT,
 		UINT,
 		BOOL,
@@ -31,6 +37,10 @@
 		UINT_4D_UNIFORM,
 	} = WebGLCompute;
 	const {
+		isFloatType,
+		isUnsignedIntType,
+		isSignedIntType,
+		isIntType,
 		makeShaderHeader,
 		compileShader,
 		initGLProgram,
@@ -45,6 +55,38 @@
 	// Testing components of utils that require WebGL with headless chrome + karma + mocha + chai.
 
 	describe('utils', () => {
+		describe('isFloatType', () => {
+			it('should detect float types', () => {
+				const results = [true, true, false, false, false, false, false, false, false];
+				[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, 'test'].forEach((type, i) => {
+					assert.equal(isFloatType(type), results[i], type);
+				});
+			});
+		});
+		describe('isUnsignedIntType', () => {
+			it('should detect unsigned int types', () => {
+				const results = [false, false, true, false, true, false, true, false, false];
+				[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, 'test'].forEach((type, i) => {
+					assert.equal(isUnsignedIntType(type), results[i], type);
+				});
+			});
+		});
+		describe('isSignedIntType', () => {
+			it('should detect signed int types', () => {
+				const results = [false, false, false, true, false, true, false, true, false];
+				[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, 'test'].forEach((type, i) => {
+					assert.equal(isSignedIntType(type), results[i], type);
+				});
+			});
+		});
+		describe('isIntType', () => {
+			it('should detect int types', () => {
+				const results = [false, false, true, true, true, true, true, true, false];
+				[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT, 'test'].forEach((type, i) => {
+					assert.equal(isIntType(type), results[i], type);
+				});
+			});
+		});
 		describe('makeShaderHeader', () => {
 			it('should create a valid shader header', () => {
 				assert.equal(makeShaderHeader(

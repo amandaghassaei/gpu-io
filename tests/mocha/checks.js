@@ -102,6 +102,7 @@
 				assert.equal(isValidClearValue([0, 0, 0, 0], 4, UNSIGNED_BYTE), true);
 				assert.equal(isValidClearValue([4.5, 0, 3, 5], 4, UNSIGNED_BYTE), false);
 				assert.equal(isValidClearValue([4.5, 0, 3, 5], 4, HALF_FLOAT), true);
+				assert.equal(isValidClearValue([4.5, 0], 3, FLOAT), false);
 				// This function calls isNumberOfType, do more extensive testing there.
 			});
 		});

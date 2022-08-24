@@ -617,7 +617,7 @@ export function getGPULayerInternalType(
 	},
 ) {
 	const { composer, writable, name } = params;
-	const { gl, errorCallback } = composer;
+	const { gl, _errorCallback } = composer;
 	const { type } = params;
 	let internalType = type;
 	// Check if int types are supported.
@@ -664,7 +664,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			if (writable) {
 				const valid = testFramebufferAttachment({ composer, internalType: internalType });
 				if (!valid) {
-					errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
+					_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 				}
 			}
 		}
@@ -678,11 +678,53 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 }
 
 /**
+ * Min and max values for types.
+ * @private
+ */
+export function minMaxValuesForType(type: GPULayerType) {
+	// Get min and max values for int types.
+	let min = -Infinity;
+	let max = Infinity;
+	switch(type) {
+		// TODO: handle float types?
+		case UNSIGNED_BYTE:
+			min = MIN_UNSIGNED_BYTE;
+			max = MAX_UNSIGNED_BYTE;
+			break;
+		case BYTE:
+			min = MIN_BYTE;
+			max = MAX_BYTE;
+			break;
+		case UNSIGNED_SHORT:
+			min = MIN_UNSIGNED_SHORT;
+			max = MAX_UNSIGNED_SHORT;
+			break;
+		case SHORT:
+			min = MIN_SHORT;
+			max = MAX_SHORT;
+			break;
+		case UNSIGNED_INT:
+			min = MIN_UNSIGNED_INT;
+			max = MAX_UNSIGNED_INT;
+			break;
+		case INT:
+			min = MIN_INT;
+			max = MAX_INT;
+			break;
+	}
+	return {
+		min, max,
+	};
+}
+
+/**
  * Recasts typed array to match GPULayer.internalType.
  * @private
  */
 export function validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer) {
-	const { numComponents, glNumChannels, internalType, width, height, name } = layer;
+	const { numComponents, width, height, name } = layer;
+	const glNumChannels = layer._glNumChannels;
+	const internalType = layer._internalType;
 	const length = layer.is1D() ? layer.length : null;
 
 	// Check that data is correct length (user error).
@@ -733,35 +775,8 @@ export function validateGPULayerArray(array: GPULayerArray | number[], layer: GP
 			throw new Error(`Invalid array type: ${array.constructor.name} for GPULayer "${name}", please use one of [${validArrayTypes.map(constructor => constructor.name).join(', ')}].`);
 	}
 
-	// Get min and max values for int types.
-	let min = -Infinity;
-	let max = Infinity;
-	switch(internalType) {
-		case UNSIGNED_BYTE:
-			min = MIN_UNSIGNED_BYTE;
-			max = MAX_UNSIGNED_BYTE;
-			break;
-		case BYTE:
-			min = MIN_BYTE;
-			max = MAX_BYTE;
-			break;
-		case UNSIGNED_SHORT:
-			min = MIN_UNSIGNED_SHORT;
-			max = MAX_UNSIGNED_SHORT;
-			break;
-		case SHORT:
-			min = MIN_SHORT;
-			max = MAX_SHORT;
-			break;
-		case UNSIGNED_INT:
-			min = MIN_UNSIGNED_INT;
-			max = MAX_UNSIGNED_INT;
-			break;
-		case INT:
-			min = MIN_INT;
-			max = MAX_INT;
-			break;
-	}
+	// Get min and max values for internalType.
+	const { min, max } = minMaxValuesForType(internalType);
 
 	// Then check if array needs to be lengthened.
 	// This could be because glNumChannels !== numComponents or because length !== width * height.
