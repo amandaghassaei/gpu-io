@@ -332,7 +332,7 @@ export class GPUComposer {
 		return isWebGL2(this.gl);
 	}
 
-	private glslKeyForType(type: GPULayerType) {
+	private _glslKeyForType(type: GPULayerType) {
 		if (this.glslVersion === GLSL1) return FLOAT;
 		switch (type) {
 			case HALF_FLOAT:
@@ -357,7 +357,7 @@ export class GPUComposer {
 	 */
 	_setValueProgramForType(type: GPULayerType) {
 		const { _setValuePrograms } = this;
-		const key = this.glslKeyForType(type);
+		const key = this._glslKeyForType(type);
 		if (_setValuePrograms[key] === undefined) {
 			const program = new GPUProgram(this, {
 				name: `setValue-${key}`,
@@ -378,9 +378,9 @@ export class GPUComposer {
 		return _setValuePrograms[key]!;
 	}
 
-	private copyProgramForType(type: GPULayerType) {
+	private _copyProgramForType(type: GPULayerType) {
 		const { _copyPrograms } = this;
-		const key = this.glslKeyForType(type);
+		const key = this._glslKeyForType(type);
 		if (_copyPrograms[key] === undefined) {
 			const program = new GPUProgram(this, {
 				name: `copy-${key}`,
@@ -401,7 +401,7 @@ export class GPUComposer {
 		return _copyPrograms[key]!;
 	}
 
-	private get wrappedLineColorProgram() {
+	private _getWrappedLineColorProgram() {
 		if (this._wrappedLineColorProgram === undefined) {
 			const program = new GPUProgram(this, {
 				name: 'wrappedLineColor',
@@ -412,9 +412,9 @@ export class GPUComposer {
 		return this._wrappedLineColorProgram;
 	}
 
-	private vectorMagnitudeProgramForType(type: GPULayerType) {
+	private _vectorMagnitudeProgramForType(type: GPULayerType) {
 		const { _vectorMagnitudePrograms } = this;
-		const key = this.glslKeyForType(type);
+		const key = this._glslKeyForType(type);
 		if (_vectorMagnitudePrograms[key] === undefined) {
 			const program = new GPUProgram(this, {
 				name: `vectorMagnitude-${key}`,
@@ -428,23 +428,23 @@ export class GPUComposer {
 		return _vectorMagnitudePrograms[key]!;
 	}
 
-	private get quadPositionsBuffer() {
+	private _getQuadPositionsBuffer() {
 		if (this._quadPositionsBuffer === undefined) {
 			const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
-			this._quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions)!;
+			this._quadPositionsBuffer = this._initVertexBuffer(fsQuadPositions)!;
 		}
 		return this._quadPositionsBuffer!;
 	}
 
-	private get boundaryPositionsBuffer() {
+	private _getBoundaryPositionsBuffer() {
 		if (this._boundaryPositionsBuffer === undefined) {
 			const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
-			this._boundaryPositionsBuffer = this.initVertexBuffer(boundaryPositions)!;
+			this._boundaryPositionsBuffer = this._initVertexBuffer(boundaryPositions)!;
 		}
 		return this._boundaryPositionsBuffer!;
 	}
 
-	private getCirclePositionsBuffer(numSegments: number) {
+	private _getCirclePositionsBuffer(numSegments: number) {
 		const { _circlePositionsBuffer } = this;
 		if (_circlePositionsBuffer[numSegments] == undefined) {
 			const unitCirclePoints = [0, 0];
@@ -455,13 +455,13 @@ export class GPUComposer {
 				);
 			}
 			const circlePositions = new Float32Array(unitCirclePoints);
-			const buffer = this.initVertexBuffer(circlePositions)!;
+			const buffer = this._initVertexBuffer(circlePositions)!;
 			_circlePositionsBuffer[numSegments] = buffer;
 		}
 		return _circlePositionsBuffer[numSegments];
 	}
 
-	private initVertexBuffer(
+	private _initVertexBuffer(
 		data: Float32Array,
 	) {
 		const { _errorCallback, gl } = this;
@@ -510,13 +510,13 @@ export class GPUComposer {
 		if (gpuLayer.writable) {
 			for (let i = 0; i < gpuLayer.numBuffers - 1; i++) {
 				this.step({
-					program: this.copyProgramForType(gpuLayer.type),
+					program: this._copyProgramForType(gpuLayer.type),
 					input: gpuLayer.getStateAtIndex((gpuLayer.bufferIndex + i + 1) % gpuLayer.numBuffers),
 					output: clone,
 				});
 			}
 			this.step({
-				program: this.copyProgramForType(gpuLayer.type),
+				program: this._copyProgramForType(gpuLayer.type),
 				input: gpuLayer.currentState,
 				output: clone,
 			});
@@ -693,7 +693,7 @@ export class GPUComposer {
 		this._height = height;
 	};
 
-	private drawSetup(
+	private _drawSetup(
 		program: WebGLProgram,
 		fullscreenRender: boolean,
 		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
@@ -725,7 +725,7 @@ export class GPUComposer {
 
 		// Set output framebuffer.
 		// This may modify WebGL internal state.
-		this.setOutputLayer(fullscreenRender, input, output);
+		this._setOutputLayer(fullscreenRender, input, output);
 
 		// Set current program.
 		gl.useProgram(program);
@@ -737,7 +737,7 @@ export class GPUComposer {
 		}
 	}
 
-	private setBlendMode(shouldBlendAlpha?: boolean) {
+	private _setBlendMode(shouldBlendAlpha?: boolean) {
 		const { gl } = this;
 		if (shouldBlendAlpha) {
 			gl.enable(gl.BLEND);
@@ -745,7 +745,7 @@ export class GPUComposer {
 		}
 	}
 
-	private addLayerToInputs(
+	private _addLayerToInputs(
 		layer: GPULayer,
 		input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
 	) {
@@ -769,9 +769,9 @@ export class GPUComposer {
 		return _inputLayers as (GPULayer | WebGLTexture)[];
 	}
 
-	private passThroughLayerDataFromInputToOutput(state: GPULayer) {
+	private _passThroughLayerDataFromInputToOutput(state: GPULayer) {
 		// TODO: figure out the fastest way to copy a texture.
-		const copyProgram = this.copyProgramForType(state._internalType);
+		const copyProgram = this._copyProgramForType(state._internalType);
 		this.step({
 			program: copyProgram,
 			input: state,
@@ -779,7 +779,7 @@ export class GPUComposer {
 		});
 	}
 
-	private setOutputLayer(
+	private _setOutputLayer(
 		fullscreenRender: boolean,
 		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
 		output?: GPULayer, // Undefined renders to screen.
@@ -807,7 +807,7 @@ export class GPUComposer {
 				output._prepareForWrite(true);
 			} else {
 				// Pass input texture through to output.
-				this.passThroughLayerDataFromInputToOutput(output);
+				this._passThroughLayerDataFromInputToOutput(output);
 				// Render to output without incrementing buffer.
 				output._prepareForWrite(false);
 			}
@@ -819,7 +819,7 @@ export class GPUComposer {
 				// If we are doing a sneaky thing with a swapped texture and are
 				// only rendering part of the screen, we may need to add a copy operation.
 				if (output._usingTextureOverrideForCurrentBuffer()) {
-					this.passThroughLayerDataFromInputToOutput(output);
+					this._passThroughLayerDataFromInputToOutput(output);
 				}
 				output._prepareForWrite(false);
 			}
@@ -830,7 +830,7 @@ export class GPUComposer {
 		gl.viewport(0, 0, width, height);
 	};
 
-	private setVertexAttribute(program: WebGLProgram, name: string, size: number, programName: string) {
+	private _setVertexAttribute(program: WebGLProgram, name: string, size: number, programName: string) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
 		const location = gl.getAttribLocation(program, name);
@@ -843,16 +843,16 @@ export class GPUComposer {
 		gl.enableVertexAttribArray(location);
 	}
 
-	private setPositionAttribute(program: WebGLProgram, programName: string) {
-		this.setVertexAttribute(program, 'a_internal_position', 2, programName);
+	private _setPositionAttribute(program: WebGLProgram, programName: string) {
+		this._setVertexAttribute(program, 'a_internal_position', 2, programName);
 	}
 
-	private setIndexAttribute(program: WebGLProgram, programName: string) {
-		this.setVertexAttribute(program, 'a_internal_index', 1, programName);
+	private _setIndexAttribute(program: WebGLProgram, programName: string) {
+		this._setVertexAttribute(program, 'a_internal_index', 1, programName);
 	}
 
-	private setUVAttribute(program: WebGLProgram, programName: string) {
-		this.setVertexAttribute(program, 'a_internal_uv', 2, programName);
+	private _setUVAttribute(program: WebGLProgram, programName: string) {
+		this._setVertexAttribute(program, 'a_internal_uv', 2, programName);
 	}
 
 	// Step for entire fullscreen quad.
@@ -864,7 +864,7 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, quadPositionsBuffer } = this;
+		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 
 		// Ignore if we are in error state.
@@ -875,16 +875,16 @@ export class GPUComposer {
 		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, true, input, output);
+		this._drawSetup(glProgram, true, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(glProgram, program.name);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
+		this._setPositionAttribute(glProgram, program.name);
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.disable(gl.BLEND);
 	}
@@ -899,7 +899,7 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, boundaryPositionsBuffer} = this;
+		const { gl, _errorState} = this;
 		const { program, input, output } = params;
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
@@ -912,18 +912,18 @@ export class GPUComposer {
 		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-		this.setPositionAttribute(glProgram, program.name);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._getBoundaryPositionsBuffer());
+		this._setPositionAttribute(glProgram, program.name);
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		if (params.singleEdge) {
 			switch(params.singleEdge) {
 				case 'LEFT':
@@ -956,7 +956,7 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, quadPositionsBuffer } = this;
+		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
@@ -969,17 +969,17 @@ export class GPUComposer {
 		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(glProgram, program.name);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer);
+		this._setPositionAttribute(glProgram, program.name);
 		
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.disable(gl.BLEND);
 	}
@@ -1007,7 +1007,7 @@ export class GPUComposer {
 		const glProgram = program._defaultProgram!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], FLOAT);
@@ -1016,11 +1016,11 @@ export class GPUComposer {
 		if (numSegments < 3) {
 			throw new Error(`numSegments for GPUComposer.stepCircle must be greater than 2, got ${numSegments}.`);
 		}
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
-		this.setPositionAttribute(glProgram, program.name);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
+		this._setPositionAttribute(glProgram, program.name);
 		
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);	
 		gl.disable(gl.BLEND);
 	}
@@ -1052,7 +1052,7 @@ export class GPUComposer {
 		const glProgram = program._segmentProgram!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, FLOAT);
@@ -1073,18 +1073,18 @@ export class GPUComposer {
 			}
 			// Have to subtract a small offset from length.
 			program._setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
 		} else {
 			// Have to subtract a small offset from length.
 			program._setVertexUniform(glProgram, 'u_internal_length', length - thickness, FLOAT);
 			// Use a rectangle in case of no caps.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
 		}
 
-		this.setPositionAttribute(glProgram, program.name);
+		this._setPositionAttribute(glProgram, program.name);
 		
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		if (params.endCaps) {
 			gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
 		} else {
@@ -1261,27 +1261,27 @@ export class GPUComposer {
 		)!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
-		this.setPositionAttribute(glProgram, program.name);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions)!);
+		this._setPositionAttribute(glProgram, program.name);
 		if (uvs) {
 			// Init uv buffer.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs)!);
-			this.setUVAttribute(glProgram, program.name);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(uvs)!);
+			this._setUVAttribute(glProgram, program.name);
 		}
 		if (normals) {
 			// Init normals buffer.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals)!);
-			this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals)!);
+			this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
 		}
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
 		gl.disable(gl.BLEND);
 	}
@@ -1313,29 +1313,29 @@ export class GPUComposer {
 		)!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
-		this.setPositionAttribute(glProgram, program.name);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions)!);
+		this._setPositionAttribute(glProgram, program.name);
 		if (uvs) {
 			// Init uv buffer.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs)!);
-			this.setUVAttribute(glProgram, program.name);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(uvs)!);
+			this._setUVAttribute(glProgram, program.name);
 		}
 		if (normals) {
 			// Init normals buffer.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals)!);
-			this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals)!);
+			this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
 		}
 
 		const count = params.count ? params.count : positions.length / 2;
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
 		gl.disable(gl.BLEND);
 	}
@@ -1370,7 +1370,7 @@ export class GPUComposer {
 		)!;
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		const count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
 
@@ -1385,24 +1385,24 @@ export class GPUComposer {
 				positions[2 * i] = params.positions[2 * index];
 				positions[2 * i + 1] = params.positions[2 * index + 1];
 			}
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions)!);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions)!);
 		} else {
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(params.positions)!);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(params.positions)!);
 		}
-		this.setPositionAttribute(glProgram, program.name);
+		this._setPositionAttribute(glProgram, program.name);
 		if (uvs) {
 			// Init uv buffer.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs)!);
-			this.setUVAttribute(glProgram, program.name);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(uvs)!);
+			this._setUVAttribute(glProgram, program.name);
 		}
 		if (normals) {
 			// Init normals buffer.
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals)!);
-			this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals)!);
+			this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
 		}
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		if (params.indices) {
 			gl.drawArrays(gl.LINES, 0, count);
 		} else {
@@ -1456,10 +1456,10 @@ export class GPUComposer {
 		const glProgram = program._layerPointsProgram!;
 
 		// Add positions to end of input if needed.
-		const input = this.addLayerToInputs(positions, params.input);
+		const input = this._addLayerToInputs(positions, params.input);
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
@@ -1477,13 +1477,13 @@ export class GPUComposer {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = initSequentialFloatArray(length);
 			this._pointIndexArray = indices;
-			this._pointIndexBuffer = this.initVertexBuffer(indices);
+			this._pointIndexBuffer = this._initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIndexBuffer!);
-		this.setIndexAttribute(glProgram, program.name);
+		this._setIndexAttribute(glProgram, program.name);
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.POINTS, 0, count);
 		gl.disable(gl.BLEND);
 	}
@@ -1522,17 +1522,17 @@ export class GPUComposer {
 
 		let program = params.program;
 		if (program === undefined) {
-			program = params.wrapX || params.wrapY ? this.wrappedLineColorProgram : this._setValueProgramForType(FLOAT);;
+			program = params.wrapX || params.wrapY ? this._getWrappedLineColorProgram() : this._setValueProgramForType(FLOAT);;
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
 		const glProgram = program._layerLinesProgram!;
 
 		// Add positionLayer to end of input if needed.
-		const input = this.addLayerToInputs(positions, params.input);
+		const input = this._addLayerToInputs(positions, params.input);
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// TODO: cache indexArray if no indices passed in.
 		const indices = params.indices ? params.indices : initSequentialFloatArray(params.count || positions.length);
@@ -1560,16 +1560,16 @@ export class GPUComposer {
 			} else {
 				floatArray = indices as Float32Array;
 			}
-			this._indexedLinesIndexBuffer = this.initVertexBuffer(floatArray);
+			this._indexedLinesIndexBuffer = this._initVertexBuffer(floatArray);
 		} else {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._indexedLinesIndexBuffer!);
 			// Copy buffer data.
 			gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 		}
-		this.setIndexAttribute(glProgram, program.name);
+		this._setIndexAttribute(glProgram, program.name);
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		if (params.indices) {
 			gl.drawArrays(gl.LINES, 0, count);
 		} else {
@@ -1621,10 +1621,10 @@ export class GPUComposer {
 		const glProgram = program._layerVectorFieldProgram!;
 
 		// Add data to end of input if needed.
-		const input = this.addLayerToInputs(data, params.input);
+		const input = this._addLayerToInputs(data, params.input);
 
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, false, input, output);
+		this._drawSetup(glProgram, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), INT);
@@ -1639,13 +1639,13 @@ export class GPUComposer {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = initSequentialFloatArray(length);
 			this._vectorFieldIndexArray = indices;
-			this._vectorFieldIndexBuffer = this.initVertexBuffer(indices);
+			this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer!);
-		this.setIndexAttribute(glProgram, program.name);
+		this._setIndexAttribute(glProgram, program.name);
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.LINES, 0, length);
 		gl.disable(gl.BLEND);
 	}
@@ -1660,7 +1660,7 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, quadPositionsBuffer } = this;
+		const { gl, _errorState } = this;
 		const { data, output } = params;
 
 		// Ignore if we are in error state.
@@ -1668,7 +1668,7 @@ export class GPUComposer {
 			return;
 		}
 
-		const program = this.vectorMagnitudeProgramForType(data.type);
+		const program = this._vectorMagnitudeProgramForType(data.type);
 		const color = params.color || [1, 0, 0]; // Default to red.
 		program.setUniform('u_color', color, FLOAT);
 		const scale = params.scale || 1;
@@ -1678,19 +1678,19 @@ export class GPUComposer {
 		const glProgram = program._defaultProgram!;
 
 		// Add data to end of input if needed.
-		const input = this.addLayerToInputs(data, params.input);
+		const input = this._addLayerToInputs(data, params.input);
 		// Do setup - this must come first.
-		this.drawSetup(glProgram, true, input, output);
+		this._drawSetup(glProgram, true, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-		this.setPositionAttribute(glProgram, program.name);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
+		this._setPositionAttribute(glProgram, program.name);
 
 		// Draw.
-		this.setBlendMode(params.shouldBlendAlpha);
+		this._setBlendMode(params.shouldBlendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.disable(gl.BLEND);
 	}

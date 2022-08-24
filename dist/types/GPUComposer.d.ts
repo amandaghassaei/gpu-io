@@ -69,19 +69,19 @@ export declare class GPUComposer {
         errorCallback?: ErrorCallback;
     }): GPUComposer;
     isWebGL2(): boolean;
-    private glslKeyForType;
+    private _glslKeyForType;
     /**
      *
      * @private
      */
     _setValueProgramForType(type: GPULayerType): GPUProgram;
-    private copyProgramForType;
-    private get wrappedLineColorProgram();
-    private vectorMagnitudeProgramForType;
-    private get quadPositionsBuffer();
-    private get boundaryPositionsBuffer();
-    private getCirclePositionsBuffer;
-    private initVertexBuffer;
+    private _copyProgramForType;
+    private _getWrappedLineColorProgram;
+    private _vectorMagnitudeProgramForType;
+    private _getQuadPositionsBuffer;
+    private _getBoundaryPositionsBuffer;
+    private _getCirclePositionsBuffer;
+    private _initVertexBuffer;
     /**
      * Used internally, see GPULayer.clone() for public API.
      * @private
@@ -103,15 +103,15 @@ export declare class GPUComposer {
      */
     _getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string): WebGLProgram | undefined;
     resize(width: number, height: number): void;
-    private drawSetup;
-    private setBlendMode;
-    private addLayerToInputs;
-    private passThroughLayerDataFromInputToOutput;
-    private setOutputLayer;
-    private setVertexAttribute;
-    private setPositionAttribute;
-    private setIndexAttribute;
-    private setUVAttribute;
+    private _drawSetup;
+    private _setBlendMode;
+    private _addLayerToInputs;
+    private _passThroughLayerDataFromInputToOutput;
+    private _setOutputLayer;
+    private _setVertexAttribute;
+    private _setPositionAttribute;
+    private _setIndexAttribute;
+    private _setUVAttribute;
     step(params: {
         program: GPUProgram;
         input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;

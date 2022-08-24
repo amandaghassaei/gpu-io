@@ -2429,7 +2429,7 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.isWebGL2 = function () {
         return (0, utils_1.isWebGL2)(this.gl);
     };
-    GPUComposer.prototype.glslKeyForType = function (type) {
+    GPUComposer.prototype._glslKeyForType = function (type) {
         if (this.glslVersion === constants_1.GLSL1)
             return constants_1.FLOAT;
         switch (type) {
@@ -2455,7 +2455,7 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype._setValueProgramForType = function (type) {
         var _a;
         var _setValuePrograms = this._setValuePrograms;
-        var key = this.glslKeyForType(type);
+        var key = this._glslKeyForType(type);
         if (_setValuePrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "setValue-".concat(key),
@@ -2475,10 +2475,10 @@ var GPUComposer = /** @class */ (function () {
         }
         return _setValuePrograms[key];
     };
-    GPUComposer.prototype.copyProgramForType = function (type) {
+    GPUComposer.prototype._copyProgramForType = function (type) {
         var _a;
         var _copyPrograms = this._copyPrograms;
-        var key = this.glslKeyForType(type);
+        var key = this._glslKeyForType(type);
         if (_copyPrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "copy-".concat(key),
@@ -2498,24 +2498,20 @@ var GPUComposer = /** @class */ (function () {
         }
         return _copyPrograms[key];
     };
-    Object.defineProperty(GPUComposer.prototype, "wrappedLineColorProgram", {
-        get: function () {
-            if (this._wrappedLineColorProgram === undefined) {
-                var program = new GPUProgram_1.GPUProgram(this, {
-                    name: 'wrappedLineColor',
-                    fragmentShader: __webpack_require__(598),
-                });
-                this._wrappedLineColorProgram = program;
-            }
-            return this._wrappedLineColorProgram;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    GPUComposer.prototype.vectorMagnitudeProgramForType = function (type) {
+    GPUComposer.prototype._getWrappedLineColorProgram = function () {
+        if (this._wrappedLineColorProgram === undefined) {
+            var program = new GPUProgram_1.GPUProgram(this, {
+                name: 'wrappedLineColor',
+                fragmentShader: __webpack_require__(598),
+            });
+            this._wrappedLineColorProgram = program;
+        }
+        return this._wrappedLineColorProgram;
+    };
+    GPUComposer.prototype._vectorMagnitudeProgramForType = function (type) {
         var _a;
         var _vectorMagnitudePrograms = this._vectorMagnitudePrograms;
-        var key = this.glslKeyForType(type);
+        var key = this._glslKeyForType(type);
         if (_vectorMagnitudePrograms[key] === undefined) {
             var program = new GPUProgram_1.GPUProgram(this, {
                 name: "vectorMagnitude-".concat(key),
@@ -2528,29 +2524,21 @@ var GPUComposer = /** @class */ (function () {
         }
         return _vectorMagnitudePrograms[key];
     };
-    Object.defineProperty(GPUComposer.prototype, "quadPositionsBuffer", {
-        get: function () {
-            if (this._quadPositionsBuffer === undefined) {
-                var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-                this._quadPositionsBuffer = this.initVertexBuffer(fsQuadPositions);
-            }
-            return this._quadPositionsBuffer;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUComposer.prototype, "boundaryPositionsBuffer", {
-        get: function () {
-            if (this._boundaryPositionsBuffer === undefined) {
-                var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1, -1, -1]);
-                this._boundaryPositionsBuffer = this.initVertexBuffer(boundaryPositions);
-            }
-            return this._boundaryPositionsBuffer;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    GPUComposer.prototype.getCirclePositionsBuffer = function (numSegments) {
+    GPUComposer.prototype._getQuadPositionsBuffer = function () {
+        if (this._quadPositionsBuffer === undefined) {
+            var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+            this._quadPositionsBuffer = this._initVertexBuffer(fsQuadPositions);
+        }
+        return this._quadPositionsBuffer;
+    };
+    GPUComposer.prototype._getBoundaryPositionsBuffer = function () {
+        if (this._boundaryPositionsBuffer === undefined) {
+            var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1, -1, -1]);
+            this._boundaryPositionsBuffer = this._initVertexBuffer(boundaryPositions);
+        }
+        return this._boundaryPositionsBuffer;
+    };
+    GPUComposer.prototype._getCirclePositionsBuffer = function (numSegments) {
         var _circlePositionsBuffer = this._circlePositionsBuffer;
         if (_circlePositionsBuffer[numSegments] == undefined) {
             var unitCirclePoints = [0, 0];
@@ -2558,12 +2546,12 @@ var GPUComposer = /** @class */ (function () {
                 unitCirclePoints.push(Math.cos(2 * Math.PI * i / numSegments), Math.sin(2 * Math.PI * i / numSegments));
             }
             var circlePositions = new Float32Array(unitCirclePoints);
-            var buffer = this.initVertexBuffer(circlePositions);
+            var buffer = this._initVertexBuffer(circlePositions);
             _circlePositionsBuffer[numSegments] = buffer;
         }
         return _circlePositionsBuffer[numSegments];
     };
-    GPUComposer.prototype.initVertexBuffer = function (data) {
+    GPUComposer.prototype._initVertexBuffer = function (data) {
         var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl;
         var buffer = gl.createBuffer();
         if (!buffer) {
@@ -2607,13 +2595,13 @@ var GPUComposer = /** @class */ (function () {
         if (gpuLayer.writable) {
             for (var i = 0; i < gpuLayer.numBuffers - 1; i++) {
                 this.step({
-                    program: this.copyProgramForType(gpuLayer.type),
+                    program: this._copyProgramForType(gpuLayer.type),
                     input: gpuLayer.getStateAtIndex((gpuLayer.bufferIndex + i + 1) % gpuLayer.numBuffers),
                     output: clone,
                 });
             }
             this.step({
-                program: this.copyProgramForType(gpuLayer.type),
+                program: this._copyProgramForType(gpuLayer.type),
                 input: gpuLayer.currentState,
                 output: clone,
             });
@@ -2747,7 +2735,7 @@ var GPUComposer = /** @class */ (function () {
         this._height = height;
     };
     ;
-    GPUComposer.prototype.drawSetup = function (program, fullscreenRender, input, output) {
+    GPUComposer.prototype._drawSetup = function (program, fullscreenRender, input, output) {
         var gl = this.gl;
         // Check if we are in an error state.
         if (!program) {
@@ -2773,7 +2761,7 @@ var GPUComposer = /** @class */ (function () {
         }
         // Set output framebuffer.
         // This may modify WebGL internal state.
-        this.setOutputLayer(fullscreenRender, input, output);
+        this._setOutputLayer(fullscreenRender, input, output);
         // Set current program.
         gl.useProgram(program);
         // Set input textures.
@@ -2782,14 +2770,14 @@ var GPUComposer = /** @class */ (function () {
             gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
         }
     };
-    GPUComposer.prototype.setBlendMode = function (shouldBlendAlpha) {
+    GPUComposer.prototype._setBlendMode = function (shouldBlendAlpha) {
         var gl = this.gl;
         if (shouldBlendAlpha) {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
     };
-    GPUComposer.prototype.addLayerToInputs = function (layer, input) {
+    GPUComposer.prototype._addLayerToInputs = function (layer, input) {
         // Add layer to end of input if needed.
         var _inputLayers = input;
         if ((0, checks_1.isArray)(_inputLayers)) {
@@ -2812,16 +2800,16 @@ var GPUComposer = /** @class */ (function () {
         }
         return _inputLayers;
     };
-    GPUComposer.prototype.passThroughLayerDataFromInputToOutput = function (state) {
+    GPUComposer.prototype._passThroughLayerDataFromInputToOutput = function (state) {
         // TODO: figure out the fastest way to copy a texture.
-        var copyProgram = this.copyProgramForType(state._internalType);
+        var copyProgram = this._copyProgramForType(state._internalType);
         this.step({
             program: copyProgram,
             input: state,
             output: state,
         });
     };
-    GPUComposer.prototype.setOutputLayer = function (fullscreenRender, input, output) {
+    GPUComposer.prototype._setOutputLayer = function (fullscreenRender, input, output) {
         var gl = this.gl;
         // Render to screen.
         if (!output) {
@@ -2844,7 +2832,7 @@ var GPUComposer = /** @class */ (function () {
             }
             else {
                 // Pass input texture through to output.
-                this.passThroughLayerDataFromInputToOutput(output);
+                this._passThroughLayerDataFromInputToOutput(output);
                 // Render to output without incrementing buffer.
                 output._prepareForWrite(false);
             }
@@ -2858,7 +2846,7 @@ var GPUComposer = /** @class */ (function () {
                 // If we are doing a sneaky thing with a swapped texture and are
                 // only rendering part of the screen, we may need to add a copy operation.
                 if (output._usingTextureOverrideForCurrentBuffer()) {
-                    this.passThroughLayerDataFromInputToOutput(output);
+                    this._passThroughLayerDataFromInputToOutput(output);
                 }
                 output._prepareForWrite(false);
             }
@@ -2868,7 +2856,7 @@ var GPUComposer = /** @class */ (function () {
         gl.viewport(0, 0, width, height);
     };
     ;
-    GPUComposer.prototype.setVertexAttribute = function (program, name, size, programName) {
+    GPUComposer.prototype._setVertexAttribute = function (program, name, size, programName) {
         var gl = this.gl;
         // Point attribute to the currently bound VBO.
         var location = gl.getAttribLocation(program, name);
@@ -2880,18 +2868,18 @@ var GPUComposer = /** @class */ (function () {
         // Enable the attribute.
         gl.enableVertexAttribArray(location);
     };
-    GPUComposer.prototype.setPositionAttribute = function (program, programName) {
-        this.setVertexAttribute(program, 'a_internal_position', 2, programName);
+    GPUComposer.prototype._setPositionAttribute = function (program, programName) {
+        this._setVertexAttribute(program, 'a_internal_position', 2, programName);
     };
-    GPUComposer.prototype.setIndexAttribute = function (program, programName) {
-        this.setVertexAttribute(program, 'a_internal_index', 1, programName);
+    GPUComposer.prototype._setIndexAttribute = function (program, programName) {
+        this._setVertexAttribute(program, 'a_internal_index', 1, programName);
     };
-    GPUComposer.prototype.setUVAttribute = function (program, programName) {
-        this.setVertexAttribute(program, 'a_internal_uv', 2, programName);
+    GPUComposer.prototype._setUVAttribute = function (program, programName) {
+        this._setVertexAttribute(program, 'a_internal_uv', 2, programName);
     };
     // Step for entire fullscreen quad.
     GPUComposer.prototype.step = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
         // Ignore if we are in error state.
         if (_errorState) {
@@ -2899,20 +2887,20 @@ var GPUComposer = /** @class */ (function () {
         }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this.drawSetup(glProgram, true, input, output);
+        this._drawSetup(glProgram, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
-        gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this.setPositionAttribute(glProgram, program.name);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
+        this._setPositionAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
     // Step program only for a strip of px along the boundary.
     GPUComposer.prototype.stepBoundary = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, boundaryPositionsBuffer = _a.boundaryPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
@@ -2922,16 +2910,16 @@ var GPUComposer = /** @class */ (function () {
         }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', onePx, constants_1.FLOAT);
-        gl.bindBuffer(gl.ARRAY_BUFFER, boundaryPositionsBuffer);
-        this.setPositionAttribute(glProgram, program.name);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._getBoundaryPositionsBuffer());
+        this._setPositionAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         if (params.singleEdge) {
             switch (params.singleEdge) {
                 case 'LEFT':
@@ -2957,7 +2945,7 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program for all but a strip of px along the boundary.
     GPUComposer.prototype.stepNonBoundary = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
@@ -2967,15 +2955,15 @@ var GPUComposer = /** @class */ (function () {
         }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', onePx, constants_1.FLOAT);
-        gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this.setPositionAttribute(glProgram, program.name);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer);
+        this._setPositionAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
@@ -2989,7 +2977,7 @@ var GPUComposer = /** @class */ (function () {
         }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
@@ -2997,10 +2985,10 @@ var GPUComposer = /** @class */ (function () {
         if (numSegments < 3) {
             throw new Error("numSegments for GPUComposer.stepCircle must be greater than 2, got ".concat(numSegments, "."));
         }
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
-        this.setPositionAttribute(glProgram, program.name);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
+        this._setPositionAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
         gl.disable(gl.BLEND);
     };
@@ -3016,7 +3004,7 @@ var GPUComposer = /** @class */ (function () {
         }
         var glProgram = program._segmentProgram;
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
@@ -3035,17 +3023,17 @@ var GPUComposer = /** @class */ (function () {
             }
             // Have to subtract a small offset from length.
             program._setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), constants_1.FLOAT);
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.getCirclePositionsBuffer(numSegments));
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
         }
         else {
             // Have to subtract a small offset from length.
             program._setVertexUniform(glProgram, 'u_internal_length', length - thickness, constants_1.FLOAT);
             // Use a rectangle in case of no caps.
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.quadPositionsBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
         }
-        this.setPositionAttribute(glProgram, program.name);
+        this._setPositionAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         if (params.endCaps) {
             gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
         }
@@ -3199,25 +3187,25 @@ var GPUComposer = /** @class */ (function () {
             (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
             (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
         // Init positions buffer.
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions));
-        this.setPositionAttribute(glProgram, program.name);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions));
+        this._setPositionAttribute(glProgram, program.name);
         if (uvs) {
             // Init uv buffer.
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs));
-            this.setUVAttribute(glProgram, program.name);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(uvs));
+            this._setUVAttribute(glProgram, program.name);
         }
         if (normals) {
             // Init normals buffer.
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals));
-            this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals));
+            this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
         }
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
         gl.disable(gl.BLEND);
     };
@@ -3232,26 +3220,26 @@ var GPUComposer = /** @class */ (function () {
             (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
             (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
         // Init positions buffer.
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions));
-        this.setPositionAttribute(glProgram, program.name);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions));
+        this._setPositionAttribute(glProgram, program.name);
         if (uvs) {
             // Init uv buffer.
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs));
-            this.setUVAttribute(glProgram, program.name);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(uvs));
+            this._setUVAttribute(glProgram, program.name);
         }
         if (normals) {
             // Init normals buffer.
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals));
-            this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals));
+            this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
         }
         var count = params.count ? params.count : positions.length / 2;
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
         gl.disable(gl.BLEND);
     };
@@ -3270,7 +3258,7 @@ var GPUComposer = /** @class */ (function () {
             (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
             (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         var count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
@@ -3283,24 +3271,24 @@ var GPUComposer = /** @class */ (function () {
                 positions[2 * i] = params.positions[2 * index];
                 positions[2 * i + 1] = params.positions[2 * index + 1];
             }
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(positions));
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions));
         }
         else {
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(params.positions));
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(params.positions));
         }
-        this.setPositionAttribute(glProgram, program.name);
+        this._setPositionAttribute(glProgram, program.name);
         if (uvs) {
             // Init uv buffer.
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(uvs));
-            this.setUVAttribute(glProgram, program.name);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(uvs));
+            this._setUVAttribute(glProgram, program.name);
         }
         if (normals) {
             // Init normals buffer.
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.initVertexBuffer(normals));
-            this.setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals));
+            this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
         }
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         if (params.indices) {
             gl.drawArrays(gl.LINES, 0, count);
         }
@@ -3338,9 +3326,9 @@ var GPUComposer = /** @class */ (function () {
         }
         var glProgram = program._layerPointsProgram;
         // Add positions to end of input if needed.
-        var input = this.addLayerToInputs(positions, params.input);
+        var input = this._addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
@@ -3357,12 +3345,12 @@ var GPUComposer = /** @class */ (function () {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = (0, utils_1.initSequentialFloatArray)(length);
             this._pointIndexArray = indices;
-            this._pointIndexBuffer = this.initVertexBuffer(indices);
+            this._pointIndexBuffer = this._initVertexBuffer(indices);
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIndexBuffer);
-        this.setIndexAttribute(glProgram, program.name);
+        this._setIndexAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.POINTS, 0, count);
         gl.disable(gl.BLEND);
     };
@@ -3383,16 +3371,16 @@ var GPUComposer = /** @class */ (function () {
         }
         var program = params.program;
         if (program === undefined) {
-            program = params.wrapX || params.wrapY ? this.wrappedLineColorProgram : this._setValueProgramForType(constants_1.FLOAT);
+            program = params.wrapX || params.wrapY ? this._getWrappedLineColorProgram() : this._setValueProgramForType(constants_1.FLOAT);
             ;
             var color = params.color || [1, 0, 0]; // Default to red.
             program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
         }
         var glProgram = program._layerLinesProgram;
         // Add positionLayer to end of input if needed.
-        var input = this.addLayerToInputs(positions, params.input);
+        var input = this._addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // TODO: cache indexArray if no indices passed in.
         var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(params.count || positions.length);
         var count = params.count ? params.count : indices.length;
@@ -3419,16 +3407,16 @@ var GPUComposer = /** @class */ (function () {
             else {
                 floatArray = indices;
             }
-            this._indexedLinesIndexBuffer = this.initVertexBuffer(floatArray);
+            this._indexedLinesIndexBuffer = this._initVertexBuffer(floatArray);
         }
         else {
             gl.bindBuffer(gl.ARRAY_BUFFER, this._indexedLinesIndexBuffer);
             // Copy buffer data.
             gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
         }
-        this.setIndexAttribute(glProgram, program.name);
+        this._setIndexAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         if (params.indices) {
             gl.drawArrays(gl.LINES, 0, count);
         }
@@ -3467,9 +3455,9 @@ var GPUComposer = /** @class */ (function () {
         }
         var glProgram = program._layerVectorFieldProgram;
         // Add data to end of input if needed.
-        var input = this.addLayerToInputs(data, params.input);
+        var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        this.drawSetup(glProgram, false, input, output);
+        this._drawSetup(glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), constants_1.INT);
         // Set default scale.
@@ -3483,23 +3471,23 @@ var GPUComposer = /** @class */ (function () {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = (0, utils_1.initSequentialFloatArray)(length);
             this._vectorFieldIndexArray = indices;
-            this._vectorFieldIndexBuffer = this.initVertexBuffer(indices);
+            this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer);
-        this.setIndexAttribute(glProgram, program.name);
+        this._setIndexAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.LINES, 0, length);
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerMagnitude = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, quadPositionsBuffer = _a.quadPositionsBuffer;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var data = params.data, output = params.output;
         // Ignore if we are in error state.
         if (_errorState) {
             return;
         }
-        var program = this.vectorMagnitudeProgramForType(data.type);
+        var program = this._vectorMagnitudeProgramForType(data.type);
         var color = params.color || [1, 0, 0]; // Default to red.
         program.setUniform('u_color', color, constants_1.FLOAT);
         var scale = params.scale || 1;
@@ -3507,17 +3495,17 @@ var GPUComposer = /** @class */ (function () {
         program.setUniform('u_internal_numDimensions', data.numComponents, constants_1.INT);
         var glProgram = program._defaultProgram;
         // Add data to end of input if needed.
-        var input = this.addLayerToInputs(data, params.input);
+        var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        this.drawSetup(glProgram, true, input, output);
+        this._drawSetup(glProgram, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
-        gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionsBuffer);
-        this.setPositionAttribute(glProgram, program.name);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
+        this._setPositionAttribute(glProgram, program.name);
         // Draw.
-        this.setBlendMode(params.shouldBlendAlpha);
+        this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
