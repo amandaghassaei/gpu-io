@@ -147,18 +147,41 @@
 				layer2.dispose();
 			});
 		});
-		describe('_bindOutputBuffer', () => {
-			it('should ', () => {
-				// TODO:
+		describe('bindFramebuffer', () => {
+			it('should bind GPULayer framebuffer for draw', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3, writable: true});
+				const { gl } = composer1;
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
+				layer1.bindFramebuffer();
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1.buffers[layer1.bufferIndex].framebuffer);
+				layer1.dispose();
+			});
+			it('should throw error for readonly GPULayer', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 1});
+				assert.throws(() => { layer1.bindFramebuffer(); }, 'GPULayer "test-layer" is not writable.');
+				layer1.dispose();
 			});
 		});
-		describe('_bindOutputBufferForWrite', () => {
-			it('should ', () => {
+		describe('_prepareForWrite', () => {
+			it('should increment index and bind framebuffer', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3, writable: true});
+				const { gl } = composer1;
+				assert.equal(layer1.bufferIndex, 0);
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
+				layer1._prepareForWrite();
+				assert.equal(layer1.bufferIndex, 0);
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1.buffers[layer1.bufferIndex].framebuffer);
+				layer1._prepareForWrite(true);
+				assert.equal(layer1.bufferIndex, 1);
+				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1.buffers[layer1.bufferIndex].framebuffer);
+				layer1.dispose();
+			});
+			it('should remove texture overrides at current buffer index', () => {
 				// TODO:
 			});
 		});
 		describe('setFromArray', () => {
-			it('should ', () => {
+			it('should set values of GPULayer', () => {
 				// TODO:
 			});
 		});
@@ -209,15 +232,16 @@
 				layer1.dispose();
 			});
 			it('should return TypedArray with correct length and type', () => {
-				// [HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
-				// 	const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245, writable: true});
-				// 	assert.notEqual(layer1.length, layer1.width * layer1.height);
-				// 	const values = layer1.getValues();
-				// 	assert.typeOf(values, initArrayForType(type, 10, true).constructor.name);
-				// 	assert.equal(values.length, layer1.length * layer1.numComponents);
-				// 	layer1.dispose();
-				// 	// TODO:
-				// });
+				[HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
+					const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245, writable: true});
+					assert.notEqual(layer1.length, layer1.width * layer1.height);
+					const values = layer1.getValues();
+					// TODO: isFloatType, isIntType, IsUnsignedIntType, IsSignedIntType
+					assert.typeOf(values, (type === FLOAT || type === HALF_FLOAT) ? 'Float32Array' : 'Int32Array');
+					assert.equal(values.length, layer1.length * layer1.numComponents);
+					layer1.dispose();
+					// TODO:
+				});
 				
 			});
 			// This is tested extensively in pipeline.js.

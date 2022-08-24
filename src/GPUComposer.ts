@@ -189,7 +189,7 @@ export class GPUComposer {
 	constructor(
 		params: {
 			canvas: HTMLCanvasElement,
-			context?: WebGLRenderingContext | WebGL2RenderingContext | null,
+			context?: WebGLRenderingContext | WebGL2RenderingContext,
 			contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | string,
 			contextOptions?: {
 				antialias?: boolean,
@@ -240,17 +240,22 @@ export class GPUComposer {
 		if (!gl) {
 			// Init a gl context if not passed in.
 			if (params.contextID) {
-				gl = canvas.getContext(params.contextID, params.contextOptions)  as WebGLRenderingContext | null;
-				if (!gl) {
+				const _gl = canvas.getContext(params.contextID, params.contextOptions) as WebGLRenderingContext | null;
+				if (!_gl) {
 					console.warn(`Unable to initialize WebGL context with contextID: ${params.contextID}.`);
+				} else {
+					gl = _gl;
 				}
 			}
 			if (!gl) {
-				gl = canvas.getContext(WEBGL2, params.contextOptions)  as WebGL2RenderingContext | null
+				const _gl = canvas.getContext(WEBGL2, params.contextOptions)  as WebGL2RenderingContext | null
 					|| canvas.getContext(WEBGL1, params.contextOptions)  as WebGLRenderingContext | null
 					|| canvas.getContext(EXPERIMENTAL_WEBGL, params.contextOptions)  as WebGLRenderingContext | null;
+				if (_gl) {
+					gl = _gl;
+				}
 			}
-			if (gl === null) {
+			if (!gl) {
 				this.errorCallback('Unable to initialize WebGL context.');
 				return;
 			}
@@ -790,24 +795,24 @@ export class GPUComposer {
 			if (fullscreenRender) {
 				// Render and increment buffer so we are rendering to a different target
 				// than the input texture.
-				output._bindOutputBufferForWrite(true);
+				output._prepareForWrite(true);
 			} else {
 				// Pass input texture through to output.
 				this.passThroughLayerDataFromInputToOutput(output);
 				// Render to output without incrementing buffer.
-				output._bindOutputBufferForWrite(false);
+				output._prepareForWrite(false);
 			}
 		} else {
 			if (fullscreenRender) {
 				// Render to current buffer.
-				output._bindOutputBufferForWrite(false);
+				output._prepareForWrite(false);
 			} else {
 				// If we are doing a sneaky thing with a swapped texture and are
 				// only rendering part of the screen, we may need to add a copy operation.
 				if (output._usingTextureOverrideForCurrentBuffer()) {
 					this.passThroughLayerDataFromInputToOutput(output);
 				}
-				output._bindOutputBufferForWrite(false);
+				output._prepareForWrite(false);
 			}
 		}
 		

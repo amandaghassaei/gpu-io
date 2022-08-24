@@ -52,7 +52,7 @@ export declare class GPUComposer {
     verboseLogging: boolean;
     constructor(params: {
         canvas: HTMLCanvasElement;
-        context?: WebGLRenderingContext | WebGL2RenderingContext | null;
+        context?: WebGLRenderingContext | WebGL2RenderingContext;
         contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | string;
         contextOptions?: {
             antialias?: boolean;

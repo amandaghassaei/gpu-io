@@ -137,6 +137,8 @@ Create a GPULayer.
 
 • `get` **bufferIndex**(): `number`
 
+Get buffer index of the current state.
+
 #### Returns
 
 `number`
@@ -147,6 +149,8 @@ ___
 
 • `get` **currentState**(): `WebGLTexture`
 
+Get the current state as a GLTexture.
+
 #### Returns
 
 `WebGLTexture`
@@ -156,6 +160,8 @@ ___
 ### lastState
 
 • `get` **lastState**(): `WebGLTexture`
+
+Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
 
 #### Returns
 
@@ -229,6 +235,8 @@ The length of the GPULayer array (only available to 1D GPULayers).
 
 ▸ **incrementBufferIndex**(): `void`
 
+Increment buffer index by 1.
+
 #### Returns
 
 `void`
@@ -238,6 +246,8 @@ ___
 ### getStateAtIndex
 
 ▸ **getStateAtIndex**(`index`): `WebGLTexture`
+
+Get the state at a specified index as a GLTexture.
 
 #### Parameters
 

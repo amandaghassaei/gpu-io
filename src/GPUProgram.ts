@@ -34,6 +34,7 @@ import {
 	UINT_2D_UNIFORM,
 	UINT_3D_UNIFORM,
 	UINT_4D_UNIFORM,
+	UniformParams,
 } from './constants';
 import {
 	compileShader,
@@ -82,11 +83,7 @@ export class GPUProgram {
 			name: string,
 			// We may want to pass in an array of shader string sources, if split across several files.
 			fragmentShader: string | string[],
-			uniforms?: {
-				name: string,
-				value: UniformValue,
-				type: UniformType,
-			}[],
+			uniforms?: UniformParams[],
 			// We'll allow some compile-time variables to be passed in as #define to the preprocessor for the fragment shader.
 			defines?: CompileTimeVars,
 		},

@@ -252,6 +252,14 @@ export type UniformInternalType =
  */
 export type UniformValue = boolean | number | number[];
 /**
+ * GPUProgram uniform parameters.
+ */
+export type UniformParams = {
+	name: string,
+	value: UniformValue,
+	type: UniformType,
+};
+/**
  * @private
  */
 export type Uniform = { 

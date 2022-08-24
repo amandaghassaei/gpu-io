@@ -86,7 +86,7 @@ ___
 | :------ | :------ |
 | `params` | `Object` |
 | `params.canvas` | `HTMLCanvasElement` |
-| `params.context?` | ``null`` \| `WebGLRenderingContext` \| `WebGL2RenderingContext` |
+| `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` |
 | `params.contextID?` | `string` |
 | `params.contextOptions?` | `Object` |
 | `params.contextOptions.antialias?` | `boolean` |

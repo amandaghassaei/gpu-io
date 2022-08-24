@@ -46,6 +46,7 @@ webgl-compute
 - [GLSLPrecision](README.md#glslprecision)
 - [UniformType](README.md#uniformtype)
 - [UniformValue](README.md#uniformvalue)
+- [UniformParams](README.md#uniformparams)
 - [CompileTimeVars](README.md#compiletimevars)
 - [ErrorCallback](README.md#errorcallback)
 
@@ -305,6 +306,22 @@ ___
 Ƭ **UniformValue**: `boolean` \| `number` \| `number`[]
 
 GPUProgram uniform values.
+
+___
+
+### UniformParams
+
+Ƭ **UniformParams**: `Object`
+
+GPUProgram uniform parameters.
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `name` | `string` |
+| `value` | [`UniformValue`](README.md#uniformvalue) |
+| `type` | [`UniformType`](README.md#uniformtype) |
 
 ___
 

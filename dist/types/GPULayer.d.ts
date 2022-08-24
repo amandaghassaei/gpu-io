@@ -123,23 +123,34 @@ export declare class GPULayer {
      */
     private initBuffers;
     /**
-     *
+     * Get buffer index of the current state.
      */
     get bufferIndex(): number;
+    /**
+     * Increment buffer index by 1.
+     */
     incrementBufferIndex(): void;
+    /**
+     * Get the current state as a GLTexture.
+     */
     get currentState(): WebGLTexture;
+    /**
+     * Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
+     */
     get lastState(): WebGLTexture;
+    /**
+     * Get the state at a specified index as a GLTexture.
+     */
     getStateAtIndex(index: number): WebGLTexture;
     /**
-     * Binds this GPULayer's current framebuffer.
-     * @private
+     * Binds this GPULayer's current framebuffer as the draw target.
      */
-    _bindOutputBuffer(): void;
+    private bindFramebuffer;
     /**
-     *
+     * Increments the buffer index (if needed) and binds next framebuffer as draw target.
      * @private
      */
-    _bindOutputBufferForWrite(incrementBufferIndex: boolean): void;
+    _prepareForWrite(incrementBufferIndex: boolean): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
     resize(dimensions: number | [number, number], array?: GPULayerArray | number[]): void;
     /**

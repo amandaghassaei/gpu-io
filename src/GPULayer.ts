@@ -81,7 +81,9 @@ export class GPULayer {
 	 * Sets GPULayer as readonly or readwrite, defaults to false.
 	 */
 	readonly writable: boolean;
-	private _clearValue: number | number[] = 0; // Value to set when clear() is called, defaults to zero.  Access with GPULayer.clearValue.
+	// Value to set when clear() is called, defaults to zero.
+	// Access with GPULayer.clearValue.
+	private _clearValue: number | number[] = 0;
 
 	// Each GPULayer may contain a number of buffers to store different instances of the state.
 	// e.g [currentState, previousState]
@@ -466,21 +468,30 @@ export class GPULayer {
 	}
 	
 	/**
-	 * 
+	 * Get buffer index of the current state.
 	 */
 	get bufferIndex() {
 		return this._bufferIndex;
 	}
 
+	/**
+	 * Increment buffer index by 1.
+	 */
 	incrementBufferIndex() {
 		// Increment bufferIndex.
 		this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
 	}
 
+	/**
+	 * Get the current state as a GLTexture.
+	 */
 	get currentState() {
 		return this.getStateAtIndex(this.bufferIndex);
 	}
 
+	/**
+	 * Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
+	 */
 	get lastState() {
 		if (this.numBuffers === 1) {
 			throw new Error(`Cannot access lastState on GPULayer "${this.name}" with only one buffer.`);
@@ -488,6 +499,9 @@ export class GPULayer {
 		return this.getStateAtIndex((this.bufferIndex - 1 + this.numBuffers) % this.numBuffers);
 	}
 
+	/**
+	 * Get the state at a specified index as a GLTexture.
+	 */
 	getStateAtIndex(index: number) {
 		if (index < 0 || index >= this.numBuffers) {
 			throw new Error(`Invalid buffer index: ${index} for GPULayer "${this.name}" with ${this.numBuffers} buffer${this.numBuffers > 1 ? 's' : ''}.`)
@@ -497,10 +511,9 @@ export class GPULayer {
 	}
 
 	/**
-	 * Binds this GPULayer's current framebuffer.
-	 * @private
+	 * Binds this GPULayer's current framebuffer as the draw target.
 	 */
-	_bindOutputBuffer() {
+	private bindFramebuffer() {
 		const { gl } = this.composer;
 		const { framebuffer } = this.buffers[this.bufferIndex];
 		if (!framebuffer) {
@@ -510,16 +523,16 @@ export class GPULayer {
 	}
 
 	/**
-	 * 
+	 * Increments the buffer index (if needed) and binds next framebuffer as draw target.
 	 * @private
 	 */
-	_bindOutputBufferForWrite(
+	_prepareForWrite(
 		incrementBufferIndex: boolean,
 	) {
 		if (incrementBufferIndex) {
 			this.incrementBufferIndex();
 		}
-		this._bindOutputBuffer();
+		this.bindFramebuffer();
 
 		// We are going to do a data write, if we have overrides enabled, we can remove them.
 		if (this.textureOverrides) {
@@ -576,7 +589,6 @@ export class GPULayer {
 		return this._clearValue;
 	}
 
-	
 
 	/**
 	 * Clear all data in GPULayer to GPULayer.clearValue.
@@ -682,7 +694,7 @@ export class GPULayer {
 		const { gl, glslVersion } = composer;
 
 		// In case GPULayer was not the last output written to.
-		this._bindOutputBuffer();
+		this.bindFramebuffer();
 
 		let { glNumChannels, glType, glFormat, internalType } = this;
 		let values;

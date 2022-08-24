@@ -2355,17 +2355,23 @@ var GPUComposer = /** @class */ (function () {
         if (!gl) {
             // Init a gl context if not passed in.
             if (params.contextID) {
-                gl = canvas.getContext(params.contextID, params.contextOptions);
-                if (!gl) {
+                var _gl = canvas.getContext(params.contextID, params.contextOptions);
+                if (!_gl) {
                     console.warn("Unable to initialize WebGL context with contextID: ".concat(params.contextID, "."));
+                }
+                else {
+                    gl = _gl;
                 }
             }
             if (!gl) {
-                gl = canvas.getContext(constants_1.WEBGL2, params.contextOptions)
+                var _gl = canvas.getContext(constants_1.WEBGL2, params.contextOptions)
                     || canvas.getContext(constants_1.WEBGL1, params.contextOptions)
                     || canvas.getContext(constants_1.EXPERIMENTAL_WEBGL, params.contextOptions);
+                if (_gl) {
+                    gl = _gl;
+                }
             }
-            if (gl === null) {
+            if (!gl) {
                 this.errorCallback('Unable to initialize WebGL context.');
                 return;
             }
@@ -2827,19 +2833,19 @@ var GPUComposer = /** @class */ (function () {
             if (fullscreenRender) {
                 // Render and increment buffer so we are rendering to a different target
                 // than the input texture.
-                output._bindOutputBufferForWrite(true);
+                output._prepareForWrite(true);
             }
             else {
                 // Pass input texture through to output.
                 this.passThroughLayerDataFromInputToOutput(output);
                 // Render to output without incrementing buffer.
-                output._bindOutputBufferForWrite(false);
+                output._prepareForWrite(false);
             }
         }
         else {
             if (fullscreenRender) {
                 // Render to current buffer.
-                output._bindOutputBufferForWrite(false);
+                output._prepareForWrite(false);
             }
             else {
                 // If we are doing a sneaky thing with a swapped texture and are
@@ -2847,7 +2853,7 @@ var GPUComposer = /** @class */ (function () {
                 if (output._usingTextureOverrideForCurrentBuffer()) {
                     this.passThroughLayerDataFromInputToOutput(output);
                 }
-                output._bindOutputBufferForWrite(false);
+                output._prepareForWrite(false);
             }
         }
         // Resize viewport.
@@ -3612,7 +3618,9 @@ var GPULayer = /** @class */ (function () {
      * @param params.array - Array to initialize GPULayer.
      */
     function GPULayer(composer, params) {
-        this._clearValue = 0; // Value to set when clear() is called, defaults to zero.  Access with GPULayer.clearValue.
+        // Value to set when clear() is called, defaults to zero.
+        // Access with GPULayer.clearValue.
+        this._clearValue = 0;
         // Each GPULayer may contain a number of buffers to store different instances of the state.
         // e.g [currentState, previousState]
         this._bufferIndex = 0;
@@ -3842,7 +3850,7 @@ var GPULayer = /** @class */ (function () {
     };
     Object.defineProperty(GPULayer.prototype, "bufferIndex", {
         /**
-         *
+         * Get buffer index of the current state.
          */
         get: function () {
             return this._bufferIndex;
@@ -3850,11 +3858,17 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    /**
+     * Increment buffer index by 1.
+     */
     GPULayer.prototype.incrementBufferIndex = function () {
         // Increment bufferIndex.
         this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
     };
     Object.defineProperty(GPULayer.prototype, "currentState", {
+        /**
+         * Get the current state as a GLTexture.
+         */
         get: function () {
             return this.getStateAtIndex(this.bufferIndex);
         },
@@ -3862,6 +3876,9 @@ var GPULayer = /** @class */ (function () {
         configurable: true
     });
     Object.defineProperty(GPULayer.prototype, "lastState", {
+        /**
+         * Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
+         */
         get: function () {
             if (this.numBuffers === 1) {
                 throw new Error("Cannot access lastState on GPULayer \"".concat(this.name, "\" with only one buffer."));
@@ -3871,6 +3888,9 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    /**
+     * Get the state at a specified index as a GLTexture.
+     */
     GPULayer.prototype.getStateAtIndex = function (index) {
         if (index < 0 || index >= this.numBuffers) {
             throw new Error("Invalid buffer index: ".concat(index, " for GPULayer \"").concat(this.name, "\" with ").concat(this.numBuffers, " buffer").concat(this.numBuffers > 1 ? 's' : '', "."));
@@ -3880,10 +3900,9 @@ var GPULayer = /** @class */ (function () {
         return this.buffers[index].texture;
     };
     /**
-     * Binds this GPULayer's current framebuffer.
-     * @private
+     * Binds this GPULayer's current framebuffer as the draw target.
      */
-    GPULayer.prototype._bindOutputBuffer = function () {
+    GPULayer.prototype.bindFramebuffer = function () {
         var gl = this.composer.gl;
         var framebuffer = this.buffers[this.bufferIndex].framebuffer;
         if (!framebuffer) {
@@ -3892,14 +3911,14 @@ var GPULayer = /** @class */ (function () {
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     };
     /**
-     *
+     * Increments the buffer index (if needed) and binds next framebuffer as draw target.
      * @private
      */
-    GPULayer.prototype._bindOutputBufferForWrite = function (incrementBufferIndex) {
+    GPULayer.prototype._prepareForWrite = function (incrementBufferIndex) {
         if (incrementBufferIndex) {
             this.incrementBufferIndex();
         }
-        this._bindOutputBuffer();
+        this.bindFramebuffer();
         // We are going to do a data write, if we have overrides enabled, we can remove them.
         if (this.textureOverrides) {
             this.textureOverrides[this.bufferIndex] = undefined;
@@ -4063,7 +4082,7 @@ var GPULayer = /** @class */ (function () {
         var _a = this, width = _a.width, height = _a.height, composer = _a.composer, numComponents = _a.numComponents, type = _a.type;
         var gl = composer.gl, glslVersion = composer.glslVersion;
         // In case GPULayer was not the last output written to.
-        this._bindOutputBuffer();
+        this.bindFramebuffer();
         var _b = this, glNumChannels = _b.glNumChannels, glType = _b.glType, glFormat = _b.glFormat, internalType = _b.internalType;
         var values;
         switch (internalType) {
