@@ -221,8 +221,9 @@ export function shouldCastIntTypeAsFloat(
 	// Use HALF_FLOAT/FLOAT instead.
 	// Some large values of INT and UNSIGNED_INT are not supported unfortunately.
 	// See tests for more information.
-	// Update: Even UNSIGNED_BYTE are to be cast as float in GLSL1.  I noticed some strange behavior in test:
-	// 'should convert uint uniforms to int for UNSIGNED_BYTE GPULayers + WebGL2/glsl1' in GPUProgram.
+	// Update: Even UNSIGNED_BYTE should be cast as float in GLSL1.  I noticed some strange behavior in test:
+	// setUniform>'should cast/handle uint uniforms for UNSIGNED_BYTE GPULayers' in tests/mocha/GPUProgram and 
+	// getValues>'should return correct values for UNSIGNED_BYTE GPULayer' in tests/mocha/GPULayer
 	return type === UNSIGNED_BYTE || type === BYTE || type === SHORT || type === INT || type === UNSIGNED_SHORT || type === UNSIGNED_INT;
 }
 

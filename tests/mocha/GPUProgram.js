@@ -7,14 +7,11 @@
 		GPULayer,
 		FLOAT,
 		UNSIGNED_BYTE,
-		UNSIGNED_SHORT,
-		BYTE,
 		WEBGL1,
 		WEBGL2,
 		GLSL1,
 		GLSL3,
 		UINT,
-		INT,
 		isWebGL2,
 	} = WebGLCompute;
 
@@ -124,99 +121,48 @@
 				layer.dispose();
 			});
 			it('should handle a variety of types and sizes', () => {
-				// const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL1 });
-				// assert.equal(isWebGL2(composer1.gl), false);
-				// const setValueProgram = new GPUProgram(composer1, {
-				// 	name: 'uniform-test',
-				// 	fragmentShader: setUintValueFragmentShader,
-				// });
-				// const value = [1, 2, 3, 4];
-				// setValueProgram.setUniform('u_value', value, UINT);
-				// const layer = new GPULayer(composer1, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 4, writable: true, dimensions: [1, 1]});
-				// composer1.step({
-				// 	program: setValueProgram,
-				// 	output: layer,
-				// });
-				// const output = layer.getValues();
-				// output.forEach((out, i) => {
-				// 	assert.equal(out, value[i], output);
-				// });
-				// setValueProgram.dispose();
-				// layer.dispose();
-				// composer1.dispose();
+				// TODO:
 			});
-			it('should handle uint uniforms to int for UNSIGNED_BYTE GPULayers + WebGL2/glsl3', () => {
-				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL3 });
-				assert.equal(isWebGL2(composer1.gl), true);
-				assert.equal(composer1.glslVersion, GLSL3);
-				const setValueProgram = new GPUProgram(composer1, {
-					name: 'uniform-test',
-					fragmentShader: setUintValueFragmentShader,
-				});
-				const value = [1, 2, 3, 4];
-				setValueProgram.setUniform('u_value', value, UINT);
-				const layer = new GPULayer(composer1, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 4, writable: true, dimensions: [1, 1]});
-				composer1.step({
-					program: setValueProgram,
-					output: layer,
-				});
-				const output = layer.getValues();
-				output.forEach((out, i) => {
-					assert.equal(out, value[i], output);
-				});
-				setValueProgram.dispose();
-				layer.dispose();
-				composer1.dispose();
-			});
-			it('should convert uint uniforms to int for UNSIGNED_BYTE GPULayers + WebGL2/glsl1', () => {
-				// This seems to only work after I changed GPULayer to cast UNSIGNED_BYTE types to HALF_FLOAT.
+			it('should cast/handle uint uniforms for UNSIGNED_BYTE GPULayers', () => {
+				// This seems to only work after I changed GPULayer to cast UNSIGNED_BYTE types to HALF_FLOAT for GLSL1.
 				// Otherwise, I was seeing uniform values >= 1 coming out as 255 from the setValueProgram.
-				// Technically read/write to UNSIGNED_BYTE type should work, but in some cases it seemed to be breaking down.
+				// Technically read/write to UNSIGNED_BYTE type should work in WebGL1/2 + GLSL1, but in some cases it seemed to be breaking down.
 				// See note in GPULayerHelpers.shouldCastIntTypeAsFloat for more info.
-				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), glslVersion: GLSL1 });
-				assert.equal(isWebGL2(composer1.gl), true);
-				assert.equal(composer1.glslVersion, GLSL1);
-				const setValueProgram = new GPUProgram(composer1, {
-					name: 'uniform-test',
-					fragmentShader: setUintValueFragmentShader,
-				});
-				const value = [1, 2, 3, 4];
-				setValueProgram.setUniform('u_value', value, UINT);
-				const layer = new GPULayer(composer1, { name: 'test-layer', type: BYTE, numComponents: 4, writable: true, dimensions: [1, 1]});
-				composer1.step({
-					program: setValueProgram,
-					output: layer,
-				});
-				const output = layer.getValues();
-				output.forEach((out, i) => {
-					assert.equal(out, value[i], output);
-				});
-				setValueProgram.dispose();
-				layer.dispose();
-				composer1.dispose();
-			});
-			it('should convert uint uniforms to int for UNSIGNED_BYTE GPULayers + WebGL1', () => {
+				// I don't think this is actually a uniform issue, but rather a UNSIGNED_BYTE GPULayer issue.
+				// see tests/mocha/GPULayer/getValues>'should return correct values for UNSIGNED_BYTE GPULayer'
+				const composer3 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL3 });
+				assert.equal(isWebGL2(composer3.gl), true);
+				assert.equal(composer3.glslVersion, GLSL3);
+				const composer2 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL1 });
+				assert.equal(isWebGL2(composer2.gl), true);
+				assert.equal(composer2.glslVersion, GLSL1);
 				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL1 });
 				assert.equal(isWebGL2(composer1.gl), false);
 				assert.equal(composer1.glslVersion, GLSL1);
-				const setValueProgram = new GPUProgram(composer1, {
-					name: 'uniform-test',
-					fragmentShader: setUintValueFragmentShader,
+
+				[composer1, composer2, composer3].forEach(composer => {
+					const setValueProgram = new GPUProgram(composer, {
+						name: 'uniform-test',
+						fragmentShader: setUintValueFragmentShader,
+					});
+					const value = [1, 2, 3, 4];
+					setValueProgram.setUniform('u_value', value, UINT);
+					const layer = new GPULayer(composer, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 4, writable: true, dimensions: [1, 1]});
+					composer.step({
+						program: setValueProgram,
+						output: layer,
+					});
+					const output = layer.getValues();
+					output.forEach((out, i) => {
+						assert.equal(out, value[i], `${output}, ${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'}, ${composer.glslVersion}`);
+					});
+					setValueProgram.dispose();
+					layer.dispose();
 				});
-				const value = [1, 2, 3, 4];
-				setValueProgram.setUniform('u_value', value, UINT);
-				const layer = new GPULayer(composer1, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 4, writable: true, dimensions: [1, 1]});
-				composer1.step({
-					program: setValueProgram,
-					output: layer,
-				});
-				const output = layer.getValues();
-				output.forEach((out, i) => {
-					assert.equal(out, value[i], output);
-				});
-				setValueProgram.dispose();
-				layer.dispose();
+				
 				composer1.dispose();
+				composer2.dispose();
+				composer3.dispose();
 			});
 			it('should throw error for missing uniform', () => {
 				const setValueProgram = new GPUProgram(composer, {

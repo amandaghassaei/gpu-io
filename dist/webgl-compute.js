@@ -3927,12 +3927,23 @@ var GPULayer = /** @class */ (function () {
      * Get the state at a specified index as a GLTexture.
      */
     GPULayer.prototype.getStateAtIndex = function (index) {
-        if (index < 0 || index >= this.numBuffers) {
-            throw new Error("Invalid buffer index: ".concat(index, " for GPULayer \"").concat(this.name, "\" with ").concat(this.numBuffers, " buffer").concat(this.numBuffers > 1 ? 's' : '', "."));
+        var _a = this, numBuffers = _a.numBuffers, _textureOverrides = _a._textureOverrides, _buffers = _a._buffers;
+        if (index < 0 && index > -numBuffers) {
+            index += numBuffers; // Slightly negative numbers are ok.
         }
-        if (this._textureOverrides && this._textureOverrides[index])
-            return this._textureOverrides[index];
-        return this._buffers[index].texture;
+        if (index < 0 || index >= numBuffers) {
+            // We will allow this number to overflow with warning - likely user error.
+            console.warn("Out of range buffer index: ".concat(index, " for GPULayer \"").concat(this.name, "\" with $.numBuffers} buffer").concat(numBuffers > 1 ? 's' : '', ".  Was this intentional?"));
+            if (index < 0) {
+                index += numBuffers * Math.ceil(Math.abs(index) / numBuffers);
+            }
+            else {
+                index = index % numBuffers;
+            }
+        }
+        if (_textureOverrides && _textureOverrides[index])
+            return _textureOverrides[index];
+        return _buffers[index].texture;
     };
     /**
      * Binds this GPULayer's current framebuffer as the draw target.
@@ -4104,13 +4115,14 @@ var GPULayer = /** @class */ (function () {
                 values = new Float32Array(width * height * _glNumChannels);
                 break;
             case constants_1.UNSIGNED_BYTE:
-                if (glslVersion === constants_1.GLSL1) {
-                    // Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
-                    _glNumChannels = 4;
-                    _glFormat = gl.RGBA;
-                    values = new Uint8Array(width * height * _glNumChannels);
-                    break;
-                }
+                // We never hit glslVersion === GLSL1 anymore, see GPULayerHelpers.shouldCastIntTypeAsFloat for more info.
+                // if (glslVersion === GLSL1) {
+                // 	// Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
+                // 	_glNumChannels = 4;
+                // 	_glFormat = gl.RGBA;
+                // 	values = new Uint8Array(width * height * _glNumChannels);
+                // 	break;
+                // }
                 // Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA_INTEGER;
@@ -4493,8 +4505,9 @@ function shouldCastIntTypeAsFloat(params) {
     // Use HALF_FLOAT/FLOAT instead.
     // Some large values of INT and UNSIGNED_INT are not supported unfortunately.
     // See tests for more information.
-    // Update: Even UNSIGNED_BYTE are to be cast as float in GLSL1.  I noticed some strange behavior in test:
-    // 'should convert uint uniforms to int for UNSIGNED_BYTE GPULayers + WebGL2/glsl1' in GPUProgram.
+    // Update: Even UNSIGNED_BYTE should be cast as float in GLSL1.  I noticed some strange behavior in test:
+    // setUniform>'should cast/handle uint uniforms for UNSIGNED_BYTE GPULayers' in tests/mocha/GPUProgram and 
+    // getValues>'should return correct values for UNSIGNED_BYTE GPULayer' in tests/mocha/GPULayer
     return type === constants_1.UNSIGNED_BYTE || type === constants_1.BYTE || type === constants_1.SHORT || type === constants_1.INT || type === constants_1.UNSIGNED_SHORT || type === constants_1.UNSIGNED_INT;
 }
 exports.shouldCastIntTypeAsFloat = shouldCastIntTypeAsFloat;

@@ -536,11 +536,21 @@ export class GPULayer {
 	 * Get the state at a specified index as a GLTexture.
 	 */
 	getStateAtIndex(index: number) {
-		if (index < 0 || index >= this.numBuffers) {
-			throw new Error(`Invalid buffer index: ${index} for GPULayer "${this.name}" with ${this.numBuffers} buffer${this.numBuffers > 1 ? 's' : ''}.`)
+		const { numBuffers, _textureOverrides, _buffers } = this;
+		if (index < 0 && index > -numBuffers) {
+			index += numBuffers; // Slightly negative numbers are ok.
 		}
-		if (this._textureOverrides && this._textureOverrides[index]) return this._textureOverrides[index]!;
-		return this._buffers[index].texture;
+		if (index < 0 || index >= numBuffers) {
+			// We will allow this number to overflow with warning - likely user error.
+			console.warn(`Out of range buffer index: ${index} for GPULayer "${this.name}" with $.numBuffers} buffer${numBuffers > 1 ? 's' : ''}.  Was this intentional?`);
+			if (index < 0) {
+				index += numBuffers * Math.ceil(Math.abs(index) / numBuffers);
+			} else {
+				index = index % numBuffers;
+			}
+		}
+		if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
+		return _buffers[index].texture;
 	}
 
 	/**
@@ -721,13 +731,14 @@ export class GPULayer {
 				values = new Float32Array(width * height * _glNumChannels);
 				break;
 			case UNSIGNED_BYTE:
-				if (glslVersion === GLSL1) {
-					// Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
-					_glNumChannels = 4;
-					_glFormat = gl.RGBA;
-					values = new Uint8Array(width * height * _glNumChannels);
-					break;
-				}
+				// We never hit glslVersion === GLSL1 anymore, see GPULayerHelpers.shouldCastIntTypeAsFloat for more info.
+				// if (glslVersion === GLSL1) {
+				// 	// Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
+				// 	_glNumChannels = 4;
+				// 	_glFormat = gl.RGBA;
+				// 	values = new Uint8Array(width * height * _glNumChannels);
+				// 	break;
+				// }
 				// Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
 				_glNumChannels = 4;
 				_glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;

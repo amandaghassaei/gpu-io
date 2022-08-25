@@ -19,6 +19,7 @@
 		GLSL1,
 		GLSL3,
 		_testing,
+		isWebGL2,
 	} = WebGLCompute;
 	const {
 		isNumber,
@@ -178,7 +179,6 @@
 			});
 		});
 		describe('getStateAtIndex, get currentState, and get lastState', () => {
-			// TODO: make this work for negative numbers.
 			it('should return WebGLTextures', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 1});
 				assert.typeOf(layer1.currentState, 'WebGLTexture');
@@ -186,21 +186,18 @@
 				assert.typeOf(layer2.currentState, 'WebGLTexture');
 				assert.typeOf(layer2.lastState, 'WebGLTexture');
 				assert.notEqual(layer2.currentState, layer2.lastState);
+				assert.equal(layer2.getStateAtIndex(-2), layer2.currentState); // This will throw warning - likely user error.
+				assert.equal(layer2.getStateAtIndex(-1), layer2.lastState);
 				assert.equal(layer2.getStateAtIndex(0), layer2.currentState);
 				assert.equal(layer2.getStateAtIndex(1), layer2.lastState);
+				assert.equal(layer2.getStateAtIndex(2), layer2.currentState); // This will throw warning - likely user error.
 				// After incrementing index, this logic should be reversed.
 				layer2.incrementBufferIndex();
+				assert.equal(layer2.getStateAtIndex(-2), layer2.lastState); // This will throw warning - likely user error.
+				assert.equal(layer2.getStateAtIndex(-1), layer2.currentState);
 				assert.equal(layer2.getStateAtIndex(0), layer2.lastState);
 				assert.equal(layer2.getStateAtIndex(1), layer2.currentState);
-				layer1.dispose();
-				layer2.dispose();
-			});
-			it('should throw error when buffer index out of bounds', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 1});
-				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 2});
-				assert.throws(() => { layer1.lastState; }, 'Cannot access lastState on GPULayer "test-layer" with only one buffer.');
-				assert.throws(() => { layer2.getStateAtIndex(-1); }, 'Invalid buffer index: -1 for GPULayer "test-layer" with 2 buffers.');
-				assert.throws(() => { layer2.getStateAtIndex(2); }, 'Invalid buffer index: 2 for GPULayer "test-layer" with 2 buffers.');
+				assert.equal(layer2.getStateAtIndex(2), layer2.lastState); // This will throw warning - likely user error.
 				layer1.dispose();
 				layer2.dispose();
 			});
@@ -331,19 +328,36 @@
 					layer1.dispose();
 				});
 			});
-			it('should return correct values for UNSIGNED_BYTE + WebGL1', () => {
-				// const composer2 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL1 });
-				// const layer1 = new GPULayer(composer2, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 3, dimensions: [30, 30], writable: true});
-				// layer1.clearValue = [1, 0, 3];
-				// layer1.clear();
-				// const values = layer1.getValues();
-				// for (let i = 0; i < values.length / 3; i++) {
-				// 	for (let j = 0; j < 3; j++) {
-				// 		assert.equal(values[3 * i + j], layer1.clearValue[j], values);
-				// 	}
-				// }
-				// layer1.dispose();
-				// TODO:
+			it('should return correct values for UNSIGNED_BYTE GPULayer', () => {
+				// This seems to only work after I changed GPULayer to cast UNSIGNED_BYTE types to HALF_FLOAT for GLSL1.
+				// Otherwise, I was seeing uniform values >= 1 coming out as 255 from the getValues().
+				// Technically read/write to UNSIGNED_BYTE type should work in WebGL1/2 + GLSL1, but in some cases it seemed to be breaking down.
+				// See note in GPULayerHelpers.shouldCastIntTypeAsFloat for more info.
+				const composer3 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL3 });
+				assert.equal(isWebGL2(composer3.gl), true);
+				assert.equal(composer3.glslVersion, GLSL3);
+				const composer2 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL1 });
+				assert.equal(isWebGL2(composer2.gl), true);
+				assert.equal(composer2.glslVersion, GLSL1);
+				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL1 });
+				assert.equal(isWebGL2(composer1.gl), false);
+				assert.equal(composer1.glslVersion, GLSL1);
+
+				[composer1, composer2, composer3].forEach(composer => {
+					const layer1 = new GPULayer(composer, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 3, dimensions: [30, 30], writable: true});
+					layer1.clearValue = [1, 0, 3];
+					layer1.clear();
+					const values = layer1.getValues();
+					for (let i = 0; i < values.length / 3; i++) {
+						for (let j = 0; j < 3; j++) {
+							assert.equal(values[3 * i + j], layer1.clearValue[j], values);
+						}
+					}
+					layer1.dispose();
+				});
+				composer1.dispose();
+				composer2.dispose();
+				composer3.dispose();
 			});
 			// This is tested extensively in pipeline.js.
 		});
