@@ -130,6 +130,13 @@ More info about using webgl-compute to update mesh positions data is coming soon
 
 This library defaults to using GLSL1.0 TODO: change this.
 
+More info about the difference between GLSL and WebGL versions:
+
+- [GLSL Versions](https://github.com/mattdesl/lwjgl-basics/wiki/GLSL-Versions) by Matt DesLauriers
+- [WebGL1 Reference Card](https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) by Khronos
+- [WebGL2 Reference Card](https://www.khronos.org/files/webgl20-reference-guide.pdf) by Khronos
+- [WebGL2 from WebGL1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html) by WebGL2Fundamentals.org
+
 
 ### Transform Feedback
 
@@ -139,7 +146,7 @@ You might notice that this library does not use any transform feedback to e.g. h
 - Transform feedback is only supported in WebGL 2.  At the time I first started writing this, WebGL 2 was not supported by mobile Safari.  Though that has changed recently, it will take some time for many people to update (for example, luddites like me who never update their apps), so for now I'd like to support all functionality in this library in WebGL 1.
 - I played around with the idea of using transform feedback if WebGL 2 is available, then falling back to a fragment shader implementation if only WebGL 1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
 
-My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API (e.g. only allowing up to four channels per texture), so I'd like to get away from it in the long term if possible.
+My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API, so I'd like to get away from it in the long term if possible.
 
 
 ### Precision

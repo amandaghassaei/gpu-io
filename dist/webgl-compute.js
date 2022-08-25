@@ -2430,8 +2430,6 @@ var GPUComposer = /** @class */ (function () {
         return (0, utils_1.isWebGL2)(this.gl);
     };
     GPUComposer.prototype._glslKeyForType = function (type) {
-        if (this.glslVersion === constants_1.GLSL1)
-            return constants_1.FLOAT;
         switch (type) {
             case constants_1.HALF_FLOAT:
             case constants_1.FLOAT:
@@ -2439,6 +2437,8 @@ var GPUComposer = /** @class */ (function () {
             case constants_1.UNSIGNED_BYTE:
             case constants_1.UNSIGNED_SHORT:
             case constants_1.UNSIGNED_INT:
+                if (this.glslVersion === constants_1.GLSL1)
+                    return constants_1.INT;
                 return constants_1.UINT;
             case constants_1.BYTE:
             case constants_1.SHORT:
@@ -2464,7 +2464,7 @@ var GPUComposer = /** @class */ (function () {
                     {
                         name: 'u_value',
                         value: [0, 0, 0, 0],
-                        type: key === constants_1.UINT ? constants_1.INT : key, // TODO: is there a uint type?
+                        type: key,
                     },
                 ],
                 defines: (_a = {},
@@ -4493,7 +4493,9 @@ function shouldCastIntTypeAsFloat(params) {
     // Use HALF_FLOAT/FLOAT instead.
     // Some large values of INT and UNSIGNED_INT are not supported unfortunately.
     // See tests for more information.
-    return type === constants_1.BYTE || type === constants_1.SHORT || type === constants_1.INT || type === constants_1.UNSIGNED_SHORT || type === constants_1.UNSIGNED_INT;
+    // Update: Even UNSIGNED_BYTE are to be cast as float in GLSL1.  I noticed some strange behavior in test:
+    // 'should convert uint uniforms to int for UNSIGNED_BYTE GPULayers + WebGL2/glsl1' in GPUProgram.
+    return type === constants_1.UNSIGNED_BYTE || type === constants_1.BYTE || type === constants_1.SHORT || type === constants_1.INT || type === constants_1.UNSIGNED_SHORT || type === constants_1.UNSIGNED_INT;
 }
 exports.shouldCastIntTypeAsFloat = shouldCastIntTypeAsFloat;
 /**
@@ -4532,28 +4534,28 @@ function getGLTextureParameters(params) {
                 default:
                     throw new Error("Unsupported glNumChannels: ".concat(glNumChannels, " for GPULayer \"").concat(name, "\"."));
             }
-        }
-        else if (glslVersion === constants_1.GLSL1 && internalType === constants_1.UNSIGNED_BYTE) {
-            // Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
-            if (writable) {
-                // For read only UNSIGNED_BYTE textures in GLSL 1, use RGBA.
-                glNumChannels = 4;
-            }
-            // For read only UNSIGNED_BYTE textures in GLSL 1, use RGB/RGBA.
-            switch (glNumChannels) {
-                case 1:
-                case 2:
-                case 3:
-                    glFormat = gl.RGB;
-                    glNumChannels = 3;
-                    break;
-                case 4:
-                    glFormat = gl.RGBA;
-                    glNumChannels = 4;
-                    break;
-                default:
-                    throw new Error("Unsupported glNumChannels: ".concat(glNumChannels, " for GPULayer \"").concat(name, "\"."));
-            }
+            // The following lines of code are not hit now that we have cast UNSIGNED_BYTE types to HALF_FLOAT.
+            // } else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
+            // 	// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+            // 	if (writable) {
+            // 		// For read only UNSIGNED_BYTE textures in GLSL 1, use RGBA.
+            // 		glNumChannels = 4;
+            // 	}
+            // 	// For read only UNSIGNED_BYTE textures in GLSL 1, use RGB/RGBA.
+            // 	switch (glNumChannels) {
+            // 		case 1:
+            // 		case 2:
+            // 		case 3:
+            // 			glFormat = gl.RGB;
+            // 			glNumChannels = 3;
+            // 			break;
+            // 		case 4:
+            // 			glFormat = gl.RGBA;
+            // 			glNumChannels = 4;
+            // 			break;
+            // 		default:
+            // 			throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
+            // 	}
         }
         else {
             // This case will only be hit by GLSL 3.
@@ -5286,29 +5288,69 @@ var GPUProgram = /** @class */ (function () {
      * Set uniform for GLProgram.
      * @private
      */
-    GPUProgram.prototype._setProgramUniform = function (program, programName, name, value, type) {
+    GPUProgram.prototype._setProgramUniform = function (program, programName, uniformName, value, type) {
         var _a;
         var _b = this, _composer = _b._composer, _uniforms = _b._uniforms;
-        var gl = _composer.gl, _errorCallback = _composer._errorCallback;
+        var gl = _composer.gl, _errorCallback = _composer._errorCallback, glslVersion = _composer.glslVersion;
         // Set active program.
         gl.useProgram(program);
-        var location = (_a = _uniforms[name]) === null || _a === void 0 ? void 0 : _a.location[programName];
-        // Init a location for WebGLProgram if needed.
+        var isGLSL3 = glslVersion === constants_1.GLSL3;
+        var location = (_a = _uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.location[programName];
+        // Init a location for WebGLProgram if needed (only do this once).
         if (location === undefined) {
-            var _location = gl.getUniformLocation(program, name);
+            var _location = gl.getUniformLocation(program, uniformName);
             if (!_location) {
-                _errorCallback("Could not init uniform \"".concat(name, "\" for program \"").concat(this.name, "\".\nCheck that uniform is present in shader code, unused uniforms may be removed by compiler.\nAlso check that uniform type in shader code matches type ").concat(type, ".\nError code: ").concat(gl.getError(), "."));
+                _errorCallback("Could not init uniform \"".concat(uniformName, "\" for program \"").concat(this.name, "\". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type ").concat(type, ". Error code: ").concat(gl.getError(), "."));
                 return;
             }
             location = _location;
             // Save location for future use.
-            if (_uniforms[name]) {
-                _uniforms[name].location[programName] = location;
+            if (_uniforms[uniformName]) {
+                _uniforms[uniformName].location[programName] = location;
+            }
+            // Since this is the first time we are initing the uniform, check that type is correct.
+            // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getUniform
+            var uniform = gl.getUniform(program, location);
+            var badType = false;
+            // TODO: check bool.
+            // if (type === BOOL_1D_UNIFORM) {
+            // 	if (!isBoolean(uniform)) {
+            // 		badType = true;
+            // 	}
+            // } else 
+            if (type === constants_1.FLOAT_1D_UNIFORM || type === constants_1.FLOAT_2D_UNIFORM || type === constants_1.FLOAT_3D_UNIFORM || type === constants_1.FLOAT_4D_UNIFORM) {
+                if (!(0, checks_1.isNumber)(uniform) && uniform.constructor !== Float32Array) {
+                    badType = true;
+                }
+            }
+            else if (type === constants_1.INT_1D_UNIFORM || type === constants_1.INT_2D_UNIFORM || type === constants_1.INT_3D_UNIFORM || type === constants_1.INT_4D_UNIFORM) {
+                if (!(0, checks_1.isInteger)(uniform) && uniform.constructor !== Int32Array) {
+                    badType = true;
+                }
+            }
+            else if (type === constants_1.UINT_1D_UNIFORM || type === constants_1.UINT_2D_UNIFORM || type === constants_1.UINT_3D_UNIFORM || type === constants_1.UINT_4D_UNIFORM) {
+                if (!isGLSL3) {
+                    // GLSL1 does not have uint type, expect int instead.
+                    if (!(0, checks_1.isNonNegativeInteger)(uniform) && uniform.constructor !== Int32Array) {
+                        badType = true;
+                    }
+                }
+                else if (!(0, checks_1.isNonNegativeInteger)(uniform) && uniform.constructor !== Uint32Array) {
+                    badType = true;
+                }
+            }
+            if (badType) {
+                _errorCallback("Invalid uniform \"".concat(uniformName, "\" for program \"").concat(this.name, "\". Check that uniform type in shader code matches type ").concat(type, ", gl.getUniform(program, location) returned type: ").concat(uniform.constructor.name, "."));
+                return;
             }
         }
         // Set uniform.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
         switch (type) {
+            case constants_1.BOOL_1D_UNIFORM:
+                // We are setting boolean uniforms with uniform1i.
+                gl.uniform1i(location, value ? 1 : 0);
+                break;
             case constants_1.FLOAT_1D_UNIFORM:
                 gl.uniform1f(location, value);
                 break;
@@ -5322,13 +5364,7 @@ var GPUProgram = /** @class */ (function () {
                 gl.uniform4fv(location, value);
                 break;
             case constants_1.INT_1D_UNIFORM:
-                if ((0, checks_1.isBoolean)(value)) {
-                    // We are setting boolean uniforms with uniform1i.
-                    gl.uniform1i(location, value ? 1 : 0);
-                }
-                else {
-                    gl.uniform1i(location, value);
-                }
+                gl.uniform1i(location, value);
                 break;
             case constants_1.INT_2D_UNIFORM:
                 gl.uniform2iv(location, value);
@@ -5339,17 +5375,30 @@ var GPUProgram = /** @class */ (function () {
             case constants_1.INT_4D_UNIFORM:
                 gl.uniform4iv(location, value);
                 break;
+            // Uint not supported in GLSL1, use int instead.
             case constants_1.UINT_1D_UNIFORM:
-                gl.uniform1ui(location, value);
+                if (isGLSL3)
+                    gl.uniform1ui(location, value);
+                else
+                    gl.uniform1i(location, value);
                 break;
             case constants_1.UINT_2D_UNIFORM:
-                gl.uniform2uiv(location, value);
+                if (isGLSL3)
+                    gl.uniform2uiv(location, value);
+                else
+                    gl.uniform2iv(location, value);
                 break;
             case constants_1.UINT_3D_UNIFORM:
-                gl.uniform3uiv(location, value);
+                if (isGLSL3)
+                    gl.uniform3uiv(location, value);
+                else
+                    gl.uniform3iv(location, value);
                 break;
             case constants_1.UINT_4D_UNIFORM:
-                gl.uniform4uiv(location, value);
+                if (isGLSL3)
+                    gl.uniform4uiv(location, value);
+                else
+                    gl.uniform4iv(location, value);
                 break;
             default:
                 throw new Error("Unknown uniform type ".concat(type, " for GPUProgram \"").concat(this.name, "\"."));
@@ -5365,10 +5414,6 @@ var GPUProgram = /** @class */ (function () {
         var _a;
         var _b = this, _programs = _b._programs, _uniforms = _b._uniforms, _composer = _b._composer;
         var verboseLogging = _composer.verboseLogging;
-        // Uint is not supported in webgl1.
-        if (!(0, utils_1.isWebGL2)(_composer.gl) && type === constants_1.UINT) {
-            type = constants_1.INT;
-        }
         // Check that length of value is correct.
         if ((0, checks_1.isArray)(value)) {
             var length_1 = value.length;
@@ -5731,8 +5776,8 @@ exports.isBoolean = isBoolean;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = void 0;
+exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
 // Data types.
 /**
  * Half float data type.
@@ -5910,6 +5955,10 @@ exports.UINT_3D_UNIFORM = '3ui';
  * @private
  */
 exports.UINT_4D_UNIFORM = '4ui';
+/**
+ * @private
+ */
+exports.BOOL_1D_UNIFORM = exports.INT_1D_UNIFORM; // Using int type for bool.
 // Vertex shader types.
 /**
  * @private
@@ -6264,6 +6313,7 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print the error.
+        console.log(shaderSource);
         errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', " shader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
         return null;
     }
@@ -6554,12 +6604,17 @@ function preprocessShader(shaderSource) {
  */
 function convertShaderToGLSL1(shaderSource) {
     // TODO: there are probably more to add here.
+    // No isampler2D or usampler2D.
     shaderSource = shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
-    shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
-    shaderSource = shaderSource.replace(/((\bivec3\b)|(\buvec3\b))/g, 'vec3');
-    shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
+    // Unsigned int types are not supported, use int types instead.
     shaderSource = shaderSource.replace(/\buint\b/g, 'int');
+    shaderSource = shaderSource.replace(/\buvec2\b/g, 'ivec2');
+    shaderSource = shaderSource.replace(/\buvec3\b/g, 'ivec3');
+    shaderSource = shaderSource.replace(/\buvec4\b/g, 'ivec4');
     shaderSource = shaderSource.replace(/\buint\(/g, 'int(');
+    shaderSource = shaderSource.replace(/\buvec2\(/g, 'ivec2(');
+    shaderSource = shaderSource.replace(/\buvec3\(/g, 'ivec3(');
+    shaderSource = shaderSource.replace(/\buvec4\(/g, 'ivec4(');
     // Convert texture to texture2D.
     shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
     return shaderSource;
@@ -6586,9 +6641,12 @@ function convertFragmentShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to varying.
     shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
-    // Convert out to gl_FragColor.
+    // Convert out_fragColor to gl_FragColor.
     shaderSource = shaderSource.replace(/\bout \w+ out_fragColor;/g, '');
-    shaderSource = shaderSource.replace(/\bout_fragColor\s+=/, 'gl_FragColor =');
+    var output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/);
+    if (output) {
+        shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/, "gl_FragColor = vec4(".concat(output[0].trim(), ");"));
+    }
     return shaderSource;
 }
 /**
@@ -6723,7 +6781,7 @@ function uniformInternalTypeForValue(value, type, uniformName, programName) {
             // Boolean types are passed in as ints.
             // This suggest floats work as well, but ints seem more natural:
             // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-            return constants_1.INT_1D_UNIFORM;
+            return constants_1.BOOL_1D_UNIFORM;
         }
         throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected boolean."));
     }

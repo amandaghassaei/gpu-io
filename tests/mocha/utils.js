@@ -35,6 +35,7 @@
 		UINT_2D_UNIFORM,
 		UINT_3D_UNIFORM,
 		UINT_4D_UNIFORM,
+		BOOL_1D_UNIFORM,
 	} = WebGLCompute;
 	const {
 		isFloatType,
@@ -256,6 +257,18 @@ precision lowp float;precision lowp sampler2D;
 					PRECISION_HIGH_P,
 					PRECISION_HIGH_P,
 					preprocessFragmentShader(copyFragmentShader, GLSL1),
+					webgl1.FRAGMENT_SHADER,
+					'fragment-shader-test',
+					(message) => {console.log(message)},
+					{ WEBGLCOMPUTE_INT: '1' },
+				), 'WebGLShader');
+				// TODO: test variations on gl_fragOut (non vector 4).
+				assert.typeOf(compileShader(
+					webgl1,
+					GLSL1,
+					PRECISION_HIGH_P,
+					PRECISION_HIGH_P,
+					preprocessFragmentShader(setUintValueFragmentShader, GLSL1),
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
@@ -565,7 +578,7 @@ uniform sampler2D u_state;
 #endif
 
 void main() {
-	gl_FragColor = texture2D(u_state, v_UV);
+	gl_FragColor = vec4(texture2D(u_state, v_UV));
 }`);
 				// No mutations.
 				assert.equal(copyFragmentShader, copyFragmentShaderCopy);
@@ -634,9 +647,9 @@ void main() {
 				assert.equal(uniformInternalTypeForValue([0, 4, 6], UINT, 'test-program'), UINT_3D_UNIFORM);
 				assert.equal(uniformInternalTypeForValue([4, 0, 40, 60000], UINT, 'test-program'), UINT_4D_UNIFORM);
 
-				// Passing bools as ints.
-				assert.equal(uniformInternalTypeForValue(true, BOOL, 'test-program'), INT_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue(false, BOOL, 'test-program'), INT_1D_UNIFORM);
+				// 1D booleans allowed.
+				assert.equal(uniformInternalTypeForValue(true, BOOL, 'test-program'), BOOL_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue(false, BOOL, 'test-program'), BOOL_1D_UNIFORM);
 			});
 		});
 	});

@@ -221,7 +221,9 @@ export function shouldCastIntTypeAsFloat(
 	// Use HALF_FLOAT/FLOAT instead.
 	// Some large values of INT and UNSIGNED_INT are not supported unfortunately.
 	// See tests for more information.
-	return type === BYTE || type === SHORT || type === INT || type === UNSIGNED_SHORT || type === UNSIGNED_INT;
+	// Update: Even UNSIGNED_BYTE are to be cast as float in GLSL1.  I noticed some strange behavior in test:
+	// 'should convert uint uniforms to int for UNSIGNED_BYTE GPULayers + WebGL2/glsl1' in GPUProgram.
+	return type === UNSIGNED_BYTE || type === BYTE || type === SHORT || type === INT || type === UNSIGNED_SHORT || type === UNSIGNED_INT;
 }
 
 /**
@@ -272,27 +274,28 @@ export function getGLTextureParameters(
 				default:
 					throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 			}
-		} else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
-			// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
-			if (writable) {
-				// For read only UNSIGNED_BYTE textures in GLSL 1, use RGBA.
-				glNumChannels = 4;
-			}
-			// For read only UNSIGNED_BYTE textures in GLSL 1, use RGB/RGBA.
-			switch (glNumChannels) {
-				case 1:
-				case 2:
-				case 3:
-					glFormat = gl.RGB;
-					glNumChannels = 3;
-					break;
-				case 4:
-					glFormat = gl.RGBA;
-					glNumChannels = 4;
-					break;
-				default:
-					throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
-			}
+		// The following lines of code are not hit now that we have cast UNSIGNED_BYTE types to HALF_FLOAT.
+		// } else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
+		// 	// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+		// 	if (writable) {
+		// 		// For read only UNSIGNED_BYTE textures in GLSL 1, use RGBA.
+		// 		glNumChannels = 4;
+		// 	}
+		// 	// For read only UNSIGNED_BYTE textures in GLSL 1, use RGB/RGBA.
+		// 	switch (glNumChannels) {
+		// 		case 1:
+		// 		case 2:
+		// 		case 3:
+		// 			glFormat = gl.RGB;
+		// 			glNumChannels = 3;
+		// 			break;
+		// 		case 4:
+		// 			glFormat = gl.RGBA;
+		// 			glNumChannels = 4;
+		// 			break;
+		// 		default:
+		// 			throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
+		// 	}
 		} else {
 			// This case will only be hit by GLSL 3.
 			// Int textures are not supported in GLSL1.

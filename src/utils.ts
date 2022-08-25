@@ -8,6 +8,7 @@ import {
 } from './checks';
 import {
 	BOOL,
+	BOOL_1D_UNIFORM,
 	BYTE,
 	CompileTimeVars,
 	DEFAULT_ERROR_CALLBACK,
@@ -181,6 +182,7 @@ export function compileShader(
 	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!success) {
 		// Something went wrong during compilation - print the error.
+		console.log(shaderSource);
 		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'} shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}
@@ -570,12 +572,17 @@ function preprocessShader(shaderSource: string) {
  */
 function convertShaderToGLSL1(shaderSource: string) {
 	// TODO: there are probably more to add here.
+	// No isampler2D or usampler2D.
 	shaderSource = shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
-	shaderSource = shaderSource.replace(/((\bivec2\b)|(\buvec2\b))/g, 'vec2');
-	shaderSource = shaderSource.replace(/((\bivec3\b)|(\buvec3\b))/g, 'vec3');
-	shaderSource = shaderSource.replace(/((\bivec4\b)|(\buvec4\b))/g, 'vec4');
+	// Unsigned int types are not supported, use int types instead.
 	shaderSource = shaderSource.replace(/\buint\b/g, 'int');
+	shaderSource = shaderSource.replace(/\buvec2\b/g, 'ivec2');
+	shaderSource = shaderSource.replace(/\buvec3\b/g, 'ivec3');
+	shaderSource = shaderSource.replace(/\buvec4\b/g, 'ivec4');
 	shaderSource = shaderSource.replace(/\buint\(/g, 'int(');
+	shaderSource = shaderSource.replace(/\buvec2\(/g, 'ivec2(');
+	shaderSource = shaderSource.replace(/\buvec3\(/g, 'ivec3(');
+	shaderSource = shaderSource.replace(/\buvec4\(/g, 'ivec4(');
 	// Convert texture to texture2D.
 	shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
 	return shaderSource;
@@ -604,9 +611,13 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to varying.
 	shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
-	// Convert out to gl_FragColor.
+	// Convert out_fragColor to gl_FragColor.
 	shaderSource = shaderSource.replace(/\bout \w+ out_fragColor;/g, '');
-	shaderSource = shaderSource.replace(/\bout_fragColor\s+=/, 'gl_FragColor =');
+	const output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/);
+	if (output) {
+		shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/, `gl_FragColor = vec4(${output[0].trim()});`);
+	}
+	
 	return shaderSource;
 }
 
@@ -741,7 +752,7 @@ export function uniformInternalTypeForValue(
 			// Boolean types are passed in as ints.
 			// This suggest floats work as well, but ints seem more natural:
 			// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
-			return INT_1D_UNIFORM;
+			return BOOL_1D_UNIFORM;
 		}
 		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected boolean.`);
 	} else {

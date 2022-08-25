@@ -390,15 +390,15 @@ const testLayerReads = (() => {
 			let status = SUCCESS;
 			const error = [];
 			const log = [];
-			const typeMismatch =  TYPE !== inputLayer.internalType;
+			const typeMismatch =  TYPE !== inputLayer._internalType;
 			if (typeMismatch) {
-				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${inputLayer.internalType} internally.`);
+				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${inputLayer._internalType} internally.`);
 			}
-			if (WRAP !== inputLayer.internalWrapS || WRAP !== inputLayer.internalWrapT) {
-				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${inputLayer.internalWrapS}, ${inputLayer.internalWrapT}] internally.`);
+			if (WRAP !== inputLayer._internalWrapS || WRAP !== inputLayer._internalWrapT) {
+				error.push(`Unsupported boundary wrap ${WRAP} for the  [${inputLayer._internalWrapS}, ${inputLayer._internalWrapT}] internally.`);
 			}
-			if (composer.gl[FILTER] !== inputLayer.glFilter) {
-				const filter = inputLayer.glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;
+			if (composer.gl[FILTER] !== inputLayer._glFilter) {
+				const filter = inputLayer._glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;
 				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally.`);
 			}
 
@@ -422,7 +422,7 @@ const testLayerReads = (() => {
 				const extremaSupported = typeExtremaSupported && floatExtremaSupported && halfFloatExtremaSupported;
 				if (
 					!halfFloatExtremaSupported || // Half float extrema should always be supported.
-					(!floatExtremaSupported && inputLayer.internalType !== HALF_FLOAT) || // Float extrema should always be supported unless using half float type.
+					(!floatExtremaSupported && inputLayer._internalType !== HALF_FLOAT) || // Float extrema should always be supported unless using half float type.
 					(!extremaSupported && !typeMismatch) // Extrema should be supported if using correct internal type.
 				) {
 					status = ERROR;
@@ -437,12 +437,12 @@ const testLayerReads = (() => {
 				) {
 					let min = MIN_HALF_FLOAT_INT;
 					let max = MAX_HALF_FLOAT_INT;
-					if (inputLayer.internalType === FLOAT) {
+					if (inputLayer._internalType === FLOAT) {
 						min = MIN_FLOAT_INT;
 						max = MAX_FLOAT_INT;
 					}
 					status = WARNING;
-					extremaWarning.push(`Internal data type ${inputLayer.internalType} supports integers in range ${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")}.  Current type ${TYPE} contains integers in range ${input[0].toLocaleString("en-US")} to ${input[2].toLocaleString("en-US")}.`);
+					extremaWarning.push(`Internal data type ${inputLayer._internalType} supports integers in range ${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")}.  Current type ${TYPE} contains integers in range ${input[0].toLocaleString("en-US")} to ${input[2].toLocaleString("en-US")}.`);
 				}
 				return {
 					status,

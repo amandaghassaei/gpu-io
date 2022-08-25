@@ -333,7 +333,6 @@ export class GPUComposer {
 	}
 
 	private _glslKeyForType(type: GPULayerType) {
-		if (this.glslVersion === GLSL1) return FLOAT;
 		switch (type) {
 			case HALF_FLOAT:
 			case FLOAT:
@@ -341,6 +340,7 @@ export class GPUComposer {
 			case UNSIGNED_BYTE:
 			case UNSIGNED_SHORT:
 			case UNSIGNED_INT:
+				if (this.glslVersion === GLSL1) return INT;
 				return UINT;
 			case BYTE:
 			case SHORT:
@@ -366,7 +366,7 @@ export class GPUComposer {
 					{
 						name: 'u_value',
 						value: [0, 0, 0, 0],
-						type: key === UINT ? INT : key, // TODO: is there a uint type?
+						type: key,
 					},
 				],
 				defines: {

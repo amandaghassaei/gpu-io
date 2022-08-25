@@ -53,15 +53,18 @@
 	let composer1, composer2, composer3;
 
 	describe('GPULayerHelpers', () => {
-		before(() => {
+		beforeEach(() => {
 			composer1 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL1 });
 			composer2 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL1 });
 			composer3 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL3 });
 		});
-		after(() => {
+		afterEach(() => {
 			composer1.dispose();
 			composer2.dispose();
 			composer3.dispose();
+			composer1 = undefined;
+			composer2 = undefined;
+			composer3 = undefined;
 		});
 		describe('initArrayForType', () => {
 			const length = 10;
@@ -164,10 +167,11 @@
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: UNSIGNED_INT }), false);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: INT }), false);
 			});
-			it('should cast non-glsl3 ints to float (except USIGNED_BYTE)', () => {
+			it('should cast non-glsl3 ints to float (even UNSIGNED_BYTE)', () => {
+				// See note in GPULayerHelpers.shouldCastIntTypeAsFloat for more info.
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: HALF_FLOAT }), false);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: UNSIGNED_BYTE }), false);
+				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: UNSIGNED_BYTE }), true);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: BYTE }), true);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: UNSIGNED_SHORT }), true);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: SHORT }), true);
@@ -176,7 +180,7 @@
 
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: HALF_FLOAT }), false);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: UNSIGNED_BYTE }), false);
+				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: UNSIGNED_BYTE }), true);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: BYTE }), true);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: UNSIGNED_SHORT }), true);
 				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: SHORT }), true);
@@ -278,7 +282,7 @@
 				});
 			});
 			it('should return valid internal type for GLSL1', () => {
-				const results = [FLOAT, HALF_FLOAT, UNSIGNED_BYTE, HALF_FLOAT, FLOAT, FLOAT, FLOAT, FLOAT];
+				const results = [FLOAT, HALF_FLOAT, HALF_FLOAT, HALF_FLOAT, FLOAT, FLOAT, FLOAT, FLOAT];
 				[composer1, composer2].forEach(composer => {
 					[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach((type, i) => {
 						[true, false].forEach(writable => {

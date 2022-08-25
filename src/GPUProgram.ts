@@ -2,6 +2,9 @@ import { GPUComposer } from './GPUComposer';
 import {
 	isArray,
 	isBoolean,
+	isInteger,
+	isNonNegativeInteger,
+	isNumber,
 	isObject,
 	isString,
 } from './checks';
@@ -28,20 +31,19 @@ import {
 	LAYER_POINTS_PROGRAM_NAME,
 	LAYER_VECTOR_FIELD_PROGRAM_NAME,
 	LAYER_LINES_PROGRAM_NAME,
-	INT,
-	UINT,
 	UINT_1D_UNIFORM,
 	UINT_2D_UNIFORM,
 	UINT_3D_UNIFORM,
 	UINT_4D_UNIFORM,
 	UniformParams,
+	BOOL_1D_UNIFORM,
+	GLSL3,
 } from './constants';
 import {
 	compileShader,
 	preprocessFragmentShader,
 	initGLProgram,
 	uniformInternalTypeForValue,
-	isWebGL2,
 } from './utils';
 
 export class GPUProgram {
@@ -287,36 +289,72 @@ export class GPUProgram {
 	private _setProgramUniform(
 		program: WebGLProgram,
 		programName: string,
-		name: string,
+		uniformName: string,
 		value: UniformValue,
 		type: UniformInternalType,
 	) {
 		const { _composer, _uniforms } = this;
-		const { gl, _errorCallback } = _composer;
+		const { gl, _errorCallback, glslVersion } = _composer;
 		// Set active program.
 		gl.useProgram(program);
 
-		let location = _uniforms[name]?.location[programName];
-		// Init a location for WebGLProgram if needed.
+		const isGLSL3 = glslVersion === GLSL3;
+
+		let location = _uniforms[uniformName]?.location[programName];
+		// Init a location for WebGLProgram if needed (only do this once).
 		if (location === undefined) {
-			const _location = gl.getUniformLocation(program, name);
+			const _location = gl.getUniformLocation(program, uniformName);
 			if (!_location) {
-				_errorCallback(`Could not init uniform "${name}" for program "${this.name}".
-Check that uniform is present in shader code, unused uniforms may be removed by compiler.
-Also check that uniform type in shader code matches type ${type}.
-Error code: ${gl.getError()}.`);
+				_errorCallback(`Could not init uniform "${uniformName}" for program "${this.name}". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type ${type}. Error code: ${gl.getError()}.`);
 				return;
 			}
 			location = _location;
 			// Save location for future use.
-			if (_uniforms[name]) {
-				_uniforms[name].location[programName] = location;
+			if (_uniforms[uniformName]) {
+				_uniforms[uniformName].location[programName] = location;
+			}
+
+			// Since this is the first time we are initing the uniform, check that type is correct.
+			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getUniform
+			const uniform = gl.getUniform(program, location);
+			let badType = false;
+			// TODO: check bool.
+			// if (type === BOOL_1D_UNIFORM) {
+			// 	if (!isBoolean(uniform)) {
+			// 		badType = true;
+			// 	}
+			// } else 
+			if (type === FLOAT_1D_UNIFORM || type === FLOAT_2D_UNIFORM || type === FLOAT_3D_UNIFORM || type === FLOAT_4D_UNIFORM) {
+				if (!isNumber(uniform) && uniform.constructor !== Float32Array) {
+					badType = true;
+				}
+			} else if (type === INT_1D_UNIFORM || type === INT_2D_UNIFORM || type === INT_3D_UNIFORM || type === INT_4D_UNIFORM) {
+				if (!isInteger(uniform) && uniform.constructor !== Int32Array) {
+					badType = true;
+				}
+			} else if (type === UINT_1D_UNIFORM || type === UINT_2D_UNIFORM || type === UINT_3D_UNIFORM || type === UINT_4D_UNIFORM) {
+				if (!isGLSL3) {
+					// GLSL1 does not have uint type, expect int instead.
+					if (!isNonNegativeInteger(uniform) && uniform.constructor !== Int32Array) {
+						badType = true;
+					}
+				} else if (!isNonNegativeInteger(uniform) && uniform.constructor !== Uint32Array) {
+					badType = true;
+				}
+			}
+			if (badType) {
+				_errorCallback(`Invalid uniform "${uniformName}" for program "${this.name}". Check that uniform type in shader code matches type ${type}, gl.getUniform(program, location) returned type: ${uniform.constructor.name}.`);
+				return;
 			}
 		}
 
 		// Set uniform.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
 		switch (type) {
+			case BOOL_1D_UNIFORM:
+				// We are setting boolean uniforms with uniform1i.
+				gl.uniform1i(location, value ? 1 : 0);
+				break;
 			case FLOAT_1D_UNIFORM:
 				gl.uniform1f(location, value as number);
 				break;
@@ -330,12 +368,7 @@ Error code: ${gl.getError()}.`);
 				gl.uniform4fv(location, value as number[]);
 				break;
 			case INT_1D_UNIFORM:
-				if (isBoolean(value)) {
-					// We are setting boolean uniforms with uniform1i.
-					gl.uniform1i(location, value ? 1 : 0);
-				} else {
-					gl.uniform1i(location, value as number);
-				}
+				gl.uniform1i(location, value as number);
 				break;
 			case INT_2D_UNIFORM:
 				gl.uniform2iv(location, value as number[]);
@@ -346,17 +379,22 @@ Error code: ${gl.getError()}.`);
 			case INT_4D_UNIFORM:
 				gl.uniform4iv(location, value as number[]);
 				break;
+			// Uint not supported in GLSL1, use int instead.
 			case UINT_1D_UNIFORM:
-				(gl as WebGL2RenderingContext).uniform1ui(location, value as number);
+				if (isGLSL3) (gl as WebGL2RenderingContext).uniform1ui(location, value as number);
+				else gl.uniform1i(location, value as number);
 				break;
 			case UINT_2D_UNIFORM:
-				(gl as WebGL2RenderingContext).uniform2uiv(location, value as number[]);
+				if (isGLSL3) (gl as WebGL2RenderingContext).uniform2uiv(location, value as number[]);
+				else gl.uniform2iv(location, value as number[]);
 				break;
 			case UINT_3D_UNIFORM:
-				(gl as WebGL2RenderingContext).uniform3uiv(location, value as number[]);
+				if (isGLSL3) (gl as WebGL2RenderingContext).uniform3uiv(location, value as number[]);
+				else gl.uniform3iv(location, value as number[]);
 				break;
 			case UINT_4D_UNIFORM:
-				(gl as WebGL2RenderingContext).uniform4uiv(location, value as number[]);
+				if (isGLSL3) (gl as WebGL2RenderingContext).uniform4uiv(location, value as number[]);
+				else gl.uniform4iv(location, value as number[]);
 				break;
 			default:
 				throw new Error(`Unknown uniform type ${type} for GPUProgram "${this.name}".`);
@@ -376,11 +414,6 @@ Error code: ${gl.getError()}.`);
 	) {
 		const { _programs, _uniforms, _composer } = this;
 		const { verboseLogging } = _composer;
-
-		// Uint is not supported in webgl1.
-		if (!isWebGL2(_composer.gl) && type === UINT) {
-			type = INT;
-		}
 
 		// Check that length of value is correct.
 		if (isArray(value)) {

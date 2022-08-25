@@ -225,6 +225,10 @@ export const UINT_3D_UNIFORM = '3ui';
  * @private
  */
 export const UINT_4D_UNIFORM = '4ui';
+/**
+ * @private
+ */
+ export const BOOL_1D_UNIFORM = INT_1D_UNIFORM; // Using int type for bool.
 
 // Uniform types and values.
 /**
@@ -235,6 +239,7 @@ export type UniformType = typeof FLOAT | typeof INT | typeof UINT | typeof BOOL;
  * @private
  */
 export type UniformInternalType = 
+	typeof BOOL_1D_UNIFORM |
 	typeof FLOAT_1D_UNIFORM |
 	typeof FLOAT_2D_UNIFORM |
 	typeof FLOAT_3D_UNIFORM |
