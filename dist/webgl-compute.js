@@ -5325,13 +5325,12 @@ var GPUProgram = /** @class */ (function () {
             // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getUniform
             var uniform = gl.getUniform(program, location);
             var badType = false;
-            // TODO: check bool.
-            // if (type === BOOL_1D_UNIFORM) {
-            // 	if (!isBoolean(uniform)) {
-            // 		badType = true;
-            // 	}
-            // } else 
-            if (type === constants_1.FLOAT_1D_UNIFORM || type === constants_1.FLOAT_2D_UNIFORM || type === constants_1.FLOAT_3D_UNIFORM || type === constants_1.FLOAT_4D_UNIFORM) {
+            if (type === constants_1.BOOL_1D_UNIFORM || type === constants_1.BOOL_2D_UNIFORM || type === constants_1.BOOL_3D_UNIFORM || type === constants_1.BOOL_4D_UNIFORM) {
+                if (!(0, checks_1.isBoolean)(uniform) && uniform.constructor !== Array) {
+                    badType = true;
+                }
+            }
+            else if (type === constants_1.FLOAT_1D_UNIFORM || type === constants_1.FLOAT_2D_UNIFORM || type === constants_1.FLOAT_3D_UNIFORM || type === constants_1.FLOAT_4D_UNIFORM) {
                 if (!(0, checks_1.isNumber)(uniform) && uniform.constructor !== Float32Array) {
                     badType = true;
                 }
@@ -5360,9 +5359,20 @@ var GPUProgram = /** @class */ (function () {
         // Set uniform.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
         switch (type) {
+            // We are setting boolean uniforms with uniform[1234]i.
+            // This suggest floats work as well, but ints seem more natural:
+            // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
             case constants_1.BOOL_1D_UNIFORM:
-                // We are setting boolean uniforms with uniform1i.
                 gl.uniform1i(location, value ? 1 : 0);
+                break;
+            case constants_1.BOOL_2D_UNIFORM:
+                gl.uniform2i(location, value[0] ? 1 : 0, value[1] ? 1 : 0);
+                break;
+            case constants_1.BOOL_3D_UNIFORM:
+                gl.uniform3i(location, value[0] ? 1 : 0, value[1] ? 1 : 0, value[2] ? 1 : 0);
+                break;
+            case constants_1.BOOL_4D_UNIFORM:
+                gl.uniform4i(location, value[0] ? 1 : 0, value[1] ? 1 : 0, value[2] ? 1 : 0, value[3] ? 1 : 0);
                 break;
             case constants_1.FLOAT_1D_UNIFORM:
                 gl.uniform1f(location, value);
@@ -5789,8 +5799,8 @@ exports.isBoolean = isBoolean;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
+exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = void 0;
 // Data types.
 /**
  * Half float data type.
@@ -5923,55 +5933,67 @@ exports.PRECISION_HIGH_P = 'highp';
 /**
  * @private
  */
-exports.FLOAT_1D_UNIFORM = '1f';
+exports.FLOAT_1D_UNIFORM = 'FLOAT_1D_UNIFORM';
 /**
  * @private
  */
-exports.FLOAT_2D_UNIFORM = '2f';
+exports.FLOAT_2D_UNIFORM = 'FLOAT_2D_UNIFORM';
 /**
  * @private
  */
-exports.FLOAT_3D_UNIFORM = '3f';
+exports.FLOAT_3D_UNIFORM = 'FLOAT_3D_UNIFORM';
 /**
  * @private
  */
-exports.FLOAT_4D_UNIFORM = '4f';
+exports.FLOAT_4D_UNIFORM = 'FLOAT_4D_UNIFORM';
 /**
  * @private
  */
-exports.INT_1D_UNIFORM = '1i';
+exports.INT_1D_UNIFORM = 'INT_1D_UNIFORM';
 /**
  * @private
  */
-exports.INT_2D_UNIFORM = '2i';
+exports.INT_2D_UNIFORM = 'INT_2D_UNIFORM';
 /**
  * @private
  */
-exports.INT_3D_UNIFORM = '3i';
+exports.INT_3D_UNIFORM = 'INT_3D_UNIFORM';
 /**
  * @private
  */
-exports.INT_4D_UNIFORM = '4i';
+exports.INT_4D_UNIFORM = 'INT_4D_UNIFORM';
 /**
  * @private
  */
-exports.UINT_1D_UNIFORM = '1ui';
+exports.UINT_1D_UNIFORM = 'UINT_1D_UNIFORM';
 /**
  * @private
  */
-exports.UINT_2D_UNIFORM = '2ui';
+exports.UINT_2D_UNIFORM = 'UINT_2D_UNIFORM';
 /**
  * @private
  */
-exports.UINT_3D_UNIFORM = '3ui';
+exports.UINT_3D_UNIFORM = 'UINT_3D_UNIFORM';
 /**
  * @private
  */
-exports.UINT_4D_UNIFORM = '4ui';
+exports.UINT_4D_UNIFORM = 'UINT_4D_UNIFORM';
 /**
  * @private
  */
-exports.BOOL_1D_UNIFORM = exports.INT_1D_UNIFORM; // Using int type for bool.
+exports.BOOL_1D_UNIFORM = 'BOOL_1D_UNIFORM';
+/**
+* @private
+*/
+exports.BOOL_2D_UNIFORM = 'BOOL_2D_UNIFORM';
+/**
+* @private
+*/
+exports.BOOL_3D_UNIFORM = 'BOOL_3D_UNIFORM';
+/**
+* @private
+*/
+exports.BOOL_4D_UNIFORM = 'BOOL_4D_UNIFORM';
 // Vertex shader types.
 /**
  * @private
@@ -6656,9 +6678,9 @@ function convertFragmentShaderToGLSL1(shaderSource) {
     shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
     // Convert out_fragColor to gl_FragColor.
     shaderSource = shaderSource.replace(/\bout \w+ out_fragColor;/g, '');
-    var output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/);
+    var output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/s); // /s makes this work for multiline.
     if (output) {
-        shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/, "gl_FragColor = vec4(".concat(output[0].trim(), ");"));
+        shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, "gl_FragColor = vec4(".concat(output[0], ");"));
     }
     return shaderSource;
 }
@@ -6790,16 +6812,35 @@ function uniformInternalTypeForValue(value, type, uniformName, programName) {
         throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected uint or uint[] of length 1-4."));
     }
     else if (type === constants_1.BOOL) {
-        if ((0, checks_1.isBoolean)(value)) {
-            // Boolean types are passed in as ints.
-            // This suggest floats work as well, but ints seem more natural:
-            // https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+        // Check that we are dealing with a boolean.
+        if ((0, checks_1.isArray)(value)) {
+            for (var i = 0; i < value.length; i++) {
+                if (!(0, checks_1.isBoolean)(value[i])) {
+                    throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected bool or bool[] of length 1-4."));
+                }
+            }
+        }
+        else {
+            if (!(0, checks_1.isBoolean)(value)) {
+                throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected bool or bool[] of length 1-4."));
+            }
+        }
+        if (!(0, checks_1.isArray)(value) || value.length === 1) {
             return constants_1.BOOL_1D_UNIFORM;
+        }
+        if (value.length === 2) {
+            return constants_1.BOOL_2D_UNIFORM;
+        }
+        if (value.length === 3) {
+            return constants_1.BOOL_3D_UNIFORM;
+        }
+        if (value.length === 4) {
+            return constants_1.BOOL_4D_UNIFORM;
         }
         throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected boolean."));
     }
     else {
-        throw new Error("Invalid type \"".concat(type, "\" for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected ").concat(constants_1.FLOAT, " or ").concat(constants_1.INT, " of ").concat(constants_1.BOOL, "."));
+        throw new Error("Invalid type \"".concat(type, "\" for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected ").concat(constants_1.FLOAT, " or ").concat(constants_1.INT, " or ").concat(constants_1.BOOL, "."));
     }
 }
 exports.uniformInternalTypeForValue = uniformInternalTypeForValue;

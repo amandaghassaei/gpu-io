@@ -37,6 +37,9 @@ import {
 	UINT_4D_UNIFORM,
 	UniformParams,
 	BOOL_1D_UNIFORM,
+	BOOL_2D_UNIFORM,
+	BOOL_3D_UNIFORM,
+	BOOL_4D_UNIFORM,
 	GLSL3,
 } from './constants';
 import {
@@ -318,12 +321,11 @@ export class GPUProgram {
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getUniform
 			const uniform = gl.getUniform(program, location);
 			let badType = false;
-			// TODO: check bool.
-			// if (type === BOOL_1D_UNIFORM) {
-			// 	if (!isBoolean(uniform)) {
-			// 		badType = true;
-			// 	}
-			// } else 
+			if (type === BOOL_1D_UNIFORM || type === BOOL_2D_UNIFORM || type === BOOL_3D_UNIFORM || type === BOOL_4D_UNIFORM) {
+				if (!isBoolean(uniform) && uniform.constructor !== Array) {
+					badType = true;
+				}
+			} else 
 			if (type === FLOAT_1D_UNIFORM || type === FLOAT_2D_UNIFORM || type === FLOAT_3D_UNIFORM || type === FLOAT_4D_UNIFORM) {
 				if (!isNumber(uniform) && uniform.constructor !== Float32Array) {
 					badType = true;
@@ -351,9 +353,20 @@ export class GPUProgram {
 		// Set uniform.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniform
 		switch (type) {
+			// We are setting boolean uniforms with uniform[1234]i.
+			// This suggest floats work as well, but ints seem more natural:
+			// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
 			case BOOL_1D_UNIFORM:
-				// We are setting boolean uniforms with uniform1i.
 				gl.uniform1i(location, value ? 1 : 0);
+				break;
+			case BOOL_2D_UNIFORM:
+				gl.uniform2i(location, (value as number[])[0] ? 1 : 0, (value as number[])[1] ? 1 : 0);
+				break;
+			case BOOL_3D_UNIFORM:
+				gl.uniform3i(location, (value as number[])[0] ? 1 : 0, (value as number[])[1] ? 1 : 0, (value as number[])[2] ? 1 : 0);
+				break;
+			case BOOL_4D_UNIFORM:
+				gl.uniform4i(location, (value as number[])[0] ? 1 : 0, (value as number[])[1] ? 1 : 0, (value as number[])[2] ? 1 : 0, (value as number[])[3] ? 1 : 0);
 				break;
 			case FLOAT_1D_UNIFORM:
 				gl.uniform1f(location, value as number);

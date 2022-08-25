@@ -12,6 +12,8 @@
 		GLSL1,
 		GLSL3,
 		UINT,
+		INT,
+		BOOL,
 		isWebGL2,
 	} = WebGLCompute;
 
@@ -121,7 +123,64 @@
 				layer.dispose();
 			});
 			it('should handle a variety of types and sizes', () => {
-				// TODO:
+				const composer3 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL3 });
+				assert.equal(isWebGL2(composer3.gl), true);
+				assert.equal(composer3.glslVersion, GLSL3);
+				const composer2 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL2, glslVersion: GLSL1 });
+				assert.equal(isWebGL2(composer2.gl), true);
+				assert.equal(composer2.glslVersion, GLSL1);
+				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), contextID: WEBGL1 });
+				assert.equal(isWebGL2(composer1.gl), false);
+				assert.equal(composer1.glslVersion, GLSL1);
+
+				[composer1, composer2, composer3].forEach(composer => {
+					const setUniformProgram = new GPUProgram(composer, {
+						name: 'uniform-test',
+						fragmentShader: setUniformsValueFragmentShader,
+					});
+					const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
+					composer.step({
+						program: setUniformProgram,
+						output: layer,
+					});
+					const output = layer.getValues();
+					// Should equal zero by default.
+					output.forEach((out) => {
+						assert.equal(out, 0, `${output}, ${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'}, ${composer.glslVersion}`);
+					});
+
+					// Set uniforms.
+					setUniformProgram.setUniform('u_uvalue1', 10, UINT);
+					setUniformProgram.setUniform('u_uvalue2', [4, 3], UINT);
+					setUniformProgram.setUniform('u_uvalue3', [27, 900, 3], UINT);
+					setUniformProgram.setUniform('u_uvalue4', [4, 0, 36, 22], UINT);
+					setUniformProgram.setUniform('u_ivalue1', 4, INT);
+					setUniformProgram.setUniform('u_ivalue2', [-34, 78], INT);
+					setUniformProgram.setUniform('u_ivalue3', [-56, 8, 9], INT);
+					setUniformProgram.setUniform('u_ivalue4', [23, 0, 23, 5678], INT);
+					setUniformProgram.setUniform('u_fvalue1', 3.5, FLOAT);
+					setUniformProgram.setUniform('u_fvalue2', [-5.324, 45.8], FLOAT);
+					setUniformProgram.setUniform('u_fvalue3', [-56, 4.5, 9], FLOAT);
+					setUniformProgram.setUniform('u_fvalue4', [23, 0, 34.87777, -5678.0], FLOAT);
+					setUniformProgram.setUniform('u_bvalue1', true, BOOL);
+					setUniformProgram.setUniform('u_bvalue2', [false, true], BOOL);
+					setUniformProgram.setUniform('u_bvalue3', [true, false, false], BOOL);
+					setUniformProgram.setUniform('u_bvalue4', [false, false, true, true], BOOL);
+
+					composer.step({
+						program: setUniformProgram,
+						output: layer,
+					});
+					const expected = [1009, 5733, -5618.64623, 5];
+					const output2 = layer.getValues();
+					output2.forEach((out, i) => {
+						assert.closeTo(out, expected[i], 1e-3, `${output2}, ${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'}, ${composer.glslVersion}`);
+					});
+				});
+
+				composer1.dispose();
+				composer2.dispose();
+				composer3.dispose();
 			});
 			it('should cast/handle uint uniforms for UNSIGNED_BYTE GPULayers', () => {
 				// This seems to only work after I changed GPULayer to cast UNSIGNED_BYTE types to HALF_FLOAT for GLSL1.
@@ -175,7 +234,7 @@
 				assert.throws(() => { composer.step({
 					program: setValueProgram,
 					output: layer,
-				}); }, /Could not init uniform "u_value_nonexist" for program "uniform-test". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type 4f. Error code: [0-9]+./);
+				}); }, /Could not init uniform "u_value_nonexist" for program "uniform-test". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type FLOAT_4D_UNIFORM. Error code: [0-9]+./);
 				setValueProgram.dispose();
 				layer.dispose();
 			});
@@ -190,7 +249,7 @@
 				assert.throws(() => { composer.step({
 					program: setValueProgram,
 					output: layer,
-				}); }, 'Invalid uniform "u_value" for program "uniform-test". Check that uniform type in shader code matches type 4ui, gl.getUniform(program, location) returned type: Float32Array.');
+				}); }, 'Invalid uniform "u_value" for program "uniform-test". Check that uniform type in shader code matches type UINT_4D_UNIFORM, gl.getUniform(program, location) returned type: Float32Array.');
 				setValueProgram.dispose();
 				layer.dispose();
 			});
@@ -199,7 +258,7 @@
 			it('should set program vertex uniform', () => {
 				// Throw an error for uniforms that don't exist.
 				assert.throws(() => { program._setVertexUniform(program._defaultProgram, 'u_testing', 3, FLOAT) },
-/Could not init uniform "u_testing" for program "common-program". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type 1f. Error code: [0-9]+./);
+/Could not init uniform "u_testing" for program "common-program". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type FLOAT_1D_UNIFORM. Error code: [0-9]+./);
 				// Test a case that works, shouldn't throw an error.
 				program._setVertexUniform(program._defaultProgram, 'u_internal_scale', 3, FLOAT);
 				// This function calls GPUProgram.setUniform, do more extensive testing there.

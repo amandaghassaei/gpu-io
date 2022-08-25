@@ -180,55 +180,67 @@ export type GLSLPrecision = typeof PRECISION_LOW_P | typeof PRECISION_MEDIUM_P |
 /**
  * @private
  */
-export const FLOAT_1D_UNIFORM = '1f';
+export const FLOAT_1D_UNIFORM = 'FLOAT_1D_UNIFORM';
 /**
  * @private
  */
-export const FLOAT_2D_UNIFORM = '2f';
+export const FLOAT_2D_UNIFORM = 'FLOAT_2D_UNIFORM';
 /**
  * @private
  */
-export const FLOAT_3D_UNIFORM = '3f';
+export const FLOAT_3D_UNIFORM = 'FLOAT_3D_UNIFORM';
 /**
  * @private
  */
-export const FLOAT_4D_UNIFORM = '4f';
+export const FLOAT_4D_UNIFORM = 'FLOAT_4D_UNIFORM';
 /**
  * @private
  */
-export const INT_1D_UNIFORM = '1i';
+export const INT_1D_UNIFORM = 'INT_1D_UNIFORM';
 /**
  * @private
  */
-export const INT_2D_UNIFORM = '2i';
+export const INT_2D_UNIFORM = 'INT_2D_UNIFORM';
 /**
  * @private
  */
-export const INT_3D_UNIFORM = '3i';
+export const INT_3D_UNIFORM = 'INT_3D_UNIFORM';
 /**
  * @private
  */
-export const INT_4D_UNIFORM = '4i';
+export const INT_4D_UNIFORM = 'INT_4D_UNIFORM';
 /**
  * @private
  */
-export const UINT_1D_UNIFORM = '1ui';
+export const UINT_1D_UNIFORM = 'UINT_1D_UNIFORM';
 /**
  * @private
  */
-export const UINT_2D_UNIFORM = '2ui';
+export const UINT_2D_UNIFORM = 'UINT_2D_UNIFORM';
 /**
  * @private
  */
-export const UINT_3D_UNIFORM = '3ui';
+export const UINT_3D_UNIFORM = 'UINT_3D_UNIFORM';
 /**
  * @private
  */
-export const UINT_4D_UNIFORM = '4ui';
+export const UINT_4D_UNIFORM = 'UINT_4D_UNIFORM';
 /**
  * @private
  */
- export const BOOL_1D_UNIFORM = INT_1D_UNIFORM; // Using int type for bool.
+ export const BOOL_1D_UNIFORM = 'BOOL_1D_UNIFORM';
+ /**
+ * @private
+ */
+  export const BOOL_2D_UNIFORM = 'BOOL_2D_UNIFORM';
+  /**
+ * @private
+ */
+ export const BOOL_3D_UNIFORM = 'BOOL_3D_UNIFORM';
+ /**
+ * @private
+ */
+  export const BOOL_4D_UNIFORM = 'BOOL_4D_UNIFORM';
 
 // Uniform types and values.
 /**
@@ -240,6 +252,9 @@ export type UniformType = typeof FLOAT | typeof INT | typeof UINT | typeof BOOL;
  */
 export type UniformInternalType = 
 	typeof BOOL_1D_UNIFORM |
+	typeof BOOL_2D_UNIFORM |
+	typeof BOOL_3D_UNIFORM |
+	typeof BOOL_4D_UNIFORM |
 	typeof FLOAT_1D_UNIFORM |
 	typeof FLOAT_2D_UNIFORM |
 	typeof FLOAT_3D_UNIFORM |
@@ -255,7 +270,7 @@ export type UniformInternalType =
 /**
  * GPUProgram uniform values.
  */
-export type UniformValue = boolean | number | number[];
+export type UniformValue = boolean | boolean[] | number | number[];
 /**
  * GPUProgram uniform parameters.
  */

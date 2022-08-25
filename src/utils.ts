@@ -9,6 +9,9 @@ import {
 import {
 	BOOL,
 	BOOL_1D_UNIFORM,
+	BOOL_2D_UNIFORM,
+	BOOL_3D_UNIFORM,
+	BOOL_4D_UNIFORM,
 	BYTE,
 	CompileTimeVars,
 	DEFAULT_ERROR_CALLBACK,
@@ -613,9 +616,9 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 	shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
 	// Convert out_fragColor to gl_FragColor.
 	shaderSource = shaderSource.replace(/\bout \w+ out_fragColor;/g, '');
-	const output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/);
+	const output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/s); // /s makes this work for multiline.
 	if (output) {
-		shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/, `gl_FragColor = vec4(${output[0].trim()});`);
+		shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[0]});`);
 	}
 	
 	return shaderSource;
@@ -748,14 +751,32 @@ export function uniformInternalTypeForValue(
 		}
 		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected uint or uint[] of length 1-4.`);
 	} else if (type === BOOL) {
-		if (isBoolean(value)) {
-			// Boolean types are passed in as ints.
-			// This suggest floats work as well, but ints seem more natural:
-			// https://github.com/KhronosGroup/WebGL/blob/main/sdk/tests/conformance/uniforms/gl-uniform-bool.html
+		// Check that we are dealing with a boolean.
+		if (isArray(value)) {
+			for (let i = 0; i < (value as boolean[]).length; i++) {
+				if (!isBoolean((value as boolean[])[i])) {
+					throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected bool or bool[] of length 1-4.`);
+				}
+			}
+		} else {
+			if (!isBoolean(value)) {
+				throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected bool or bool[] of length 1-4.`);
+			}
+		}
+		if (!isArray(value) || (value as number[]).length === 1) {
 			return BOOL_1D_UNIFORM;
+		}
+		if ((value as number[]).length === 2) {
+			return BOOL_2D_UNIFORM;
+		}
+		if ((value as number[]).length === 3) {
+			return BOOL_3D_UNIFORM;
+		}
+		if ((value as number[]).length === 4) {
+			return BOOL_4D_UNIFORM;
 		}
 		throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected boolean.`);
 	} else {
-		throw new Error(`Invalid type "${type}" for uniform "${uniformName}" in program "${programName}", expected ${FLOAT} or ${INT} of ${BOOL}.`);
+		throw new Error(`Invalid type "${type}" for uniform "${uniformName}" in program "${programName}", expected ${FLOAT} or ${INT} or ${BOOL}.`);
 	}
 }

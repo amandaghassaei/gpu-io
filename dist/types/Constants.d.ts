@@ -160,55 +160,67 @@ export declare type GLSLPrecision = typeof PRECISION_LOW_P | typeof PRECISION_ME
 /**
  * @private
  */
-export declare const FLOAT_1D_UNIFORM = "1f";
+export declare const FLOAT_1D_UNIFORM = "FLOAT_1D_UNIFORM";
 /**
  * @private
  */
-export declare const FLOAT_2D_UNIFORM = "2f";
+export declare const FLOAT_2D_UNIFORM = "FLOAT_2D_UNIFORM";
 /**
  * @private
  */
-export declare const FLOAT_3D_UNIFORM = "3f";
+export declare const FLOAT_3D_UNIFORM = "FLOAT_3D_UNIFORM";
 /**
  * @private
  */
-export declare const FLOAT_4D_UNIFORM = "4f";
+export declare const FLOAT_4D_UNIFORM = "FLOAT_4D_UNIFORM";
 /**
  * @private
  */
-export declare const INT_1D_UNIFORM = "1i";
+export declare const INT_1D_UNIFORM = "INT_1D_UNIFORM";
 /**
  * @private
  */
-export declare const INT_2D_UNIFORM = "2i";
+export declare const INT_2D_UNIFORM = "INT_2D_UNIFORM";
 /**
  * @private
  */
-export declare const INT_3D_UNIFORM = "3i";
+export declare const INT_3D_UNIFORM = "INT_3D_UNIFORM";
 /**
  * @private
  */
-export declare const INT_4D_UNIFORM = "4i";
+export declare const INT_4D_UNIFORM = "INT_4D_UNIFORM";
 /**
  * @private
  */
-export declare const UINT_1D_UNIFORM = "1ui";
+export declare const UINT_1D_UNIFORM = "UINT_1D_UNIFORM";
 /**
  * @private
  */
-export declare const UINT_2D_UNIFORM = "2ui";
+export declare const UINT_2D_UNIFORM = "UINT_2D_UNIFORM";
 /**
  * @private
  */
-export declare const UINT_3D_UNIFORM = "3ui";
+export declare const UINT_3D_UNIFORM = "UINT_3D_UNIFORM";
 /**
  * @private
  */
-export declare const UINT_4D_UNIFORM = "4ui";
+export declare const UINT_4D_UNIFORM = "UINT_4D_UNIFORM";
 /**
  * @private
  */
-export declare const BOOL_1D_UNIFORM = "1i";
+export declare const BOOL_1D_UNIFORM = "BOOL_1D_UNIFORM";
+/**
+* @private
+*/
+export declare const BOOL_2D_UNIFORM = "BOOL_2D_UNIFORM";
+/**
+* @private
+*/
+export declare const BOOL_3D_UNIFORM = "BOOL_3D_UNIFORM";
+/**
+* @private
+*/
+export declare const BOOL_4D_UNIFORM = "BOOL_4D_UNIFORM";
 /**
  * GPUProgram uniform types.
  */
@@ -216,11 +228,11 @@ export declare type UniformType = typeof FLOAT | typeof INT | typeof UINT | type
 /**
  * @private
  */
-export declare type UniformInternalType = typeof BOOL_1D_UNIFORM | typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof FLOAT_4D_UNIFORM | typeof INT_1D_UNIFORM | typeof INT_2D_UNIFORM | typeof INT_3D_UNIFORM | typeof INT_4D_UNIFORM | typeof UINT_1D_UNIFORM | typeof UINT_2D_UNIFORM | typeof UINT_3D_UNIFORM | typeof UINT_4D_UNIFORM;
+export declare type UniformInternalType = typeof BOOL_1D_UNIFORM | typeof BOOL_2D_UNIFORM | typeof BOOL_3D_UNIFORM | typeof BOOL_4D_UNIFORM | typeof FLOAT_1D_UNIFORM | typeof FLOAT_2D_UNIFORM | typeof FLOAT_3D_UNIFORM | typeof FLOAT_4D_UNIFORM | typeof INT_1D_UNIFORM | typeof INT_2D_UNIFORM | typeof INT_3D_UNIFORM | typeof INT_4D_UNIFORM | typeof UINT_1D_UNIFORM | typeof UINT_2D_UNIFORM | typeof UINT_3D_UNIFORM | typeof UINT_4D_UNIFORM;
 /**
  * GPUProgram uniform values.
  */
-export declare type UniformValue = boolean | number | number[];
+export declare type UniformValue = boolean | boolean[] | number | number[];
 /**
  * GPUProgram uniform parameters.
  */

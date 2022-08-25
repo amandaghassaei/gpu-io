@@ -36,6 +36,9 @@
 		UINT_3D_UNIFORM,
 		UINT_4D_UNIFORM,
 		BOOL_1D_UNIFORM,
+		BOOL_2D_UNIFORM,
+		BOOL_3D_UNIFORM,
+		BOOL_4D_UNIFORM,
 	} = WebGLCompute;
 	const {
 		isFloatType,
@@ -578,7 +581,7 @@ uniform sampler2D u_state;
 #endif
 
 void main() {
-	gl_FragColor = vec4(texture2D(u_state, v_UV));
+	gl_FragColor = vec4( texture2D(u_state, v_UV));
 }`);
 				// No mutations.
 				assert.equal(copyFragmentShader, copyFragmentShaderCopy);
@@ -614,42 +617,44 @@ void main() {
 					'Invalid value [2,4,-6,8] for uniform "u_myUniform" in program "test-program", expected uint or uint[] of length 1-4.');
 
 				assert.throws(() => { uniformInternalTypeForValue('test', BOOL, 'u_myUniform', 'test-program'); },
-					'Invalid value "test" for uniform "u_myUniform" in program "test-program", expected boolean.');
+					'Invalid value "test" for uniform "u_myUniform" in program "test-program", expected bool or bool[] of length 1-4.');
 				assert.throws(() => { uniformInternalTypeForValue(3, BOOL, 'u_myUniform', 'test-program'); },
-					'Invalid value 3 for uniform "u_myUniform" in program "test-program", expected boolean.');
+					'Invalid value 3 for uniform "u_myUniform" in program "test-program", expected bool or bool[] of length 1-4.');
 				assert.throws(() => { uniformInternalTypeForValue(1, BOOL, 'u_myUniform', 'test-program'); },
-					'Invalid value 1 for uniform "u_myUniform" in program "test-program", expected boolean.');
+					'Invalid value 1 for uniform "u_myUniform" in program "test-program", expected bool or bool[] of length 1-4.');
 				assert.throws(() => { uniformInternalTypeForValue(0, BOOL, 'u_myUniform', 'test-program'); },
-					'Invalid value 0 for uniform "u_myUniform" in program "test-program", expected boolean.');
-				assert.throws(() => { uniformInternalTypeForValue([true, false], BOOL, 'u_myUniform', 'test-program'); },
-					'Invalid value [true,false] for uniform "u_myUniform" in program "test-program", expected boolean.');
+					'Invalid value 0 for uniform "u_myUniform" in program "test-program", expected bool or bool[] of length 1-4.');
+				assert.throws(() => { uniformInternalTypeForValue([1, 0], BOOL, 'u_myUniform', 'test-program'); },
+					'Invalid value [1,0] for uniform "u_myUniform" in program "test-program", expected bool or bool[] of length 1-4.');
 			});
 			it('should throw error if type is invalid', () => {
 				assert.throws(() => { uniformInternalTypeForValue(0, 'THING', 'u_myUniform', 'test-program'); },
-					'Invalid type "THING" for uniform "u_myUniform" in program "test-program", expected FLOAT or INT of BOOL.');
+					'Invalid type "THING" for uniform "u_myUniform" in program "test-program", expected FLOAT or INT or BOOL.');
 			});
 			it('should return valid uniform type', () => {
-				assert.equal(uniformInternalTypeForValue(0, FLOAT, 'test-program'), FLOAT_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0], FLOAT, 'test-program'), FLOAT_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0, 1.3], FLOAT, 'test-program'), FLOAT_2D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0, -4.5, 6], FLOAT, 'test-program'), FLOAT_3D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([4.6, 0, -4, 60000], FLOAT, 'test-program'), FLOAT_4D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue(0, FLOAT, 'uniformName', 'test-program'), FLOAT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0], FLOAT, 'uniformName', 'test-program'), FLOAT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, 1.3], FLOAT, 'uniformName', 'test-program'), FLOAT_2D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, -4.5, 6], FLOAT, 'uniformName', 'test-program'), FLOAT_3D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([4.6, 0, -4, 60000], FLOAT, 'uniformName', 'test-program'), FLOAT_4D_UNIFORM);
 
-				assert.equal(uniformInternalTypeForValue(0, INT, 'test-program'), INT_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0], INT, 'test-program'), INT_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0, 1], INT, 'test-program'), INT_2D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0, 4, 6], INT, 'test-program'), INT_3D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([4, 0, -4, 60000], INT, 'test-program'), INT_4D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue(0, INT, 'uniformName', 'test-program'), INT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0], INT, 'uniformName', 'test-program'), INT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, 1], INT, 'uniformName', 'test-program'), INT_2D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, 4, 6], INT, 'uniformName', 'test-program'), INT_3D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([4, 0, -4, 60000], INT, 'uniformName', 'test-program'), INT_4D_UNIFORM);
 
-				assert.equal(uniformInternalTypeForValue(0, UINT, 'test-program'), UINT_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0], UINT, 'test-program'), UINT_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0, 1], UINT, 'test-program'), UINT_2D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([0, 4, 6], UINT, 'test-program'), UINT_3D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue([4, 0, 40, 60000], UINT, 'test-program'), UINT_4D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue(0, UINT, 'uniformName', 'test-program'), UINT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0], UINT, 'uniformName', 'test-program'), UINT_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, 1], UINT, 'uniformName', 'test-program'), UINT_2D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([0, 4, 6], UINT, 'uniformName', 'test-program'), UINT_3D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([4, 0, 40, 60000], UINT, 'uniformName', 'test-program'), UINT_4D_UNIFORM);
 
-				// 1D booleans allowed.
-				assert.equal(uniformInternalTypeForValue(true, BOOL, 'test-program'), BOOL_1D_UNIFORM);
-				assert.equal(uniformInternalTypeForValue(false, BOOL, 'test-program'), BOOL_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue(true, BOOL, 'uniformName', 'test-program'), BOOL_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue(false, BOOL, 'uniformName', 'test-program'), BOOL_1D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([true, false], BOOL, 'uniformName', 'test-program'), BOOL_2D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([true, false, false], BOOL, 'uniformName', 'test-program'), BOOL_3D_UNIFORM);
+				assert.equal(uniformInternalTypeForValue([true, false, true, false], BOOL, 'uniformName', 'test-program'), BOOL_4D_UNIFORM);
 			});
 		});
 	});
