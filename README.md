@@ -190,12 +190,12 @@ const composer = new GPUComposer({
 I've also included the following helper functions to test the precision of mediump on your device and determine whether highp is supported:
 
 ```js
-const {
+import {
 	isHighpSupportedInVertexShader,
 	isHighpSupportedInFragmentShader,
 	getVertexShaderMediumpPrecision,
 	getFragmentShaderMediumpPrecision,
-} = WebGLCompute;
+} from 'webgl-compute';
 
 // Prints 'highp' or 'mediump' depending on returned precision of
 // mediump (16+bit or 32+bit).
