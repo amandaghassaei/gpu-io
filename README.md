@@ -127,14 +127,21 @@ More info about using webgl-compute to update mesh positions data is coming soon
 
 ### GLSL version
 
-This library defaults to using GLSL1.0 TODO: change this.
+This library defaults to using GLSL version 300 (GLSL3) but you can set it to use version 100 by passing a `glslVersion` parameter to `GPUComposer`:
+
+```js
+import { GPUComposer, GLSL1 } from 'webgl-compute';
+const composer = new GPUComposer({ canvas: document.createElement('canvas'), glslVersion: GLSL1 });
+```
+
+See [docs>GPUComposer>constructor](https://github.com/amandaghassaei/webgl-compute/blob/main/docs/classes/GPUComposer.md#constructor) for more information.
 
 More info about the difference between GLSL and WebGL versions:
 
 - [GLSL Versions](https://github.com/mattdesl/lwjgl-basics/wiki/GLSL-Versions) by Matt DesLauriers
 - [WebGL1 Reference Card](https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) by Khronos
 - [WebGL2 Reference Card](https://www.khronos.org/files/webgl20-reference-guide.pdf) by Khronos
-- [WebGL2 from WebGL1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html) by WebGL2Fundamentals.org
+- [WebGL2 from WebGL1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html) by [webgl2fundamentals.org](https://webgl2fundamentals.org/)
 
 
 ### Transform Feedback
