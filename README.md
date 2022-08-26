@@ -40,7 +40,7 @@ import { GPUComposer, GPULayer, GPUProgram } from 'webgl-compute';
 <script src="webgl-compute.js"></script>
 ```
 
-WebGLCompute will be accessible globally.
+WebGLCompute will be accessible globally:
 
 ```js
 const { GPUComposer, GPULayer, GPUProgram } = WebGLCompute;
@@ -131,7 +131,10 @@ This library defaults to using GLSL version 300 (GLSL3) but you can set it to us
 
 ```js
 import { GPUComposer, GLSL1 } from 'webgl-compute';
-const composer = new GPUComposer({ canvas: document.createElement('canvas'), glslVersion: GLSL1 });
+const composer = new GPUComposer({
+	canvas: document.createElement('canvas'),
+	glslVersion: GLSL1,
+});
 ```
 
 See [docs>GPUComposer>constructor](https://github.com/amandaghassaei/webgl-compute/blob/main/docs/classes/GPUComposer.md#constructor) for more information.
