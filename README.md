@@ -130,7 +130,11 @@ More info about using webgl-compute to update mesh positions data is coming soon
 This library defaults to using GLSL version 300 (GLSL3) but you can set it to use version 100 by passing a `glslVersion` parameter to `GPUComposer`:
 
 ```js
-import { GPUComposer, GLSL1 } from 'webgl-compute';
+import {
+	GPUComposer,
+	GLSL1,
+} from 'webgl-compute';
+
 const composer = new GPUComposer({
 	canvas: document.createElement('canvas'),
 	glslVersion: GLSL1,
