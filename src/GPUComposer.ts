@@ -42,6 +42,7 @@ import {
 	GLSLPrecision,
 	PRECISION_HIGH_P,
 	DEFAULT_ERROR_CALLBACK,
+	BOOL,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -1439,7 +1440,7 @@ export class GPUComposer {
 
 		// Check that numPoints is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
-			throw new Error(`GPUComposer.drawPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer "${positions.name}" with ${positions.numComponents} components.`)
+			throw new Error(`GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer "${positions.name}" with ${positions.numComponents} components.`)
 		}
 		const { length } = positions;
 		const count = params.count || length;
@@ -1465,14 +1466,14 @@ export class GPUComposer {
 		program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, BOOL);
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
 		program._setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
-		program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, BOOL);
+		program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, BOOL);
 		if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = initSequentialFloatArray(length);
@@ -1542,11 +1543,11 @@ export class GPUComposer {
 		program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, BOOL);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, INT);
-		program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, INT);
+		program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, BOOL);
+		program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, BOOL);
 		if (this._indexedLinesIndexBuffer === undefined) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			let floatArray: Float32Array;

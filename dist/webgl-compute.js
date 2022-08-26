@@ -3311,7 +3311,7 @@ var GPUComposer = /** @class */ (function () {
         }
         // Check that numPoints is valid.
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
-            throw new Error("GPUComposer.drawPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
+            throw new Error("GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
         }
         var length = positions.length;
         var count = params.count || length;
@@ -3333,14 +3333,14 @@ var GPUComposer = /** @class */ (function () {
         program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-        program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, constants_1.BOOL);
         // Set default pointSize.
         var pointSize = params.pointSize || 1;
         program._setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, constants_1.FLOAT);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, constants_1.INT);
-        program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, constants_1.BOOL);
+        program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, constants_1.BOOL);
         if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = (0, utils_1.initSequentialFloatArray)(length);
@@ -3388,11 +3388,11 @@ var GPUComposer = /** @class */ (function () {
         program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-        program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4 ? 1 : 0, constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, constants_1.BOOL);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_wrapX', params.wrapX ? 1 : 0, constants_1.INT);
-        program._setVertexUniform(glProgram, 'u_internal_wrapY', params.wrapY ? 1 : 0, constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, constants_1.BOOL);
+        program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, constants_1.BOOL);
         if (this._indexedLinesIndexBuffer === undefined) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var floatArray = void 0;

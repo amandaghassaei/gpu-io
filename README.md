@@ -156,7 +156,7 @@ More info about the difference between GLSL and WebGL versions:
 
 ### Transform Feedback
 
-You might notice that this library does not use any transform feedback to e.g. handle computations on arbitrary 1D lists.  Transform feedback is great for things like particle simulations and other types of physics that is *not* computed at the pixel level.  It is totally possible to perform these types of simulations using this library, but currently they are all computed in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
+You might notice that this library does not use any transform feedback to e.g. handle computations on 1D lists.  Transform feedback is great for things like particle simulations and other types of physics that is *not* computed at the pixel level.  It is totally possible to perform these types of simulations using this library, but currently they are all computed in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
 
 - The main use case for this library is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays, but that is a secondary functionality.
 - Transform feedback is only supported in WebGL 2.  At the time I first started writing this, WebGL 2 was not supported by mobile Safari.  Though that has changed recently, it will take some time for many people to update (for example, luddites like me who never update their apps), so for now I'd like to support all functionality in this library in WebGL 1.
@@ -186,6 +186,22 @@ const composer = new GPUComposer({
 ```
 
 **Note: even if highp is specified in your shader code, this library will convert to mediump if the current browser does not support highp (the alternative would be to throw an error).**
+
+Of course, you can also always specify the precision of a particular variable in your shader code:
+
+```glsl
+in vec2 v_UV;
+
+// u_state is a Uint8 array, so we can set its precision to lowp.
+uniform lowp isampler2D u_state;
+
+out vec4 out_fragColor;
+
+void main() {
+	lowp int state = texture(u_state, v_UV).r;
+	....
+}
+```
 
 I've also included the following helper functions to test the precision of mediump on your device and determine whether highp is supported:
 
