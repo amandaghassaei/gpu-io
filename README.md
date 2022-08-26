@@ -185,9 +185,7 @@ const composer = new GPUComposer({
 });
 ```
 
-**Note: even if highp is specified in your shader code, this library will convert to mediump if the current browser does not support highp (the alternative would be to throw an error).**
-
-Of course, you can also always specify the precision of a particular variable in your shader code:
+Of course, you can also always manually specify the precision of a particular variable in your shader code:
 
 ```glsl
 in vec2 v_UV;
@@ -202,6 +200,8 @@ void main() {
 	....
 }
 ```
+
+**Note: even if highp is specified in your shader code, this library will convert to mediump if the current browser does not support highp (the alternative would be to throw an error).**
 
 I've also included the following helper functions to test the precision of mediump on your device and determine whether highp is supported:
 
