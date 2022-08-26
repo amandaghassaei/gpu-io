@@ -137,6 +137,9 @@ const composer = new GPUComposer({
 });
 ```
 
+In either case, this library will fall back to using GLSL1 if GLSL3 is not supported by the current device.
+
+
 See [docs>GPUComposer>constructor](https://github.com/amandaghassaei/webgl-compute/blob/main/docs/classes/GPUComposer.md#constructor) for more information.
 
 More info about the difference between GLSL and WebGL versions:
