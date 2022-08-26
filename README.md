@@ -192,7 +192,7 @@ Of course, you can also always specify the precision of a particular variable in
 ```glsl
 in vec2 v_UV;
 
-// u_state is a Uint8 array, so we can set its precision to lowp.
+// u_state is a BYTE array, so we can set its precision to lowp.
 uniform lowp isampler2D u_state;
 
 out vec4 out_fragColor;
