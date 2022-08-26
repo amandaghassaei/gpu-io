@@ -131,7 +131,7 @@ export class GPUProgram {
 			fragmentShader as string :
 			(fragmentShader as string[]).join('\n');
 		this._fragmentShaderSource = preprocessFragmentShader(
-			fragmentShaderSource, composer.glslVersion,
+			fragmentShaderSource, composer.glslVersion, name,
 		);
 		this._compile(defines); // Compiling also saves defines.
 

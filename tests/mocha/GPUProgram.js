@@ -50,15 +50,38 @@
 					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","defines"].');
 			});
 			it('should throw errors for bad fragment source code', () => {
-				// Init a separate composer so the global one doesn't get into an error state.
-				const testComposer = new GPUComposer({ canvas: document.createElement('canvas') });
-				assert.throws(() => { new GPUProgram(testComposer, { name: 'test-program', fragmentShader: "" }); },
-					'Could not compile fragment shader for program "test-program": ERROR: Missing main()');
-				testComposer.dispose();
+				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "" }); },
+					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
+			});
+			it('should throw errors for missing out_fragColor or gl_FragColor in fragment source code', () => {
+				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: badOutputFragmentShader }); },
+					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
 			});
 			it('should set parameters', () => {
 				const program = new GPUProgram(composer, { name: 'test-program', fragmentShader: setValueFragmentShader });
 				assert.equal(program.name, 'test-program');
+				program.dispose();
+			});
+			it('should support glsl1 fragment shaders with gl_FragColor = ', () => {
+				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), glslVersion: GLSL1 });
+				const program = new GPUProgram(composer1, { name: 'test-program', fragmentShader: glsl1FragmentShader });
+				const layer = new GPULayer(composer1, { name: 'test-layer', numComponents: 4, writable: true, dimensions: [1, 1], type: FLOAT });
+				composer1.step({
+					program,
+					output: layer,
+				});
+				const values = layer.getValues();
+				values.forEach(value => {
+					assert.equal(value, 5);
+				});
+				layer.dispose();
+				program.dispose();
+			});
+			it('should throw error for glsl1 fragment shaders with glslVersion 3', () => {
+				assert.equal(composer.glslVersion, GLSL3);
+				assert.throws(() => {
+					new GPUProgram(composer, { name: 'test-program', fragmentShader: glsl1FragmentShader });
+				}, `Found "gl_FragColor" declaration in fragment shader for GPUProgram "test-program": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.`);
 			});
 		});
 		describe('get _defaultProgram', () => {

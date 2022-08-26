@@ -52,6 +52,7 @@
 		isPowerOf2,
 		initSequentialFloatArray,
 		preprocessVertexShader,
+		checkFragmentShaderForFragColor,
 		preprocessFragmentShader,
 		uniformInternalTypeForValue,
 	} = _testing;
@@ -475,6 +476,19 @@ precision lowp float;precision lowp sampler2D;
 				assert.equal(initSequentialFloatArray(12).toString(), Float32Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).toString());
 			});
 		});
+		describe('checkFragmentShaderForFragColor', () => {
+			it('should check for out_fragColor in fragment source', () => {
+				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL3, 'test'); },
+					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
+				assert.throws(() => { checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL3, 'test'); },
+					'Found "gl_FragColor" declaration in fragment shader for GPUProgram "test": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.');
+				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL1, 'test'); },
+					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
+			});
+			it('should allow gl_FragColor in GLSL1', () => {
+				assert.equal(checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL1, 'test'), true);
+			});
+		});
 		describe('preprocessVertexShader', () => {
 			const defaultVertexShaderCopy = defaultVertexShader.slice();
 			it('should remove #version declarations', () => {
@@ -539,26 +553,32 @@ void main() {
 		});
 		describe('preprocessFragmentShader', () => {
 			const copyFragmentShaderCopy = copyFragmentShader.slice();
+			const simpleFragmentShaderGLSL1  = `varying vec2 v_UV;
+
+void main() {
+	gl_FragColor = vec4( vec4(v_UV.x, v_UV.y, 0, 1));
+}`;
 			it('should remove #version declarations', () => {
-				assert.equal(preprocessFragmentShader('#version 300 es', GLSL1), '');
-				assert.equal(preprocessFragmentShader('#version 300 es', GLSL3), '');
-				assert.equal(preprocessFragmentShader('#version 100', GLSL1), '');
-				assert.equal(preprocessFragmentShader('#version 100', GLSL3), '');
+				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL3, 'name'), simpleFragmentShader);
+				assert.equal(preprocessFragmentShader('#version 100\n' + simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader('#version 100\n' + simpleFragmentShader, GLSL3, 'name'), simpleFragmentShader);
 			});
 			it('should remove precision declarations', () => {
-				assert.equal(preprocessFragmentShader('precision highp float; precision mediump int;', GLSL1), '');
-				assert.equal(preprocessFragmentShader('precision highp float; precision mediump int;', GLSL3), '');
-				assert.equal(preprocessFragmentShader('precision mediump float; precision lowp int;', GLSL1), '');
-				assert.equal(preprocessFragmentShader('precision mediump float; precision lowp int;', GLSL3), '');
-				assert.equal(preprocessFragmentShader('precision highp sampler2D; precision mediump usampler2D; precision lowp isampler2D;', GLSL1), '');
+				assert.equal(preprocessFragmentShader(`precision highp float; precision mediump int;${simpleFragmentShader}`, GLSL1, 'name'), simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader(`precision highp float; precision mediump int;${simpleFragmentShader}`, GLSL3, 'name'), simpleFragmentShader);
+				assert.equal(preprocessFragmentShader(`precision mediump float; precision lowp int;${simpleFragmentShader}`, GLSL1, 'name'), simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader(`precision mediump float; precision lowp int;${simpleFragmentShader}`, GLSL3, 'name'), simpleFragmentShader);
+				assert.equal(preprocessFragmentShader(`precision highp sampler2D; precision mediump usampler2D; precision lowp isampler2D;${simpleFragmentShader}`, GLSL1, 'name'), simpleFragmentShaderGLSL1);
 			});
 			it('should pass valid glsl3 shaders through', () => {
-				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL3), copyFragmentShader);
+				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL3), copyFragmentShader, 'name');
 				// No mutations.
 				assert.equal(copyFragmentShader, copyFragmentShaderCopy);
 			});
 			it('should convert glsl3 shader to glsl1', () => {
-				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL1), `varying vec2 v_UV;
+				assert.equal(preprocessFragmentShader(simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL1, 'name'), `varying vec2 v_UV;
 
 #ifdef WEBGLCOMPUTE_FLOAT
 uniform sampler2D u_state;

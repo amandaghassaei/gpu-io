@@ -94,11 +94,16 @@ export declare function initSequentialFloatArray(length: number): Float32Array;
  */
 export declare function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion): string;
 /**
+ * Check that out_fragColor or gl_FragColor is present in fragment shader source.
+ * @private
+ */
+export declare function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string): boolean;
+/**
  * Preprocess fragment shader for glslVersion and browser capabilities.
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-export declare function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion): string;
+export declare function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string): string;
 /**
  * Check uniforms and return internal WebGL type (e.g. [1234][u]?[if])
  * @private

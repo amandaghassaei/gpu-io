@@ -5140,7 +5140,7 @@ var GPUProgram = /** @class */ (function () {
         var fragmentShaderSource = (0, checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
-        this._fragmentShaderSource = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion);
+        this._fragmentShaderSource = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name);
         this._compile(defines); // Compiling also saves defines.
         // Set program uniforms.
         if (uniforms) {
@@ -6212,7 +6212,7 @@ var GPULayerHelpers = __webpack_require__(191);
 /**
  * @private
  */
-var _testing = __assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, checks), GPULayerHelpers);
+var _testing = __assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, checkFragmentShaderForFragColor: utils.checkFragmentShaderForFragColor, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, checks), GPULayerHelpers);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
@@ -6233,7 +6233,7 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
+exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.checkFragmentShaderForFragColor = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var precisionSource = __webpack_require__(937);
@@ -6620,7 +6620,7 @@ function preprocessShader(shaderSource) {
     // Strip out any version numbers.
     // https://github.com/Jam3/glsl-version-regex
     var origLength = shaderSource.length;
-    shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+[a-zA-Z]+)?)\s*/, '');
+    shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+(es)+)?)\s*/, '');
     if (shaderSource.length !== origLength) {
         console.warn('WebGLCompute expects shader source that does not contain #version declarations, removing...');
     }
@@ -6630,6 +6630,7 @@ function preprocessShader(shaderSource) {
     if (shaderSource.length !== origLength) {
         console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
     }
+    // TODO: strip out comments.
     return shaderSource;
 }
 /**
@@ -6704,12 +6705,39 @@ function preprocessVertexShader(shaderSource, glslVersion) {
 }
 exports.preprocessVertexShader = preprocessVertexShader;
 /**
+ * Check that out_fragColor or gl_FragColor is present in fragment shader source.
+ * @private
+ */
+function checkFragmentShaderForFragColor(shaderSource, glslVersion, name) {
+    var gl_FragColor = shaderSource.match(/\bgl_FragColor\s?=/);
+    var out_fragColor = shaderSource.match(/\bout_fragColor\s?=/);
+    if (glslVersion === constants_1.GLSL3) {
+        // Check that fragment shader source DOES NOT contain gl_FragColor
+        if (gl_FragColor) {
+            throw new Error("Found \"gl_FragColor\" declaration in fragment shader for GPUProgram \"".concat(name, "\": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader."));
+        }
+        // Check that fragment shader source DOES contain out_fragColor.
+        if (!out_fragColor) {
+            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
+        }
+    }
+    else {
+        // Check that fragment shader source DOES contain either gl_FragColor or out_fragColor.
+        if (!gl_FragColor && !out_fragColor) {
+            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
+        }
+    }
+    return true;
+}
+exports.checkFragmentShaderForFragColor = checkFragmentShaderForFragColor;
+/**
  * Preprocess fragment shader for glslVersion and browser capabilities.
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-function preprocessFragmentShader(shaderSource, glslVersion) {
+function preprocessFragmentShader(shaderSource, glslVersion, name) {
     shaderSource = preprocessShader(shaderSource);
+    checkFragmentShaderForFragColor(shaderSource, glslVersion, name);
     // Check if highp supported in fragment shaders.
     if (!isHighpSupportedInFragmentShader()) {
         console.warn('highp not supported in fragment shader, falling back to mediump.');

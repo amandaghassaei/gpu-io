@@ -555,7 +555,7 @@ function preprocessShader(shaderSource: string) {
 	// Strip out any version numbers.
 	// https://github.com/Jam3/glsl-version-regex
 	let origLength = shaderSource.length;
-	shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+[a-zA-Z]+)?)\s*/, '');
+	shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+(es)+)?)\s*/, '');
 	if (shaderSource.length !== origLength) {
 		console.warn('WebGLCompute expects shader source that does not contain #version declarations, removing...');
 	}
@@ -565,6 +565,8 @@ function preprocessShader(shaderSource: string) {
 	if (shaderSource.length !== origLength) {
 		console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
 	}
+	// TODO: strip out comments.
+
 	return shaderSource;
 }
 
@@ -620,7 +622,6 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 	if (output) {
 		shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[0]});`);
 	}
-	
 	return shaderSource;
 }
 
@@ -644,12 +645,38 @@ export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVe
 }
 
 /**
+ * Check that out_fragColor or gl_FragColor is present in fragment shader source.
+ * @private 
+ */
+export function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string) {
+	const gl_FragColor = shaderSource.match(/\bgl_FragColor\s?=/);
+	const out_fragColor = shaderSource.match(/\bout_fragColor\s?=/);
+	if (glslVersion === GLSL3) {
+		// Check that fragment shader source DOES NOT contain gl_FragColor
+		if (gl_FragColor) {
+			throw new Error(`Found "gl_FragColor" declaration in fragment shader for GPUProgram "${name}": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.`);
+		}
+		// Check that fragment shader source DOES contain out_fragColor.
+		if (!out_fragColor) {
+			throw new Error(`Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
+		}
+	} else {
+		// Check that fragment shader source DOES contain either gl_FragColor or out_fragColor.
+		if (!gl_FragColor && !out_fragColor) {
+			throw new Error(`Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
+		}
+	}
+	return true;
+}
+
+/**
  * Preprocess fragment shader for glslVersion and browser capabilities.
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion) {
+export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string) {
 	shaderSource = preprocessShader(shaderSource);
+	checkFragmentShaderForFragColor(shaderSource, glslVersion, name);
 	// Check if highp supported in fragment shaders.
 	if (!isHighpSupportedInFragmentShader()) {
 		console.warn('highp not supported in fragment shader, falling back to mediump.');

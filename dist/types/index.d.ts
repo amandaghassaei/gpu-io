@@ -82,6 +82,7 @@ declare const _testing: {
     initGLProgram: typeof utils.initGLProgram;
     readyToRead: typeof utils.readyToRead;
     preprocessVertexShader: typeof utils.preprocessVertexShader;
+    checkFragmentShaderForFragColor: typeof utils.checkFragmentShaderForFragColor;
     preprocessFragmentShader: typeof utils.preprocessFragmentShader;
     isPowerOf2: typeof utils.isPowerOf2;
     initSequentialFloatArray: typeof utils.initSequentialFloatArray;
