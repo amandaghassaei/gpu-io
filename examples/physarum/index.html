@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>Conway's Game Of Life</title>
+		<title>Physarum</title>
 		<link rel="stylesheet" type="text/css" href="../common/dat.gui.css" />
 		<link rel="stylesheet" type="text/css" href="../common/micromodal.css" />
 		<link rel="stylesheet" type="text/css" href="../common/index.css" />
@@ -14,17 +14,20 @@
 			  <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
 				<header class="modal__header">
 				  <h2 class="modal__title" id="modal-1-title">
-					Conway's Game of Life
+					Physarum Transport Network
 				  </h2>
 				  <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
 				</header>
 				<main class="modal__content" id="modal-1-content">
 				  <p>
-					This is a WebGL fragment shader implementation of <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a>, written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
+					This system simulates the network effects of a multicellular slime mold (Physarum polycephalum), based on work by <a href="https://cargocollective.com/sagejenson/physarum">Sage Jenson</a> and a 2010 paper by Jeff Jones: <a href="https://uwe-repository.worktribe.com/output/980579">"Characteristics of pattern formation and evolution in approximations of Physarum transport networks."</a>
+					In this simulation, particle "agents" interact with an underlying field of chemical attractants to form complex, emergent behaviors.
+					All simulation steps are computed on the GPU via a series of WebGL fragment shaders.
+					Written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
 				  </p>
 				  <p>
 					This page is part of a series of examples using <a href="https://github.com/amandaghassaei/webgl-compute">webgl-compute</a>, a GPU-accelerated computing library for physics simulations and cellular automata.
-					Find the source code on <a href="https://github.com/amandaghassaei/webgl-compute/tree/main/examples/gol">Github</a>.
+					Find the source code on <a href="https://github.com/amandaghassaei/webgl-compute/tree/main/examples/physarum">Github</a>.
 				  </p>
 				</main>
 			  </div>

@@ -11,13 +11,13 @@ uniform usampler2D u_state;
 #endif
 
 #ifdef WEBGLCOMPUTE_FLOAT
-out vec4 out_fragColor;
+out highp vec4 out_fragColor;
 #endif
 #ifdef WEBGLCOMPUTE_INT
-out ivec4 out_fragColor;
+out highp ivec4 out_fragColor;
 #endif
 #ifdef WEBGLCOMPUTE_UINT
-out uvec4 out_fragColor;
+out highp uvec4 out_fragColor;
 #endif
 
 void main() {

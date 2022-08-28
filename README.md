@@ -54,6 +54,7 @@ Full API documentation can be found in the [docs/](./docs/)
 ## Examples
 
 - [Conway's Game of Life](http://apps.amandaghassaei.com/webgl-compute/examples/gol/) (simple)
+- [Physarum Transport Network](http://apps.amandaghassaei.com/webgl-compute/examples/physarum/) (particle + grid)
 
 
 ## Compatibility with Threejs
@@ -152,6 +153,7 @@ More info about the difference between GLSL and WebGL versions:
 - [WebGL1 Reference Card](https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) by Khronos
 - [WebGL2 Reference Card](https://www.khronos.org/files/webgl20-reference-guide.pdf) by Khronos
 - [WebGL2 from WebGL1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html) by [webgl2fundamentals.org](https://webgl2fundamentals.org/)
+- [WebGL Report](https://webglreport.com/?v=2) by Cesium
 
 
 ### Transform Feedback
@@ -233,6 +235,7 @@ I used a few codebases as reference when writing this, thanks to their authors f
 
 - [three.js](https://github.com/mrdoob/three.js/)
 - [regl](https://github.com/regl-project/regl)
+- [gpu.js](https://github.com/gpujs/gpu.js/)
 - [WebGL Boilerplate](https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html)
 - [GPU Accelerated Particles with WebGL 2](https://gpfault.net/posts/webgl2-particles.txt.html)
 

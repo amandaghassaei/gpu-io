@@ -186,6 +186,10 @@ export class GPUComposer {
 
 	verboseLogging = false;
 
+	private _lastTickTime?: number;
+	private _lastTickFPS?: number
+	private _numTicks = 0;
+
 	constructor(
 		params: {
 			canvas: HTMLCanvasElement,
@@ -1708,6 +1712,26 @@ export class GPUComposer {
 		this._renderer.setRenderTarget(null);
 		// Reset texture bindings.
 		this._renderer.resetState();
+	}
+
+	tick() {
+		let { _lastTickTime, _lastTickFPS } = this;
+		const currentTime = performance.now();
+		this._lastTickTime = currentTime;
+		if (!_lastTickTime) {
+			return { fps: 0, milliseconds: 0 };
+		}
+		const currentFPS = 1000 / (currentTime - _lastTickTime);
+		if (!_lastTickFPS) _lastTickFPS = currentFPS;
+		// Use a low pass filter to smooth out fps reading.
+		const factor = 0.9;
+		const fps =  Number.parseFloat((factor * _lastTickFPS + (1 - factor) * currentFPS).toFixed(1));
+		this._lastTickFPS = fps;
+		this._numTicks += 1;
+		return {
+			fps,
+			numTicks: this._numTicks,
+		}
 	}
 	
 	dispose() {

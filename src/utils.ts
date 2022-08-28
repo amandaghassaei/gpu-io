@@ -185,7 +185,7 @@ export function compileShader(
 	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!success) {
 		// Something went wrong during compilation - print the error.
-		console.log(shaderSource);
+		console.log('shader source:', shaderSource);
 		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'} shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}
@@ -617,7 +617,7 @@ function convertFragmentShaderToGLSL1(shaderSource: string) {
 	// Convert in to varying.
 	shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
 	// Convert out_fragColor to gl_FragColor.
-	shaderSource = shaderSource.replace(/\bout \w+ out_fragColor;/g, '');
+	shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor;/g, '');
 	const output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/s); // /s makes this work for multiline.
 	if (output) {
 		shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[0]});`);

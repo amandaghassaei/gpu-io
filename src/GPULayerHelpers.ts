@@ -110,9 +110,7 @@ export function calcGPULayerSize(
 		}
 		const width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
 		const height = Math.pow(2, Math.floor(exp/2));
-		if (verboseLogging) {
-			console.log(`Using [${width}, ${height}] for 1D array of length ${size} in GPULayer "${name}".`);
-		}
+		if (verboseLogging) console.log(`Using [${width}, ${height}] for 1D array of length ${size} in GPULayer "${name}".`);
 		return { width, height, length };
 	}
 	const width = (size as [number, number])[0];

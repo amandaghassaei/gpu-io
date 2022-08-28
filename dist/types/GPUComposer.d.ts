@@ -50,6 +50,9 @@ export declare class GPUComposer {
         };
     };
     verboseLogging: boolean;
+    private _lastTickTime?;
+    private _lastTickFPS?;
+    private _numTicks;
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext;
@@ -228,5 +231,14 @@ export declare class GPUComposer {
         shouldBlendAlpha?: boolean;
     }): void;
     resetThreeState(): void;
+    tick(): {
+        fps: number;
+        milliseconds: number;
+        numTicks?: undefined;
+    } | {
+        fps: number;
+        numTicks: number;
+        milliseconds?: undefined;
+    };
     dispose(): void;
 }

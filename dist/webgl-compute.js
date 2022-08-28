@@ -2322,6 +2322,7 @@ var GPUComposer = /** @class */ (function () {
             },
             _a);
         this.verboseLogging = false;
+        this._numTicks = 0;
         // Check params.
         var validKeys = ['canvas', 'context', 'contextID', 'contextOptions', 'glslVersion', 'verboseLogging', 'errorCallback'];
         var requiredKeys = ['canvas'];
@@ -3522,6 +3523,26 @@ var GPUComposer = /** @class */ (function () {
         // Reset texture bindings.
         this._renderer.resetState();
     };
+    GPUComposer.prototype.tick = function () {
+        var _a = this, _lastTickTime = _a._lastTickTime, _lastTickFPS = _a._lastTickFPS, _numTicks = _a._numTicks;
+        var currentTime = performance.now();
+        this._lastTickTime = currentTime;
+        if (!_lastTickTime) {
+            return { fps: 0, milliseconds: 0 };
+        }
+        var currentFPS = 1000 / (currentTime - _lastTickTime);
+        if (!_lastTickFPS)
+            _lastTickFPS = currentFPS;
+        // Use a low pass filter to smooth out fps reading.
+        var factor = 0.9;
+        var fps = Number.parseFloat((factor * _lastTickFPS + (1 - factor) * currentFPS).toFixed(1));
+        this._lastTickFPS = fps;
+        this._numTicks += 1;
+        return {
+            fps: fps,
+            numTicks: this._numTicks,
+        };
+    };
     GPUComposer.prototype.dispose = function () {
         var _a;
         var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, _copyPrograms = _b._copyPrograms, _setValuePrograms = _b._setValuePrograms, _vectorMagnitudePrograms = _b._vectorMagnitudePrograms;
@@ -4411,9 +4432,8 @@ function calcGPULayerSize(size, name, verboseLogging) {
         }
         var width_1 = Math.pow(2, Math.floor(exp / 2) + exp % 2);
         var height_1 = Math.pow(2, Math.floor(exp / 2));
-        if (verboseLogging) {
+        if (verboseLogging)
             console.log("Using [".concat(width_1, ", ").concat(height_1, "] for 1D array of length ").concat(size, " in GPULayer \"").concat(name, "\"."));
-        }
         return { width: width_1, height: height_1, length: length_1 };
     }
     var width = size[0];
@@ -6141,7 +6161,7 @@ function getExtension(composer, extensionName, optional) {
     // Check if we've already loaded the extension.
     if (composer._extensions[extensionName] !== undefined)
         return composer._extensions[extensionName];
-    var gl = composer.gl, _errorCallback = composer._errorCallback, _extensions = composer._extensions;
+    var gl = composer.gl, _errorCallback = composer._errorCallback, _extensions = composer._extensions, verboseLogging = composer.verboseLogging;
     var extension;
     try {
         extension = gl.getExtension(extensionName);
@@ -6150,7 +6170,8 @@ function getExtension(composer, extensionName, optional) {
     if (extension) {
         // Cache this extension.
         _extensions[extensionName] = extension;
-        console.log("Loaded extension: ".concat(extensionName, "."));
+        if (verboseLogging)
+            console.log("Loaded extension: ".concat(extensionName, "."));
     }
     else {
         _extensions[extensionName] = false; // Cache the bad extension lookup.
@@ -6348,7 +6369,7 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print the error.
-        console.log(shaderSource);
+        console.log('shader source:', shaderSource);
         errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', " shader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
         return null;
     }
@@ -6678,7 +6699,7 @@ function convertFragmentShaderToGLSL1(shaderSource) {
     // Convert in to varying.
     shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
     // Convert out_fragColor to gl_FragColor.
-    shaderSource = shaderSource.replace(/\bout \w+ out_fragColor;/g, '');
+    shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor;/g, '');
     var output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/s); // /s makes this work for multiline.
     if (output) {
         shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, "gl_FragColor = vec4(".concat(output[0], ");"));
@@ -6928,7 +6949,7 @@ module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;retur
 /***/ 767:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out float v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 positionData=texture(u_internal_positions,particleUV);vec2 positionAbsolute=positionData.rg;if(u_internal_positionWithAccumulation)positionAbsolute+=positionData.ba;v_UV=positionAbsolute*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 position=v_UV*2.-1.;v_index=a_internal_index;gl_PointSize=u_internal_pointSize;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;flat out int v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 positionData=texture(u_internal_positions,particleUV);vec2 positionAbsolute=positionData.rg;if(u_internal_positionWithAccumulation)positionAbsolute+=positionData.ba;v_UV=positionAbsolute*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 position=v_UV*2.-1.;v_index=int(a_internal_index);gl_PointSize=u_internal_pointSize;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 

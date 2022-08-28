@@ -31,7 +31,7 @@ export function getExtension(
 	// Check if we've already loaded the extension.
 	if (composer._extensions[extensionName] !== undefined) return composer._extensions[extensionName];
 
-	const { gl, _errorCallback, _extensions } = composer;
+	const { gl, _errorCallback, _extensions, verboseLogging } = composer;
 	let extension;
 	try {
 		extension = gl.getExtension(extensionName);
@@ -39,7 +39,7 @@ export function getExtension(
 	if (extension) {
 		// Cache this extension.
 		_extensions[extensionName] = extension;
-		console.log(`Loaded extension: ${extensionName}.`);
+		if (verboseLogging) console.log(`Loaded extension: ${extensionName}.`);
 	} else {
 		_extensions[extensionName] = false; // Cache the bad extension lookup.
 		console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extensionName}.`);
