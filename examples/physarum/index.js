@@ -12,7 +12,7 @@ function main({ gui, glslVersion, contextID }) {
 
 	const PARAMS = {
 		decayFactor: 0.9,
-		depositAmount: 3,
+		depositAmount: 4,
 		particleDensity: 0.35,
 		sensorDistance: 18,
 		sensorAngle: 90,
@@ -86,7 +86,7 @@ function main({ gui, glslVersion, contextID }) {
 		setDots: () => {
 			const settings = {
 				decayFactor: 0.9,
-				depositAmount: 3,
+				depositAmount: 4,
 				particleDensity: 0.35,
 				sensorDistance: 26,
 				sensorAngle: 5.5,
@@ -502,7 +502,7 @@ function main({ gui, glslVersion, contextID }) {
 	}
 
 	function savePNG() {
-		trail.savePNG({ filename: 'physarum', multiplier: 255 });
+		trail.savePNG({ filename: 'physarum', multiplier: 255 * PARAMS.renderAmplitude });
 	}
 
 	// Add 'p' hotkey to print screen.

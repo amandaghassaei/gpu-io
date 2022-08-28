@@ -853,7 +853,7 @@ export class GPULayer {
 		const callback = params.callback || saveAs;
 		const filename = params.filename || name;
 		const multiplier = params.multiplier ||
-			(type === FLOAT || type === HALF_FLOAT) ? 255 : 1;
+			((type === FLOAT || type === HALF_FLOAT) ? 255 : 1);
 
 		const canvas = document.createElement('canvas');
 		canvas.width = width;

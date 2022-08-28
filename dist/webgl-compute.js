@@ -3524,7 +3524,7 @@ var GPUComposer = /** @class */ (function () {
         this._renderer.resetState();
     };
     GPUComposer.prototype.tick = function () {
-        var _a = this, _lastTickTime = _a._lastTickTime, _lastTickFPS = _a._lastTickFPS, _numTicks = _a._numTicks;
+        var _a = this, _lastTickTime = _a._lastTickTime, _lastTickFPS = _a._lastTickFPS;
         var currentTime = performance.now();
         this._lastTickTime = currentTime;
         if (!_lastTickTime) {
@@ -4250,7 +4250,7 @@ var GPULayer = /** @class */ (function () {
         var callback = params.callback || file_saver_1.saveAs;
         var filename = params.filename || name;
         var multiplier = params.multiplier ||
-            (type === constants_1.FLOAT || type === constants_1.HALF_FLOAT) ? 255 : 1;
+            ((type === constants_1.FLOAT || type === constants_1.HALF_FLOAT) ? 255 : 1);
         var canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
