@@ -22,7 +22,7 @@ function main({ gui, glslVersion, contextID }) {
 		setFibers: () => {
 			const settings = {
 				decayFactor: 0.9,
-				depositAmount: 3,
+				depositAmount: 4,
 				particleDensity: 0.35,
 				sensorDistance: 18, 
 				sensorAngle: 5.5,
@@ -38,7 +38,7 @@ function main({ gui, glslVersion, contextID }) {
 		setFingerprint: () => {
 			const settings = {
 				decayFactor: 0.9,
-				depositAmount: 3,
+				depositAmount: 4,
 				particleDensity: 0.35,
 				sensorDistance: 14,
 				sensorAngle: 70,
@@ -54,7 +54,7 @@ function main({ gui, glslVersion, contextID }) {
 		setHoneycomb: () => {
 			const settings = {
 				decayFactor: 0.9,
-				depositAmount: 3,
+				depositAmount: 4,
 				particleDensity: 0.35,
 				sensorDistance: 7.5,
 				sensorAngle: 90,
@@ -70,7 +70,7 @@ function main({ gui, glslVersion, contextID }) {
 		setNet: () => {
 			const settings = {
 				decayFactor: 0.9,
-				depositAmount: 3,
+				depositAmount: 4,
 				particleDensity: 0.35,
 				sensorDistance: 18,
 				sensorAngle: 90,
@@ -429,7 +429,7 @@ function main({ gui, glslVersion, contextID }) {
 		particlesHeading.resize(numParticles, heading);
 		particlesGUI.name = getParticlesFolderTitle();
 	}).name('Particle Density');
-	particlesGUI.add(PARAMS, 'sensorAngle', 0, 90, 0.01).listen().onChange((value) => {
+	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).listen().onChange((value) => {
 		rotateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
 	}).name('Sensor Angle');
 	// From Jones 2010: "minimum distance of 3 pixels offset is necessary for the complex behaviors to emerge"
