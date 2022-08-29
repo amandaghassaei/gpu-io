@@ -10,6 +10,9 @@ function main({ gui, glslVersion, contextID }) {
 		LINEAR,
 	} = WebGLCompute;
 
+	// More info about these parameter is given in Jones 2010
+	// "Characteristics of pattern formation and evolution in approximations of Physarum transport networks."
+	// Nice overview and examples at https://cargocollective.com/sagejenson/physarum
 	const PARAMS = {
 		decayFactor: 0.9,
 		depositAmount: 4,
@@ -110,11 +113,13 @@ function main({ gui, glslVersion, contextID }) {
 	// position (xy) plus accumulated displacement (zw).
 	// This way small numbers are added together in the accumulated displacement
 	// until they are large enough to be combined with the absolute position.
+	// This isn't strictly necessary but can help in cases where the code falls
+	// back to HALF_FLOAT (if FLOAT is not supported by the device).
 	const PARTICLES_NUM_COMPONENTS = 4;
 
+	// Calculate the number of particles and init with random positions and headings.
 	function initParticlesArrays() {
 		const { width, height } = canvas;
-		// Init new random state.
 		const numParticles = Math.round(width * height * PARAMS.particleDensity);
 		const positions = new Float32Array(numParticles * PARTICLES_NUM_COMPONENTS);
 		const heading = new Float32Array(numParticles);
@@ -127,9 +132,16 @@ function main({ gui, glslVersion, contextID }) {
 		}
 		return { positions, heading, numParticles };
 	}
+	
 
+	// The composer orchestrates all of the GPU operations.
 	const composer = new GPUComposer({ canvas, glslVersion, contextID });
+	
+	/**
+	 * Init particles state and programs.
+	 */
 	const { positions, heading, numParticles } = initParticlesArrays();
+	// Init particles position data on GPU.
 	const particlesPositions = new GPULayer(composer, {
 		name: 'particlesPositions',
 		dimensions: numParticles,
@@ -139,6 +151,7 @@ function main({ gui, glslVersion, contextID }) {
 		writable: true,
 		array: positions,
 	});
+	// Init particles heading (orientation) data on GPU.
 	const particlesHeading = new GPULayer(composer, {
 		name: 'particlesHeading',
 		dimensions: numParticles,
@@ -148,6 +161,7 @@ function main({ gui, glslVersion, contextID }) {
 		writable: true,
 		array: heading,
 	});
+	// Fragment shader program for updating particles heading.
 	const rotateParticles = new GPUProgram(composer, {
 		name: 'rotateParticles',
 		fragmentShader: `
@@ -244,6 +258,7 @@ function main({ gui, glslVersion, contextID }) {
 			}
 		],
 	});
+	// Fragment shader program for updating particles positions.
 	const moveParticles = new GPUProgram(composer, {
 		name: 'moveParticles',
 		fragmentShader: `
@@ -270,7 +285,7 @@ function main({ gui, glslVersion, contextID }) {
 				// If displacement is large enough, merge with abs position.
 				// This method reduces floating point error in position.
 				vec2 nextDisplacement = displacement + step;
-				if (dot(nextDisplacement, nextDisplacement) > 10.0) {
+				if (dot(nextDisplacement, nextDisplacement) > 30.0) {
 					absolute += nextDisplacement;
 					nextDisplacement = vec2(0);
 					// Also check if we've wrapped.
@@ -310,6 +325,11 @@ function main({ gui, glslVersion, contextID }) {
 			},
 		],
 	});
+
+	/**
+	 * Init chemical trail state and programs.
+	 */
+	// Init a GPULayer to contain trail data at full size of screen.
 	const trail = new GPULayer(composer, {
 		name: 'trail',
 		dimensions: [canvas.width, canvas.height],
@@ -321,6 +341,7 @@ function main({ gui, glslVersion, contextID }) {
 		wrapT: REPEAT,
 		writable: true,
 	});
+	// Fragment shader program for adding chemical attractant from particles to trail layer.
 	const deposit = new GPUProgram(composer, {
 		name: 'deposit',
 		fragmentShader: `
@@ -339,7 +360,7 @@ function main({ gui, glslVersion, contextID }) {
 		uniforms: [
 			{
 				name: 'u_trail',
-				value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
+				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
@@ -349,6 +370,7 @@ function main({ gui, glslVersion, contextID }) {
 			},
 		],
 	});
+	// Fragment shader program for diffusing trail state.
 	const diffuseAndDecay = new GPUProgram(composer, {
 		name: 'diffuseAndDecay',
 		fragmentShader: `
@@ -374,7 +396,7 @@ function main({ gui, glslVersion, contextID }) {
 		uniforms: [
 			{
 				name: 'u_trail',
-				value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
+				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
@@ -389,6 +411,7 @@ function main({ gui, glslVersion, contextID }) {
 			},
 		],
 	});
+	// Fragment shader program for rendering trail state to screen (with a scaling factor).
 	const render = new GPUProgram(composer, {
 		name: 'render',
 		fragmentShader: `
@@ -406,7 +429,7 @@ function main({ gui, glslVersion, contextID }) {
 		uniforms: [
 			{
 				name: 'u_trail',
-				value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
+				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
@@ -417,13 +440,15 @@ function main({ gui, glslVersion, contextID }) {
 		],
 	});
 
-	// Init simple GUI.
+	/**
+	 * Init a simple GUI.
+	 */
 	function getParticlesFolderTitle() {
 		return `Particles (${particlesPositions.length.toLocaleString("en-US")})`;
 	}
 	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
 	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).listen().onFinishChange(() => {
-		// Init new particles.
+		// Init new particles when particle density changes.
 		const { positions, heading, numParticles } = initParticlesArrays();
 		particlesPositions.resize(numParticles, positions);
 		particlesHeading.resize(numParticles, heading);
@@ -432,7 +457,6 @@ function main({ gui, glslVersion, contextID }) {
 	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).listen().onChange((value) => {
 		rotateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
 	}).name('Sensor Angle');
-	// From Jones 2010: "minimum distance of 3 pixels offset is necessary for the complex behaviors to emerge"
 	particlesGUI.add(PARAMS, 'sensorDistance', 1, 30, 0.01).listen().onChange((value) => {
 		rotateParticles.setUniform('u_sensorDistance', value);
 	}).name('Sensor Distance');
@@ -454,6 +478,7 @@ function main({ gui, glslVersion, contextID }) {
 	renderGUI.add(PARAMS, 'renderAmplitude', 0, 1, 0.01).listen().onChange((value) => {
 		render.setUniform('u_renderAmplitude', value);
 	}).name('Amplitude');
+	// Interesting presets to try out.
 	const presetsGUI = gui.addFolder('Presets');
 	presetsGUI.add(PARAMS, 'setFibers').name('Fibers');
 	presetsGUI.add(PARAMS, 'setDots').name('Dots');
@@ -464,20 +489,32 @@ function main({ gui, glslVersion, contextID }) {
 	gui.add(PARAMS, 'reset').name('Reset');
 	gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
+	/**
+	 * This loop is where all the action happens.
+	 */
 	function loop() {
-		// Update randomDir uniform by coin flip.
+		// Update each particle's heading.
+		// Update randomDir uniform by coin flip - the same value will be applied to all particles
+		// in the system, which is a bit odd, but seems to work fine.
+		// Would be more realistic to pick randomDir within each fragment shader kernel,
+		// but this is easier.
 		rotateParticles.setUniform('u_randomDir', Math.random() < 0.5);
 		composer.step({
 			program: rotateParticles,
 			input: [particlesHeading, particlesPositions, trail],
 			output: particlesHeading,
 		});
+
+		// Move each particle.
 		composer.step({
 			program: moveParticles,
 			input: [particlesPositions, particlesHeading],
 			output: particlesPositions,
 		});
 
+		// Render particle's positions on top of trail layer to apply chemical
+		// attractant to trail.  Technically this is still not quite right bc overlapping
+		// particles will get merged together, but it seems to work fine anyway.
 		composer.drawLayerAsPoints({
 			positions: particlesPositions,
 			program: deposit,
@@ -488,6 +525,7 @@ function main({ gui, glslVersion, contextID }) {
 			wrapY: true,
 		});
 
+		// Diffuse trail state and apply decay factor.
 		composer.step({
 			program: diffuseAndDecay,
 			input: trail,
@@ -501,11 +539,10 @@ function main({ gui, glslVersion, contextID }) {
 		});
 	}
 
+	// Add 'p' hotkey to print screen.
 	function savePNG() {
 		trail.savePNG({ filename: 'physarum', multiplier: 255 * PARAMS.renderAmplitude });
 	}
-
-	// Add 'p' hotkey to print screen.
 	function onKeydown(e) {
 		if (e.key === 'p') {
 			savePNG();
@@ -537,6 +574,7 @@ function main({ gui, glslVersion, contextID }) {
 	}
 	onResize();
 
+	// Reset the system.
 	function reset() {
 		rotateParticles.setUniform('u_sensorAngle', PARAMS.sensorAngle * Math.PI / 180);
 		rotateParticles.setUniform('u_sensorDistance', PARAMS.sensorDistance);
@@ -549,6 +587,7 @@ function main({ gui, glslVersion, contextID }) {
 		onResize();
 	}
 
+	// Garbage collection.
 	function dispose() {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
