@@ -73,6 +73,18 @@ declare const _testing: {
     isArray(value: any): boolean;
     isObject(value: any): boolean;
     isBoolean(value: any): boolean;
+    glsl1VertexIn(shaderSource: string): string;
+    glsl1VertexOut(shaderSource: string): string;
+    glsl1FragmentIn(shaderSource: string): string;
+    glsl1FragmentOut(shaderSource: string): string;
+    checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): boolean;
+    glsl1Texture(shaderSource: string): string;
+    glsl1Sampler2D(shaderSource: string): string;
+    glsl1Uint(shaderSource: string): string;
+    highpToMediump(shaderSource: string): string;
+    stripVersion(shaderSource: string): string;
+    stripPrecision(shaderSource: string): string;
+    stripComments(shaderSource: string): string;
     isFloatType: typeof utils.isFloatType;
     isUnsignedIntType: typeof utils.isUnsignedIntType;
     isSignedIntType: typeof utils.isSignedIntType;
@@ -82,7 +94,6 @@ declare const _testing: {
     initGLProgram: typeof utils.initGLProgram;
     readyToRead: typeof utils.readyToRead;
     preprocessVertexShader: typeof utils.preprocessVertexShader;
-    checkFragmentShaderForFragColor: typeof utils.checkFragmentShaderForFragColor;
     preprocessFragmentShader: typeof utils.preprocessFragmentShader;
     isPowerOf2: typeof utils.isPowerOf2;
     initSequentialFloatArray: typeof utils.initSequentialFloatArray;

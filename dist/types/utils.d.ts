@@ -70,13 +70,13 @@ export declare function isHighpSupportedInFragmentShader(): boolean;
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
  * @returns - Vertex shader mediump precision.
  */
-export declare function getVertexShaderMediumpPrecision(): "highp" | "mediump";
+export declare function getVertexShaderMediumpPrecision(): "mediump" | "highp";
 /**
  * Returns the actual precision of mediump inside fragment shader.
  * From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
  * @returns - Fragment shader supported mediump precision.
  */
-export declare function getFragmentShaderMediumpPrecision(): "highp" | "mediump";
+export declare function getFragmentShaderMediumpPrecision(): "mediump" | "highp";
 /**
  * Returns whether a number is a power of 2.
  * @private
@@ -93,11 +93,6 @@ export declare function initSequentialFloatArray(length: number): Float32Array;
  * @private
  */
 export declare function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVersion): string;
-/**
- * Check that out_fragColor or gl_FragColor is present in fragment shader source.
- * @private
- */
-export declare function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string): boolean;
 /**
  * Preprocess fragment shader for glslVersion and browser capabilities.
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.

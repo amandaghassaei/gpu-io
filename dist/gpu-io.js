@@ -6229,11 +6229,12 @@ var GPUProgram_1 = __webpack_require__(664);
 Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function () { return GPUProgram_1.GPUProgram; } }));
 var checks = __webpack_require__(707);
 var GPULayerHelpers = __webpack_require__(191);
+var regex = __webpack_require__(126);
 // These exports are only used for testing.
 /**
  * @private
  */
-var _testing = __assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, checkFragmentShaderForFragColor: utils.checkFragmentShaderForFragColor, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, checks), GPULayerHelpers);
+var _testing = __assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, regex), checks), GPULayerHelpers);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
@@ -6248,15 +6249,137 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 
 /***/ }),
 
+/***/ 126:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.highpToMediump = exports.glsl1Uint = exports.glsl1Sampler2D = exports.glsl1Texture = exports.checkFragmentShaderForFragColor = exports.glsl1FragmentOut = exports.glsl1FragmentIn = exports.glsl1VertexOut = exports.glsl1VertexIn = void 0;
+var constants_1 = __webpack_require__(601);
+/**
+ * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
+ */
+function glsl1VertexIn(shaderSource) {
+    // Convert vertex shader in to attribute.
+    return shaderSource.replace(/\bin\b/, 'attribute');
+}
+exports.glsl1VertexIn = glsl1VertexIn;
+function glsl1VertexOut(shaderSource) {
+    // Convert vertex shader out to varying.
+    return shaderSource.replace(/\bout\b/g, 'varying');
+}
+exports.glsl1VertexOut = glsl1VertexOut;
+function glsl1FragmentIn(shaderSource) {
+    // Convert fragment shader in to varying.
+    return shaderSource.replace(/\bin\b/g, 'varying');
+}
+exports.glsl1FragmentIn = glsl1FragmentIn;
+function glsl1FragmentOut(shaderSource) {
+    // Convert out_fragColor to gl_FragColor.
+    shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor;/g, '');
+    var output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/s); // /s makes this work for multiline.
+    if (output) {
+        shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, "gl_FragColor = vec4(".concat(output[0], ");"));
+    }
+    return shaderSource;
+}
+exports.glsl1FragmentOut = glsl1FragmentOut;
+/**
+ * Check that out_fragColor or gl_FragColor is present in fragment shader source.
+ * @private
+ */
+function checkFragmentShaderForFragColor(shaderSource, glslVersion, name) {
+    var gl_FragColor = shaderSource.match(/\bgl_FragColor\s?=/);
+    var out_fragColor = shaderSource.match(/\bout_fragColor\s?=/);
+    if (glslVersion === constants_1.GLSL3) {
+        // Check that fragment shader source DOES NOT contain gl_FragColor
+        if (gl_FragColor) {
+            throw new Error("Found \"gl_FragColor\" declaration in fragment shader for GPUProgram \"".concat(name, "\": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader."));
+        }
+        // Check that fragment shader source DOES contain out_fragColor.
+        if (!out_fragColor) {
+            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
+        }
+    }
+    else {
+        // Check that fragment shader source DOES contain either gl_FragColor or out_fragColor.
+        if (!gl_FragColor && !out_fragColor) {
+            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
+        }
+    }
+    return true;
+}
+exports.checkFragmentShaderForFragColor = checkFragmentShaderForFragColor;
+function glsl1Texture(shaderSource) {
+    // Convert texture to texture2D.
+    // TODO: add polyfills.
+    return shaderSource.replace(/\btexture\(/g, 'texture2D(');
+}
+exports.glsl1Texture = glsl1Texture;
+function glsl1Sampler2D(shaderSource) {
+    // No isampler2D or usampler2D.
+    return shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
+}
+exports.glsl1Sampler2D = glsl1Sampler2D;
+function glsl1Uint(shaderSource) {
+    // Unsigned int types are not supported, use int types instead.
+    shaderSource = shaderSource.replace(/\buint\b/g, 'int');
+    shaderSource = shaderSource.replace(/\buvec2\b/g, 'ivec2');
+    shaderSource = shaderSource.replace(/\buvec3\b/g, 'ivec3');
+    shaderSource = shaderSource.replace(/\buvec4\b/g, 'ivec4');
+    shaderSource = shaderSource.replace(/\buint\(/g, 'int(');
+    shaderSource = shaderSource.replace(/\buvec2\(/g, 'ivec2(');
+    shaderSource = shaderSource.replace(/\buvec3\(/g, 'ivec3(');
+    shaderSource = shaderSource.replace(/\buvec4\(/g, 'ivec4(');
+    return shaderSource;
+}
+exports.glsl1Uint = glsl1Uint;
+function highpToMediump(shaderSource) {
+    // Replace all highp with mediump.
+    return shaderSource.replace(/\bhighp\b/, 'mediump');
+}
+exports.highpToMediump = highpToMediump;
+function stripVersion(shaderSource) {
+    // Strip out any version numbers.
+    // https://github.com/Jam3/glsl-version-regex
+    var origLength = shaderSource.length;
+    shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+(es)+)?)\s*/, '');
+    if (shaderSource.length !== origLength) {
+        console.warn('GPUIO expects shader source that does not contain #version declarations, removing....');
+    }
+    return shaderSource;
+}
+exports.stripVersion = stripVersion;
+function stripPrecision(shaderSource) {
+    // Strip out any precision declarations.
+    var origLength = shaderSource.length;
+    shaderSource = shaderSource.replace(/\s*precision\s+((highp)|(mediump)|(lowp))\s+[a-zA-Z0-9]+\s*;/g, '');
+    if (shaderSource.length !== origLength) {
+        console.warn('GPUIO expects shader source that does not contain precision declarations, removing....');
+    }
+    return shaderSource;
+}
+exports.stripPrecision = stripPrecision;
+function stripComments(shaderSource) {
+    // TODO: implement this.
+    return shaderSource;
+}
+exports.stripComments = stripComments;
+
+
+/***/ }),
+
 /***/ 593:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.checkFragmentShaderForFragColor = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
+exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
+var regex_1 = __webpack_require__(126);
 var precisionSource = __webpack_require__(937);
 /**
  * Memoize results of more complex WebGL tests (that require allocations/deallocations).
@@ -6639,19 +6762,11 @@ exports.initSequentialFloatArray = initSequentialFloatArray;
  */
 function preprocessShader(shaderSource) {
     // Strip out any version numbers.
-    // https://github.com/Jam3/glsl-version-regex
-    var origLength = shaderSource.length;
-    shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+(es)+)?)\s*/, '');
-    if (shaderSource.length !== origLength) {
-        console.warn('GPUIO expects shader source that does not contain #version declarations, removing...');
-    }
+    shaderSource = (0, regex_1.stripVersion)(shaderSource);
     // Strip out any precision declarations.
-    origLength = shaderSource.length;
-    shaderSource = shaderSource.replace(/\s*precision\s+((highp)|(mediump)|(lowp))\s+[a-zA-Z0-9]+\s*;/g, '');
-    if (shaderSource.length !== origLength) {
-        console.warn('GPUIO expects shader source that does not contain precision declarations, removing...');
-    }
-    // TODO: strip out comments.
+    shaderSource = (0, regex_1.stripPrecision)(shaderSource);
+    // Strip out comments.
+    shaderSource = (0, regex_1.stripComments)(shaderSource);
     return shaderSource;
 }
 /**
@@ -6662,18 +6777,11 @@ function preprocessShader(shaderSource) {
 function convertShaderToGLSL1(shaderSource) {
     // TODO: there are probably more to add here.
     // No isampler2D or usampler2D.
-    shaderSource = shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
+    shaderSource = (0, regex_1.glsl1Sampler2D)(shaderSource);
     // Unsigned int types are not supported, use int types instead.
-    shaderSource = shaderSource.replace(/\buint\b/g, 'int');
-    shaderSource = shaderSource.replace(/\buvec2\b/g, 'ivec2');
-    shaderSource = shaderSource.replace(/\buvec3\b/g, 'ivec3');
-    shaderSource = shaderSource.replace(/\buvec4\b/g, 'ivec4');
-    shaderSource = shaderSource.replace(/\buint\(/g, 'int(');
-    shaderSource = shaderSource.replace(/\buvec2\(/g, 'ivec2(');
-    shaderSource = shaderSource.replace(/\buvec3\(/g, 'ivec3(');
-    shaderSource = shaderSource.replace(/\buvec4\(/g, 'ivec4(');
+    shaderSource = (0, regex_1.glsl1Uint)(shaderSource);
     // Convert texture to texture2D.
-    shaderSource = shaderSource.replace(/\btexture\(/g, 'texture2D(');
+    shaderSource = (0, regex_1.glsl1Texture)(shaderSource);
     return shaderSource;
 }
 /**
@@ -6684,9 +6792,9 @@ function convertShaderToGLSL1(shaderSource) {
 function convertVertexShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to attribute.
-    shaderSource = shaderSource.replace(/\bin\b/, 'attribute');
+    shaderSource = (0, regex_1.glsl1VertexIn)(shaderSource);
     // Convert out to varying.
-    shaderSource = shaderSource.replace(/\bout\b/g, 'varying');
+    shaderSource = (0, regex_1.glsl1VertexOut)(shaderSource);
     return shaderSource;
 }
 /**
@@ -6697,13 +6805,9 @@ function convertVertexShaderToGLSL1(shaderSource) {
 function convertFragmentShaderToGLSL1(shaderSource) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to varying.
-    shaderSource = shaderSource.replace(/\bin\b/g, 'varying');
+    shaderSource = (0, regex_1.glsl1FragmentIn)(shaderSource);
     // Convert out_fragColor to gl_FragColor.
-    shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor;/g, '');
-    var output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/s); // /s makes this work for multiline.
-    if (output) {
-        shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, "gl_FragColor = vec4(".concat(output[0], ");"));
-    }
+    shaderSource = (0, regex_1.glsl1FragmentOut)(shaderSource);
     return shaderSource;
 }
 /**
@@ -6717,7 +6821,7 @@ function preprocessVertexShader(shaderSource, glslVersion) {
     if (!isHighpSupportedInVertexShader()) {
         console.warn('highp not supported in vertex shader, falling back to mediump.');
         // Replace all highp with mediump.
-        shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
+        shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }
     if (glslVersion === constants_1.GLSL3) {
         return shaderSource;
@@ -6726,44 +6830,18 @@ function preprocessVertexShader(shaderSource, glslVersion) {
 }
 exports.preprocessVertexShader = preprocessVertexShader;
 /**
- * Check that out_fragColor or gl_FragColor is present in fragment shader source.
- * @private
- */
-function checkFragmentShaderForFragColor(shaderSource, glslVersion, name) {
-    var gl_FragColor = shaderSource.match(/\bgl_FragColor\s?=/);
-    var out_fragColor = shaderSource.match(/\bout_fragColor\s?=/);
-    if (glslVersion === constants_1.GLSL3) {
-        // Check that fragment shader source DOES NOT contain gl_FragColor
-        if (gl_FragColor) {
-            throw new Error("Found \"gl_FragColor\" declaration in fragment shader for GPUProgram \"".concat(name, "\": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader."));
-        }
-        // Check that fragment shader source DOES contain out_fragColor.
-        if (!out_fragColor) {
-            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
-        }
-    }
-    else {
-        // Check that fragment shader source DOES contain either gl_FragColor or out_fragColor.
-        if (!gl_FragColor && !out_fragColor) {
-            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
-        }
-    }
-    return true;
-}
-exports.checkFragmentShaderForFragColor = checkFragmentShaderForFragColor;
-/**
  * Preprocess fragment shader for glslVersion and browser capabilities.
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
 function preprocessFragmentShader(shaderSource, glslVersion, name) {
     shaderSource = preprocessShader(shaderSource);
-    checkFragmentShaderForFragColor(shaderSource, glslVersion, name);
+    (0, regex_1.checkFragmentShaderForFragColor)(shaderSource, glslVersion, name);
     // Check if highp supported in fragment shaders.
     if (!isHighpSupportedInFragmentShader()) {
         console.warn('highp not supported in fragment shader, falling back to mediump.');
         // Replace all highp with mediump.
-        shaderSource = shaderSource.replace(/\bhighp\b/, 'mediump');
+        shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }
     if (glslVersion === constants_1.GLSL3) {
         return shaderSource;
