@@ -52,40 +52,40 @@ function main({ gui, contextID, glslVersion}) {
 	const golRules = new GPUProgram(composer, {
 		name: 'golRules',
 		fragmentShader: `
-	in vec2 v_UV;
+			in vec2 v_UV;
 
-	uniform vec2 u_pxSize;
-	uniform lowp isampler2D u_state;
+			uniform vec2 u_pxSize;
+			uniform lowp isampler2D u_state;
 
-	uniform lowp uint u_survivalRules;
-	uniform lowp uint u_birthRules;
+			uniform lowp uint u_survivalRules;
+			uniform lowp uint u_birthRules;
 
-	out lowp int out_fragColor;
+			out lowp int out_fragColor;
 
-	void main() {
-		lowp int state = int(texture(u_state, v_UV).r);
-		lowp int n = int(texture(u_state, v_UV + vec2(0, u_pxSize[1])).r);
-		lowp int s = int(texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r);
-		lowp int e = int(texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r);
-		lowp int w = int(texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r);
-		lowp int ne = int(texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r);
-		lowp int nw = int(texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r);
-		lowp int se = int(texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r);
-		lowp int sw = int(texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r);
-		lowp int numLiving = n + s + e + w + ne + nw + se + sw;
-		if (state == 0){
-			lowp uint mask = u_birthRules & uint(1 << (numLiving - 1));
-			if (mask > uint(0)) {
-				state = 1;
-			}
-		} else {
-			lowp uint mask = u_survivalRules & uint(1 << (numLiving - 1));
-			if (mask == uint(0)) {
-				state = 0;
-			}
-		}
-		out_fragColor = state;
-	}`,
+			void main() {
+				lowp int state = int(texture(u_state, v_UV).r);
+				lowp int n = int(texture(u_state, v_UV + vec2(0, u_pxSize[1])).r);
+				lowp int s = int(texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r);
+				lowp int e = int(texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r);
+				lowp int w = int(texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r);
+				lowp int ne = int(texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r);
+				lowp int nw = int(texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r);
+				lowp int se = int(texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r);
+				lowp int sw = int(texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r);
+				lowp int numLiving = n + s + e + w + ne + nw + se + sw;
+				if (state == 0){
+					lowp uint mask = u_birthRules & uint(1 << (numLiving - 1));
+					if (mask > uint(0)) {
+						state = 1;
+					}
+				} else {
+					lowp uint mask = u_survivalRules & uint(1 << (numLiving - 1));
+					if (mask == uint(0)) {
+						state = 0;
+					}
+				}
+				out_fragColor = state;
+			}`,
 		uniforms: [
 			{
 				name: 'u_state',
@@ -112,16 +112,16 @@ function main({ gui, contextID, glslVersion}) {
 	const golRender = new GPUProgram(composer, {
 		name: 'golRender',
 		fragmentShader: `
-	in vec2 v_UV;
+			in vec2 v_UV;
 
-	uniform lowp isampler2D u_state;
+			uniform lowp isampler2D u_state;
 
-	out vec4 out_fragColor;
+			out vec4 out_fragColor;
 
-	void main() {
-		lowp int state = texture(u_state, v_UV).r;
-		out_fragColor = vec4(state, state, state, 1);
-	}`,
+			void main() {
+				lowp int state = texture(u_state, v_UV).r;
+				out_fragColor = vec4(state, state, state, 1);
+			}`,
 		uniforms: [
 			{
 				name: 'u_state',
