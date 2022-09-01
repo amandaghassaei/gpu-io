@@ -1,6 +1,6 @@
-webgl-compute
+gpu-io
 
-# webgl-compute
+# gpu-io
 
 ## Table of contents
 

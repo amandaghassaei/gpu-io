@@ -1,5 +1,5 @@
 {
-  "name": "webgl-compute",
+  "name": "gpu-io",
   "version": "0.0.1",
   "description": "A GPGPU library for WebGL",
   "keywords": [
@@ -13,11 +13,11 @@
     "simulation",
     "cellular automata"
   ],
-  "main": "dist/webgl-compute.js",
+  "main": "dist/gpu-io.js",
   "types": "dist/types/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/amandaghassaei/webgl-compute.git"
+    "url": "https://github.com/amandaghassaei/gpu-io.git"
   },
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",

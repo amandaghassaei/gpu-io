@@ -1,4 +1,4 @@
-# webgl-compute
+# gpu-io
 
 **Update 8/28/22: This has not been officially released, coming very soon.**
 
@@ -21,31 +21,31 @@ This library supports rendering directly to the screen.  It also has some built-
 
 ### Install via npm
 
-`npm install github:amandaghassaei/webgl-compute`
+`npm install github:amandaghassaei/gpu-io`
 
 (Because this repo is under active development, you may also want to include a specific commit in your install):
 
-`npm install github:amandaghassaei/webgl-compute#d6c75dd`
+`npm install github:amandaghassaei/gpu-io#d6c75dd`
 
 And import into your project:
 
 ```js
-import { GPUComposer, GPULayer, GPUProgram } from 'webgl-compute';
+import { GPUComposer, GPULayer, GPUProgram } from 'gpu-io';
 ```
 
 
 ### Import into HTML
 
-*OR* you can add [webgl-compute.js](./dist/webgl-compute.js) to your html directly:
+*OR* you can add [gpu-io.js](./dist/gpu-io.js) to your html directly:
 
 ```html
-<script src="webgl-compute.js"></script>
+<script src="gpu-io.js"></script>
 ```
 
-WebGLCompute will be accessible globally:
+GPUIO will be accessible globally:
 
 ```js
-const { GPUComposer, GPULayer, GPUProgram } = WebGLCompute;
+const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
 ```
 
 ## API
@@ -55,8 +55,8 @@ Full API documentation can be found in the [docs/](./docs/)
 
 ## Examples
 
-- [Conway's Game of Life](http://apps.amandaghassaei.com/webgl-compute/examples/gol/) (simple)
-- [Physarum Transport Network](http://apps.amandaghassaei.com/webgl-compute/examples/physarum/) (particle + grid)
+- [Conway's Game of Life](http://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
+- [Physarum Transport Network](http://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
 
 
 ## Compatibility with Threejs
@@ -65,30 +65,30 @@ Currently, this library can run in a separate webgl context from threejs with no
 
 ```js
 import THREE from 'three';
-import * as WebGLCompute from 'webgl-compute';
+import * as GPUIO from 'gpu-io';
 
 const renderer = new THREE.WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff
-// on top of things rendered to the screen from webgl-compute.
+// on top of things rendered to the screen from gpu-io.
 renderer.autoClear = false;
 
 const gl = renderer.getContext();
 const canvas = renderer.domElement;
 
-const composer = WebGLCompute.GPUComposer.initWithThreeRenderer(renderer);
+const composer = GPUIO.GPUComposer.initWithThreeRenderer(renderer);
 ```
 
-To use the output from a webgl-compute GPULayer to a Threejs Texture:
+To use the output from a gpu-io GPULayer to a Threejs Texture:
 
 ```js
-const layer1 = new WebGLCompute.GPULayer({
+const layer1 = new GPUIO.GPULayer({
 	name: 'layer1',
 	dimensions: [100, 100],
-	type: WebGLCompute.UNSIGNED_BYTE,
+	type: GPUIO.UNSIGNED_BYTE,
 	numComponents: 1,
-	wrapS: WebGLCompute.CLAMP_TO_EDGE,
-	wrapT: WebGLCompute.CLAMP_TO_EDGE,
-	filter: WebGLCompute.NEAREST,
+	wrapS: GPUIO.CLAMP_TO_EDGE,
+	wrapT: GPUIO.CLAMP_TO_EDGE,
+	filter: GPUIO.NEAREST,
 	writable: true,
 	numBuffers: 1,
 });
@@ -117,7 +117,7 @@ const mesh = new THREE.Mesh(
 // additional needsUpdate flags.
 ```
 
-More info about using webgl-compute to update mesh positions data is coming soon.
+More info about using gpu-io to update mesh positions data is coming soon.
 
 
 ## Limitations/Caveats/Notes
@@ -137,7 +137,7 @@ import {
 	GPUComposer,
 	GLSL1,
 	WEBGL1,
-} from 'webgl-compute';
+} from 'gpu-io';
 
 // Init wtih WebGL2 (if available) with GLSL1.
 const composer1 = new GPUComposer({
@@ -155,7 +155,7 @@ const composer2 = new GPUComposer({
 In either case, this library will fall back to using GLSL1 if GLSL3 is not supported by the current device.
 
 
-See [docs>GPUComposer>constructor](https://github.com/amandaghassaei/webgl-compute/blob/main/docs/classes/GPUComposer.md#constructor) for more information.
+See [docs>GPUComposer>constructor](https://github.com/amandaghassaei/gpu-io/blob/main/docs/classes/GPUComposer.md#constructor) for more information.
 
 More info about the difference between GLSL and WebGL versions:
 
@@ -188,7 +188,7 @@ import {
 	PRECISION_LOW_P,
 	PRECISION_MEDIUM_P,
 	PRECISION_HIGH_P,
-} from 'webgl-compute';
+} from 'gpu-io';
 
 const composer = new GPUComposer({
 	canvas: document.getElementById('webgl-canvas'),
@@ -223,7 +223,7 @@ import {
 	isHighpSupportedInFragmentShader,
 	getVertexShaderMediumpPrecision,
 	getFragmentShaderMediumpPrecision,
-} from 'webgl-compute';
+} from 'gpu-io';
 
 // Prints 'highp' or 'mediump' depending on returned precision of
 // mediump (16+bit or 32+bit).
@@ -278,7 +278,7 @@ I'm using mocha + karma + chai + headless Chrome to test the WebGL components of
 npm run test
 ```
 
-I've also included a few html pages (in the [tests/browser/](./tests/browser/) directory) for testing various functions of this library in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/webgl-compute/tests/](http://apps.amandaghassaei.com/webgl-compute/tests/).
+I've also included a few html pages (in the [tests/browser/](./tests/browser/) directory) for testing various functions of this library in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
 
 To run these tests locally:
 

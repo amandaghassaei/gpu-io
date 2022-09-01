@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0"/>
-    <title>webgl-compute - WebGL2 GPULayer reads</title>
+    <title>gpu-io - WebGL2 GPULayer reads</title>
     <link rel="stylesheet" type="text/css" href="../../deps/micromodal.css">
 	  <link rel="stylesheet" type="text/css" href="../../common/main.css">
   </head>
@@ -14,14 +14,14 @@
   </div>
   <script src="../../deps/micromodal.min.js"></script>
   <script src="../../../deps/float16.js"></script>
-  <script src="../../../../dist/webgl-compute.js"></script>
+  <script src="../../../../dist/gpu-io.js"></script>
   <script src="../../common/common.js"></script>
   <script src="../../../common/utils.js"></script>
   <script src="../../../common/ReadOnly.js"></script>
   <script>
     const tests = [
-      { WEBGL_VERSION: WebGLCompute.WEBGL2, GLSL_VERSION: WebGLCompute.GLSL1 },
-      { WEBGL_VERSION: WebGLCompute.WEBGL2, GLSL_VERSION: WebGLCompute.GLSL3 },
+      { WEBGL_VERSION: GPUIO.WEBGL2, GLSL_VERSION: GPUIO.GLSL1 },
+      { WEBGL_VERSION: GPUIO.WEBGL2, GLSL_VERSION: GPUIO.GLSL3 },
     ];
     makeTable(testLayerReads, tests);
   </script>

@@ -1,20 +1,20 @@
-#ifdef WEBGLCOMPUTE_FLOAT
+#ifdef GPUIO_FLOAT
 uniform vec4 u_value;
 #endif
-#ifdef WEBGLCOMPUTE_INT
+#ifdef GPUIO_INT
 uniform ivec4 u_value;
 #endif
-#ifdef WEBGLCOMPUTE_UINT
+#ifdef GPUIO_UINT
 uniform uvec4 u_value;
 #endif
 
-#ifdef WEBGLCOMPUTE_FLOAT
+#ifdef GPUIO_FLOAT
 out vec4 out_fragColor;
 #endif
-#ifdef WEBGLCOMPUTE_INT
+#ifdef GPUIO_INT
 out ivec4 out_fragColor;
 #endif
-#ifdef WEBGLCOMPUTE_UINT
+#ifdef GPUIO_UINT
 out uvec4 out_fragColor;
 #endif
 

@@ -18,7 +18,7 @@ const testLayerWrites = (() => {
 		GPULayer,
 		GPUProgram,
 		GPUComposer,
-	} = WebGLCompute;
+	} = GPUIO;
 
 	function offsetProgramForType(type) {
 		switch (type) {

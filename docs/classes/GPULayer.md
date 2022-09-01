@@ -1,4 +1,4 @@
-[webgl-compute](../README.md) / GPULayer
+[gpu-io](../README.md) / GPULayer
 
 # Class: GPULayer
 

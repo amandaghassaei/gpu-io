@@ -4,13 +4,13 @@ in vec2 v_UV;
 
 uniform vec3 u_color;
 uniform float u_scale;
-#ifdef WEBGLCOMPUTE_FLOAT
+#ifdef GPUIO_FLOAT
 uniform sampler2D u_internal_data;
 #endif
-#ifdef WEBGLCOMPUTE_INT
+#ifdef GPUIO_INT
 uniform isampler2D u_internal_data;
 #endif
-#ifdef WEBGLCOMPUTE_UINT
+#ifdef GPUIO_UINT
 uniform usampler2D u_internal_data;
 #endif
 

@@ -19,7 +19,7 @@ const {
 	getFragmentShaderMediumpPrecision,
 	isHighpSupportedInVertexShader,
 	isHighpSupportedInFragmentShader
-} = WebGLCompute;
+} = GPUIO;
 
 MicroModal.init();
 

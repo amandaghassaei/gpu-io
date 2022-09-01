@@ -4,8 +4,8 @@ const TerserPlugin = require('terser-webpack-plugin');
 module.exports = {
 	mode: 'production',
 	entry: {
-		'webgl-compute': './src/index.ts',
-		'webgl-compute.min': './src/index.ts',
+		'gpu-io': './src/index.ts',
+		'gpu-io.min': './src/index.ts',
 	  },
 	performance: {
 		hints: false,
@@ -54,7 +54,7 @@ module.exports = {
 	output: {
 		filename: '[name].js',
 		path: path.resolve(__dirname, 'dist'),
-		library: 'WebGLCompute',
+		library: 'GPUIO',
 		libraryTarget: "umd",
 		clean: true,
 	},

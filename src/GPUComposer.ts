@@ -154,20 +154,20 @@ export class GPUComposer {
 		[DEFAULT_W_UV_PROGRAM_NAME]: {
 			src: defaultVertexShaderSource,
 			defines: {
-				'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
+				'GPUIO_UV_ATTRIBUTE': '1',
 			},
 		},
 		[DEFAULT_W_NORMAL_PROGRAM_NAME]: {
 			src: defaultVertexShaderSource,
 			defines: {
-				'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
+				'GPUIO_NORMAL_ATTRIBUTE': '1',
 			},
 		},
 		[DEFAULT_W_UV_NORMAL_PROGRAM_NAME]: {
 			src: defaultVertexShaderSource,
 			defines: {
-				'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
-				'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
+				'GPUIO_UV_ATTRIBUTE': '1',
+				'GPUIO_NORMAL_ATTRIBUTE': '1',
 			},
 		},
 		[SEGMENT_PROGRAM_NAME]: {
@@ -375,7 +375,7 @@ export class GPUComposer {
 					},
 				],
 				defines: {
-					[`WEBGLCOMPUTE_${key}`]: '1',
+					[`GPUIO_${key}`]: '1',
 				},
 			});
 			_setValuePrograms[key] = program;
@@ -398,7 +398,7 @@ export class GPUComposer {
 					},
 				],
 				defines: {
-					[`WEBGLCOMPUTE_${key}`]: '1',
+					[`GPUIO_${key}`]: '1',
 				},
 			});
 			_copyPrograms[key] = program;
@@ -425,7 +425,7 @@ export class GPUComposer {
 				name: `vectorMagnitude-${key}`,
 				fragmentShader: _vectorMagnitudePrograms.src,
 				defines: {
-					[`WEBGLCOMPUTE_${key}`]: '1',
+					[`GPUIO_${key}`]: '1',
 				},
 			});
 			_vectorMagnitudePrograms[key] = program;

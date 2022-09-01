@@ -15,7 +15,7 @@
 		REPEAT,
 		CLAMP_TO_EDGE,
 		isWebGL2Supported,
-	} = WebGLCompute;
+	} = GPUIO;
 
 	const DIM = 30;
 

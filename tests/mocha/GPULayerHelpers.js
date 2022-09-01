@@ -20,7 +20,7 @@
 		GLSL3,
 		isWebGL2,
 		_testing,
-	} = WebGLCompute;
+	} = GPUIO;
 	const {
 		initArrayForType,
 		calcGPULayerSize,

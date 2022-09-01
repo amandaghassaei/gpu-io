@@ -15,7 +15,7 @@
 		RGB,
 		RGBA,
 		_testing,
-	} = WebGLCompute;
+	} = GPUIO;
 	const {
 		isValidDataType,
 		isValidFilter,

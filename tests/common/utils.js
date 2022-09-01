@@ -31,7 +31,7 @@ function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wr
 		REPEAT,
 		CLAMP_TO_EDGE,
 		HALF_FLOAT,
-	} = WebGLCompute;
+	} = GPUIO;
 
 	const expected = input.slice();
 

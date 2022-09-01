@@ -5,7 +5,7 @@
 		WEBGL1,
 		WEBGL2,
 		isWebgL2Supported,
-	} = WebGLCompute;
+	} = GPUIO;
 
 	// Init info dialog.
 	MicroModal.init();

@@ -8,7 +8,7 @@ function main({ gui, glslVersion, contextID }) {
 		FLOAT,
 		REPEAT,
 		LINEAR,
-	} = WebGLCompute;
+	} = GPUIO;
 
 	// More info about these parameter is given in Jones 2010
 	// "Characteristics of pattern formation and evolution in approximations of Physarum transport networks."

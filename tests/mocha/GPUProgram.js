@@ -15,7 +15,7 @@
 		INT,
 		BOOL,
 		isWebGL2,
-	} = WebGLCompute;
+	} = GPUIO;
 
 	describe('GPUProgram', () => {
 		beforeEach(() => {

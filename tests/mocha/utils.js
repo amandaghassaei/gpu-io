@@ -39,7 +39,7 @@
 		BOOL_2D_UNIFORM,
 		BOOL_3D_UNIFORM,
 		BOOL_4D_UNIFORM,
-	} = WebGLCompute;
+	} = GPUIO;
 	const {
 		isFloatType,
 		isUnsignedIntType,
@@ -101,9 +101,9 @@
 					{ test1: '1', test2: '2' }), `#version 300 es
 #define test1 1
 #define test2 2
-#define WEBGLCOMPUTE_INT_PRECISION 2
-#define WEBGLCOMPUTE_FLOAT_PRECISION 1
-#if (WEBGLCOMPUTE_INT_PRECISION == 2)
+#define GPUIO_INT_PRECISION 2
+#define GPUIO_FLOAT_PRECISION 1
+#if (GPUIO_INT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp int;
 #if (__VERSION__ == 300)
@@ -116,29 +116,29 @@ precision mediump isampler2D;precision mediump usampler2D;
 #endif
 #endif
 #endif
-#if (WEBGLCOMPUTE_INT_PRECISION == 1)
+#if (GPUIO_INT_PRECISION == 1)
 precision mediump int;
 #if (__VERSION__ == 300)
 precision mediump isampler2D;precision mediump usampler2D;
 #endif
 #endif
-#if (WEBGLCOMPUTE_INT_PRECISION == 0)
+#if (GPUIO_INT_PRECISION == 0)
 precision lowp int;
 #if (__VERSION__ == 300)
 precision lowp isampler2D;precision lowp usampler2D;
 #endif
 #endif
-#if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)
+#if (GPUIO_FLOAT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;precision highp sampler2D;
 #else
 precision mediump float;precision mediump sampler2D;
 #endif
 #endif
-#if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)
+#if (GPUIO_FLOAT_PRECISION == 1)
 precision mediump float;precision mediump sampler2D;
 #endif
-#if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)
+#if (GPUIO_FLOAT_PRECISION == 0)
 precision lowp float;precision lowp sampler2D;
 #endif
 `);
@@ -148,9 +148,9 @@ precision lowp float;precision lowp sampler2D;
 					PRECISION_MEDIUM_P,
 					{ test1: '1', test2: '2' }), `#define test1 1
 #define test2 2
-#define WEBGLCOMPUTE_INT_PRECISION 2
-#define WEBGLCOMPUTE_FLOAT_PRECISION 1
-#if (WEBGLCOMPUTE_INT_PRECISION == 2)
+#define GPUIO_INT_PRECISION 2
+#define GPUIO_FLOAT_PRECISION 1
+#if (GPUIO_INT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp int;
 #if (__VERSION__ == 300)
@@ -163,29 +163,29 @@ precision mediump isampler2D;precision mediump usampler2D;
 #endif
 #endif
 #endif
-#if (WEBGLCOMPUTE_INT_PRECISION == 1)
+#if (GPUIO_INT_PRECISION == 1)
 precision mediump int;
 #if (__VERSION__ == 300)
 precision mediump isampler2D;precision mediump usampler2D;
 #endif
 #endif
-#if (WEBGLCOMPUTE_INT_PRECISION == 0)
+#if (GPUIO_INT_PRECISION == 0)
 precision lowp int;
 #if (__VERSION__ == 300)
 precision lowp isampler2D;precision lowp usampler2D;
 #endif
 #endif
-#if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)
+#if (GPUIO_FLOAT_PRECISION == 2)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;precision highp sampler2D;
 #else
 precision mediump float;precision mediump sampler2D;
 #endif
 #endif
-#if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)
+#if (GPUIO_FLOAT_PRECISION == 1)
 precision mediump float;precision mediump sampler2D;
 #endif
-#if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)
+#if (GPUIO_FLOAT_PRECISION == 0)
 precision lowp float;precision lowp sampler2D;
 #endif
 `);
@@ -239,7 +239,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl2.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				), 'WebGLShader');
 				assert.typeOf(compileShader(
 					webgl2,
@@ -250,7 +250,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl2.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				), 'WebGLShader');
 			});
 			it('should compile WebGL1 fragment shaders', () => {
@@ -264,7 +264,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				), 'WebGLShader');
 				// TODO: test variations on gl_fragOut (non vector 4).
 				assert.typeOf(compileShader(
@@ -276,7 +276,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				), 'WebGLShader');
 			});
 			it('should throw error if define is not a string', () => {
@@ -290,8 +290,8 @@ precision lowp float;precision lowp sampler2D;
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: 1 },
-				); }, 'GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [string : number] for key WEBGLCOMPUTE_INT');
+					{ GPUIO_INT: 1 },
+				); }, 'GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [string : number] for key GPUIO_INT');
 			});
 			it('should throw error if precision is not valid value', () => {
 				const webgl1 = document.createElement('canvas').getContext(WEBGL1);
@@ -304,7 +304,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				); }, 'Unknown shader precision value: "thing1".');
 				assert.throws(() => { compileShader(
 					webgl1,
@@ -315,7 +315,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				); }, 'Unknown shader precision value: "thing2".');
 			});
 		});
@@ -341,7 +341,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl2.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				);
 				assert.typeOf(initGLProgram(
 					webgl2,
@@ -369,7 +369,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl2.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				);
 				assert.typeOf(initGLProgram(
 					webgl2,
@@ -400,7 +400,7 @@ precision lowp float;precision lowp sampler2D;
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ WEBGLCOMPUTE_INT: '1' },
+					{ GPUIO_INT: '1' },
 				);
 				assert.typeOf(initGLProgram(
 					webgl1,
@@ -511,10 +511,10 @@ precision lowp float;precision lowp sampler2D;
 			});
 			it('should convert glsl3 shader to glsl1', () => {
 				assert.equal(preprocessVertexShader(defaultVertexShader, GLSL1), `attribute vec2 a_internal_position;
-#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE
+#ifdef GPUIO_UV_ATTRIBUTE
 in vec2 a_internal_uv;
 #endif
-#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
+#ifdef GPUIO_NORMAL_ATTRIBUTE
 in vec2 a_internal_normal;
 #endif
 
@@ -523,18 +523,18 @@ uniform vec2 u_internal_translation;
 
 varying vec2 v_UV;
 varying vec2 v_UV_local;
-#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
+#ifdef GPUIO_NORMAL_ATTRIBUTE
 varying vec2 v_normal;
 #endif
 
 void main() {
 	// Optional varyings.
-	#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE
+	#ifdef GPUIO_UV_ATTRIBUTE
 	v_UV_local = a_internal_uv;
 	#else
 	v_UV_local = a_internal_position;
 	#endif
-	#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE
+	#ifdef GPUIO_NORMAL_ATTRIBUTE
 	v_normal = a_internal_normal;
 	#endif
 
@@ -580,23 +580,23 @@ void main() {
 				assert.equal(preprocessFragmentShader(simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
 				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL1, 'name'), `varying vec2 v_UV;
 
-#ifdef WEBGLCOMPUTE_FLOAT
+#ifdef GPUIO_FLOAT
 uniform sampler2D u_state;
 #endif
-#ifdef WEBGLCOMPUTE_INT
+#ifdef GPUIO_INT
 uniform sampler2D u_state;
 #endif
-#ifdef WEBGLCOMPUTE_UINT
+#ifdef GPUIO_UINT
 uniform sampler2D u_state;
 #endif
 
-#ifdef WEBGLCOMPUTE_FLOAT
+#ifdef GPUIO_FLOAT
 
 #endif
-#ifdef WEBGLCOMPUTE_INT
+#ifdef GPUIO_INT
 
 #endif
-#ifdef WEBGLCOMPUTE_UINT
+#ifdef GPUIO_UINT
 
 #endif
 

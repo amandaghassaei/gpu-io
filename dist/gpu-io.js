@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["WebGLCompute"] = factory();
+		exports["GPUIO"] = factory();
 	else
-		root["WebGLCompute"] = factory();
+		root["GPUIO"] = factory();
 })(self, function() {
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
@@ -2292,20 +2292,20 @@ var GPUComposer = /** @class */ (function () {
             _a[constants_1.DEFAULT_W_UV_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
                 defines: {
-                    'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
+                    'GPUIO_UV_ATTRIBUTE': '1',
                 },
             },
             _a[constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
                 defines: {
-                    'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
+                    'GPUIO_NORMAL_ATTRIBUTE': '1',
                 },
             },
             _a[constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
                 defines: {
-                    'WEBGLCOMPUTE_UV_ATTRIBUTE': '1',
-                    'WEBGLCOMPUTE_NORMAL_ATTRIBUTE': '1',
+                    'GPUIO_UV_ATTRIBUTE': '1',
+                    'GPUIO_NORMAL_ATTRIBUTE': '1',
                 },
             },
             _a[constants_1.SEGMENT_PROGRAM_NAME] = {
@@ -2469,7 +2469,7 @@ var GPUComposer = /** @class */ (function () {
                     },
                 ],
                 defines: (_a = {},
-                    _a["WEBGLCOMPUTE_".concat(key)] = '1',
+                    _a["GPUIO_".concat(key)] = '1',
                     _a),
             });
             _setValuePrograms[key] = program;
@@ -2492,7 +2492,7 @@ var GPUComposer = /** @class */ (function () {
                     },
                 ],
                 defines: (_a = {},
-                    _a["WEBGLCOMPUTE_".concat(key)] = '1',
+                    _a["GPUIO_".concat(key)] = '1',
                     _a),
             });
             _copyPrograms[key] = program;
@@ -2518,7 +2518,7 @@ var GPUComposer = /** @class */ (function () {
                 name: "vectorMagnitude-".concat(key),
                 fragmentShader: _vectorMagnitudePrograms.src,
                 defines: (_a = {},
-                    _a["WEBGLCOMPUTE_".concat(key)] = '1',
+                    _a["GPUIO_".concat(key)] = '1',
                     _a),
             });
             _vectorMagnitudePrograms[key] = program;
@@ -6341,8 +6341,8 @@ function makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines) {
     var versionSource = glslVersion === constants_1.GLSL3 ? "#version ".concat(constants_1.GLSL3, "\n") : '';
     var definesSource = defines ? convertDefinesToString(defines) : '';
     var precisionDefinesSource = convertDefinesToString({
-        WEBGLCOMPUTE_INT_PRECISION: "".concat(intForPrecision(intPrecision)),
-        WEBGLCOMPUTE_FLOAT_PRECISION: "".concat(intForPrecision(floatPrecision)),
+        GPUIO_INT_PRECISION: "".concat(intForPrecision(intPrecision)),
+        GPUIO_FLOAT_PRECISION: "".concat(intForPrecision(floatPrecision)),
     });
     return "".concat(versionSource).concat(definesSource).concat(precisionDefinesSource).concat(precisionSource);
 }
@@ -6643,13 +6643,13 @@ function preprocessShader(shaderSource) {
     var origLength = shaderSource.length;
     shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+(es)+)?)\s*/, '');
     if (shaderSource.length !== origLength) {
-        console.warn('WebGLCompute expects shader source that does not contain #version declarations, removing...');
+        console.warn('GPUIO expects shader source that does not contain #version declarations, removing...');
     }
     // Strip out any precision declarations.
     origLength = shaderSource.length;
     shaderSource = shaderSource.replace(/\s*precision\s+((highp)|(mediump)|(lowp))\s+[a-zA-Z0-9]+\s*;/g, '');
     if (shaderSource.length !== origLength) {
-        console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
+        console.warn('GPUIO expects shader source that does not contain precision declarations, removing...');
     }
     // TODO: strip out comments.
     return shaderSource;
@@ -6900,28 +6900,28 @@ exports.uniformInternalTypeForValue = uniformInternalTypeForValue;
 /***/ 937:
 /***/ ((module) => {
 
-module.exports = "#if (WEBGLCOMPUTE_INT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp int;\n#if (__VERSION__ == 300)\nprecision highp isampler2D;precision highp usampler2D;\n#endif\n#else\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 1)\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#if (WEBGLCOMPUTE_INT_PRECISION == 0)\nprecision lowp int;\n#if (__VERSION__ == 300)\nprecision lowp isampler2D;precision lowp usampler2D;\n#endif\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp sampler2D;\n#else\nprecision mediump float;precision mediump sampler2D;\n#endif\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 1)\nprecision mediump float;precision mediump sampler2D;\n#endif\n#if (WEBGLCOMPUTE_FLOAT_PRECISION == 0)\nprecision lowp float;precision lowp sampler2D;\n#endif\n"
+module.exports = "#if (GPUIO_INT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp int;\n#if (__VERSION__ == 300)\nprecision highp isampler2D;precision highp usampler2D;\n#endif\n#else\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#endif\n#if (GPUIO_INT_PRECISION == 1)\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#if (GPUIO_INT_PRECISION == 0)\nprecision lowp int;\n#if (__VERSION__ == 300)\nprecision lowp isampler2D;precision lowp usampler2D;\n#endif\n#endif\n#if (GPUIO_FLOAT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp sampler2D;\n#else\nprecision mediump float;precision mediump sampler2D;\n#endif\n#endif\n#if (GPUIO_FLOAT_PRECISION == 1)\nprecision mediump float;precision mediump sampler2D;\n#endif\n#if (GPUIO_FLOAT_PRECISION == 0)\nprecision lowp float;precision lowp sampler2D;\n#endif\n"
 
 /***/ }),
 
 /***/ 158:
 /***/ ((module) => {
 
-module.exports = "in vec2 v_UV;\n#ifdef WEBGLCOMPUTE_FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nuniform isampler2D u_state;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nuniform usampler2D u_state;\n#endif\n#ifdef WEBGLCOMPUTE_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=texture(u_state,v_UV);}"
+module.exports = "in vec2 v_UV;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_state;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_state;\n#endif\n#ifdef GPUIO_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef GPUIO_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef GPUIO_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=texture(u_state,v_UV);}"
 
 /***/ }),
 
 /***/ 148:
 /***/ ((module) => {
 
-module.exports = "#ifdef WEBGLCOMPUTE_FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nuniform ivec4 u_value;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nuniform uvec4 u_value;\n#endif\n#ifdef WEBGLCOMPUTE_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=u_value;}"
+module.exports = "#ifdef GPUIO_FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef GPUIO_INT\nuniform ivec4 u_value;\n#endif\n#ifdef GPUIO_UINT\nuniform uvec4 u_value;\n#endif\n#ifdef GPUIO_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef GPUIO_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef GPUIO_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=u_value;}"
 
 /***/ }),
 
 /***/ 723:
 /***/ ((module) => {
 
-module.exports = "in vec2 v_UV;uniform vec3 u_color;uniform float u_scale;\n#ifdef WEBGLCOMPUTE_FLOAT\nuniform sampler2D u_internal_data;\n#endif\n#ifdef WEBGLCOMPUTE_INT\nuniform isampler2D u_internal_data;\n#endif\n#ifdef WEBGLCOMPUTE_UINT\nuniform usampler2D u_internal_data;\n#endif\nout vec4 out_fragColor;void main(){uvec4 value=texture(u_internal_data,v_UV);float mag=length(value);out_fragColor=vec4(mag*u_scale*u_color,1);}"
+module.exports = "in vec2 v_UV;uniform vec3 u_color;uniform float u_scale;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_internal_data;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_internal_data;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_internal_data;\n#endif\nout vec4 out_fragColor;void main(){uvec4 value=texture(u_internal_data,v_UV);float mag=length(value);out_fragColor=vec4(mag*u_scale*u_color,1);}"
 
 /***/ }),
 
@@ -6935,7 +6935,7 @@ module.exports = "in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragC
 /***/ 288:
 /***/ ((module) => {
 
-module.exports = "in vec2 a_internal_position;\n#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef WEBGLCOMPUTE_UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=a_internal_position;\n#endif\n#ifdef WEBGLCOMPUTE_NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 position=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
+module.exports = "in vec2 a_internal_position;\n#ifdef GPUIO_UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef GPUIO_NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef GPUIO_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef GPUIO_UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=a_internal_position;\n#endif\n#ifdef GPUIO_NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 position=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
@@ -7045,4 +7045,4 @@ module.exports = "in vec2 a_internal_position;uniform float u_internal_halfThick
 /******/ })()
 ;
 });
-//# sourceMappingURL=webgl-compute.js.map
+//# sourceMappingURL=gpu-io.js.map

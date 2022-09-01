@@ -19,7 +19,7 @@
 		GLSL3,
 		_testing,
 		isWebGL2,
-	} = WebGLCompute;
+	} = GPUIO;
 	const {
 		isNumber,
 		isString,

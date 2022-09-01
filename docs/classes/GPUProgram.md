@@ -1,4 +1,4 @@
-[webgl-compute](../README.md) / GPUProgram
+[gpu-io](../README.md) / GPUProgram
 
 # Class: GPUProgram
 

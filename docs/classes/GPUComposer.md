@@ -1,4 +1,4 @@
-[webgl-compute](../README.md) / GPUComposer
+[gpu-io](../README.md) / GPUComposer
 
 # Class: GPUComposer
 

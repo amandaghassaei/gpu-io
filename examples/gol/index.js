@@ -9,7 +9,7 @@ function main({ gui, contextID, glslVersion}) {
 		UINT,
 		FLOAT,
 		REPEAT,
-	} = WebGLCompute;
+	} = GPUIO;
 
 	const PARAMS = {
 		survivalRules: Number.parseInt('00000110', 2),

@@ -139,8 +139,8 @@ export function makeShaderHeader(
 	const versionSource = glslVersion === GLSL3 ? `#version ${GLSL3}\n` : '';
 	const definesSource = defines ? convertDefinesToString(defines) : '';
 	const precisionDefinesSource = convertDefinesToString({
-		WEBGLCOMPUTE_INT_PRECISION: `${intForPrecision(intPrecision)}`,
-		WEBGLCOMPUTE_FLOAT_PRECISION: `${intForPrecision(floatPrecision)}`,
+		GPUIO_INT_PRECISION: `${intForPrecision(intPrecision)}`,
+		GPUIO_FLOAT_PRECISION: `${intForPrecision(floatPrecision)}`,
 	});
 	return `${versionSource}${definesSource}${precisionDefinesSource}${precisionSource}`;
 }
@@ -557,13 +557,13 @@ function preprocessShader(shaderSource: string) {
 	let origLength = shaderSource.length;
 	shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+(es)+)?)\s*/, '');
 	if (shaderSource.length !== origLength) {
-		console.warn('WebGLCompute expects shader source that does not contain #version declarations, removing...');
+		console.warn('GPUIO expects shader source that does not contain #version declarations, removing...');
 	}
 	// Strip out any precision declarations.
 	origLength = shaderSource.length;
 	shaderSource = shaderSource.replace(/\s*precision\s+((highp)|(mediump)|(lowp))\s+[a-zA-Z0-9]+\s*;/g, '');
 	if (shaderSource.length !== origLength) {
-		console.warn('WebGLCompute expects shader source that does not contain precision declarations, removing...');
+		console.warn('GPUIO expects shader source that does not contain precision declarations, removing...');
 	}
 	// TODO: strip out comments.
 
