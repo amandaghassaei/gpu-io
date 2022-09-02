@@ -595,6 +595,7 @@ export function testFramebufferAttachment(
 	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
 	const validStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+	console.log('test', validStatus, width, height, glInternalFormat, glFormat, glType, internalType);
 
 	// Clear out allocated memory.
 	gl.deleteTexture(texture);

@@ -483,7 +483,7 @@ export class GPULayer {
 				gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
 				const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-				if(status != gl.FRAMEBUFFER_COMPLETE){
+				if(status !== gl.FRAMEBUFFER_COMPLETE){
 					console.log(width, height, _glInternalFormat, _glFormat, _glType, validatedArray);
 					_errorCallback(`Invalid status for framebuffer for GPULayer "${name}": ${status}.`);
 				}
