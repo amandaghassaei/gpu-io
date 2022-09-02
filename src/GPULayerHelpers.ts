@@ -549,7 +549,7 @@ export function testFramebufferAttachment(
 	const { gl, glslVersion } = composer;
 
 	// Memoize results for a given set of inputs.
-	const key = `${isWebGL2(gl)},${internalType},${glslVersion}`;
+	const key = `${isWebGL2(gl)},${internalType},${glslVersion === GLSL3 ? '3' : '1'}`;
 	if (results.framebufferWriteSupport[key] !== undefined) {
 		return results.framebufferWriteSupport[key];
 	}
@@ -595,7 +595,7 @@ export function testFramebufferAttachment(
 	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
 	const validStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
-	console.log('test', validStatus, width, height, glInternalFormat, glFormat, glType, internalType);
+	console.log('test', key, validStatus, width, height, glInternalFormat, glFormat, glType, internalType);
 
 	// Clear out allocated memory.
 	gl.deleteTexture(texture);
