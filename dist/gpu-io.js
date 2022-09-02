@@ -3892,7 +3892,6 @@ var GPULayer = /** @class */ (function () {
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
                 var status_1 = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
                 if (status_1 !== gl.FRAMEBUFFER_COMPLETE) {
-                    console.log(width, height, _glInternalFormat, _glFormat, _glType, validatedArray);
                     _errorCallback("Invalid status for framebuffer for GPULayer \"".concat(name, "\": ").concat(status_1, "."));
                 }
                 // Add framebuffer.
@@ -4883,7 +4882,6 @@ function testFramebufferAttachment(params) {
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     var validStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
-    console.log('test', key, validStatus, width, height, glInternalFormat, glFormat, glType, internalType);
     // Clear out allocated memory.
     gl.deleteTexture(texture);
     gl.deleteFramebuffer(framebuffer);
