@@ -129,7 +129,7 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 	if (containsOutFragColor(shaderSource)) {
 		const type = getFragmentOutType(shaderSource, name);
 		// Remove out_fragColor declaration.
-		shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor;/g, '');
+		shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor\s*;/g, '');
 		let assignmentFound = false;
 		while (true) {
 			// Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
@@ -188,19 +188,28 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 	return true;
 }
 
+/**
+ * Convert texture to texture2D.
+ * TODO: add polyfills.
+ * @private
+ */
 export function glsl1Texture(shaderSource: string) {
-	// Convert texture to texture2D.
-	// TODO: add polyfills.
 	return shaderSource.replace(/\btexture\(/g, 'texture2D(');
 }
 
+/**
+ * Convert isampler2D and usampler2D to sampler2D.
+ * @private
+ */
 export function glsl1Sampler2D(shaderSource: string) {
-	// No isampler2D or usampler2D.
-	return shaderSource.replace(/((\bisampler2D\b)|(\busampler2D\b))/g, 'sampler2D');
+	return shaderSource.replace(/\b(i|u)sampler2D\b/g, 'sampler2D');
 }
 
+/**
+ * Unsigned int types are not supported, use int types instead.
+ * @private
+ */
 export function glsl1Uint(shaderSource: string) {
-	// Unsigned int types are not supported, use int types instead.
 	shaderSource = shaderSource.replace(/\buint\b/g, 'int');
 	shaderSource = shaderSource.replace(/\buvec2\b/g, 'ivec2');
 	shaderSource = shaderSource.replace(/\buvec3\b/g, 'ivec3');
@@ -212,14 +221,20 @@ export function glsl1Uint(shaderSource: string) {
 	return shaderSource;
 }
 
+/**
+ * Replace all highp with mediump.
+ * @private
+ */
 export function highpToMediump(shaderSource: string) {
-	// Replace all highp with mediump.
 	return shaderSource.replace(/\bhighp\b/, 'mediump');
 }
 
+/**
+ * Strip out any version numbers.
+ * https://github.com/Jam3/glsl-version-regex
+ * @private
+ */
 export function stripVersion(shaderSource: string) {
-	// Strip out any version numbers.
-	// https://github.com/Jam3/glsl-version-regex
 	const origLength = shaderSource.length;
 	shaderSource = shaderSource.replace(/^\s*\#version\s+([0-9]+(\s+(es)+)?)\s*/, '');
 	if (shaderSource.length !== origLength) {
@@ -228,8 +243,11 @@ export function stripVersion(shaderSource: string) {
 	return shaderSource;
 }
 
+/**
+ * Strip out any precision declarations.
+ * @private
+ */
 export function stripPrecision(shaderSource: string) {
-	// Strip out any precision declarations.
 	const origLength = shaderSource.length;
 	shaderSource = shaderSource.replace(/\s*precision\s+((highp)|(mediump)|(lowp))\s+[a-zA-Z0-9]+\s*;/g, '');
 	if (shaderSource.length !== origLength) {
@@ -238,6 +256,10 @@ export function stripPrecision(shaderSource: string) {
 	return shaderSource;
 }
 
+/**
+ * Strip out comments from shader code.
+ * @private
+ */
 export function stripComments(shaderSource: string) {
 	shaderSource = shaderSource.replace(/\s?\/\/.*\n/g, '');
 	return shaderSource;

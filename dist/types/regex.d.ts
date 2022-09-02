@@ -46,10 +46,40 @@ export declare function glsl1FragmentOut(shaderSource: string, name: string): st
  * @private
  */
 export declare function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string): boolean;
+/**
+ * Convert texture to texture2D.
+ * TODO: add polyfills.
+ * @private
+ */
 export declare function glsl1Texture(shaderSource: string): string;
+/**
+ * Convert isampler2D and usampler2D to sampler2D.
+ * @private
+ */
 export declare function glsl1Sampler2D(shaderSource: string): string;
+/**
+ * Unsigned int types are not supported, use int types instead.
+ * @private
+ */
 export declare function glsl1Uint(shaderSource: string): string;
+/**
+ * Replace all highp with mediump.
+ * @private
+ */
 export declare function highpToMediump(shaderSource: string): string;
+/**
+ * Strip out any version numbers.
+ * https://github.com/Jam3/glsl-version-regex
+ * @private
+ */
 export declare function stripVersion(shaderSource: string): string;
+/**
+ * Strip out any precision declarations.
+ * @private
+ */
 export declare function stripPrecision(shaderSource: string): string;
+/**
+ * Strip out comments from shader code.
+ * @private
+ */
 export declare function stripComments(shaderSource: string): string;

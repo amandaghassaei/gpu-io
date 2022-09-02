@@ -12,6 +12,13 @@
 		getFragmentOutType,
 		glsl1FragmentOut,
 		checkFragmentShaderForFragColor,
+		glsl1Texture,
+		glsl1Sampler2D,
+		glsl1Uint,
+		highpToMediump,
+		stripVersion,
+		stripPrecision,
+		stripComments,
 	} = _testing;
 
 	describe('regex', () => {
@@ -117,20 +124,16 @@ void main() {
 			});
 		});
 		describe('glsl1FragmentOut', () => {
-			it('should remove out declaration', () => {
+			it('should remove out declaration and convert out_fragColor to gl_FragColor', () => {
 				assert.equal(glsl1FragmentOut('out vec4 out_fragColor;\noutVariable;\nout_fragColor = vec4(0);'), '\noutVariable;\ngl_FragColor = vec4(vec4(0));');
-				// Remove the out declaration.
-				// assert.equal(glsl1FragmentOut('out vec4 out_fragColor;'), '');
-				// assert.equal(glsl1FragmentOut('out    vec4  out_fragColor;'), '');
-				// // Handle lowp, mediump, highp.
-				// assert.equal(glsl1FragmentOut('out  lowp  vec4  out_fragColor;'), '');
-				// assert.equal(glsl1FragmentOut('out   mediump ivec2  out_fragColor;'), '');
-				// assert.equal(glsl1FragmentOut('out highp  float  out_fragColor;'), '');
-				// // Handle case where no out_fragColor present.
-				// assert.equal(glsl1FragmentOut(glsl1FragmentShader), glsl1FragmentShader);
-			});
-			it('should convert out_fragColor to gl_FragColor', () => {
-
+				// Handle lowp, mediump, highp.
+				assert.equal(glsl1FragmentOut('out  lowp  vec4  out_fragColor;out_fragColor = vec4(0);'), 'gl_FragColor = vec4(vec4(0));');
+				assert.equal(glsl1FragmentOut('out   mediump ivec2  out_fragColor;out_fragColor = ivec2(0);'), 'gl_FragColor = vec4(ivec2(0), 0, 0);');
+				assert.equal(glsl1FragmentOut('out highp  float  out_fragColor;out_fragColor = 0.0;'), 'gl_FragColor = vec4(0.0, 0, 0, 0);');
+				// Handle case where no out_fragColor present.
+				assert.equal(glsl1FragmentOut(glsl1FragmentShader), glsl1FragmentShader);
+				// Throw error if no assignment.
+				assert.throws(() => { glsl1FragmentOut('out vec4 out_fragColor;', 'test'); }, 'No assignment found for out_fragColor in GPUProgram "test".');
 			});
 		});
 		describe('checkFragmentShaderForFragColor', () => {
@@ -144,6 +147,60 @@ void main() {
 			});
 			it('should allow gl_FragColor in GLSL1', () => {
 				assert.equal(checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL1, 'test'), true);
+			});
+		});
+		describe('glsl1Texture', () => {
+			it('should convert texture to texture2D', () => {
+				assert.equal(glsl1Texture('texture(u_sampler, vUV);'), 'texture2D(u_sampler, vUV);');
+			});
+		});
+		describe('glsl1Sampler2D', () => {
+			it('should convert isampler2D and usampler2D to sampler2D', () => {
+				assert.equal(glsl1Sampler2D('uniform isampler2D  u_test;'), 'uniform sampler2D  u_test;');
+				assert.equal(glsl1Sampler2D('uniform usampler2D u_test;'), 'uniform sampler2D u_test;');
+				assert.equal(glsl1Sampler2D('uniform sampler2D u_test;'), 'uniform sampler2D u_test;');
+				// Handle lowp, mediump, highp.
+				assert.equal(glsl1Sampler2D('uniform lowp isampler2D u_test;'), 'uniform lowp sampler2D u_test;');
+				assert.equal(glsl1Sampler2D('uniform mediump isampler2D u_test;'), 'uniform mediump sampler2D u_test;');
+				assert.equal(glsl1Sampler2D('uniform highp isampler2D u_test;'), 'uniform highp sampler2D u_test;');
+			});
+		});
+		describe('glsl1Uint', () => {
+			it('should convert unsigned int types to int', () => {
+				assert.equal(glsl1Uint('uint a;'), 'int a;');
+				assert.equal(glsl1Uint('uvec2 a;'), 'ivec2 a;');
+				assert.equal(glsl1Uint('uvec3 a;'), 'ivec3 a;');
+				assert.equal(glsl1Uint('uvec4 a;'), 'ivec4 a;');
+				assert.equal(glsl1Uint('uint(4);'), 'int(4);');
+				assert.equal(glsl1Uint('uvec2(4, 3);'), 'ivec2(4, 3);');
+				assert.equal(glsl1Uint('uvec3(4);'), 'ivec3(4);');
+				assert.equal(glsl1Uint('uvec4(4);'), 'ivec4(4);');
+			});
+		});
+		describe('highpToMediump', () => {
+			it('should convert highp to mediump', () => {
+				assert.equal(highpToMediump('uniform highp int a;'), 'uniform mediump int a;');
+				assert.equal(highpToMediump('highp  int a;'), 'mediump  int a;');
+			});
+		});
+		describe('stripVersion', () => {
+			it('should strip version numbers from shader', () => {
+				assert.equal(stripVersion('#version 300 es'), '');
+				assert.equal(stripVersion('#version 100\nint a = 7'), 'int a = 7');
+			});
+		});
+		describe('stripPrecision', () => {
+			it('should strip out any precision declarations', () => {
+				assert.equal(stripPrecision(' precision mediump isampler2D;'), '');
+				assert.equal(stripPrecision('precision   lowp sampler2D;'), '');
+				assert.equal(stripPrecision('precision highp  usampler2D;'), '');
+				assert.equal(stripPrecision('precision mediump uint;'), '');
+				assert.equal(stripPrecision('precision lowp int;a=50'), 'a=50');
+			});
+		});
+		describe('stripComments', () => {
+			it('should strip out comments', () => {
+				assert.equal(stripComments('// comment\n int a = 40;// comment\n float b = 5.0;'), ' int a = 40; float b = 5.0;');
 			});
 		});
 	});
