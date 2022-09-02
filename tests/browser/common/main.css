@@ -1,6 +1,7 @@
 body {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px;
+	min-width: 960px;
 }
 
 canvas {
@@ -32,6 +33,7 @@ a, a:link, a:visited, a:hover, a:active {
 
 .container {
 	margin: 10px;
+	margin-right: 0px;
 }
 .label {
 	width: 20px;
@@ -55,10 +57,9 @@ a, a:link, a:visited, a:hover, a:active {
 
 .outerTable {
 	border: solid 1px #444;
+	margin-right: 10px;
 }
-.outerTable + .outerTable {
-	margin-left: -2px;
-}
+
 .outerTable-title {
 	text-align: center;
 }
@@ -79,8 +80,8 @@ a, a:link, a:visited, a:hover, a:active {
 }
 .header {
 	height: 30px;
-	padding-left:15px;
-	padding-right:15px;
+	padding-left:8px;
+	padding-right:8px;
 }
 .bold {
 	font-weight: 900;

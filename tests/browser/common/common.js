@@ -24,6 +24,7 @@ const {
 MicroModal.init();
 
 document.getElementById('info').innerHTML =  `
+Browser: ${getBrowserVersion()}<br/>
 WebGL2 Supported: ${isWebGL2Supported()}<br/>
 Vertex shader mediump precision handled as: ${getVertexShaderMediumpPrecision()}<br/>
 Fragment shader mediump precision handled as: ${getFragmentShaderMediumpPrecision()}<br/>
@@ -150,7 +151,21 @@ function isWebGL2Supported() {
 	return true;
 }
 
-function makeTable(testFunction, tests) {
+function makeTable(testFunction) {
+
+	let tests;
+    if (GPUIO.isWebGL2Supported()) {
+      tests = [
+        { WEBGL_VERSION: GPUIO.WEBGL2, GLSL_VERSION: GPUIO.GLSL3 },
+        { WEBGL_VERSION: GPUIO.WEBGL2, GLSL_VERSION: GPUIO.GLSL1 },
+        { WEBGL_VERSION: GPUIO.WEBGL1, GLSL_VERSION: GPUIO.GLSL1 },
+      ];
+    } else {
+      tests = [
+        { WEBGL_VERSION: GPUIO.WEBGL1, GLSL_VERSION: GPUIO.GLSL1 },
+      ];
+    }
+
 	// To make things simpler, keep DIM_X * DIMY < 256.
 	const DIM_X = 30;
 	const DIM_Y = 30;
@@ -196,7 +211,7 @@ function makeTable(testFunction, tests) {
 			container.appendChild(outerTable);
 			const outerTableTitle = document.createElement('div');
 			outerTableTitle.className="outerTable-title entry"
-			outerTableTitle.innerHTML = `GLSL v${GLSL_VERSION === GLSL3 ? '3' : '1'}`;
+			outerTableTitle.innerHTML = `WebGL ${WEBGL_VERSION === WEBGL2 ? '2' : '1'} + GLSL v${GLSL_VERSION === GLSL3 ? '3' : '1'}`;
 			outerTable.appendChild(outerTableTitle);
 
 			// Loop through various settings.
@@ -278,12 +293,15 @@ function makeTable(testFunction, tests) {
 					FILTER: LINEAR,
 				}));
 			}
-			outerTable.appendChild(makeColumn(linearRepeatResults, extremaResults, '<br/>LINEAR / REPEAT'));
+			outerTable.appendChild(makeColumn(linearRepeatResults, extremaResults, 'LINEAR<br/>REPEAT'));
 		});
 
 		container.appendChild(document.createElement('br'));
 	});
 }
 
-const version = document.getElementById('version');
-version.innerHTML = getBrowserVersion();
+const pending = document.getElementsByClassName('pending');
+
+for (const el of pending) {
+	el.innerHTML = '';
+}

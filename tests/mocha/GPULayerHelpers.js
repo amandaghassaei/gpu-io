@@ -217,7 +217,7 @@
 					name: 'test',
 					numComponents: 5,
 					internalType: INT,
-					writable: true,
+					writable: false,
 				}); },
 				'Unsupported numComponents: 5 for GPULayer "test".');
 				assert.throws(() => { getGLTextureParameters({

@@ -4882,8 +4882,7 @@ function testFramebufferAttachment(params) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-    var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-    var validStatus = status === gl.FRAMEBUFFER_COMPLETE;
+    var validStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
     // Clear out allocated memory.
     gl.deleteTexture(texture);
     gl.deleteFramebuffer(framebuffer);
@@ -4940,7 +4939,6 @@ function getGPULayerInternalType(params) {
         }
         // Must support at least half float if using a float type.
         if (internalType === constants_1.HALF_FLOAT) {
-            // getExtension(composer, FLOAT, true);
             (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HALF_FLOAT);
             // TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
             if (writable) {
