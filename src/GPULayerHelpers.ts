@@ -549,7 +549,7 @@ export function testFramebufferAttachment(
 	const { gl, glslVersion } = composer;
 
 	// Memoize results for a given set of inputs.
-	const key = `${isWebGL2(gl),internalType,glslVersion}`;
+	const key = `${isWebGL2(gl)},${internalType},${glslVersion}`;
 	if (results.framebufferWriteSupport[key] !== undefined) {
 		return results.framebufferWriteSupport[key];
 	}

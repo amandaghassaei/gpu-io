@@ -4842,7 +4842,7 @@ function testFramebufferAttachment(params) {
     var composer = params.composer, internalType = params.internalType;
     var gl = composer.gl, glslVersion = composer.glslVersion;
     // Memoize results for a given set of inputs.
-    var key = "".concat(((0, utils_1.isWebGL2)(gl), internalType, glslVersion));
+    var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(glslVersion);
     if (results.framebufferWriteSupport[key] !== undefined) {
         return results.framebufferWriteSupport[key];
     }
