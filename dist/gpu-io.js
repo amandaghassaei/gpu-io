@@ -4774,12 +4774,13 @@ function getGLTextureParameters(params) {
     }
     else {
         // Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+        glNumChannels = numComponents;
         if (writable) {
-            // For read only textures in WebGL 1, use RGBA.
+            // For writable textures in WebGL 1, use RGBA.
             glNumChannels = 4;
         }
         // For read only textures in WebGL 1, use RGB/RGBA.
-        switch (numComponents) {
+        switch (glNumChannels) {
             case 1:
             case 2:
             case 3:
@@ -4939,8 +4940,8 @@ function getGPULayerInternalType(params) {
         }
         // Must support at least half float if using a float type.
         if (internalType === constants_1.HALF_FLOAT) {
+            // getExtension(composer, FLOAT, true);
             (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HALF_FLOAT);
-            (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR);
             // TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
             if (writable) {
                 var valid = testFramebufferAttachment({ composer: composer, internalType: internalType });

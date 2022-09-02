@@ -30,7 +30,6 @@ import {
 	GPULayerNumComponents,
 	GPULayerType,
 	GPULayerWrap,
-	GLSL1,
 	GPULayerBuffer,
 	validFilters,
 	validWraps,

@@ -477,12 +477,13 @@ export function getGLTextureParameters(
 		}
 	} else {
 		// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
+		glNumChannels = numComponents;
 		if (writable) {
-			// For read only textures in WebGL 1, use RGBA.
+			// For writable textures in WebGL 1, use RGBA.
 			glNumChannels = 4;
 		}
 		// For read only textures in WebGL 1, use RGB/RGBA.
-		switch (numComponents) {
+		switch (glNumChannels) {
 			case 1:
 			case 2:
 			case 3:
@@ -594,8 +595,7 @@ export function testFramebufferAttachment(
 	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
 	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
-	const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-	const validStatus = status === gl.FRAMEBUFFER_COMPLETE;
+	const validStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
 
 	// Clear out allocated memory.
 	gl.deleteTexture(texture);
@@ -661,8 +661,8 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		}
 		// Must support at least half float if using a float type.
 		if (internalType === HALF_FLOAT) {
+			// getExtension(composer, FLOAT, true);
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
-			getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
 				const valid = testFramebufferAttachment({ composer, internalType: internalType });
