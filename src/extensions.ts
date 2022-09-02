@@ -39,7 +39,7 @@ export function getExtension(
 	if (extension) {
 		// Cache this extension.
 		_extensions[extensionName] = extension;
-		if (verboseLogging) console.log(`Loaded extension: ${extensionName}.`);
+		console.log(`Loaded extension: ${extensionName}.`);
 	} else {
 		_extensions[extensionName] = false; // Cache the bad extension lookup.
 		console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extensionName}.`);

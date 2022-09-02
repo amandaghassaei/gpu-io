@@ -4940,6 +4940,7 @@ function getGPULayerInternalType(params) {
         // Must support at least half float if using a float type.
         if (internalType === constants_1.HALF_FLOAT) {
             (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HALF_FLOAT);
+            (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR);
             // TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
             if (writable) {
                 var valid = testFramebufferAttachment({ composer: composer, internalType: internalType });
@@ -6170,8 +6171,7 @@ function getExtension(composer, extensionName, optional) {
     if (extension) {
         // Cache this extension.
         _extensions[extensionName] = extension;
-        if (verboseLogging)
-            console.log("Loaded extension: ".concat(extensionName, "."));
+        console.log("Loaded extension: ".concat(extensionName, "."));
     }
     else {
         _extensions[extensionName] = false; // Cache the bad extension lookup.
@@ -6259,6 +6259,8 @@ exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.
 var constants_1 = __webpack_require__(601);
 /**
  * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
+ * Note: there is no positive lookbehind support in some browsers, use capturing parens instead.
+ * https://stackoverflow.com/questions/3569104/positive-look-behind-in-javascript-regular-expression/3569116#3569116
  */
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
@@ -6270,13 +6272,22 @@ function escapeRegExp(string) {
  */
 function typecastVariable(shaderSource, variableName, type) {
     // "s" makes this work for multiline values.
-    var regexMatch = new RegExp("(?<=\\b".concat(escapeRegExp(variableName), "\\s*=\\s*)\\S[^;]*(?=;)"), 'sg');
-    var values = shaderSource.match(regexMatch);
-    if (values) {
+    // const regexMatch = new RegExp(`(?<=\\b${escapeRegExp(variableName)}\\s*=\\s*)\\S[^;]*(?=;)`, 'sg');
+    // Do this without lookbehind to support older browsers.
+    var regexMatch = new RegExp("\\b".concat(escapeRegExp(variableName), "\\s*=\\s*\\S[^;]*;"), 'sg');
+    var assignmentExpressions = shaderSource.match(regexMatch);
+    if (assignmentExpressions) {
         // Loop through all places where variable is assigned and typecast.
-        for (var i = 0; i < values.length; i++) {
-            var regexReplace = new RegExp("\\b".concat(escapeRegExp(variableName), "\\s*=\\s*").concat(escapeRegExp(values[i]), "\\s*;"), 's');
-            shaderSource = shaderSource.replace(regexReplace, "".concat(variableName, " = ").concat(type, "(").concat(values[i], ");"));
+        for (var i = 0; i < assignmentExpressions.length; i++) {
+            var regexValueMatch = new RegExp("\\b".concat(escapeRegExp(variableName), "\\s*=\\s*(\\S[^;]*);"), 's');
+            var value = assignmentExpressions[i].match(regexValueMatch);
+            if (value && value[1]) {
+                var regexReplace = new RegExp("\\b".concat(escapeRegExp(variableName), "\\s*=\\s*").concat(escapeRegExp(value[1]), "\\s*;"), 's');
+                shaderSource = shaderSource.replace(regexReplace, "".concat(variableName, " = ").concat(type, "(").concat(value[1], ");"));
+            }
+            else {
+                console.warn("Could not find value in expression: \"".concat(assignmentExpressions[i], "\""));
+            }
         }
     }
     else {
@@ -6299,13 +6310,24 @@ exports.glsl1VertexIn = glsl1VertexIn;
  * @private
  */
 function _castVaryingToFloat(shaderSource, regexString, type) {
-    var regexMatch = new RegExp("(?<=".concat(regexString, "\\s+)\\S[^;]*(?=;)"), 'g');
-    var castToFloatVars = shaderSource.match(regexMatch);
-    if (castToFloatVars) {
+    // const regexMatch = new RegExp(`(?<=${regexString}\\s+)\\S[^;]*(?=;)`, 'g');
+    // Do this without lookbehind to support older browsers.
+    var regexMatch = new RegExp("".concat(regexString, "\\s+\\S[^;]*;"), 'g');
+    var castToFloatExpressions = shaderSource.match(regexMatch);
+    if (castToFloatExpressions) {
+        // Replace all with new type.
         var regexReplace = new RegExp("".concat(regexString, "\\b"), 'g');
         shaderSource = shaderSource.replace(regexReplace, "varying ".concat(type));
-        for (var i = 0; i < castToFloatVars.length; i++) {
-            shaderSource = typecastVariable(shaderSource, castToFloatVars[i], type);
+        // Loop through each expression, grab variable name, and cast all assignments.
+        for (var i = 0; i < castToFloatExpressions.length; i++) {
+            var regexVariableMatch = new RegExp("".concat(regexString, "\\s+(\\S[^;]*);"));
+            var variable = castToFloatExpressions[i].match(regexVariableMatch);
+            if (variable && variable[2]) {
+                shaderSource = typecastVariable(shaderSource, variable[2], type);
+            }
+            else {
+                console.warn("Could not find variable name in expression: \"".concat(castToFloatExpressions[i], "\""));
+            }
         }
     }
     return shaderSource;
@@ -6316,7 +6338,9 @@ function _castVaryingToFloat(shaderSource, regexString, type) {
  * @private
  */
 function castVaryingToFloat(shaderSource) {
-    shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+u?int', 'float');
+    // Need to init all expressions with the same number of capturing groups
+    // so that this will work in _castVaryingToFloat.
+    shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(u)?int', 'float'); // '\\bvarying\\s+u?int'
     shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec2', 'vec2');
     shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec3', 'vec3');
     shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec4', 'vec4');
@@ -6367,11 +6391,13 @@ function containsGLFragColor(shaderSource) {
  * @private
  */
 function getFragmentOutType(shaderSource, name) {
-    var type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
-    if (!type || !type[0]) {
+    // const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
+    // Do this without lookbehind to support older browsers.
+    var type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_fragColor;/);
+    if (!type || !type[3]) {
         throw new Error("No type found in out_fragColor declaration for GPUProgram \"".concat(name, "\"."));
     }
-    return type[0];
+    return type[3];
 }
 exports.getFragmentOutType = getFragmentOutType;
 /**
@@ -6386,8 +6412,10 @@ function glsl1FragmentOut(shaderSource, name) {
         var assignmentFound = false;
         while (true) {
             // Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
-            var output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/sg); // /s makes this work for multiline.
-            if (output) {
+            // const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+            // Do this without lookbehind to support older browsers.
+            var output = shaderSource.match(/\bout_fragColor\s*=\s*(\S.*);/s); // /s makes this work for multiline.
+            if (output && output[1]) {
                 assignmentFound = true;
                 var filler = '';
                 switch (type) {
@@ -6406,7 +6434,7 @@ function glsl1FragmentOut(shaderSource, name) {
                         filler = ', 0';
                         break;
                 }
-                shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, "gl_FragColor = vec4(".concat(output[0]).concat(filler, ");"));
+                shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, "gl_FragColor = vec4(".concat(output[1]).concat(filler, ");"));
             }
             else {
                 if (!assignmentFound)
@@ -6700,7 +6728,6 @@ function isWebGL2Supported() {
         var gl = document.createElement('canvas').getContext(constants_1.WEBGL2);
         // GL context and canvas will be garbage collected.
         results.supportsWebGL2 = isWebGL2(gl); // Will return false in case of gl = null.
-        return true;
     }
     return results.supportsWebGL2;
 }

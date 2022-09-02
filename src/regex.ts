@@ -2,6 +2,8 @@ import { GLSLVersion, GLSL3 } from './constants';
 
 /**
  * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
+ * Note: there is no positive lookbehind support in some browsers, use capturing parens instead.
+ * https://stackoverflow.com/questions/3569104/positive-look-behind-in-javascript-regular-expression/3569116#3569116
  */
 
 function escapeRegExp(string: string){
@@ -15,13 +17,21 @@ function escapeRegExp(string: string){
  */
 export function typecastVariable(shaderSource: string, variableName: string, type: string) {
 	// "s" makes this work for multiline values.
-	const regexMatch = new RegExp(`(?<=\\b${escapeRegExp(variableName)}\\s*=\\s*)\\S[^;]*(?=;)`, 'sg');
-	const values = shaderSource.match(regexMatch);
-	if (values) {
+	// const regexMatch = new RegExp(`(?<=\\b${escapeRegExp(variableName)}\\s*=\\s*)\\S[^;]*(?=;)`, 'sg');
+	// Do this without lookbehind to support older browsers.
+	const regexMatch = new RegExp(`\\b${escapeRegExp(variableName)}\\s*=\\s*\\S[^;]*;`, 'sg');
+	const assignmentExpressions = shaderSource.match(regexMatch);
+	if (assignmentExpressions) {
 		// Loop through all places where variable is assigned and typecast.
-		for (let i = 0; i < values.length; i++) {
-			const regexReplace = new RegExp(`\\b${escapeRegExp(variableName)}\\s*=\\s*${escapeRegExp(values[i])}\\s*;`, 's');
-			shaderSource = shaderSource.replace(regexReplace, `${variableName} = ${type}(${values[i]});`);
+		for (let i = 0; i < assignmentExpressions.length; i++) {
+			const regexValueMatch = new RegExp(`\\b${escapeRegExp(variableName)}\\s*=\\s*(\\S[^;]*);`, 's');
+			const value = assignmentExpressions[i].match(regexValueMatch);
+			if (value && value[1]) {
+				const regexReplace = new RegExp(`\\b${escapeRegExp(variableName)}\\s*=\\s*${escapeRegExp(value[1])}\\s*;`, 's');
+				shaderSource = shaderSource.replace(regexReplace, `${variableName} = ${type}(${value[1]});`);
+			} else {
+				console.warn(`Could not find value in expression: "${assignmentExpressions[i]}"`);
+			}
 		}
 	} else {
 		console.warn(`No assignment found for shader variable ${variableName}.`);
@@ -43,13 +53,23 @@ export function glsl1VertexIn(shaderSource: string) {
  * @private
  */
 function _castVaryingToFloat(shaderSource: string, regexString: string, type: string) {
-	const regexMatch = new RegExp(`(?<=${regexString}\\s+)\\S[^;]*(?=;)`, 'g');
-	const castToFloatVars = shaderSource.match(regexMatch);
-	if (castToFloatVars) {
+	// const regexMatch = new RegExp(`(?<=${regexString}\\s+)\\S[^;]*(?=;)`, 'g');
+	// Do this without lookbehind to support older browsers.
+	const regexMatch = new RegExp(`${regexString}\\s+\\S[^;]*;`, 'g');
+	const castToFloatExpressions = shaderSource.match(regexMatch);
+	if (castToFloatExpressions) {
+		// Replace all with new type.
 		const regexReplace = new RegExp(`${regexString}\\b`, 'g');
 		shaderSource = shaderSource.replace(regexReplace, `varying ${type}`);
-		for (let i = 0; i < castToFloatVars.length; i++) {
-			shaderSource = typecastVariable(shaderSource, castToFloatVars[i], type);
+		// Loop through each expression, grab variable name, and cast all assignments.
+		for (let i = 0; i < castToFloatExpressions.length; i++) {
+			const regexVariableMatch = new RegExp(`${regexString}\\s+(\\S[^;]*);`);
+			const variable = castToFloatExpressions[i].match(regexVariableMatch);
+			if (variable && variable[2]) {
+				shaderSource = typecastVariable(shaderSource, variable[2], type);
+			} else {
+				console.warn(`Could not find variable name in expression: "${castToFloatExpressions[i]}"`);
+			}
 		}
 	}
 	return shaderSource;
@@ -61,7 +81,9 @@ function _castVaryingToFloat(shaderSource: string, regexString: string, type: st
  * @private
  */
 export function castVaryingToFloat(shaderSource: string) {
-	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+u?int', 'float');
+	// Need to init all expressions with the same number of capturing groups
+	// so that this will work in _castVaryingToFloat.
+	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(u)?int', 'float'); // '\\bvarying\\s+u?int'
 	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec2', 'vec2');
 	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec3', 'vec3');
 	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec4', 'vec4');
@@ -114,11 +136,13 @@ function containsGLFragColor(shaderSource: string) {
  * @private
  */
 export function getFragmentOutType(shaderSource: string, name: string) {
-	const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
-	if (!type || !type[0]) {
+	// const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
+	// Do this without lookbehind to support older browsers.
+	const type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_fragColor;/);
+	if (!type || !type[3]) {
 		throw new Error(`No type found in out_fragColor declaration for GPUProgram "${name}".`);
 	}
-	return type[0] as 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
+	return type[3] as 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 }
 
 /**
@@ -133,8 +157,10 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 		let assignmentFound = false;
 		while (true) {
 			// Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
-			const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/sg); // /s makes this work for multiline.
-			if (output) {
+			// const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+			// Do this without lookbehind to support older browsers.
+			const output = shaderSource.match(/\bout_fragColor\s*=\s*(\S.*);/s); // /s makes this work for multiline.
+			if (output && output[1]) {
 				assignmentFound = true;
 				let filler = '';
 				switch (type) {
@@ -153,7 +179,7 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 						filler = ', 0';
 						break;
 				}
-				shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[0]}${filler});`);
+				shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[1]}${filler});`);
 			} else {
 				if (!assignmentFound) throw new Error(`No assignment found for out_fragColor in GPUProgram "${name}".`);
 				break;

@@ -662,6 +662,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		// Must support at least half float if using a float type.
 		if (internalType === HALF_FLOAT) {
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
+			getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
 				const valid = testFramebufferAttachment({ composer, internalType: internalType });

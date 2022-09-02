@@ -258,7 +258,6 @@ export function isWebGL2Supported() {
 		const gl = document.createElement('canvas').getContext(WEBGL2);
 		// GL context and canvas will be garbage collected.
 		results.supportsWebGL2 = isWebGL2(gl!); // Will return false in case of gl = null.
-		return true;
 	}
 	return results.supportsWebGL2;
 }

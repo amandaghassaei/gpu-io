@@ -1,10 +1,11 @@
+'use strict';
 {
 	const {
 		GLSL1,
 		GLSL3,
 		WEBGL1,
 		WEBGL2,
-		isWebgL2Supported,
+		isWebGL2Supported,
 	} = GPUIO;
 
 	// Init info dialog.
@@ -14,28 +15,38 @@
 	const gui = new dat.GUI();
 
 	const webGLSettings = {
-		webGL2: true,
-		useGLSL3: true,
+		webGL2: isWebGL2Supported(),
+		useGLSL3: isWebGL2Supported(),
 	};
 
 	// Global variables to get from example app.
 	let loop, dispose, composer;
+	// Other global ui variables.
+	let title;
+	let useGLSL3Toggle;
 
 	function reloadExampleWithNewParams() {
-		// TODO: remove everything from gui other than settings folder.
+		if (useGLSL3Toggle) {
+			settings.remove(useGLSL3Toggle);
+			useGLSL3Toggle = undefined;
+		}
 		if (dispose) dispose();
 		({ loop, composer, dispose } = main({
 			gui,
 			contextID: webGLSettings.webGL2 ? WEBGL2 : WEBGL1,
 			glslVersion: webGLSettings.useGLSL3 ? GLSL3 : GLSL1,
 		}));
+		if (webGLSettings.webGL2) {
+			useGLSL3Toggle = settings.add(webGLSettings, 'useGLSL3').name('Use GLSL 300').onChange(reloadExampleWithNewParams);
+		}
+		title = `WebGL ${webGLSettings.webGL2 ? '2' : '1'}`;
+		settings.name = title;
 	}
 
 	// Add some settings to gui.
-	const WEBGL_TITLE = 'WebGL Settings';
-	const settings = gui.addFolder(WEBGL_TITLE);
-	settings.add(webGLSettings, 'webGL2').name('Use WebGL 2').onChange(reloadExampleWithNewParams);
-	settings.add(webGLSettings, 'useGLSL3').name('Use GLSL 300').onChange(reloadExampleWithNewParams);
+	const settings = gui.addFolder(title);
+	if (isWebGL2Supported()) settings.add(webGLSettings, 'webGL2').name('Use WebGL 2').onChange(reloadExampleWithNewParams);
+	
 	// Add info modal.
 	const modalOptions = { showModal: () => {
 		MicroModal.show('modal-1');
@@ -44,12 +55,13 @@
 
 	// Load example app.
 	reloadExampleWithNewParams();
+	
 
 	function outerLoop() {
 		// Update fps counter.
 		const { fps, numTicks } = composer.tick();
 		if (numTicks % 10 === 0) {
-			settings.name = `${WEBGL_TITLE} (${fps.toFixed(1)} FPS)`
+			settings.name = `${title} (${fps.toFixed(1)} FPS)`
 		}
 		window.requestAnimationFrame(outerLoop);
 		// Run example loop.

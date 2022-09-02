@@ -195,11 +195,11 @@ function main({ gui, contextID, glslVersion}) {
 		changeBit('birthRules', val, 7);
 	});
 	birth.open();
-	gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
+	const seedRatio = gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
 		onResize();
 	}).name('Seed Ratio');
-	gui.add(PARAMS, 'reset').name('Reset');
-	gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
+	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
+	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
 	// Render loop.
 	function loop() {
@@ -257,6 +257,9 @@ function main({ gui, contextID, glslVersion}) {
 		composer.dispose();
 		gui.removeFolder(survival);
 		gui.removeFolder(birth);
+		gui.remove(seedRatio);
+		gui.remove(resetButton);
+		gui.remove(saveButton);
 	}
 
 	return {
