@@ -73,10 +73,13 @@ declare const _testing: {
     isArray(value: any): boolean;
     isObject(value: any): boolean;
     isBoolean(value: any): boolean;
+    typecastVariable(shaderSource: string, variableName: string, type: string): string;
     glsl1VertexIn(shaderSource: string): string;
+    castVaryingToFloat(shaderSource: string): string;
     glsl1VertexOut(shaderSource: string): string;
     glsl1FragmentIn(shaderSource: string): string;
-    glsl1FragmentOut(shaderSource: string): string;
+    getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
+    glsl1FragmentOut(shaderSource: string, name: string): string;
     checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): boolean;
     glsl1Texture(shaderSource: string): string;
     glsl1Sampler2D(shaderSource: string): string;

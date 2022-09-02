@@ -486,8 +486,8 @@ function main({ gui, glslVersion, contextID }) {
 	presetsGUI.add(PARAMS, 'setFingerprint').name('Fingerprint');	
 	presetsGUI.add(PARAMS, 'setNet').name('Net');
 	presetsGUI.open();
-	gui.add(PARAMS, 'reset').name('Reset');
-	gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
+	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
+	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
 	/**
 	 * This loop is where all the action happens.
@@ -605,6 +605,8 @@ function main({ gui, glslVersion, contextID }) {
 		gui.removeFolder(trailsGUI);
 		gui.removeFolder(presetsGUI);
 		gui.removeFolder(renderGUI);
+		gui.remove(resetButton);
+		gui.remove(saveButton);
 	}
 	return {
 		loop,

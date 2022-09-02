@@ -52,12 +52,9 @@
 		isPowerOf2,
 		initSequentialFloatArray,
 		preprocessVertexShader,
-		checkFragmentShaderForFragColor,
 		preprocessFragmentShader,
 		uniformInternalTypeForValue,
 	} = _testing;
-
-	// Testing components of utils that require WebGL with headless chrome + karma + mocha + chai.
 
 	describe('utils', () => {
 		describe('isFloatType', () => {
@@ -476,19 +473,6 @@ precision lowp float;precision lowp sampler2D;
 				assert.equal(initSequentialFloatArray(12).toString(), Float32Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).toString());
 			});
 		});
-		describe('checkFragmentShaderForFragColor', () => {
-			it('should check for out_fragColor in fragment source', () => {
-				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL3, 'test'); },
-					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
-				assert.throws(() => { checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL3, 'test'); },
-					'Found "gl_FragColor" declaration in fragment shader for GPUProgram "test": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.');
-				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL1, 'test'); },
-					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
-			});
-			it('should allow gl_FragColor in GLSL1', () => {
-				assert.equal(checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL1, 'test'), true);
-			});
-		});
 		describe('preprocessVertexShader', () => {
 			const defaultVertexShaderCopy = defaultVertexShader.slice();
 			it('should remove #version declarations', () => {
@@ -504,18 +488,50 @@ precision lowp float;precision lowp sampler2D;
 				assert.equal(preprocessVertexShader('precision mediump float; precision lowp int;', GLSL3), '');
 				assert.equal(preprocessVertexShader('precision highp sampler2D; precision mediump usampler2D; precision lowp isampler2D;', GLSL1), '');
 			});
-			it('should pass valid glsl3 shaders through', () => {
-				assert.equal(preprocessVertexShader(defaultVertexShader, GLSL3), defaultVertexShader);
+			it('should pass valid glsl3 shaders through (with comment removal)', () => {
+				assert.equal(preprocessVertexShader(defaultVertexShader, GLSL3), `in vec2 a_internal_position;
+#ifdef GPUIO_UV_ATTRIBUTE
+in vec2 a_internal_uv;
+#endif
+#ifdef GPUIO_NORMAL_ATTRIBUTE
+in vec2 a_internal_normal;
+#endif
+
+uniform vec2 u_internal_scale;
+uniform vec2 u_internal_translation;
+
+out vec2 v_UV;
+out vec2 v_UV_local;
+#ifdef GPUIO_NORMAL_ATTRIBUTE
+out vec2 v_normal;
+#endif
+
+void main() {
+	#ifdef GPUIO_UV_ATTRIBUTE
+	v_UV_local = a_internal_uv;
+	#else
+	v_UV_local = a_internal_position;
+	#endif
+	#ifdef GPUIO_NORMAL_ATTRIBUTE
+	v_normal = a_internal_normal;
+	#endif
+
+	vec2 position = u_internal_scale * a_internal_position + u_internal_translation;
+
+	v_UV = 0.5 * (position + 1.0);
+
+	gl_Position = vec4(position, 0, 1);
+}`);
 				// No mutations.
 				assert.equal(defaultVertexShader, defaultVertexShaderCopy);
 			});
 			it('should convert glsl3 shader to glsl1', () => {
 				assert.equal(preprocessVertexShader(defaultVertexShader, GLSL1), `attribute vec2 a_internal_position;
 #ifdef GPUIO_UV_ATTRIBUTE
-in vec2 a_internal_uv;
+attribute vec2 a_internal_uv;
 #endif
 #ifdef GPUIO_NORMAL_ATTRIBUTE
-in vec2 a_internal_normal;
+attribute vec2 a_internal_normal;
 #endif
 
 uniform vec2 u_internal_scale;
@@ -528,7 +544,6 @@ varying vec2 v_normal;
 #endif
 
 void main() {
-	// Optional varyings.
 	#ifdef GPUIO_UV_ATTRIBUTE
 	v_UV_local = a_internal_uv;
 	#else
@@ -538,13 +553,10 @@ void main() {
 	v_normal = a_internal_normal;
 	#endif
 
-	// Apply transformations.
 	vec2 position = u_internal_scale * a_internal_position + u_internal_translation;
 
-	// Calculate a global uv for the viewport.
 	v_UV = 0.5 * (position + 1.0);
 
-	// Calculate vertex position.
 	gl_Position = vec4(position, 0, 1);
 }`);
 				// No mutations.
@@ -556,7 +568,7 @@ void main() {
 			const simpleFragmentShaderGLSL1  = `varying vec2 v_UV;
 
 void main() {
-	gl_FragColor = vec4( vec4(v_UV.x, v_UV.y, 0, 1));
+	gl_FragColor = vec4(vec4(v_UV.x, v_UV.y, 0, 1));
 }`;
 			it('should remove #version declarations', () => {
 				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
@@ -601,7 +613,7 @@ uniform sampler2D u_state;
 #endif
 
 void main() {
-	gl_FragColor = vec4( texture2D(u_state, v_UV));
+	gl_FragColor = vec4(texture2D(u_state, v_UV));
 }`);
 				// No mutations.
 				assert.equal(copyFragmentShader, copyFragmentShaderCopy);

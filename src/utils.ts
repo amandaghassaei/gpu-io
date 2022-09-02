@@ -610,12 +610,12 @@ function convertVertexShaderToGLSL1(shaderSource: string) {
  * This is called once on initialization, so doesn't need to be extremely efficient.
  * @private
  */
-function convertFragmentShaderToGLSL1(shaderSource: string) {
+function convertFragmentShaderToGLSL1(shaderSource: string, name: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to varying.
 	shaderSource = glsl1FragmentIn(shaderSource);
 	// Convert out_fragColor to gl_FragColor.
-	shaderSource = glsl1FragmentOut(shaderSource);
+	shaderSource = glsl1FragmentOut(shaderSource, name);
 	return shaderSource;
 }
 
@@ -657,7 +657,7 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 	if (glslVersion === GLSL3) {
 		return shaderSource;
 	}
-	return convertFragmentShaderToGLSL1(shaderSource);
+	return convertFragmentShaderToGLSL1(shaderSource, name);
 }
 
 /**

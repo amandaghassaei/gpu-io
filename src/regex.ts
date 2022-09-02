@@ -4,27 +4,161 @@ import { GLSLVersion, GLSL3 } from './constants';
  * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
  */
 
+function escapeRegExp(string: string){
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+/**
+ * Typecast variable assignment.
+ * This is used in cases when e.g. varyings have to be converted to float in GLSL1.
+ * @private
+ */
+export function typecastVariable(shaderSource: string, variableName: string, type: string) {
+	// "s" makes this work for multiline values.
+	const regexMatch = new RegExp(`(?<=\\b${escapeRegExp(variableName)}\\s*=\\s*)\\S[^;]*(?=;)`, 'sg');
+	const values = shaderSource.match(regexMatch);
+	if (values) {
+		// Loop through all places where variable is assigned and typecast.
+		for (let i = 0; i < values.length; i++) {
+			const regexReplace = new RegExp(`\\b${escapeRegExp(variableName)}\\s*=\\s*${escapeRegExp(values[i])}\\s*;`, 's');
+			shaderSource = shaderSource.replace(regexReplace, `${variableName} = ${type}(${values[i]});`);
+		}
+	} else {
+		console.warn(`No assignment found for shader variable ${variableName}.`);
+	}
+	return shaderSource;
+}
+
+/**
+ * Convert vertex shader "in" to "attribute".
+ * @private
+ */
 export function glsl1VertexIn(shaderSource: string) {
-	// Convert vertex shader in to attribute.
-	return shaderSource.replace(/\bin\b/, 'attribute');
+	return shaderSource.replace(/\bin\b/g, 'attribute');
 }
 
+/**
+ * Convert int varyings to float types.
+ * Also update any variable assignments so that they are cast to float.
+ * @private
+ */
+function _castVaryingToFloat(shaderSource: string, regexString: string, type: string) {
+	const regexMatch = new RegExp(`(?<=${regexString}\\s+)\\S[^;]*(?=;)`, 'g');
+	const castToFloatVars = shaderSource.match(regexMatch);
+	if (castToFloatVars) {
+		const regexReplace = new RegExp(`${regexString}\\b`, 'g');
+		shaderSource = shaderSource.replace(regexReplace, `varying ${type}`);
+		for (let i = 0; i < castToFloatVars.length; i++) {
+			shaderSource = typecastVariable(shaderSource, castToFloatVars[i], type);
+		}
+	}
+	return shaderSource;
+}
+
+/**
+ * Convert int varyings to float types.
+ * Only exported for testing.
+ * @private
+ */
+export function castVaryingToFloat(shaderSource: string) {
+	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+u?int', 'float');
+	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec2', 'vec2');
+	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec3', 'vec3');
+	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec4', 'vec4');
+	return shaderSource;
+}
+
+/**
+ * Convert vertex shader "out" to "varying".
+ * Also remove "flat" if necessary.
+ * Also cast as float if necessary.
+ * @private
+ */
 export function glsl1VertexOut(shaderSource: string) {
-	// Convert vertex shader out to varying.
-	return shaderSource.replace(/\bout\b/g, 'varying');
+	shaderSource = shaderSource.replace(/(\bflat\s+)?\bout\b/g, 'varying');
+	shaderSource = castVaryingToFloat(shaderSource);
+	return shaderSource;
 }
 
+/**
+ * Convert fragment shader "in" to "varying".
+ * Also remove "flat" if necessary.
+ * Also cast as float if necessary.
+ * @private
+ */
 export function glsl1FragmentIn(shaderSource: string) {
-	// Convert fragment shader in to varying.
-	return shaderSource.replace(/\bin\b/g, 'varying');
+	shaderSource = shaderSource.replace(/(\bflat\s+)?\bin\b/g, 'varying');
+	shaderSource = castVaryingToFloat(shaderSource);
+	return shaderSource;
 }
 
-export function glsl1FragmentOut(shaderSource: string) {
-	// Convert out_fragColor to gl_FragColor.
-	shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor;/g, '');
-	const output = shaderSource.match(/(?<=out_fragColor\s*=\s*).+(?=;)/s); // /s makes this work for multiline.
-	if (output) {
-		shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[0]});`);
+/**
+ * Contains out_fragColor.
+ * @private
+ */
+function containsOutFragColor(shaderSource: string) {
+	return !!shaderSource.match(/\bout_fragColor\b/);
+}
+
+/**
+ * Contains gl_FragColor.
+ * @private
+ */
+function containsGLFragColor(shaderSource: string) {
+	return !!shaderSource.match(/\bgl_FragColor\b/);
+}
+
+/**
+ * Get type (int, float, vec3, etc) of fragment out.
+ * Only exported for testing.
+ * @private
+ */
+export function getFragmentOutType(shaderSource: string, name: string) {
+	const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
+	if (!type || !type[0]) {
+		throw new Error(`No type found in out_fragColor declaration for GPUProgram "${name}".`);
+	}
+	return type[0] as 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
+}
+
+/**
+ * Convert out_fragColor to gl_FragColor.
+ * @private
+ */
+export function glsl1FragmentOut(shaderSource: string, name: string) {
+	if (containsOutFragColor(shaderSource)) {
+		const type = getFragmentOutType(shaderSource, name);
+		// Remove out_fragColor declaration.
+		shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor;/g, '');
+		let assignmentFound = false;
+		while (true) {
+			// Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
+			const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/sg); // /s makes this work for multiline.
+			if (output) {
+				assignmentFound = true;
+				let filler = '';
+				switch (type) {
+					case 'float':
+					case 'int':
+						filler = ', 0, 0, 0';
+						break;
+					case 'vec2':
+					case 'ivec2':
+					case 'uvec2':
+						filler = ', 0, 0';
+						break;
+					case 'vec3':
+					case 'ivec3':
+					case 'uvec3':
+						filler = ', 0';
+						break;
+				}
+				shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[0]}${filler});`);
+			} else {
+				if (!assignmentFound) throw new Error(`No assignment found for out_fragColor in GPUProgram "${name}".`);
+				break;
+			}
+		}
 	}
 	return shaderSource;
 }
@@ -34,8 +168,8 @@ export function glsl1FragmentOut(shaderSource: string) {
  * @private 
  */
  export function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string) {
-	const gl_FragColor = shaderSource.match(/\bgl_FragColor\s?=/);
-	const out_fragColor = shaderSource.match(/\bout_fragColor\s?=/);
+	const gl_FragColor = containsGLFragColor(shaderSource);
+	const out_fragColor = containsOutFragColor(shaderSource);
 	if (glslVersion === GLSL3) {
 		// Check that fragment shader source DOES NOT contain gl_FragColor
 		if (gl_FragColor) {
@@ -105,6 +239,6 @@ export function stripPrecision(shaderSource: string) {
 }
 
 export function stripComments(shaderSource: string) {
-	// TODO: implement this.
+	shaderSource = shaderSource.replace(/\s?\/\/.*\n/g, '');
 	return shaderSource;
 }

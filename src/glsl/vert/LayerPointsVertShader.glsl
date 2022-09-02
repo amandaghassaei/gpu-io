@@ -1,6 +1,7 @@
 @include "../common/modI.glsl"
 
 // Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl
+// TODO: would this work in glsl3?
 in float a_internal_index; // Index of point.
 
 uniform sampler2D u_internal_positions; // Texture lookup with position data.
