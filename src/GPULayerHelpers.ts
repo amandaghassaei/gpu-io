@@ -562,21 +562,20 @@ export function testFramebufferAttachment(
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
 	// Default to most widely supported settings.
-	const wrapS = gl[CLAMP_TO_EDGE];
-	const wrapT = gl[CLAMP_TO_EDGE];
+	const wrap = gl[CLAMP_TO_EDGE];
 	const filter = gl[NEAREST];
 	// Use non-power of two dimensions to check for more universal support.
 	// (In case size of GPULayer is changed at a later point).
-	const width = 100;
-	const height = 100;
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapS);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapT);
+	const width = 10;
+	const height = 10;
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
 	const { glInternalFormat, glFormat, glType } = getGLTextureParameters({
 		composer,
-		name: 'testFramebufferWrite',
+		name: 'testFramebufferAttachment',
 		numComponents: 1,
 		writable: true,
 		internalType,
@@ -652,7 +651,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			// To check if this is supported, you have to call the WebGL
 			// checkFramebufferStatus() function.
 			if (writable) {
-				const valid = testFramebufferAttachment({ composer, internalType: internalType });
+				const valid = testFramebufferAttachment({ composer, internalType });
 				if (!valid && internalType !== HALF_FLOAT) {
 					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
@@ -664,7 +663,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
-				const valid = testFramebufferAttachment({ composer, internalType: internalType });
+				const valid = testFramebufferAttachment({ composer, internalType });
 				if (!valid) {
 					_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 				}

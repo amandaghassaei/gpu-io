@@ -3892,6 +3892,7 @@ var GPULayer = /** @class */ (function () {
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
                 var status_1 = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
                 if (status_1 != gl.FRAMEBUFFER_COMPLETE) {
+                    console.log(width, height, _glInternalFormat, _glFormat, _glType, validatedArray);
                     _errorCallback("Invalid status for framebuffer for GPULayer \"".concat(name, "\": ").concat(status_1, "."));
                 }
                 // Add framebuffer.
@@ -4852,20 +4853,19 @@ function testFramebufferAttachment(params) {
     }
     gl.bindTexture(gl.TEXTURE_2D, texture);
     // Default to most widely supported settings.
-    var wrapS = gl[constants_1.CLAMP_TO_EDGE];
-    var wrapT = gl[constants_1.CLAMP_TO_EDGE];
+    var wrap = gl[constants_1.CLAMP_TO_EDGE];
     var filter = gl[constants_1.NEAREST];
     // Use non-power of two dimensions to check for more universal support.
     // (In case size of GPULayer is changed at a later point).
-    var width = 100;
-    var height = 100;
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapS);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapT);
+    var width = 10;
+    var height = 10;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     var _a = getGLTextureParameters({
         composer: composer,
-        name: 'testFramebufferWrite',
+        name: 'testFramebufferAttachment',
         numComponents: 1,
         writable: true,
         internalType: internalType,
