@@ -4959,14 +4959,14 @@ function testFloatLinearFiltering(composer, internalType) {
     }), glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glNumChannels = _a.glNumChannels;
     // Init texture with values.
     var values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
-    var valuesTyped = new Float32Array(width * height * glNumChannels);
-    for (var i = 0; i < valuesTyped.length; i++) {
+    var valuesTyped = new Float32Array(values.length * glNumChannels);
+    for (var i = 0; i < values.length; i++) {
         valuesTyped[i * glNumChannels] = values[i];
     }
     if (internalType === constants_1.HALF_FLOAT) {
         // Cast values as Uint16Array.
         var valuesTyped16 = new Uint16Array(valuesTyped.length);
-        var float16View = new DataView(valuesTyped.buffer);
+        var float16View = new DataView(valuesTyped16.buffer);
         for (var i = 0; i < valuesTyped.length; i++) {
             (0, float16_1.setFloat16)(float16View, 2 * i, valuesTyped[i], true);
         }
@@ -5009,8 +5009,10 @@ function testFloatLinearFiltering(composer, internalType) {
     ];
     var filtered = output.getValues();
     var supported = true;
+    var tol = internalType === constants_1.HALF_FLOAT ? 1e-3 : 1e-6;
     for (var i = 0; i < filtered.length; i++) {
-        if (Math.abs((expected[i] - filtered[i]) / expected[i]) > 1e-6) {
+        if (Math.abs((expected[i] - filtered[i]) / expected[i]) > tol) {
+            console.log(internalType, Math.abs((expected[i] - filtered[i]) / expected[i]));
             supported = false;
             break;
         }

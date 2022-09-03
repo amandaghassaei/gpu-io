@@ -648,14 +648,14 @@ export function testFloatLinearFiltering(
 	});
 	// Init texture with values.
 	const values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
-	let valuesTyped: Float32Array | Uint16Array = new Float32Array(width * height * glNumChannels);
-	for (let i = 0; i < valuesTyped.length; i++) {
+	let valuesTyped: Float32Array | Uint16Array = new Float32Array(values.length * glNumChannels);
+	for (let i = 0; i < values.length; i++) {
 		valuesTyped[i * glNumChannels] = values[i];
 	}
 	if (internalType === HALF_FLOAT) {
 		// Cast values as Uint16Array.
 		const valuesTyped16 = new Uint16Array(valuesTyped.length);
-		const float16View =  new DataView(valuesTyped.buffer);
+		const float16View =  new DataView(valuesTyped16.buffer);
 		for (let i = 0; i < valuesTyped.length; i++) {
 			setFloat16(float16View, 2 * i, valuesTyped[i], true);
 		}
@@ -708,8 +708,11 @@ export function testFloatLinearFiltering(
 		(values[6] + values[7]) / 2, (values[7] + values[8]) / 2, values[8]];
 	const filtered = output.getValues();
 	let supported = true;
+	const tol = internalType === HALF_FLOAT ? 1e-3 : 1e-6;
 	for (let i = 0; i < filtered.length; i++) {
-		if (Math.abs((expected[i] - filtered[i]) / expected[i]) > 1e-6) {
+		if (Math.abs((expected[i] - filtered[i]) / expected[i]) > tol) {
+			// TODO: remove this log.
+			console.log(internalType, Math.abs((expected[i] - filtered[i]) / expected[i]));
 			supported = false;
 			break;
 		}
