@@ -170,7 +170,7 @@ More info about the difference between GLSL and WebGL versions:
 
 ### Transform Feedback
 
-You might notice that this library does not use any transform feedback to e.g. handle computations on 1D lists.  Transform feedback is great for things like particle simulations and other types of physics that is *not* computed at the pixel level.  It is totally possible to perform these types of simulations using this library, but currently they are all computed in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
+You might notice that this library does not use any transform feedback to e.g. handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is *not* computed at the pixel level.  It is totally possible to perform these types of simulations using this library, but currently they are all computed in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
 
 - The main use case for this library is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays, but that is a secondary functionality.
 - Transform feedback is only supported in WebGL 2.  At the time I first started writing this, WebGL 2 was not supported by mobile Safari.  Though that has changed recently, it will take some time for many people to update (for example, luddites like me who never update their apps), so for now I'd like to support all functionality in this library in WebGL 1.
@@ -266,7 +266,7 @@ Some specific things that I think could be improved:
 
 Compiled with [webpack](https://www.npmjs.com/package/webpack).  To build ts files from `src` to js in `dist` run:
 
-```sh
+```
 npm install
 npm run build
 ```
@@ -276,7 +276,7 @@ npm run build
 
 I'm using mocha + karma + chai + headless Chrome to test the WebGL components of this library, following the setup described in [Automated testing with Headless Chrome](https://developer.chrome.com/blog/headless-karma-mocha-chai/).  Those tests are located in [tests/mocha/](./tests/mocha/).  To run the automated tests, run:
 
-```sh
+```
 npm run test
 ```
 
@@ -284,7 +284,7 @@ I've also included a few html pages (in the [tests/browser/](./tests/browser/) d
 
 To run these tests locally:
 
-```sh
+```
 npm install
 npm run build
 npm install http-server

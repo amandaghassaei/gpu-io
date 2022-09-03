@@ -17,10 +17,10 @@ function main({ gui, glslVersion, contextID }) {
 		decayFactor: 0.9,
 		depositAmount: 4,
 		particleDensity: 0.35,
-		sensorDistance: 18,
-		sensorAngle: 90,
+		sensorDistance: 18, 
+		sensorAngle: 5.5,
 		stepSize: 2,
-		rotationAngle: -16,
+		rotationAngle: 45,
 		renderAmplitude: 0.03,
 		setFibers: () => {
 			const settings = {
@@ -33,10 +33,7 @@ function main({ gui, glslVersion, contextID }) {
 				rotationAngle: 45,
 				renderAmplitude: 0.03,
 			};
-			for (let key in settings) {
-				PARAMS[key] = settings[key];
-			}
-			reset();
+			setPreset(settings);
 		},
 		setFingerprint: () => {
 			const settings = {
@@ -49,10 +46,7 @@ function main({ gui, glslVersion, contextID }) {
 				rotationAngle: -25,
 				renderAmplitude: 0.03,
 			};
-			for (let key in settings) {
-				PARAMS[key] = settings[key];
-			}
-			reset();
+			setPreset(settings);
 		},
 		setHoneycomb: () => {
 			const settings = {
@@ -65,10 +59,7 @@ function main({ gui, glslVersion, contextID }) {
 				rotationAngle: -45,
 				renderAmplitude: 0.03,
 			};
-			for (let key in settings) {
-				PARAMS[key] = settings[key];
-			}
-			reset();
+			setPreset(settings);
 		},
 		setNet: () => {
 			const settings = {
@@ -81,10 +72,7 @@ function main({ gui, glslVersion, contextID }) {
 				rotationAngle: -16,
 				renderAmplitude: 0.03,
 			};
-			for (let key in settings) {
-				PARAMS[key] = settings[key];
-			}
-			reset();
+			setPreset(settings);
 		},
 		setDots: () => {
 			const settings = {
@@ -97,10 +85,7 @@ function main({ gui, glslVersion, contextID }) {
 				rotationAngle: -70,
 				renderAmplitude: 0.03,
 			};
-			for (let key in settings) {
-				PARAMS[key] = settings[key];
-			}
-			reset();
+			setPreset(settings);
 		},
 		reset,
 		savePNG: savePNG,
@@ -481,46 +466,55 @@ function main({ gui, glslVersion, contextID }) {
 		return `Particles (${particlesPositions.length.toLocaleString("en-US")})`;
 	}
 	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
-	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).listen().onFinishChange(() => {
+	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
 		// Init new particles when particle density changes.
 		const { positions, heading, numParticles } = initParticlesArrays();
 		particlesPositions.resize(numParticles, positions);
 		particlesHeading.resize(numParticles, heading);
 		particlesGUI.name = getParticlesFolderTitle();
 	}).name('Particle Density');
-	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).listen().onChange((value) => {
+	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).onChange((value) => {
 		rotateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
 	}).name('Sensor Angle');
-	particlesGUI.add(PARAMS, 'sensorDistance', 1, 30, 0.01).listen().onChange((value) => {
+	particlesGUI.add(PARAMS, 'sensorDistance', 1, 30, 0.01).onChange((value) => {
 		rotateParticles.setUniform('u_sensorDistance', value);
 	}).name('Sensor Distance');
-	particlesGUI.add(PARAMS, 'rotationAngle', -90, 90, 0.01).listen().onChange((value) => {
+	particlesGUI.add(PARAMS, 'rotationAngle', -90, 90, 0.01).onChange((value) => {
 		rotateParticles.setUniform('u_rotationAngle', value * Math.PI / 180);
 	}).name('Rotation Angle');
-	particlesGUI.add(PARAMS, 'stepSize', 0.01, 3, 0.01).listen().onChange((value) => {
+	particlesGUI.add(PARAMS, 'stepSize', 0.01, 3, 0.01).onChange((value) => {
 		moveParticles.setUniform('u_stepSize', value);
 	}).name('Step Size');
 	particlesGUI.open();
 	const trailsGUI = gui.addFolder('Trails');
-	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).listen().onChange((value) => {
+	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
 		deposit.setUniform('u_depositAmount', value);
 		touch.setUniform('u_depositAmount', value);
 	}).name('Deposit Amount');
-	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).listen().onChange((value) => {
+	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).onChange((value) => {
 		diffuseAndDecay.setUniform('u_decayFactor', value);
 	}).name('Decay Factor');
 	const renderGUI = gui.addFolder('Render Settings');
-	renderGUI.add(PARAMS, 'renderAmplitude', 0, 1, 0.01).listen().onChange((value) => {
+	renderGUI.add(PARAMS, 'renderAmplitude', 0, 1, 0.01).onChange((value) => {
 		render.setUniform('u_renderAmplitude', value);
 	}).name('Amplitude');
 	// Interesting presets to try out.
 	const presetsGUI = gui.addFolder('Presets');
-	presetsGUI.add(PARAMS, 'setFibers').name('Fibers');
+	presetsGUI.add(PARAMS, 'setNet').name('Net');
 	presetsGUI.add(PARAMS, 'setDots').name('Dots');
 	presetsGUI.add(PARAMS, 'setHoneycomb').name('Honeycomb');
 	presetsGUI.add(PARAMS, 'setFingerprint').name('Fingerprint');	
-	presetsGUI.add(PARAMS, 'setNet').name('Net');
+	presetsGUI.add(PARAMS, 'setFibers').name('Fibers');
 	presetsGUI.open();
+	function setPreset(settings) {
+		for (let key in settings) {
+			PARAMS[key] = settings[key];
+		}
+		for (var i in particlesGUI.__controllers) {
+			particlesGUI.__controllers[i].updateDisplay();
+		}
+		reset();
+	}
 	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
 	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
