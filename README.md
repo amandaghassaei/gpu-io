@@ -6,6 +6,8 @@ GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly d
 
 This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers.
 
+One of the main purposes of this library is to allow people to write GPGPU programs without worrying too much about available WebGL versions or spec inconsistencies across different browsers/hardware.  [As of Feb 2022, WebGL 2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge), but widespread adoption will take some time.  Even among WebGL2 implementations, there are differences in behavior across browsers.  Many WebGL1 implementations do not support rendering to Float32 or non-uint8 integer textures, or are inconsistent in how they implement the spec (see [The miserable state of affairs of floating point support](https://www.khronos.org/webgl/public-mailing-list/public_webgl/1703/msg00043.php)).  This library rigorously checks for many of these gotchas and uses software polyfills to patch any issues so *you* don't have to worry about it.  This library will also attempt to automatically convert your GLSL3 shader code into GLSL1 so that it can run on WebGL 1 if needed – this way, you don't have to manage two sets of shader programs depending on the browser's WebGL support.
+
 - [Installation](#installation)
 - [API](#api)
 - [Examples](#examples)
