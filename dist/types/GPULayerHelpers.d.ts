@@ -1,4 +1,4 @@
-import { GPULayerFilter, GPULayerType, GPULayerWrap, GPULayerNumComponents, GPULayerArray } from './constants';
+import { FLOAT, GPULayerFilter, GPULayerType, GPULayerWrap, HALF_FLOAT, GPULayerNumComponents, GPULayerArray } from './constants';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 /**
@@ -44,10 +44,7 @@ export declare function getGPULayerInternalFilter(params: {
  * Returns whether to cast int type as floats, as needed by browser.
  * @private
  */
-export declare function shouldCastIntTypeAsFloat(params: {
-    composer: GPUComposer;
-    type: GPULayerType;
-}): boolean;
+export declare function shouldCastIntTypeAsFloat(composer: GPUComposer, type: GPULayerType): boolean;
 /**
  * Returns GLTexture parameters for GPULayer, based on browser support.
  * @private
@@ -68,10 +65,15 @@ export declare function getGLTextureParameters(params: {
  * Rigorous method for testing FLOAT and HALF_FLOAT texture support by attaching texture to framebuffer.
  * @private
  */
-export declare function testFramebufferAttachment(params: {
-    composer: GPUComposer;
-    internalType: GPULayerType;
-}): boolean;
+export declare function testFramebufferAttachment(composer: GPUComposer, internalType: GPULayerType): boolean;
+/**
+ * Rigorous method for testing whether float/half float linear filtering is supported
+ * by the current browser.  I found that some versions of WebGL2 mobile safari
+ * may support the OES_texture_float_linear and EXT_color_buffer_float, but still
+ * do not linearly interpolate float textures.
+ * @private
+ */
+export declare function testFloatLinearFiltering(composer: GPUComposer, internalType: typeof FLOAT | typeof HALF_FLOAT): boolean;
 /**
  * Get the GL type to use internally in GPULayer, based on browser support.
  * @private

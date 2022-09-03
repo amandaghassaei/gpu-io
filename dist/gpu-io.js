@@ -4113,7 +4113,7 @@ var GPULayer = /** @class */ (function () {
                 for (var k = 0; k < _glNumChannels; k++) {
                     var index = j * _glNumChannels + k;
                     if (_internalType === constants_1.HALF_FLOAT) {
-                        // Float16s need to be handled separately.
+                        // Float16 needs to be handled separately.
                         (0, float16_1.setFloat16)(float16View, 2 * index, value[k], true);
                     }
                     else {
@@ -4399,15 +4399,18 @@ exports.GPULayer = GPULayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFramebufferAttachment = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFloatLinearFiltering = exports.testFramebufferAttachment = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
 var float16_1 = __webpack_require__(533);
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
+var GPULayer_1 = __webpack_require__(355);
+var GPUProgram_1 = __webpack_require__(664);
 var utils_1 = __webpack_require__(593);
 // Memoize results.
 var results = {
     framebufferWriteSupport: {},
+    floatLinearFilterSupport: {},
 };
 /**
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
@@ -4519,21 +4522,18 @@ function getGPULayerInternalFilter(params) {
         return filter;
     }
     if (internalType === constants_1.HALF_FLOAT) {
-        // TODO: test if float linear extension is actually working.
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
             || (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension) {
+        if (!extension || !testFloatLinearFiltering(composer, internalType)) {
             console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
-            //TODO: add a fallback that does this filtering in the frag shader.
-            filter = constants_1.NEAREST;
+            filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
     if (internalType === constants_1.FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension) {
+        if (!extension || !testFloatLinearFiltering(composer, internalType)) {
             console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
-            //TODO: add a fallback that does this filtering in the frag shader.
-            filter = constants_1.NEAREST;
+            filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
     return filter;
@@ -4543,8 +4543,7 @@ exports.getGPULayerInternalFilter = getGPULayerInternalFilter;
  * Returns whether to cast int type as floats, as needed by browser.
  * @private
  */
-function shouldCastIntTypeAsFloat(params) {
-    var type = params.type, composer = params.composer;
+function shouldCastIntTypeAsFloat(composer, type) {
     var gl = composer.gl, glslVersion = composer.glslVersion;
     // All types are supported by WebGL2 + glsl3.
     if (glslVersion === constants_1.GLSL3 && (0, utils_1.isWebGL2)(gl))
@@ -4866,8 +4865,7 @@ exports.getGLTextureParameters = getGLTextureParameters;
  * Rigorous method for testing FLOAT and HALF_FLOAT texture support by attaching texture to framebuffer.
  * @private
  */
-function testFramebufferAttachment(params) {
-    var composer = params.composer, internalType = params.internalType;
+function testFramebufferAttachment(composer, internalType) {
     var gl = composer.gl, glslVersion = composer.glslVersion;
     // Memoize results for a given set of inputs.
     var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
@@ -4919,6 +4917,113 @@ function testFramebufferAttachment(params) {
 }
 exports.testFramebufferAttachment = testFramebufferAttachment;
 /**
+ * Rigorous method for testing whether float/half float linear filtering is supported
+ * by the current browser.  I found that some versions of WebGL2 mobile safari
+ * may support the OES_texture_float_linear and EXT_color_buffer_float, but still
+ * do not linearly interpolate float textures.
+ * @private
+ */
+function testFloatLinearFiltering(composer, internalType) {
+    // TODO: add test.
+    var gl = composer.gl, glslVersion = composer.glslVersion;
+    // Memoize results for a given set of inputs.
+    var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
+    if (results.floatLinearFilterSupport[key] !== undefined) {
+        return results.floatLinearFilterSupport[key];
+    }
+    var texture = gl.createTexture();
+    if (!texture) {
+        results.floatLinearFilterSupport[key] = false;
+        return results.floatLinearFilterSupport[key];
+    }
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    // Default to most widely supported settings.
+    var wrap = gl[constants_1.CLAMP_TO_EDGE];
+    // Use linear filtering.
+    var filter = gl[constants_1.LINEAR];
+    // Use non-power of two dimensions to check for more universal support.
+    // (In case size of GPULayer is changed at a later point).
+    var width = 3;
+    var height = 3;
+    var numComponents = 1;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    var _a = getGLTextureParameters({
+        composer: composer,
+        name: 'testFloatLinearFiltering',
+        numComponents: 1,
+        writable: true,
+        internalType: internalType,
+    }), glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glNumChannels = _a.glNumChannels;
+    // Init texture with values.
+    var values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
+    var valuesTyped = new Float32Array(width * height * glNumChannels);
+    for (var i = 0; i < valuesTyped.length; i++) {
+        valuesTyped[i * glNumChannels] = values[i];
+    }
+    if (internalType === constants_1.HALF_FLOAT) {
+        // Cast values as Uint16Array.
+        var valuesTyped16 = new Uint16Array(valuesTyped.length);
+        var float16View = new DataView(valuesTyped.buffer);
+        for (var i = 0; i < valuesTyped.length; i++) {
+            (0, float16_1.setFloat16)(float16View, 2 * i, valuesTyped[i], true);
+        }
+        valuesTyped = valuesTyped16;
+    }
+    gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, valuesTyped);
+    // Init a GPULayer to write to.
+    var output = new GPULayer_1.GPULayer(composer, {
+        name: 'testFloatLinearFiltering-output',
+        type: internalType,
+        numComponents: numComponents,
+        dimensions: [width, height],
+        wrapS: constants_1.CLAMP_TO_EDGE,
+        wrapT: constants_1.CLAMP_TO_EDGE,
+        filter: constants_1.NEAREST,
+        writable: true,
+    });
+    // Run program to perform linear filter.
+    var program = new GPUProgram_1.GPUProgram(composer, {
+        name: 'testFloatLinearFiltering',
+        fragmentShader: "\n\t\t\tin vec2 v_UV;\n\t\t\tuniform sampler2D u_input;\n\t\t\tuniform vec2 u_offset;\n\t\t\tout float out_fragColor;\n\t\t\tvoid main() {\n\t\t\t\tout_fragColor = texture(u_input, v_UV + u_offset).x;\n\t\t\t}",
+        uniforms: [
+            {
+                name: 'u_offset',
+                value: [0.5 / width, 0.5 / height],
+                type: constants_1.FLOAT,
+            },
+        ],
+    });
+    composer.resize(width, height);
+    composer.step({
+        program: program,
+        input: texture,
+        output: output,
+    });
+    var expected = [
+        (values[0] + values[1] + values[3] + values[4]) / 4, (values[1] + values[2] + values[4] + values[5]) / 4, (values[2] + values[5]) / 2,
+        (values[6] + values[7] + values[3] + values[4]) / 4, (values[7] + values[8] + values[4] + values[5]) / 4, (values[8] + values[5]) / 2,
+        (values[6] + values[7]) / 2, (values[7] + values[8]) / 2, values[8]
+    ];
+    var filtered = output.getValues();
+    var supported = true;
+    for (var i = 0; i < filtered.length; i++) {
+        if (Math.abs((expected[i] - filtered[i]) / expected[i]) > 1e-6) {
+            supported = false;
+            break;
+        }
+    }
+    // Clear out allocated memory.
+    program.dispose();
+    output.dispose();
+    gl.deleteTexture(texture);
+    results.floatLinearFilterSupport[key] = supported;
+    return results.floatLinearFilterSupport[key];
+}
+exports.testFloatLinearFiltering = testFloatLinearFiltering;
+/**
  * Get the GL type to use internally in GPULayer, based on browser support.
  * @private
  * Exported here for testing purposes.
@@ -4929,7 +5034,7 @@ function getGPULayerInternalType(params) {
     var type = params.type;
     var internalType = type;
     // Check if int types are supported.
-    var intCast = shouldCastIntTypeAsFloat(params);
+    var intCast = shouldCastIntTypeAsFloat(composer, type);
     if (intCast) {
         if (internalType === constants_1.UNSIGNED_BYTE || internalType === constants_1.BYTE) {
             // Integers between 0 and 2048 can be exactly represented by half float (and also between −2048 and 0)
@@ -4958,7 +5063,7 @@ function getGPULayerInternalType(params) {
             // To check if this is supported, you have to call the WebGL
             // checkFramebufferStatus() function.
             if (writable) {
-                var valid = testFramebufferAttachment({ composer: composer, internalType: internalType });
+                var valid = testFramebufferAttachment(composer, internalType);
                 if (!valid && internalType !== constants_1.HALF_FLOAT) {
                     console.warn("FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
                     internalType = constants_1.HALF_FLOAT;
@@ -4970,7 +5075,7 @@ function getGPULayerInternalType(params) {
             (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HALF_FLOAT);
             // TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
             if (writable) {
-                var valid = testFramebufferAttachment({ composer: composer, internalType: internalType });
+                var valid = testFramebufferAttachment(composer, internalType);
                 if (!valid) {
                     _errorCallback("This browser does not support rendering to HALF_FLOAT textures.");
                 }

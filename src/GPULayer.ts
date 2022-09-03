@@ -677,7 +677,7 @@ export class GPULayer {
 				for (let k = 0; k < _glNumChannels; k++) {
 					const index = j * _glNumChannels + k;
 					if (_internalType === HALF_FLOAT) {
-						// Float16s need to be handled separately.
+						// Float16 needs to be handled separately.
 						setFloat16(float16View!, 2 * index, value[k], true);
 					} else {
 						array[index] = value[k];

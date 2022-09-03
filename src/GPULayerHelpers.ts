@@ -34,6 +34,7 @@ import {
 	MAX_UNSIGNED_INT,
 	MIN_INT,
 	MAX_INT,
+	LINEAR,
 } from './constants';
 import {
 	EXT_COLOR_BUFFER_FLOAT,
@@ -45,11 +46,13 @@ import {
 } from './extensions';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
-import { isWebGL2 } from './utils';
+import { GPUProgram } from './GPUProgram';
+import { initGLProgram, isWebGL2 } from './utils';
 
 // Memoize results.
 const results = {
 	framebufferWriteSupport: {} as { [key: string]: boolean },
+	floatLinearFilterSupport: {} as { [key: string]: boolean },
 }
 
 /**
@@ -181,20 +184,17 @@ export function getGPULayerInternalFilter(
 	}
 
 	if (internalType === HALF_FLOAT) {
-		// TODO: test if float linear extension is actually working.
 		const extension = getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
 			|| getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension) {
+		if (!extension || !testFloatLinearFiltering(composer, internalType)) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
-			//TODO: add a fallback that does this filtering in the frag shader.
-			filter = NEAREST;
+			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	} if (internalType === FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension) {
+		if (!extension || !testFloatLinearFiltering(composer, internalType)) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
-			//TODO: add a fallback that does this filtering in the frag shader.
-			filter = NEAREST;
+			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	}
 	return filter;
@@ -205,12 +205,9 @@ export function getGPULayerInternalFilter(
  * @private
  */
 export function shouldCastIntTypeAsFloat(
-	params: {
-		composer: GPUComposer,
-		type: GPULayerType,
-	}
+	composer: GPUComposer,
+	type: GPULayerType,
 ) {
-	const { type, composer } = params;
 	const { gl, glslVersion } = composer;
 	// All types are supported by WebGL2 + glsl3.
 	if (glslVersion === GLSL3 && isWebGL2(gl)) return false;
@@ -540,12 +537,9 @@ export function getGLTextureParameters(
  * @private
  */
 export function testFramebufferAttachment(
-	params: {
-		composer: GPUComposer,
-		internalType: GPULayerType,
-	},
+	composer: GPUComposer,
+	internalType: GPULayerType,
 ) {
-	const { composer, internalType } = params;
 	const { gl, glslVersion } = composer;
 
 	// Memoize results for a given set of inputs.
@@ -605,6 +599,132 @@ export function testFramebufferAttachment(
 }
 
 /**
+ * Rigorous method for testing whether float/half float linear filtering is supported
+ * by the current browser.  I found that some versions of WebGL2 mobile safari
+ * may support the OES_texture_float_linear and EXT_color_buffer_float, but still
+ * do not linearly interpolate float textures.
+ * @private
+ */
+export function testFloatLinearFiltering(
+	composer: GPUComposer,
+	internalType: typeof FLOAT | typeof HALF_FLOAT,
+) {
+	// TODO: add test.
+	const { gl, glslVersion } = composer;
+
+	// Memoize results for a given set of inputs.
+	const key = `${isWebGL2(gl)},${internalType},${glslVersion === GLSL3 ? '3' : '1'}`;
+	if (results.floatLinearFilterSupport[key] !== undefined) {
+		return results.floatLinearFilterSupport[key];
+	}
+
+	const texture = gl.createTexture();
+	if (!texture) {
+		results.floatLinearFilterSupport[key] = false;
+		return results.floatLinearFilterSupport[key];
+	}
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+
+	// Default to most widely supported settings.
+	const wrap = gl[CLAMP_TO_EDGE];
+	// Use linear filtering.
+	const filter = gl[LINEAR];
+	// Use non-power of two dimensions to check for more universal support.
+	// (In case size of GPULayer is changed at a later point).
+	const width = 3;
+	const height = 3;
+	const numComponents = 1;
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+
+	const { glInternalFormat, glFormat, glType, glNumChannels } = getGLTextureParameters({
+		composer,
+		name: 'testFloatLinearFiltering',
+		numComponents: 1,
+		writable: true,
+		internalType,
+	});
+	// Init texture with values.
+	const values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
+	let valuesTyped: Float32Array | Uint16Array = new Float32Array(width * height * glNumChannels);
+	for (let i = 0; i < valuesTyped.length; i++) {
+		valuesTyped[i * glNumChannels] = values[i];
+	}
+	if (internalType === HALF_FLOAT) {
+		// Cast values as Uint16Array.
+		const valuesTyped16 = new Uint16Array(valuesTyped.length);
+		const float16View =  new DataView(valuesTyped.buffer);
+		for (let i = 0; i < valuesTyped.length; i++) {
+			setFloat16(float16View, 2 * i, valuesTyped[i], true);
+		}
+		valuesTyped = valuesTyped16;
+	}
+	gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, valuesTyped);
+
+	// Init a GPULayer to write to.
+	const output = new GPULayer(composer, {
+		name: 'testFloatLinearFiltering-output',
+		type: internalType,
+		numComponents,
+		dimensions: [width, height],
+		wrapS: CLAMP_TO_EDGE,
+		wrapT: CLAMP_TO_EDGE,
+		filter: NEAREST,
+		writable: true,
+	});
+
+	// Run program to perform linear filter.
+	const program = new GPUProgram(composer, {
+		name: 'testFloatLinearFiltering',
+		fragmentShader: `
+			in vec2 v_UV;
+			uniform sampler2D u_input;
+			uniform vec2 u_offset;
+			out float out_fragColor;
+			void main() {
+				out_fragColor = texture(u_input, v_UV + u_offset).x;
+			}`,
+		uniforms: [
+			{
+				name: 'u_offset',
+				value: [0.5 / width, 0.5 / height],
+				type: FLOAT,
+			},
+		],
+	});
+
+	composer.resize(width, height);
+	composer.step({
+		program,
+		input: texture,
+		output,
+	});
+
+	const expected = [
+		(values[0] + values[1] + values[3] + values[4]) / 4, (values[1] + values[2] + values[4] + values[5]) / 4, (values[2] + values[5]) / 2,
+		(values[6] + values[7] + values[3] + values[4]) / 4, (values[7] + values[8] + values[4] + values[5]) / 4, (values[8] + values[5]) / 2,
+		(values[6] + values[7]) / 2, (values[7] + values[8]) / 2, values[8]];
+	const filtered = output.getValues();
+	let supported = true;
+	for (let i = 0; i < filtered.length; i++) {
+		if (Math.abs((expected[i] - filtered[i]) / expected[i]) > 1e-6) {
+			supported = false;
+			break;
+		}
+	}
+
+	// Clear out allocated memory.
+	program.dispose();
+	output.dispose();
+	gl.deleteTexture(texture);
+
+	results.floatLinearFilterSupport[key] = supported;
+	return results.floatLinearFilterSupport[key];
+}
+
+/**
  * Get the GL type to use internally in GPULayer, based on browser support.
  * @private
  * Exported here for testing purposes.
@@ -622,7 +742,7 @@ export function getGPULayerInternalType(
 	const { type } = params;
 	let internalType = type;
 	// Check if int types are supported.
-	const intCast = shouldCastIntTypeAsFloat(params);
+	const intCast = shouldCastIntTypeAsFloat(composer, type);
 	if (intCast) {
 		if (internalType === UNSIGNED_BYTE || internalType === BYTE) {
 			// Integers between 0 and 2048 can be exactly represented by half float (and also between −2048 and 0)
@@ -651,7 +771,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			// To check if this is supported, you have to call the WebGL
 			// checkFramebufferStatus() function.
 			if (writable) {
-				const valid = testFramebufferAttachment({ composer, internalType });
+				const valid = testFramebufferAttachment(composer, internalType);
 				if (!valid && internalType !== HALF_FLOAT) {
 					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
@@ -663,7 +783,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
-				const valid = testFramebufferAttachment({ composer, internalType });
+				const valid = testFramebufferAttachment(composer, internalType);
 				if (!valid) {
 					_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 				}

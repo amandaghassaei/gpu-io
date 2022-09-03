@@ -10,7 +10,7 @@ function main({ gui, glslVersion, contextID }) {
 		LINEAR,
 	} = GPUIO;
 
-	// More info about these parameter is given in Jones 2010
+	// More info about these parameters given in Jones 2010:
 	// "Characteristics of pattern formation and evolution in approximations of Physarum transport networks."
 	// Nice overview and examples at https://cargocollective.com/sagejenson/physarum
 	const PARAMS = {
@@ -547,9 +547,12 @@ function main({ gui, glslVersion, contextID }) {
 			output: particlesPositions,
 		});
 
-		// Render particle's positions on top of trail layer to apply chemical
+		// Render particles' positions on top of trail layer to apply chemical
 		// attractant to trail.  Technically this is still not quite right bc overlapping
-		// particles will get merged together, but it seems to work fine anyway.
+		// particles will get merged together and only count once,
+		// but it seems to work fine anyway.
+		// Jones 2010 described a collision detection scheme that could avoid this overlap issue,
+		// but none of that is implemented in this code for simplicity.
 		composer.drawLayerAsPoints({
 			positions: particlesPositions,
 			program: deposit,
@@ -608,6 +611,7 @@ function main({ gui, glslVersion, contextID }) {
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
+		// Save png on next render loop.
 		shouldSavePNG = true;
 	}
 	function onKeydown(e) {

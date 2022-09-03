@@ -27,10 +27,7 @@ declare const _testing: {
         internalType: import("./constants").GPULayerType;
         name: string;
     }): import("./constants").GPULayerFilter;
-    shouldCastIntTypeAsFloat(params: {
-        composer: GPUComposer;
-        type: import("./constants").GPULayerType;
-    }): boolean;
+    shouldCastIntTypeAsFloat(composer: GPUComposer, type: import("./constants").GPULayerType): boolean;
     getGLTextureParameters(params: {
         composer: GPUComposer;
         name: string;
@@ -43,10 +40,8 @@ declare const _testing: {
         glType: number;
         glNumChannels: number;
     };
-    testFramebufferAttachment(params: {
-        composer: GPUComposer;
-        internalType: import("./constants").GPULayerType;
-    }): boolean;
+    testFramebufferAttachment(composer: GPUComposer, internalType: import("./constants").GPULayerType): boolean;
+    testFloatLinearFiltering(composer: GPUComposer, internalType: "HALF_FLOAT" | "FLOAT"): boolean;
     getGPULayerInternalType(params: {
         composer: GPUComposer;
         type: import("./constants").GPULayerType;

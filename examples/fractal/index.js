@@ -151,6 +151,7 @@ function main({ gui, contextID, glslVersion}) {
 	}
 
 	function savePNG() {
+		// Save png on next render loop.
 		shouldSavePNG = true;
 	}
 	// Add 'p' hotkey to print screen.

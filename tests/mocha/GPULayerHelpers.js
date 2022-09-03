@@ -146,34 +146,34 @@
 		});
 		describe('shouldCastIntTypeAsFloat', () => {
 			it('should never cast glsl3 ints to float', () => {
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: HALF_FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: UNSIGNED_BYTE }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: BYTE }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: UNSIGNED_SHORT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: SHORT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: UNSIGNED_INT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer3, type: INT }), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, HALF_FLOAT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, FLOAT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, UNSIGNED_BYTE), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, BYTE), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, UNSIGNED_SHORT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, SHORT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, UNSIGNED_INT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer3, INT), false);
 			});
 			it('should cast non-glsl3 ints to float (even UNSIGNED_BYTE)', () => {
 				// See note in GPULayerHelpers.shouldCastIntTypeAsFloat for more info.
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: HALF_FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: UNSIGNED_BYTE }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: BYTE }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: UNSIGNED_SHORT }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: SHORT }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: UNSIGNED_INT }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer1, type: INT }), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, HALF_FLOAT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, FLOAT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, UNSIGNED_BYTE), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, BYTE), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, UNSIGNED_SHORT), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, SHORT), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, UNSIGNED_INT), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer1, INT), true);
 
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: HALF_FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: FLOAT }), false);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: UNSIGNED_BYTE }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: BYTE }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: UNSIGNED_SHORT }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: SHORT }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: UNSIGNED_INT }), true);
-				assert.equal(shouldCastIntTypeAsFloat({ composer: composer2, type: INT }), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, HALF_FLOAT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, FLOAT), false);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, UNSIGNED_BYTE), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, BYTE), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, UNSIGNED_SHORT), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, SHORT), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, UNSIGNED_INT), true);
+				assert.equal(shouldCastIntTypeAsFloat(composer2, INT), true);
 			});
 		});
 		describe('getGLTextureParameters', () => {
@@ -243,15 +243,15 @@
 				[composer1, composer2, composer3].forEach(composer => {
 					[FLOAT, HALF_FLOAT].forEach(type => {
 						console.log(`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`)
-						assert.equal(testFramebufferAttachment({
-							composer: composer,
-							internalType: getGPULayerInternalType({
+						assert.equal(testFramebufferAttachment(
+							composer,
+							getGPULayerInternalType({
 								composer: composer,
 								type,
 								writable: true,
 								name: 'test',
 							}),
-						}), true, `${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`);
+						), true, `${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`);
 					});
 				});
 			});
