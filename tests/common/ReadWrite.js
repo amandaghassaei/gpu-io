@@ -510,7 +510,7 @@ const testLayerWrites = (() => {
 				if (expected[i] !== output[i]) {
 					// Check if this is due to float precision.
 					if (TYPE === FLOAT && layer._internalType === HALF_FLOAT) {
-						if (Math.abs(expected[i] - output[i]) < 1e-6) {
+						if (Math.abs(expected[i] - output[i] / expected[i]) < 0.001) {
 							continue; // Acceptable tolerance.
 						}
 					}
