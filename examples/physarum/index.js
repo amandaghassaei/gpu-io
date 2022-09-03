@@ -139,6 +139,10 @@ function main({ gui, glslVersion, contextID }) {
 	
 	/**
 	 * Init particles state and programs.
+	 * Note: it would be slightly more efficient to store particlesHeading and particlesPositions
+	 * in the same GPULayer and update both at the same time in one GPUProgram (i.e. one GL.draw pass).
+	 * They have been separated here for code clarity, but in general you want to minimize
+	 * the number of times you call composer.step() in your render loop.
 	 */
 	const { positions, heading, numParticles } = initParticlesArrays();
 	// Init particles position data on GPU.
@@ -493,12 +497,12 @@ function main({ gui, glslVersion, contextID }) {
 	 * This loop is where all the action happens.
 	 */
 	function loop() {
-		// Update each particle's heading.
 		// Update randomDir uniform by coin flip - the same value will be applied to all particles
-		// in the system, which is a bit odd, but seems to work fine.
+		// in the system, which is a bit of an oversimplification, but seems to work fine.
 		// Would be more realistic to pick randomDir within each fragment shader kernel,
 		// but this is easier.
 		rotateParticles.setUniform('u_randomDir', Math.random() < 0.5);
+		// Update each particle's heading.
 		composer.step({
 			program: rotateParticles,
 			input: [particlesHeading, particlesPositions, trail],

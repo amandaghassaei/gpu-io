@@ -6270,8 +6270,8 @@ function escapeRegExp(string) {
  */
 function typecastVariable(shaderSource, variableName, type) {
     // "s" makes this work for multiline values.
-    // const regexMatch = new RegExp(`(?<=\\b${escapeRegExp(variableName)}\\s*=\\s*)\\S[^;]*(?=;)`, 'sg');
     // Do this without lookbehind to support older browsers.
+    // const regexMatch = new RegExp(`(?<=\\b${escapeRegExp(variableName)}\\s*=\\s*)\\S[^;]*(?=;)`, 'sg');
     var regexMatch = new RegExp("\\b".concat(escapeRegExp(variableName), "\\s*=\\s*\\S[^;]*;"), 'sg');
     var assignmentExpressions = shaderSource.match(regexMatch);
     if (assignmentExpressions) {
@@ -6308,8 +6308,8 @@ exports.glsl1VertexIn = glsl1VertexIn;
  * @private
  */
 function _castVaryingToFloat(shaderSource, regexString, type) {
-    // const regexMatch = new RegExp(`(?<=${regexString}\\s+)\\S[^;]*(?=;)`, 'g');
     // Do this without lookbehind to support older browsers.
+    // const regexMatch = new RegExp(`(?<=${regexString}\\s+)\\S[^;]*(?=;)`, 'g');
     var regexMatch = new RegExp("".concat(regexString, "\\s+\\S[^;]*;"), 'g');
     var castToFloatExpressions = shaderSource.match(regexMatch);
     if (castToFloatExpressions) {
@@ -6389,8 +6389,8 @@ function containsGLFragColor(shaderSource) {
  * @private
  */
 function getFragmentOutType(shaderSource, name) {
-    // const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
     // Do this without lookbehind to support older browsers.
+    // const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
     var type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_fragColor;/);
     if (!type || !type[3]) {
         throw new Error("No type found in out_fragColor declaration for GPUProgram \"".concat(name, "\"."));
@@ -6410,8 +6410,8 @@ function glsl1FragmentOut(shaderSource, name) {
         var assignmentFound = false;
         while (true) {
             // Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
-            // const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
             // Do this without lookbehind to support older browsers.
+            // const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
             var output = shaderSource.match(/\bout_fragColor\s*=\s*(\S.*);/s); // /s makes this work for multiline.
             if (output && output[1]) {
                 assignmentFound = true;
@@ -6543,7 +6543,9 @@ exports.stripPrecision = stripPrecision;
  * @private
  */
 function stripComments(shaderSource) {
-    shaderSource = shaderSource.replace(/\s?\/\/.*\n/g, '');
+    shaderSource = shaderSource.replace(/\s?\/\/.*\n/g, ''); // Remove single-line comments.
+    // ? puts this in lazy mode (match shortest strings).
+    shaderSource = shaderSource.replace(/\/\*.*?\*\//gs, ''); /* Remove multi-line comments */
     return shaderSource;
 }
 exports.stripComments = stripComments;
