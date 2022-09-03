@@ -33,6 +33,11 @@ function checkTypeIssue(type, internalType, expected, output) {
 			return true;
 		}
 	}
+	if (type === HALF_FLOAT && internalType === HALF_FLOAT) {
+		if (Math.abs(expected - output) < 0.0001) {
+			return true;
+		}
+	}
 	// Check if this is due to extrema.
 	switch (internalType) {
 		case HALF_FLOAT:
