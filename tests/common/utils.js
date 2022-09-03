@@ -29,7 +29,7 @@ function checkTypeIssue(type, internalType, expected, output) {
 	} = GPUIO;
 	// Check if this is due to float precision.
 	if (type === FLOAT && internalType === HALF_FLOAT) {
-		if (Math.abs(expected - output / expected) < 0.01) {
+		if (Math.abs((expected - output) / expected) < 0.01) {
 			return true;
 		}
 	}
