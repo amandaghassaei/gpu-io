@@ -130,6 +130,37 @@ function main({ gui, contextID, glslVersion}) {
 			},
 		],
 	});
+	// noise is used for touch interactions.
+	const noise = new GPULayer(composer, {
+		name: 'noise',
+		dimensions: [canvas.width, canvas.height],
+		numComponents: 1,
+		type: BYTE,
+		numBuffers: 1,
+		wrapS: REPEAT,
+		wrapT: REPEAT,
+		writable: false,
+	});
+	const touch = new GPUProgram(composer, {
+		name: 'touch',
+		fragmentShader: `
+			in vec2 v_UV;
+
+			uniform lowp isampler2D u_noise;
+
+			out lowp int out_fragColor;
+
+			void main() {
+				out_fragColor = texture(u_noise, v_UV).r;
+			}`,
+		uniforms: [
+			{
+				name: 'u_noise',
+				value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
+				type: INT,
+			},
+		],
+	});
 
 	function changeBit(key, bit, index) {
 		const mask = 1 << index;
@@ -215,10 +246,36 @@ function main({ gui, contextID, glslVersion}) {
 		});
 	}
 
+	// Touch events.
+	const activeTouches = {};
+	function onPointerMove(e) {
+		if (activeTouches[e.pointerId]) {
+			composer.stepCircle({
+				program: touch,
+				input: noise,
+				output: state,
+				position: [e.clientX, canvas.height - e.clientY],
+				radius: 15,
+			});
+		}
+		
+	}
+	function onPointerStop(e) {
+		delete activeTouches[e.pointerId];
+	}
+	function onPointerStart(e) {
+		activeTouches[e.pointerId] = true;
+	}
+	window.addEventListener('pointermove', onPointerMove);
+	window.addEventListener('pointerdown', onPointerStart);
+	window.addEventListener('pointerup', onPointerStop);
+	window.addEventListener('pointerout', onPointerStop);
+	window.addEventListener('pointercancel', onPointerStop);
+
+	// Add 'p' hotkey to print screen.
 	function savePNG() {
 		state.savePNG({ filename: 'gol', multiplier: 255 });
 	}
-	// Add 'p' hotkey to print screen.
 	window.addEventListener('keydown', onKeydown);
 	function onKeydown(e) {
 		if (e.key === 'p') {
@@ -241,6 +298,7 @@ function main({ gui, contextID, glslVersion}) {
 			array[i] = Math.random() < PARAMS.seedRatio ? 1 : 0;
 		}
 		state.resize([width, height], array);
+		noise.resize([width, height], array);
 
 		// Update px size uniform.
 		golRules.setUniform('u_pxSize', [1 / width, 1 / height]);
@@ -251,8 +309,14 @@ function main({ gui, contextID, glslVersion}) {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
 		window.removeEventListener('resize', onResize);
+		window.removeEventListener('pointermove', onPointerMove);
+		window.removeEventListener('pointerdown', onPointerStart);
+		window.removeEventListener('pointerup', onPointerStop);
+		window.removeEventListener('pointerout', onPointerStop);
+		window.removeEventListener('pointercancel', onPointerStop);
 		golRules.dispose();
 		golRender.dispose();
+		touch.dispose();
 		state.dispose();
 		composer.dispose();
 		gui.removeFolder(survival);

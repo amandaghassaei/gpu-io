@@ -580,8 +580,8 @@ function main({ gui, glslVersion, contextID }) {
 		}
 	}
 
+	// Touch events.
 	const activeTouches = {};
-
 	function onPointerMove(e) {
 		if (activeTouches[e.pointerId]) {
 			composer.stepCircle({
@@ -671,6 +671,7 @@ function main({ gui, glslVersion, contextID }) {
 		trail.dispose();
 		deposit.dispose();
 		diffuseAndDecay.dispose();
+		touch.dispose();
 		render.dispose();
 		composer.dispose();
 		gui.removeFolder(particlesGUI);
