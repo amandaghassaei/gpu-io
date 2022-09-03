@@ -482,11 +482,9 @@ const testLayerReads = (() => {
 			let allMismatches = [];
 			for (let i = 0; i < output.length; i++) {
 				if (expected[i] !== output[i]) {
-					// Check if this is due to float precision.
-					if (TYPE === FLOAT && inputLayer._internalType === HALF_FLOAT) {
-						if (Math.abs(expected[i] - output[i] / expected[i]) < 0.01) {
-							continue; // Acceptable tolerance.
-						}
+					// Check if this is due to a type issue.
+					if (checkTypeIssue(TYPE, inputLayer._internalType, expected[i], output[i])) {
+						continue;
 					}
 					allMismatches.push(`expected: ${expected[i]}, got: ${output[i]}`);
 				}

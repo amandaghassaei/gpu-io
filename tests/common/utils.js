@@ -22,6 +22,30 @@ const MAX_FLOAT_INT = 16777216;
 const MIN_HALF_FLOAT_INT = -2048;
 const MAX_HALF_FLOAT_INT = 2048;
 
+function checkTypeIssue(type, internalType, expected, output) {
+	const {
+		FLOAT,
+		HALF_FLOAT,
+	} = GPUIO;
+	// Check if this is due to float precision.
+	if (type === FLOAT && internalType === HALF_FLOAT) {
+		if (Math.abs(expected - output / expected) < 0.01) {
+			return true;
+		}
+	}
+	// Check if this is due to extrema.
+	switch (internalType) {
+		case HALF_FLOAT:
+			if (expected > MAX_HALF_FLOAT_INT || expected < MIN_HALF_FLOAT_INT) return true;
+			break;
+		case FLOAT:
+			if (expected > MAX_FLOAT_INT || expected < MIN_FLOAT_INT) return true;
+			break;
+	}
+
+	return false;
+}
+
 function calculateExpectedValue(dimX, dimY, numElements, input, type, filter, wrap, offset) {
 	if (offset === 0) return input;
 
