@@ -484,7 +484,7 @@ const testLayerReads = (() => {
 				if (expected[i] !== output[i]) {
 					// Check if this is due to float precision.
 					if (TYPE === FLOAT && inputLayer._internalType === HALF_FLOAT) {
-						if (Math.abs(expected[i] - output[i] / expected[i]) < 0.001) {
+						if (Math.abs(expected[i] - output[i] / expected[i]) < 0.01) {
 							continue; // Acceptable tolerance.
 						}
 					}
