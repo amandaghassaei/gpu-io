@@ -23,6 +23,7 @@ function main({ gui, contextID, glslVersion}) {
 		savePNG: savePNG,
 	};
 	let needsCompute = true;
+	let shouldSavePNG = false;
 
 	const canvas = document.createElement('canvas');
 	document.body.appendChild(canvas);
@@ -140,11 +141,17 @@ function main({ gui, contextID, glslVersion}) {
 				program: fractalRender,
 				input: state,
 			});
+
+			// Be sure to call this after we've rendered things.
+			if (shouldSavePNG) {
+				composer.savePNG({ filename: 'julia' });
+				shouldSavePNG = false;
+			}
 		}
 	}
 
 	function savePNG() {
-		state.savePNG({ filename: 'julia', multiplier: 1 / PARAMS.maxIters });
+		shouldSavePNG = true;
 	}
 	// Add 'p' hotkey to print screen.
 	window.addEventListener('keydown', onKeydown);
