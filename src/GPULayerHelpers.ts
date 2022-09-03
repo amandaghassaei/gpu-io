@@ -642,7 +642,7 @@ export function testFloatLinearFiltering(
 	const { glInternalFormat, glFormat, glType, glNumChannels } = getGLTextureParameters({
 		composer,
 		name: 'testFloatLinearFiltering',
-		numComponents: 1,
+		numComponents,
 		writable: true,
 		internalType,
 	});

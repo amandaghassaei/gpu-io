@@ -4953,7 +4953,7 @@ function testFloatLinearFiltering(composer, internalType) {
     var _a = getGLTextureParameters({
         composer: composer,
         name: 'testFloatLinearFiltering',
-        numComponents: 1,
+        numComponents: numComponents,
         writable: true,
         internalType: internalType,
     }), glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glNumChannels = _a.glNumChannels;
