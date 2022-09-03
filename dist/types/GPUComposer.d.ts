@@ -231,6 +231,19 @@ export declare class GPUComposer {
         shouldBlendAlpha?: boolean;
     }): void;
     resetThreeState(): void;
+    /**
+     * Save the current state of the canvas to png.
+     * @param params - PNG parameters.
+     * @param params.filename - PNG filename (no extension).
+     * @param params.dpi - PNG dpi (defaults to 72dpi).
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+    */
+    savePNG(params?: {
+        filename?: string;
+        dpi?: number;
+        multiplier?: number;
+        callback?: (blob: Blob, filename: string) => void;
+    }): void;
     tick(): {
         fps: number;
         milliseconds: number;

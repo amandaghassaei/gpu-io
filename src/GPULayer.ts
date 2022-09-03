@@ -835,22 +835,21 @@ export class GPULayer {
 	/**
 	 * Save the current state of this GPULayer to png.
 	 * @param params - PNG parameters.
-	 * @param params.filename - PNG filename (no extension).
+	 * @param params.filename - PNG filename (no extension, defaults to the name of the GPULayer).
 	 * @param params.dpi - PNG dpi (defaults to 72dpi).
-	 * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types).
+	 * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
 	 * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js. 
 	*/
 	savePNG(params: {
-		filename: string,
+		filename?: string,
 		dpi?: number,
 		multiplier?: number,
-		callback: (blob: Blob, filename: string) => void,
-	}) {
+		callback?: (blob: Blob, filename: string) => void,
+	} = {}) {
 		const values = this.getValues();
 		const { width, height, type, name, numComponents } = this;
-		let { dpi } = params;
-		const callback = params.callback || saveAs;
-		const filename = params.filename || name;
+		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+		const filename = params.filename || name; // Default to the name of this layer.
 		const multiplier = params.multiplier ||
 			((type === FLOAT || type === HALF_FLOAT) ? 255 : 1);
 
@@ -880,19 +879,18 @@ export class GPULayer {
 		}
 		context.putImageData(imageData, 0, 0);
 
-		canvas!.toBlob((blob) => {
+		canvas.toBlob((blob) => {
 			if (!blob) {
 				console.warn(`Problem saving PNG from GPULayer "${name}", unable to init blob.`);
 				return;
 			}
-			if (dpi) {
-				changeDpiBlob(blob, dpi).then((blob: Blob) =>{
+			if (params.dpi) {
+				changeDpiBlob(blob, params.dpi).then((blob: Blob) =>{
 					callback(blob, `${filename}.png`);
 				});
 			} else {
 				callback(blob, `${filename}.png`);
 			}
-			
 		}, 'image/png');
 	}
 

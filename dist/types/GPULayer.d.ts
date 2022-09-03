@@ -191,16 +191,16 @@ export declare class GPULayer {
     /**
      * Save the current state of this GPULayer to png.
      * @param params - PNG parameters.
-     * @param params.filename - PNG filename (no extension).
+     * @param params.filename - PNG filename (no extension, defaults to the name of the GPULayer).
      * @param params.dpi - PNG dpi (defaults to 72dpi).
-     * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types).
+     * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
      * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
     */
-    savePNG(params: {
-        filename: string;
+    savePNG(params?: {
+        filename?: string;
         dpi?: number;
         multiplier?: number;
-        callback: (blob: Blob, filename: string) => void;
+        callback?: (blob: Blob, filename: string) => void;
     }): void;
     /**
      * Attach the output buffer of this GPULayer to a Threejs Texture object.

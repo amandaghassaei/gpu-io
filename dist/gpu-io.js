@@ -2252,6 +2252,8 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUComposer = void 0;
+// @ts-ignore
+var changedpi_1 = __webpack_require__(809);
 var GPULayer_1 = __webpack_require__(355);
 var constants_1 = __webpack_require__(601);
 var GPUProgram_1 = __webpack_require__(664);
@@ -3523,6 +3525,33 @@ var GPUComposer = /** @class */ (function () {
         // Reset texture bindings.
         this._renderer.resetState();
     };
+    /**
+     * Save the current state of the canvas to png.
+     * @param params - PNG parameters.
+     * @param params.filename - PNG filename (no extension).
+     * @param params.dpi - PNG dpi (defaults to 72dpi).
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+    */
+    GPUComposer.prototype.savePNG = function (params) {
+        if (params === void 0) { params = {}; }
+        var canvas = this.canvas;
+        var filename = params.filename || 'output';
+        var callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+        canvas.toBlob(function (blob) {
+            if (!blob) {
+                console.warn("Problem saving PNG from GPULayer \"".concat(name, "\", unable to init blob."));
+                return;
+            }
+            if (params.dpi) {
+                (0, changedpi_1.changeDpiBlob)(blob, params.dpi).then(function (blob) {
+                    callback(blob, "".concat(filename, ".png"));
+                });
+            }
+            else {
+                callback(blob, "".concat(filename, ".png"));
+            }
+        }, 'image/png');
+    };
     GPUComposer.prototype.tick = function () {
         var _a = this, _lastTickTime = _a._lastTickTime, _lastTickFPS = _a._lastTickFPS;
         var currentTime = performance.now();
@@ -4238,17 +4267,17 @@ var GPULayer = /** @class */ (function () {
     /**
      * Save the current state of this GPULayer to png.
      * @param params - PNG parameters.
-     * @param params.filename - PNG filename (no extension).
+     * @param params.filename - PNG filename (no extension, defaults to the name of the GPULayer).
      * @param params.dpi - PNG dpi (defaults to 72dpi).
-     * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types).
+     * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
      * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
     */
     GPULayer.prototype.savePNG = function (params) {
+        if (params === void 0) { params = {}; }
         var values = this.getValues();
         var _a = this, width = _a.width, height = _a.height, type = _a.type, name = _a.name, numComponents = _a.numComponents;
-        var dpi = params.dpi;
-        var callback = params.callback || file_saver_1.saveAs;
-        var filename = params.filename || name;
+        var callback = params.callback || file_saver_1.saveAs; // Default to saving the image with FileSaver.
+        var filename = params.filename || name; // Default to the name of this layer.
         var multiplier = params.multiplier ||
             ((type === constants_1.FLOAT || type === constants_1.HALF_FLOAT) ? 255 : 1);
         var canvas = document.createElement('canvas');
@@ -4281,8 +4310,8 @@ var GPULayer = /** @class */ (function () {
                 console.warn("Problem saving PNG from GPULayer \"".concat(name, "\", unable to init blob."));
                 return;
             }
-            if (dpi) {
-                (0, changedpi_1.changeDpiBlob)(blob, dpi).then(function (blob) {
+            if (params.dpi) {
+                (0, changedpi_1.changeDpiBlob)(blob, params.dpi).then(function (blob) {
                     callback(blob, "".concat(filename, ".png"));
                 });
             }

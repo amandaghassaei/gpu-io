@@ -1,3 +1,5 @@
+// @ts-ignore
+import { changeDpiBlob } from 'changedpi';
 import { GPULayer } from './GPULayer';
 import {
 	GPULayerFilter,
@@ -1712,6 +1714,37 @@ export class GPUComposer {
 		this._renderer.setRenderTarget(null);
 		// Reset texture bindings.
 		this._renderer.resetState();
+	}
+
+	/**
+	 * Save the current state of the canvas to png.
+	 * @param params - PNG parameters.
+	 * @param params.filename - PNG filename (no extension).
+	 * @param params.dpi - PNG dpi (defaults to 72dpi).
+	 * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js. 
+	*/
+	savePNG(params: {
+		filename?: string,
+		dpi?: number,
+		multiplier?: number,
+		callback?: (blob: Blob, filename: string) => void,
+	} = {}) {
+		const { canvas } = this;
+		const filename = params.filename || 'output';
+		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+		canvas.toBlob((blob) => {
+			if (!blob) {
+				console.warn(`Problem saving PNG from GPULayer "${name}", unable to init blob.`);
+				return;
+			}
+			if (params.dpi) {
+				changeDpiBlob(blob, params.dpi).then((blob: Blob) =>{
+					callback(blob, `${filename}.png`);
+				});
+			} else {
+				callback(blob, `${filename}.png`);
+			}
+		}, 'image/png');
 	}
 
 	tick() {
