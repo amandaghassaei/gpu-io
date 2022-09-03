@@ -36,6 +36,7 @@
 - [drawLayerAsVectorField](GPUComposer.md#drawlayerasvectorfield)
 - [drawLayerMagnitude](GPUComposer.md#drawlayermagnitude)
 - [resetThreeState](GPUComposer.md#resetthreestate)
+- [tick](GPUComposer.md#tick)
 - [dispose](GPUComposer.md#dispose)
 
 ## Properties
@@ -458,6 +459,16 @@ ___
 #### Returns
 
 `void`
+
+___
+
+### tick
+
+▸ **tick**(): { `fps`: `number` = 0; `milliseconds`: `number` = 0; `numTicks`: `undefined`  } \| { `milliseconds`: `undefined` = 0; `fps`: `number` ; `numTicks`: `number`  }
+
+#### Returns
+
+{ `fps`: `number` = 0; `milliseconds`: `number` = 0; `numTicks`: `undefined`  } \| { `milliseconds`: `undefined` = 0; `fps`: `number` ; `numTicks`: `number`  }
 
 ___
 

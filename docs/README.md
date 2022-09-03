@@ -303,7 +303,7 @@ ___
 
 ### UniformValue
 
-Ƭ **UniformValue**: `boolean` \| `number` \| `number`[]
+Ƭ **UniformValue**: `boolean` \| `boolean`[] \| `number` \| `number`[]
 
 GPUProgram uniform values.
 
