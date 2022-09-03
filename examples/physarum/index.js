@@ -416,6 +416,35 @@ function main({ gui, glslVersion, contextID }) {
 			},
 		],
 	});
+	// Fragment shader program for touch interactions.
+	const touch = new GPUProgram(composer, {
+		name: 'touch',
+		fragmentShader: `
+			in vec2 v_UV;
+			in vec2 v_UV_local;
+
+			uniform sampler2D u_trail;
+			uniform float u_depositAmount;
+
+			out float out_fragColor;
+
+			void main() {
+				float distSq = 1.0 - dot(v_UV_local, v_UV_local); // Calc dist from center of touch.
+				out_fragColor = texture(u_trail, v_UV).x + distSq * u_depositAmount;
+			}`,
+		uniforms: [
+			{
+				name: 'u_trail',
+				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
+				type: INT,
+			},
+			{
+				name: 'u_depositAmount',
+				value: PARAMS.depositAmount,
+				type: FLOAT,
+			},
+		],
+	});
 	// Fragment shader program for rendering trail state to screen (with a scaling factor).
 	const render = new GPUProgram(composer, {
 		name: 'render',
@@ -475,6 +504,7 @@ function main({ gui, glslVersion, contextID }) {
 	const trailsGUI = gui.addFolder('Trails');
 	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).listen().onChange((value) => {
 		deposit.setUniform('u_depositAmount', value);
+		touch.setUniform('u_depositAmount', value);
 	}).name('Deposit Amount');
 	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).listen().onChange((value) => {
 		diffuseAndDecay.setUniform('u_decayFactor', value);
@@ -550,6 +580,32 @@ function main({ gui, glslVersion, contextID }) {
 		}
 	}
 
+	const activeTouches = {};
+
+	function onPointerMove(e) {
+		if (activeTouches[e.pointerId]) {
+			composer.stepCircle({
+				program: touch,
+				input: trail,
+				output: trail,
+				position: [e.clientX, canvas.height - e.clientY],
+				radius: 15,
+			});
+		}
+		
+	}
+	function onPointerStop(e) {
+		delete activeTouches[e.pointerId];
+	}
+	function onPointerStart(e) {
+		activeTouches[e.pointerId] = true;
+	}
+	window.addEventListener('pointermove', onPointerMove);
+	window.addEventListener('pointerdown', onPointerStart);
+	window.addEventListener('pointerup', onPointerStop);
+	window.addEventListener('pointerout', onPointerStop);
+	window.addEventListener('pointercancel', onPointerStop);
+
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
 		shouldSavePNG = true;
@@ -603,6 +659,11 @@ function main({ gui, glslVersion, contextID }) {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
 		window.removeEventListener('resize', onResize);
+		window.removeEventListener('pointermove', onPointerMove);
+		window.removeEventListener('pointerdown', onPointerStart);
+		window.removeEventListener('pointerup', onPointerStop);
+		window.removeEventListener('pointerout', onPointerStop);
+		window.removeEventListener('pointercancel', onPointerStop);
 		particlesPositions.dispose();
 		particlesHeading.dispose();
 		rotateParticles.dispose();
