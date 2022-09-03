@@ -22,6 +22,9 @@ export const WEBGL_DEPTH_TEXTURE = 'WEBGL_depth_texture';
 // https://stackoverflow.com/questions/34262493/framebuffer-incomplete-attachment-for-texture-with-internal-format
 // https://stackoverflow.com/questions/36109347/framebuffer-incomplete-attachment-only-happens-on-android-w-firefox
 export const EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
+// On WebGL 2, EXT_COLOR_BUFFER_HALF_FLOAT is an alternative to using the EXT_color_buffer_float extension on platforms
+// that support 16-bit floating point render targets but not 32-bit floating point render targets.
+export const EXT_COLOR_BUFFER_HALF_FLOAT = 'EXT_color_buffer_half_float';
 
 export function getExtension(
 	composer: GPUComposer,

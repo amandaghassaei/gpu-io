@@ -83,6 +83,14 @@ declare const _testing: {
     stripVersion(shaderSource: string): string;
     stripPrecision(shaderSource: string): string;
     stripComments(shaderSource: string): string;
+    getExtension(composer: GPUComposer, extensionName: string, optional?: boolean): any;
+    OES_TEXTURE_FLOAT: "OES_texture_float";
+    OES_TEXTURE_HALF_FLOAT: "OES_texture_half_float";
+    OES_TEXTURE_FLOAT_LINEAR: "OES_texture_float_linear";
+    OES_TEXTURE_HAlF_FLOAT_LINEAR: "OES_texture_half_float_linear";
+    WEBGL_DEPTH_TEXTURE: "WEBGL_depth_texture";
+    EXT_COLOR_BUFFER_FLOAT: "EXT_color_buffer_float";
+    EXT_COLOR_BUFFER_HALF_FLOAT: "EXT_color_buffer_half_float";
     isFloatType: typeof utils.isFloatType;
     isUnsignedIntType: typeof utils.isUnsignedIntType;
     isSignedIntType: typeof utils.isSignedIntType;

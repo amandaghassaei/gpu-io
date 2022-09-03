@@ -29,12 +29,16 @@
 		shouldCastIntTypeAsFloat,
 		getGLTextureParameters,
 		testFramebufferAttachment,
+		testFloatLinearFiltering,
 		getGPULayerInternalType,
 		minMaxValuesForType,
 		validateGPULayerArray,
 		initSequentialFloatArray,
 		isArray,
-		isPowerOf2
+		isPowerOf2,
+		getExtension,
+		OES_TEXTURE_FLOAT,
+		OES_TEXTURE_HALF_FLOAT,
 	} = _testing;
 	const { getFloat16 } = float16;
 
@@ -130,6 +134,8 @@
 		});
 		describe('getGPULayerInternalFilter', () => {
 			it('should always support NEAREST filtering', () => {
+				getExtension(composer1, OES_TEXTURE_FLOAT, true);
+				getExtension(composer1, OES_TEXTURE_HALF_FLOAT, true);
 				[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
 					assert.equal(getGPULayerInternalFilter({ composer: composer1, filter: NEAREST, internalType: type, name: 'test' }), NEAREST);
 					assert.equal(getGPULayerInternalFilter({ composer: composer2, filter: NEAREST, internalType: type, name: 'test' }), NEAREST);
@@ -137,6 +143,8 @@
 				});
 			});
 			it('should support LINEAR float filtering with extensions', () => {
+				getExtension(composer1, OES_TEXTURE_FLOAT, true);
+				getExtension(composer1, OES_TEXTURE_HALF_FLOAT, true);
 				[FLOAT, HALF_FLOAT].forEach(type => {
 					assert.equal(getGPULayerInternalFilter({ composer: composer1, filter: LINEAR, internalType: type, name: 'test' }), LINEAR);
 					assert.equal(getGPULayerInternalFilter({ composer: composer2, filter: LINEAR, internalType: type, name: 'test' }), LINEAR);
@@ -252,6 +260,17 @@
 								name: 'test',
 							}),
 						), true, `${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`);
+					});
+				});
+			});
+		});
+		describe('testFloatLinearFiltering', () => {
+			it('should succeed for all combinations', () => {
+				[composer1, composer2, composer3].forEach(composer => {
+					[FLOAT, HALF_FLOAT].forEach(type => {
+						console.log(`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`)
+						assert.equal(testFloatLinearFiltering(composer, type), true,
+							`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`);
 					});
 				});
 			});

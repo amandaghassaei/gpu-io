@@ -5,6 +5,7 @@ import { GPUProgram } from './GPUProgram';
 import * as checks from './checks';
 import * as GPULayerHelpers from './GPULayerHelpers';
 import * as regex from './regex';
+import * as extensions from './extensions';
 
 // These exports are only used for testing.
 /**
@@ -24,6 +25,7 @@ const _testing = {
 	isPowerOf2: utils.isPowerOf2,
 	initSequentialFloatArray: utils.initSequentialFloatArray,
 	uniformInternalTypeForValue: utils.uniformInternalTypeForValue,
+	...extensions,
 	...regex,
 	...checks,
 	...GPULayerHelpers,

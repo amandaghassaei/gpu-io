@@ -38,6 +38,7 @@ import {
 } from './constants';
 import {
 	EXT_COLOR_BUFFER_FLOAT,
+	EXT_COLOR_BUFFER_HALF_FLOAT,
 	getExtension,
 	OES_TEXTURE_FLOAT,
 	OES_TEXTURE_FLOAT_LINEAR,
@@ -47,7 +48,7 @@ import {
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
-import { initGLProgram, isWebGL2 } from './utils';
+import { isWebGL2 } from './utils';
 
 // Memoize results.
 const results = {
@@ -708,11 +709,10 @@ export function testFloatLinearFiltering(
 		(values[6] + values[7]) / 2, (values[7] + values[8]) / 2, values[8]];
 	const filtered = output.getValues();
 	let supported = true;
-	const tol = internalType === HALF_FLOAT ? 1e-3 : 1e-6;
+	const tol = internalType === HALF_FLOAT ? 1e-2 : 1e-4;
 	for (let i = 0; i < filtered.length; i++) {
 		if (Math.abs((expected[i] - filtered[i]) / expected[i]) > tol) {
-			// TODO: remove this log.
-			console.log(internalType, Math.abs((expected[i] - filtered[i]) / expected[i]));
+			// console.log(key, internalType, Math.abs((expected[i] - filtered[i]) / expected[i]));
 			supported = false;
 			break;
 		}
@@ -748,7 +748,7 @@ export function getGPULayerInternalType(
 	const intCast = shouldCastIntTypeAsFloat(composer, type);
 	if (intCast) {
 		if (internalType === UNSIGNED_BYTE || internalType === BYTE) {
-			// Integers between 0 and 2048 can be exactly represented by half float (and also between −2048 and 0)
+			// Integers between -2048 and +2048 can be exactly represented by half float.
 			internalType = HALF_FLOAT;
 		} else {
 			// Integers between 0 and 16777216 can be exactly represented by float32 (also applies for negative integers between −16777216 and 0)
@@ -759,23 +759,22 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			internalType = FLOAT;
 		}
 	}
-	// Check if float32 supported.
+
+	// Check if float textures supported.
 	if (!isWebGL2(gl)) {
 		if (internalType === FLOAT) {
+			// The OES_texture_float extension implicitly enables WEBGL_color_buffer_float extension (for writing).
 			const extension = getExtension(composer, OES_TEXTURE_FLOAT, true);
 			if (!extension) {
 				console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 				internalType = HALF_FLOAT;
-			}
 			// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
-			// Rendering to a floating-point texture may not be supported,
-			// even if the OES_texture_float extension is supported.
-			// Typically, this fails on current mobile hardware.
-			// To check if this is supported, you have to call the WebGL
-			// checkFramebufferStatus() function.
-			if (writable) {
+			// Rendering to a floating-point texture may not be supported, even if the OES_texture_float extension
+			// is supported. Typically, this fails on mobile hardware. To check if this is supported, you have to
+			// call the WebGL checkFramebufferStatus() function after attempting to attach texture to framebuffer.
+			} else if (writable) {
 				const valid = testFramebufferAttachment(composer, internalType);
-				if (!valid && internalType !== HALF_FLOAT) {
+				if (!valid) {
 					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
 				}
@@ -783,6 +782,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		}
 		// Must support at least half float if using a float type.
 		if (internalType === HALF_FLOAT) {
+			// The OES_texture_half_float extension implicitly enables EXT_color_buffer_half_float extension (for writing).
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
@@ -792,11 +792,32 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				}
 			}
 		}
-	}
-	
-	// Load additional extensions if needed.
-	if (writable && isWebGL2(gl) && (internalType === HALF_FLOAT || internalType === FLOAT)) {
-		getExtension(composer, EXT_COLOR_BUFFER_FLOAT);
+	} else if (writable) {
+		// For writable webGL2 contexts, load EXT_color_buffer_float/EXT_color_buffer_half_float extension.
+		if (internalType === FLOAT) {
+			const extension = getExtension(composer, EXT_COLOR_BUFFER_FLOAT, true);
+			if (!extension) {
+				console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for GPULayer "${name}".`);
+				internalType = HALF_FLOAT;
+			} else {
+				// Test attaching texture to framebuffer to be sure float writing is supported.
+				const valid = testFramebufferAttachment(composer, internalType);
+				if (!valid) {
+					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
+					internalType = HALF_FLOAT;
+				}
+			}
+		}
+		if (internalType === HALF_FLOAT) {
+			// On WebGL 2, EXT_color_buffer_half_float is an alternative to using the EXT_color_buffer_float extension
+			// on platforms that support 16-bit floating point render targets but not 32-bit floating point render targets.
+			getExtension(composer, EXT_COLOR_BUFFER_HALF_FLOAT);
+			// Test attaching texture to framebuffer to be sure half float writing is supported.
+			const valid = testFramebufferAttachment(composer, internalType);
+			if (!valid) {
+				_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
+			}
+		}
 	}
 	return internalType;
 }
