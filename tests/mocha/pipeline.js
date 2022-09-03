@@ -44,8 +44,7 @@
 								TEST_EXTREMA: true,
 							});
 							checkResult(result);
-							// TODO: add LINEAR
-							[NEAREST].forEach(FILTER => {
+							[NEAREST, LINEAR].forEach(FILTER => {
 								[CLAMP_TO_EDGE, REPEAT].forEach(WRAP => {
 									const result = test({
 										TYPE,

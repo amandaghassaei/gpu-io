@@ -34,7 +34,12 @@ function checkTypeIssue(type, internalType, expected, output) {
 		}
 	}
 	if (type === HALF_FLOAT && internalType === HALF_FLOAT) {
-		if (Math.abs(expected - output) < 0.0001) {
+		if (Math.abs(expected - output) < 1e-3 || Math.abs((expected - output) / expected) < 1e-3) {
+			return true;
+		}
+	}
+	if (type === FLOAT && internalType === FLOAT) {
+		if (Math.abs(expected - output) < 1e-4 || Math.abs((expected - output) / expected) < 1e-4) {
 			return true;
 		}
 	}
