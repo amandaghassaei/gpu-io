@@ -509,7 +509,7 @@ const testLayerWrites = (() => {
 			for (let i = 0; i < expected.length; i++) {
 				if (expected[i] !== output[i]) {
 					// Check if this is due to a type issue.
-					if (checkTypeIssue(TYPE, inputLayer._internalType, expected[i], output[i])) {
+					if (checkTypeIssue(TYPE, layer._internalType, expected[i], output[i])) {
 						continue;
 					}
 					allMismatches.push(`expected: ${expected[i]}, got: ${output[i]}`);
