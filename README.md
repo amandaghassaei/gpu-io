@@ -14,6 +14,7 @@ One of the main purposes of this library is to allow people to write GPGPU progr
 - [Compatibility with Threejs](#compatibility-with-threejs)
 - [Limitations/Caveats/Notes](#limitationscaveatsnotes)
 - [Acknowledgements](#acknowledgements)
+- [License](#license)
 - [Development](#development)
 
 
@@ -250,6 +251,15 @@ I used a few codebases as reference when writing this, thanks to their authors f
 - [gpu.js](https://github.com/gpujs/gpu.js/)
 - [WebGL Boilerplate](https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html)
 - [GPU Accelerated Particles with WebGL 2](https://gpfault.net/posts/webgl2-particles.txt.html)
+
+
+## License
+
+This work is distributed under an MIT license.  Note that this library depends on a few npm packages:
+
+- [@petamoriken/float16](https://www.npmjs.com/package/@petamoriken/float16) - MIT license, no dependencies.
+- [changedpi](https://www.npmjs.com/package/changedpi) - MIT license, no dependencies.
+- [file-saver](https://www.npmjs.com/package/file-saver) - MIT license, no dependencies.
 
 
 ## Development
