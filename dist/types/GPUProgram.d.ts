@@ -11,6 +11,7 @@ export declare class GPUProgram {
     private readonly _defines;
     private readonly _uniforms;
     private readonly _programs;
+    private readonly _programsKeyLookup;
     /**
      * Create a GPUProgram.
      * @param composer - The current GPUComposer instance.
@@ -81,6 +82,11 @@ export declare class GPUProgram {
      * @param type - Uniform type (this only needs to be set once).
      */
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
+    /**
+     * Set internal fragment shader uniforms for GPUProgram.
+     * @private
+     */
+    _setInternalFragmentUniforms(program: WebGLProgram, width: number, height: number): void;
     /**
      * Set vertex shader uniform for GPUProgram.
      * @private

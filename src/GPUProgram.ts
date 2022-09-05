@@ -72,6 +72,8 @@ export class GPUProgram {
 	// Each combination of vertex + fragment shader requires a separate WebGLProgram.
 	// These programs are compiled on the fly as needed.
 	private readonly _programs: {[key in PROGRAM_NAME_INTERNAL]?: WebGLProgram } = {};
+	// Reverse lookup for above.
+	private readonly _programsKeyLookup = new WeakMap<WebGLProgram, PROGRAM_NAME_INTERNAL>();
 
 	/**
      * Create a GPUProgram.
@@ -209,7 +211,7 @@ export class GPUProgram {
 		if (this._programs[name]) return this._programs[name];
 
 		// Otherwise, we need to compile a new program on the fly.
-		const { _composer, _uniforms, _fragmentShader, _programs } = this;
+		const { _composer, _uniforms, _fragmentShader, _programs, _programsKeyLookup } = this;
 		const { gl, _errorCallback } = _composer;
 
 		const vertexShader = _composer._getVertexShaderWithName(name, this.name);
@@ -234,6 +236,7 @@ export class GPUProgram {
 		}
 
 		_programs[name] = program;
+		_programsKeyLookup.set(program, name);
 		return program;
 	}
 	/**
@@ -482,6 +485,27 @@ export class GPUProgram {
 	};
 
 	/**
+	 * Set internal fragment shader uniforms for GPUProgram.
+	 * @private
+	 */
+	_setInternalFragmentUniforms(
+		program: WebGLProgram,
+		width: number,
+		height: number,
+	) {
+		if (!program) {
+			throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
+		}
+		const { _programsKeyLookup } = this;
+		const programName = _programsKeyLookup.get(program);
+		if (!programName) {
+			throw new Error(`Could not find valid vertex programName for WebGLProgram in GPUProgram "${this.name}".`);
+		}
+		// const internalType = uniformInternalTypeForValue(value, type, uniformName, this.name);
+		// this._setProgramUniform(program, programName, uniformName, value, internalType);
+	}
+
+	/**
 	 * Set vertex shader uniform for GPUProgram.
 	 * @private
 	 */
@@ -492,9 +516,10 @@ export class GPUProgram {
 		type: UniformType,
 	) {
 		if (!program) {
-			throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
+			throw new Error('Must pass in valid WebGLProgram to GPUProgram._setVertexUniform, got undefined.');
 		}
-		const programName = Object.keys(this._programs).find(key => this._programs[key as PROGRAM_NAME_INTERNAL] === program);
+		const { _programsKeyLookup } = this;
+		const programName = _programsKeyLookup.get(program);
 		if (!programName) {
 			throw new Error(`Could not find valid vertex programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
@@ -506,7 +531,7 @@ export class GPUProgram {
 	 * Deallocate GPUProgram instance and associated WebGL properties.
 	 */
 	dispose() {
-		const { _composer, _fragmentShader, _programs } = this;
+		const { _composer, _fragmentShader, _programs, _programsKeyLookup } = this;
 		const { gl, verboseLogging } = _composer;
 
 		if (verboseLogging) console.log(`Deallocating GPUProgram "${this.name}".`);
@@ -514,7 +539,10 @@ export class GPUProgram {
 
 		// Unbind all gl data before deleting.
 		Object.values(_programs).forEach(program => {
-			if (program) gl.deleteProgram(program);
+			if (program) {
+				gl.deleteProgram(program);
+				_programsKeyLookup.delete(program);
+			}
 		});
 		Object.keys(_programs).forEach(key => {
 			delete this._programs[key as PROGRAM_NAME_INTERNAL];
@@ -539,5 +567,7 @@ export class GPUProgram {
 		delete this._uniforms;
 		// @ts-ignore
 		delete this._programs;
+		// @ts-ignore;
+		delete this._programsKeyLookup;
 	}
 }

@@ -52,7 +52,7 @@ import { isIntType, isUnsignedIntType, isWebGL2 } from './utils';
 
 // Memoize results.
 const results = {
-	framebufferWriteSupport: {} as { [key: string]: boolean },
+	writeSupport: {} as { [key: string]: boolean },
 	filterWrapSupport: {} as { [key: string]: boolean },
 }
 
@@ -534,10 +534,10 @@ export function getGLTextureParameters(
 }
 
 /**
- * Rigorous method for testing FLOAT and HALF_FLOAT texture support by attaching texture to framebuffer.
+ * Rigorous method for testing FLOAT and HALF_FLOAT write support by attaching texture to framebuffer.
  * @private
  */
-export function testFramebufferAttachment(
+export function testWriteSupport(
 	composer: GPUComposer,
 	internalType: GPULayerType,
 ) {
@@ -545,14 +545,14 @@ export function testFramebufferAttachment(
 
 	// Memoize results for a given set of inputs.
 	const key = `${isWebGL2(gl)},${internalType},${glslVersion === GLSL3 ? '3' : '1'}`;
-	if (results.framebufferWriteSupport[key] !== undefined) {
-		return results.framebufferWriteSupport[key];
+	if (results.writeSupport[key] !== undefined) {
+		return results.writeSupport[key];
 	}
 
 	const texture = gl.createTexture();
 	if (!texture) {
-		results.framebufferWriteSupport[key] = false;
-		return results.framebufferWriteSupport[key];
+		results.writeSupport[key] = false;
+		return results.writeSupport[key];
 	}
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
@@ -570,7 +570,7 @@ export function testFramebufferAttachment(
 
 	const { glInternalFormat, glFormat, glType } = getGLTextureParameters({
 		composer,
-		name: 'testFramebufferAttachment',
+		name: 'testWriteSupport',
 		numComponents: 1,
 		writable: true,
 		internalType,
@@ -582,8 +582,8 @@ export function testFramebufferAttachment(
 	if (!framebuffer) {
 		// Clear out allocated memory.
 		gl.deleteTexture(texture);
-		results.framebufferWriteSupport[key] = false;
-		return results.framebufferWriteSupport[key];
+		results.writeSupport[key] = false;
+		return results.writeSupport[key];
 	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
@@ -595,8 +595,8 @@ export function testFramebufferAttachment(
 	gl.deleteTexture(texture);
 	gl.deleteFramebuffer(framebuffer);
 
-	results.framebufferWriteSupport[key] = validStatus;
-	return results.framebufferWriteSupport[key];
+	results.writeSupport[key] = validStatus;
+	return results.writeSupport[key];
 }
 
 /**
@@ -800,7 +800,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			// is supported. Typically, this fails on mobile hardware. To check if this is supported, you have to
 			// call the WebGL checkFramebufferStatus() function after attempting to attach texture to framebuffer.
 			} else if (writable) {
-				const valid = testFramebufferAttachment(composer, internalType);
+				const valid = testWriteSupport(composer, internalType);
 				if (!valid) {
 					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
@@ -813,7 +813,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			if (writable) {
-				const valid = testFramebufferAttachment(composer, internalType);
+				const valid = testWriteSupport(composer, internalType);
 				if (!valid) {
 					_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 				}
@@ -828,7 +828,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				internalType = HALF_FLOAT;
 			} else {
 				// Test attaching texture to framebuffer to be sure float writing is supported.
-				const valid = testFramebufferAttachment(composer, internalType);
+				const valid = testWriteSupport(composer, internalType);
 				if (!valid) {
 					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
@@ -845,7 +845,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 				getExtension(composer, EXT_COLOR_BUFFER_FLOAT);
 			}
 			// Test attaching texture to framebuffer to be sure half float writing is supported.
-			const valid = testFramebufferAttachment(composer, internalType);
+			const valid = testWriteSupport(composer, internalType);
 			if (!valid) {
 				_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
 			}

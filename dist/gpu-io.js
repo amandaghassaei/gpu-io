@@ -7,11 +7,11 @@
 		exports["GPUIO"] = factory();
 	else
 		root["GPUIO"] = factory();
-})(self, function() {
+})(self, () => {
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 533:
+/***/ 847:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -2738,7 +2738,7 @@ var GPUComposer = /** @class */ (function () {
         this._height = height;
     };
     ;
-    GPUComposer.prototype._drawSetup = function (program, fullscreenRender, input, output) {
+    GPUComposer.prototype._drawSetup = function (gpuProgram, program, fullscreenRender, input, output) {
         var gl = this.gl;
         // Check if we are in an error state.
         if (!program) {
@@ -2767,6 +2767,9 @@ var GPUComposer = /** @class */ (function () {
         this._setOutputLayer(fullscreenRender, input, output);
         // Set current program.
         gl.useProgram(program);
+        var width = output ? output.width : this._width;
+        var height = output ? output.height : this._height;
+        gpuProgram._setInternalFragmentUniforms(program, width, height);
         // Set input textures.
         for (var i = 0; i < inputTextures.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
@@ -2886,7 +2889,7 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, input = params.input, output = params.output;
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(glProgram, true, input, output);
+        this._drawSetup(program, glProgram, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
@@ -2905,7 +2908,7 @@ var GPUComposer = /** @class */ (function () {
         var height = output ? output.height : this._height;
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
@@ -2946,7 +2949,7 @@ var GPUComposer = /** @class */ (function () {
         var height = output ? output.height : this._height;
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], constants_1.FLOAT);
@@ -2964,7 +2967,7 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, position = params.position, radius = params.radius, input = params.input, output = params.output;
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
@@ -2987,7 +2990,7 @@ var GPUComposer = /** @class */ (function () {
         var height = output ? output.height : this._height;
         var glProgram = program._segmentProgram;
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
@@ -3166,7 +3169,7 @@ var GPUComposer = /** @class */ (function () {
             (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
             (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
@@ -3195,7 +3198,7 @@ var GPUComposer = /** @class */ (function () {
             (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
             (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
@@ -3229,7 +3232,7 @@ var GPUComposer = /** @class */ (function () {
             (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
             (normals ? program._defaultProgramWithNormal : program._defaultProgram));
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         var count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
@@ -3295,7 +3298,7 @@ var GPUComposer = /** @class */ (function () {
         // Add positions to end of input if needed.
         var input = this._addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
@@ -3343,7 +3346,7 @@ var GPUComposer = /** @class */ (function () {
         // Add positionLayer to end of input if needed.
         var input = this._addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // TODO: cache indexArray if no indices passed in.
         var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(params.count || positions.length);
         var count = params.count ? params.count : indices.length;
@@ -3416,7 +3419,7 @@ var GPUComposer = /** @class */ (function () {
         // Add data to end of input if needed.
         var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        this._drawSetup(glProgram, false, input, output);
+        this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), constants_1.INT);
         // Set default scale.
@@ -3452,7 +3455,7 @@ var GPUComposer = /** @class */ (function () {
         // Add data to end of input if needed.
         var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        this._drawSetup(glProgram, true, input, output);
+        this._drawSetup(program, glProgram, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
@@ -3589,7 +3592,7 @@ exports.GPUComposer = GPUComposer;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPULayer = void 0;
-var float16_1 = __webpack_require__(533);
+var float16_1 = __webpack_require__(847);
 // @ts-ignore
 var changedpi_1 = __webpack_require__(809);
 var file_saver_1 = __webpack_require__(162);
@@ -4353,8 +4356,8 @@ exports.GPULayer = GPULayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFilterWrap = exports.testFramebufferAttachment = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
-var float16_1 = __webpack_require__(533);
+exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFilterWrap = exports.testWriteSupport = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+var float16_1 = __webpack_require__(847);
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
@@ -4363,7 +4366,7 @@ var GPUProgram_1 = __webpack_require__(664);
 var utils_1 = __webpack_require__(593);
 // Memoize results.
 var results = {
-    framebufferWriteSupport: {},
+    writeSupport: {},
     filterWrapSupport: {},
 };
 /**
@@ -4812,20 +4815,20 @@ function getGLTextureParameters(params) {
 }
 exports.getGLTextureParameters = getGLTextureParameters;
 /**
- * Rigorous method for testing FLOAT and HALF_FLOAT texture support by attaching texture to framebuffer.
+ * Rigorous method for testing FLOAT and HALF_FLOAT write support by attaching texture to framebuffer.
  * @private
  */
-function testFramebufferAttachment(composer, internalType) {
+function testWriteSupport(composer, internalType) {
     var gl = composer.gl, glslVersion = composer.glslVersion;
     // Memoize results for a given set of inputs.
     var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
-    if (results.framebufferWriteSupport[key] !== undefined) {
-        return results.framebufferWriteSupport[key];
+    if (results.writeSupport[key] !== undefined) {
+        return results.writeSupport[key];
     }
     var texture = gl.createTexture();
     if (!texture) {
-        results.framebufferWriteSupport[key] = false;
-        return results.framebufferWriteSupport[key];
+        results.writeSupport[key] = false;
+        return results.writeSupport[key];
     }
     gl.bindTexture(gl.TEXTURE_2D, texture);
     // Default to most widely supported settings.
@@ -4841,7 +4844,7 @@ function testFramebufferAttachment(composer, internalType) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     var _a = getGLTextureParameters({
         composer: composer,
-        name: 'testFramebufferAttachment',
+        name: 'testWriteSupport',
         numComponents: 1,
         writable: true,
         internalType: internalType,
@@ -4852,8 +4855,8 @@ function testFramebufferAttachment(composer, internalType) {
     if (!framebuffer) {
         // Clear out allocated memory.
         gl.deleteTexture(texture);
-        results.framebufferWriteSupport[key] = false;
-        return results.framebufferWriteSupport[key];
+        results.writeSupport[key] = false;
+        return results.writeSupport[key];
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
@@ -4862,10 +4865,10 @@ function testFramebufferAttachment(composer, internalType) {
     // Clear out allocated memory.
     gl.deleteTexture(texture);
     gl.deleteFramebuffer(framebuffer);
-    results.framebufferWriteSupport[key] = validStatus;
-    return results.framebufferWriteSupport[key];
+    results.writeSupport[key] = validStatus;
+    return results.writeSupport[key];
 }
-exports.testFramebufferAttachment = testFramebufferAttachment;
+exports.testWriteSupport = testWriteSupport;
 /**
  * Rigorous method for testing whether a filter/wrap combination is supported
  * by the current browser.  I found that some versions of WebGL2 mobile safari
@@ -5031,7 +5034,7 @@ function getGPULayerInternalType(params) {
                 // call the WebGL checkFramebufferStatus() function after attempting to attach texture to framebuffer.
             }
             else if (writable) {
-                var valid = testFramebufferAttachment(composer, internalType);
+                var valid = testWriteSupport(composer, internalType);
                 if (!valid) {
                     console.warn("FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
                     internalType = constants_1.HALF_FLOAT;
@@ -5044,7 +5047,7 @@ function getGPULayerInternalType(params) {
             (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HALF_FLOAT);
             // TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
             if (writable) {
-                var valid = testFramebufferAttachment(composer, internalType);
+                var valid = testWriteSupport(composer, internalType);
                 if (!valid) {
                     _errorCallback("This browser does not support rendering to HALF_FLOAT textures.");
                 }
@@ -5061,7 +5064,7 @@ function getGPULayerInternalType(params) {
             }
             else {
                 // Test attaching texture to framebuffer to be sure float writing is supported.
-                var valid = testFramebufferAttachment(composer, internalType);
+                var valid = testWriteSupport(composer, internalType);
                 if (!valid) {
                     console.warn("FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
                     internalType = constants_1.HALF_FLOAT;
@@ -5078,7 +5081,7 @@ function getGPULayerInternalType(params) {
                 (0, extensions_1.getExtension)(composer, extensions_1.EXT_COLOR_BUFFER_FLOAT);
             }
             // Test attaching texture to framebuffer to be sure half float writing is supported.
-            var valid = testFramebufferAttachment(composer, internalType);
+            var valid = testWriteSupport(composer, internalType);
             if (!valid) {
                 _errorCallback("This browser does not support rendering to HALF_FLOAT textures.");
             }
@@ -5257,6 +5260,8 @@ var GPUProgram = /** @class */ (function () {
         // Each combination of vertex + fragment shader requires a separate WebGLProgram.
         // These programs are compiled on the fly as needed.
         this._programs = {};
+        // Reverse lookup for above.
+        this._programsKeyLookup = new WeakMap();
         // Check constructor parameters.
         var name = (params || {}).name;
         if (!composer) {
@@ -5345,7 +5350,7 @@ var GPUProgram = /** @class */ (function () {
         if (this._programs[name])
             return this._programs[name];
         // Otherwise, we need to compile a new program on the fly.
-        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _fragmentShader = _a._fragmentShader, _programs = _a._programs;
+        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _fragmentShader = _a._fragmentShader, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
         var vertexShader = _composer._getVertexShaderWithName(name, this.name);
         if (vertexShader === undefined) {
@@ -5366,6 +5371,7 @@ var GPUProgram = /** @class */ (function () {
             this._setProgramUniform(program, name, uniformName, value, type);
         }
         _programs[name] = program;
+        _programsKeyLookup.set(program, name);
         return program;
     };
     Object.defineProperty(GPUProgram.prototype, "_defaultProgram", {
@@ -5644,15 +5650,31 @@ var GPUProgram = /** @class */ (function () {
     };
     ;
     /**
+     * Set internal fragment shader uniforms for GPUProgram.
+     * @private
+     */
+    GPUProgram.prototype._setInternalFragmentUniforms = function (program, width, height) {
+        if (!program) {
+            throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
+        }
+        var _programsKeyLookup = this._programsKeyLookup;
+        var programName = _programsKeyLookup.get(program);
+        if (!programName) {
+            throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
+        }
+        // const internalType = uniformInternalTypeForValue(value, type, uniformName, this.name);
+        // this._setProgramUniform(program, programName, uniformName, value, internalType);
+    };
+    /**
      * Set vertex shader uniform for GPUProgram.
      * @private
      */
     GPUProgram.prototype._setVertexUniform = function (program, uniformName, value, type) {
-        var _this = this;
         if (!program) {
-            throw new Error('Must pass in valid WebGLProgram to setVertexUniform, got undefined.');
+            throw new Error('Must pass in valid WebGLProgram to GPUProgram._setVertexUniform, got undefined.');
         }
-        var programName = Object.keys(this._programs).find(function (key) { return _this._programs[key] === program; });
+        var _programsKeyLookup = this._programsKeyLookup;
+        var programName = _programsKeyLookup.get(program);
         if (!programName) {
             throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
@@ -5664,7 +5686,7 @@ var GPUProgram = /** @class */ (function () {
      */
     GPUProgram.prototype.dispose = function () {
         var _this = this;
-        var _a = this, _composer = _a._composer, _fragmentShader = _a._fragmentShader, _programs = _a._programs;
+        var _a = this, _composer = _a._composer, _fragmentShader = _a._fragmentShader, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Deallocating GPUProgram \"".concat(this.name, "\"."));
@@ -5672,8 +5694,10 @@ var GPUProgram = /** @class */ (function () {
             throw new Error("Must call dispose() on all GPUPrograms before calling dispose() on GPUComposer.");
         // Unbind all gl data before deleting.
         Object.values(_programs).forEach(function (program) {
-            if (program)
+            if (program) {
                 gl.deleteProgram(program);
+                _programsKeyLookup.delete(program);
+            }
         });
         Object.keys(_programs).forEach(function (key) {
             delete _this._programs[key];
@@ -5696,6 +5720,8 @@ var GPUProgram = /** @class */ (function () {
         delete this._uniforms;
         // @ts-ignore
         delete this._programs;
+        // @ts-ignore;
+        delete this._programsKeyLookup;
     };
     return GPUProgram;
 }());

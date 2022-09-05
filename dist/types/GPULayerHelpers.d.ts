@@ -64,10 +64,10 @@ export declare function getGLTextureParameters(params: {
     glNumChannels: number;
 };
 /**
- * Rigorous method for testing FLOAT and HALF_FLOAT texture support by attaching texture to framebuffer.
+ * Rigorous method for testing FLOAT and HALF_FLOAT write support by attaching texture to framebuffer.
  * @private
  */
-export declare function testFramebufferAttachment(composer: GPUComposer, internalType: GPULayerType): boolean;
+export declare function testWriteSupport(composer: GPUComposer, internalType: GPULayerType): boolean;
 /**
  * Rigorous method for testing whether a filter/wrap combination is supported
  * by the current browser.  I found that some versions of WebGL2 mobile safari

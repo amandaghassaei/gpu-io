@@ -277,6 +277,9 @@
 				layer.dispose();
 			});
 		});
+		describe('_setInternalFragmentUniforms', () => {
+			// TODO: 
+		});
 		describe('_setVertexUniform', () => {
 			it('should set program vertex uniform', () => {
 				// Throw an error for uniforms that don't exist.

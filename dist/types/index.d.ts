@@ -42,7 +42,7 @@ declare const _testing: {
         glType: number;
         glNumChannels: number;
     };
-    testFramebufferAttachment(composer: GPUComposer, internalType: import("./constants").GPULayerType): boolean;
+    testWriteSupport(composer: GPUComposer, internalType: import("./constants").GPULayerType): boolean;
     testFilterWrap(composer: GPUComposer, internalType: import("./constants").GPULayerType, filter: import("./constants").GPULayerFilter, wrap: import("./constants").GPULayerWrap): boolean;
     getGPULayerInternalType(params: {
         composer: GPUComposer;

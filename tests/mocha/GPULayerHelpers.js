@@ -28,7 +28,7 @@
 		getGPULayerInternalFilter,
 		shouldCastIntTypeAsFloat,
 		getGLTextureParameters,
-		testFramebufferAttachment,
+		testWriteSupport,
 		testFilterWrap,
 		getGPULayerInternalType,
 		minMaxValuesForType,
@@ -247,11 +247,11 @@
 				'Unsupported glNumChannels: 5 for GPULayer "test".');
 			});
 		});
-		describe('testFramebufferAttachment', () => {
+		describe('testWriteSupport', () => {
 			it('should succeed for all combinations', () => {
 				[composer1, composer2, composer3].forEach(composer => {
 					[FLOAT, HALF_FLOAT].forEach(type => {
-						assert.equal(testFramebufferAttachment(
+						assert.equal(testWriteSupport(
 							composer,
 							getGPULayerInternalType({
 								composer: composer,
