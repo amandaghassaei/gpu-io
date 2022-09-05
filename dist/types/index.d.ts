@@ -6,6 +6,7 @@ import { GPUProgram } from './GPUProgram';
  * @private
  */
 declare const _testing: {
+    texturePolyfill(shaderSource: string): string;
     initArrayForType(type: import("./constants").GPULayerType, length: number, halfFloatsAsFloats?: boolean): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
     calcGPULayerSize(size: number | [number, number], name: string, verboseLogging: boolean): {
         width: number;
@@ -75,7 +76,7 @@ declare const _testing: {
     castVaryingToFloat(shaderSource: string): string;
     glsl1VertexOut(shaderSource: string): string;
     glsl1FragmentIn(shaderSource: string): string;
-    getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
+    getFragmentOutType(shaderSource: string, name: string): "vec2" | "ivec2" | "float" | "int" | "vec3" | "vec4" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
     glsl1FragmentOut(shaderSource: string, name: string): string;
     checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): boolean;
     glsl1Texture(shaderSource: string): string;
@@ -85,6 +86,7 @@ declare const _testing: {
     stripVersion(shaderSource: string): string;
     stripPrecision(shaderSource: string): string;
     stripComments(shaderSource: string): string;
+    getSampler2DsInProgram(shaderSource: string): string[];
     getExtension(composer: GPUComposer, extensionName: string, optional?: boolean): any;
     OES_TEXTURE_FLOAT: "OES_texture_float";
     OES_TEXTURE_HALF_FLOAT: "OES_texture_half_float";

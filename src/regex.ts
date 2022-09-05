@@ -216,7 +216,6 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 
 /**
  * Convert texture to texture2D.
- * TODO: add polyfills.
  * @private
  */
 export function glsl1Texture(shaderSource: string) {
@@ -291,4 +290,29 @@ export function stripComments(shaderSource: string) {
 	// ? puts this in lazy mode (match shortest strings).
 	shaderSource = shaderSource.replace(/\/\*.*?\*\//gs, ''); /* Remove multi-line comments */
 	return shaderSource;
+}
+
+/**
+ * Get the number of sampler2D's in a fragment shader program.
+ * @private
+ */
+export function getSampler2DsInProgram(shaderSource: string) {
+	// Do this without lookbehind to support older browsers.
+	// const samplers = shaderSource.match(/(?<=\buniform\s+(((highp)|(mediump)|(lowp))\s+)?(i|u)?sampler2D\s+)\w+(?=\s?;)/g);
+	const samplersNoDuplicates: {[key: string]: boolean} = {};
+	const regex = '\\buniform\\s+(((highp)|(mediump)|(lowp))\\s+)?(i|u)?sampler2D\\s+(\\w+)\\s?;';
+	const samplers = shaderSource.match(new RegExp(regex, 'g'));
+	if (!samplers || samplers.length === 0) return [];
+	// We need to be a bit careful as same sampler could be declared multiple times if compile-time args are used.
+	// Extract uniform name.
+	const uniformMatch = new RegExp(regex);
+	samplers.forEach(sampler => {
+		const uniform = sampler.match(uniformMatch);
+		if (!uniform || !uniform[7]) {
+			console.warn(`Could not find sampler2D uniform name in string "${sampler}".`);
+			return;
+		}
+		samplersNoDuplicates[uniform[7]] = true;
+	})
+	return Object.keys(samplersNoDuplicates);
 }

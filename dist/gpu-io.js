@@ -6392,11 +6392,12 @@ var checks = __webpack_require__(707);
 var GPULayerHelpers = __webpack_require__(191);
 var regex = __webpack_require__(126);
 var extensions = __webpack_require__(581);
+var polyfills = __webpack_require__(360);
 // These exports are only used for testing.
 /**
  * @private
  */
-var _testing = __assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, extensions), regex), checks), GPULayerHelpers);
+var _testing = __assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, extensions), regex), checks), GPULayerHelpers), polyfills);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
@@ -6411,13 +6412,107 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 
 /***/ }),
 
+/***/ 360:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.texturePolyfill = void 0;
+var constants_1 = __webpack_require__(601);
+var regex_1 = __webpack_require__(126);
+var checks_1 = __webpack_require__(707);
+/**
+ * Wrap/filter type to use in polyfill.
+ * (0) No polyfills.
+ * (1) Filtering is NEAREST and wrap needs polyfill.
+ * (2) Wrap is supported, but filtering needs polyfill.
+ * (3) Wrap and filtering need polyfill.
+ * (4) Filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
+ */
+var SAMPLER2D_WRAP_REPEAT_UNIFORM = 'u_gpuio_wrap_repeat';
+/**
+ * Wrap type to use in polyfill.
+ * (0) CLAMP_TO_EDGE filtering.
+ * (1) REPEAT filtering.
+ */
+var SAMPLER2D_WRAP_UNIFORM = 'u_gpuio_wrap';
+/**
+ * Filter type to use in polyfill.
+ * For now we are not using this, but will be needed if more filters added later.
+ * NEAREST is always supported, so we don't need to polyfill.
+ * (0) LINEAR filtering.
+ * @private
+ */
+var SAMPLER2D_FILTER_UNIFORM = 'u_gpuio_filter';
+/**
+ * UV size of half a pixel for this texture.
+ * @private
+ */
+var SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
+/**
+ * Dimensions of texture
+ * @private
+ */
+var SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
+/**
+ * Override texture function to perform repeat wrap.
+ * Value of u_gpuio_wrap_repeat:
+ * (0) No polyfills.
+ * (1) GPUIO_TEXTURE_WRAP -> filtering is NEAREST and wrap needs polyfill.
+ * (2) GPUIO_TEXTURE_FILTER -> wrap is supported, but filtering needs polyfill.
+ * (3) GPUIO_TEXTURE_WRAP_FILTER -> wrap and filtering need polyfill.
+ * (4) GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY -> filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
+ * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
+ * @private
+ */
+function texturePolyfill(shaderSource) {
+    var textureCalls = shaderSource.match(/\btexture\(/g);
+    if (!textureCalls || textureCalls.length === 0)
+        return shaderSource;
+    var samplerUniformNames = (0, regex_1.getSampler2DsInProgram)(shaderSource);
+    if (samplerUniformNames.length === 0)
+        return shaderSource;
+    samplerUniformNames.forEach(function (samplerName, i) {
+        var regex = new RegExp("\\btexture\\(\\s?".concat(samplerName, "\\b"), 'gs');
+        shaderSource = shaderSource.replace(regex, "GPUIO_TEXTURE_POLYFILL(".concat(samplerName, ", ").concat(i));
+    });
+    var remainingTextureCalls = shaderSource.match(/\btexture\(/g);
+    if (remainingTextureCalls === null || remainingTextureCalls === void 0 ? void 0 : remainingTextureCalls.length) {
+        console.warn('Fragment shader polyfill has missed some calls to texture().', shaderSource);
+    }
+    // Switch is not actually allowed in GLSL1, so use large if statement.
+    var switchStatementFloat = '';
+    var switchStatementInt = '';
+    var samplerParamsUniforms = {};
+    for (var i = 0; i < samplerUniformNames.length; i++) {
+        samplerParamsUniforms["".concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i)] = { value: 0, type: constants_1.INT };
+        samplerParamsUniforms["".concat(SAMPLER2D_WRAP_UNIFORM).concat(i)] = { value: [0, 0], type: constants_1.INT };
+        samplerParamsUniforms["".concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i)] = { value: [0, 0], type: constants_1.FLOAT };
+        samplerParamsUniforms["".concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i)] = { value: [0, 0], type: constants_1.FLOAT };
+        // samplerUniforms[`${SAMPLER2D_FILTER_UNIFORM}${i}`] = 0;
+        switchStatementFloat += "\n\t".concat(i > 0 ? 'else ' : '', "if (index == ").concat(i, ") {\n\t\tif (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 0) {\n\t\t\treturn texture(sampler, uv);\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 1) {\n\t\t\treturn GPUIO_TEXTURE_WRAP(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 2) {\n\t\t\treturn GPUIO_TEXTURE_FILTER(sampler, uv, ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 3) {\n\t\t\treturn GPUIO_TEXTURE_WRAP_FILTER(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 4) {\n\t\t\treturn GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t}\n\t}\n");
+        switchStatementInt += "\n\t".concat(i > 0 ? 'else ' : '', "if (index == ").concat(i, ") {\n\t\tif (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 0) {\n\t\t\treturn texture(sampler, uv);\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 1) {\n\t\t\treturn GPUIO_TEXTURE_WRAP(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t}\n\t}\n");
+    }
+    return "\n".concat(Object.keys(samplerParamsUniforms).map(function (key) {
+        var type = (0, checks_1.isArray)(samplerParamsUniforms[key].value) ?
+            (samplerParamsUniforms[key].type === constants_1.FLOAT ? 'vec2' : 'ivec2') :
+            (samplerParamsUniforms[key].type === constants_1.FLOAT ? 'float' : 'int');
+        return "uniform ".concat(type, " ").concat(key, ";");
+    }).join('\n'), "\n\nfloat GPUIO_WRAP_UV_COORD(float coord, int wrapType, float halfPx) {\n\tif (wrapType == 0) {\n\t\tif (coord < halfPx) coord = halfPx;\n\t\telse if (coord > 1.0 - halfPx) coord = 1.0 - halfPx;\n\t} else {\n\t\tif (coord < 0.0) coord += ceil(abs(coord));\n\t\telse if (coord >= 1.0) coord -= floor(coord);\n\t}\n\treturn coord;\n}\n\nvec4 GPUIO_TEXTURE_WRAP(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\n#if (__VERSION__ == 300)\nuvec4 GPUIO_TEXTURE_WRAP(usampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\nivec4 GPUIO_TEXTURE_WRAP(isampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\n#endif\n\nvec4 GPUIO_BILINEAR_INTERP(sampler2D sampler, vec2 uv, vec2 halfPx, vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = texture(sampler, baseUV);\n\tvec4 maxmin = texture(sampler, uv + vec2(halfPx.x, -halfPx.y));\n\tvec4 minmax = texture(sampler, uv + vec2(-halfPx.x, halfPx.y));\n\tvec4 maxmax = texture(sampler, uv + halfPx);\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n\nvec4 GPUIO_BILINEAR_INTERP_WRAP(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = GPUIO_TEXTURE_WRAP(sampler, baseUV, wrapType, halfPx);\n\tvec4 maxmin = GPUIO_TEXTURE_WRAP(sampler, uv + vec2(halfPx.x, -halfPx.y), wrapType, halfPx);\n\tvec4 minmax = GPUIO_TEXTURE_WRAP(sampler, uv + vec2(-halfPx.x, halfPx.y), wrapType, halfPx);\n\tvec4 maxmax = GPUIO_TEXTURE_WRAP(sampler, uv + halfPx, wrapType, halfPx);\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n\nvec4 GPUIO_TEXTURE_FILTER(sampler2D sampler, vec2 uv, vec2 halfPx, vec2 dimensions) {\n\treturn GPUIO_BILINEAR_INTERP(sampler, uv, halfPx, dimensions);\n}\n\nvec4 GPUIO_TEXTURE_WRAP_FILTER(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {\n\treturn GPUIO_BILINEAR_INTERP_WRAP(sampler, uv, wrapType, halfPx, dimensions);\n}\n\nvec4 GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {\n\tif (uv.x < halfPx.x || 1.0 - uv.x < halfPx.x || uv.y < halfPx.y || 1.0 - uv.y < halfPx.y) {\n\t\treturn GPUIO_BILINEAR_INTERP_WRAP(sampler, uv, wrapType, halfPx, dimensions);\n\t}\n\treturn texture(sampler, uv);\n}\n\nvec4 GPUIO_TEXTURE_POLYFILL(sampler2D sampler, int index, vec2 uv) {\n").concat(switchStatementFloat, "\n\treturn texture(sampler, uv);\n}\n#if (__VERSION__ == 300)\nivec4 GPUIO_TEXTURE_POLYFILL(isampler2D sampler, int index, vec2 uv) {\n").concat(switchStatementInt, "\n\treturn texture(sampler, uv);\n}\nuvec4 GPUIO_TEXTURE_POLYFILL(usampler2D sampler, int index, vec2 uv) {\n").concat(switchStatementInt, "\n\treturn texture(sampler, uv);\n}\n#endif\n\n").concat(shaderSource);
+}
+exports.texturePolyfill = texturePolyfill;
+
+
+/***/ }),
+
 /***/ 126:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.highpToMediump = exports.glsl1Uint = exports.glsl1Sampler2D = exports.glsl1Texture = exports.checkFragmentShaderForFragColor = exports.glsl1FragmentOut = exports.getFragmentOutType = exports.glsl1FragmentIn = exports.glsl1VertexOut = exports.castVaryingToFloat = exports.glsl1VertexIn = exports.typecastVariable = void 0;
+exports.getSampler2DsInProgram = exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.highpToMediump = exports.glsl1Uint = exports.glsl1Sampler2D = exports.glsl1Texture = exports.checkFragmentShaderForFragColor = exports.glsl1FragmentOut = exports.getFragmentOutType = exports.glsl1FragmentIn = exports.glsl1VertexOut = exports.castVaryingToFloat = exports.glsl1VertexIn = exports.typecastVariable = void 0;
 var constants_1 = __webpack_require__(601);
 /**
  * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
@@ -6636,7 +6731,6 @@ function checkFragmentShaderForFragColor(shaderSource, glslVersion, name) {
 exports.checkFragmentShaderForFragColor = checkFragmentShaderForFragColor;
 /**
  * Convert texture to texture2D.
- * TODO: add polyfills.
  * @private
  */
 function glsl1Texture(shaderSource) {
@@ -6713,6 +6807,32 @@ function stripComments(shaderSource) {
     return shaderSource;
 }
 exports.stripComments = stripComments;
+/**
+ * Get the number of sampler2D's in a fragment shader program.
+ * @private
+ */
+function getSampler2DsInProgram(shaderSource) {
+    // Do this without lookbehind to support older browsers.
+    // const samplers = shaderSource.match(/(?<=\buniform\s+(((highp)|(mediump)|(lowp))\s+)?(i|u)?sampler2D\s+)\w+(?=\s?;)/g);
+    var samplersNoDuplicates = {};
+    var regex = '\\buniform\\s+(((highp)|(mediump)|(lowp))\\s+)?(i|u)?sampler2D\\s+(\\w+)\\s?;';
+    var samplers = shaderSource.match(new RegExp(regex, 'g'));
+    if (!samplers || samplers.length === 0)
+        return [];
+    // We need to be a bit careful as same sampler could be declared multiple times if compile-time args are used.
+    // Extract uniform name.
+    var uniformMatch = new RegExp(regex);
+    samplers.forEach(function (sampler) {
+        var uniform = sampler.match(uniformMatch);
+        if (!uniform || !uniform[7]) {
+            console.warn("Could not find sampler2D uniform name in string \"".concat(sampler, "\"."));
+            return;
+        }
+        samplersNoDuplicates[uniform[7]] = true;
+    });
+    return Object.keys(samplersNoDuplicates);
+}
+exports.getSampler2DsInProgram = getSampler2DsInProgram;
 
 
 /***/ }),
@@ -6726,6 +6846,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
+var polyfills_1 = __webpack_require__(360);
 var regex_1 = __webpack_require__(126);
 var precisionSource = __webpack_require__(937);
 /**
@@ -6832,14 +6953,15 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     }
     // Set the shader source code.
     var shaderHeader = makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines);
-    gl.shaderSource(shader, "".concat(shaderHeader).concat(shaderSource));
+    var fullShaderSource = "".concat(shaderHeader).concat(shaderSource);
+    gl.shaderSource(shader, fullShaderSource);
     // Compile the shader
     gl.compileShader(shader);
     // Check if it compiled
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
-        // Something went wrong during compilation - print the error.
-        console.log('shader source:', shaderSource);
+        // Something went wrong during compilation - print shader source (with line number) and the error.
+        console.log(fullShaderSource.split('\n').map(function (line, i) { return "".concat(i + 1, "\t").concat(line); }).join('\n'));
         errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', " shader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
         return null;
     }
@@ -7189,6 +7311,8 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
         // Replace all highp with mediump.
         shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }
+    // Add texture() polyfills if needed.
+    shaderSource = (0, polyfills_1.texturePolyfill)(shaderSource);
     if (glslVersion === constants_1.GLSL3) {
         return shaderSource;
     }

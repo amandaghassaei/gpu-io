@@ -49,6 +49,7 @@ import {
 	WEBGL1,
 	WEBGL2,
 } from './constants';
+import { texturePolyfill } from './polyfills';
 import {
 	checkFragmentShaderForFragColor,
 	glsl1FragmentIn,
@@ -190,7 +191,8 @@ export function compileShader(
 		floatPrecision,
 		defines,
 	);
-	gl.shaderSource(shader, `${shaderHeader}${shaderSource}`);
+	const fullShaderSource = `${shaderHeader}${shaderSource}`;
+	gl.shaderSource(shader, fullShaderSource);
 
 	// Compile the shader
 	gl.compileShader(shader);
@@ -198,8 +200,8 @@ export function compileShader(
 	// Check if it compiled
 	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!success) {
-		// Something went wrong during compilation - print the error.
-		console.log('shader source:', shaderSource);
+		// Something went wrong during compilation - print shader source (with line number) and the error.
+		console.log(fullShaderSource.split('\n').map((line, i) => `${i + 1}\t${line}`).join('\n'));
 		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'} shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}
@@ -653,6 +655,8 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 		// Replace all highp with mediump.
 		shaderSource = highpToMediump(shaderSource);
 	}
+	// Add texture() polyfills if needed.
+	shaderSource = texturePolyfill(shaderSource);
 	if (glslVersion === GLSL3) {
 		return shaderSource;
 	}

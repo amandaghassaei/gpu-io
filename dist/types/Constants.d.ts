@@ -61,7 +61,7 @@ export declare type GPULayerArray = Float32Array | Uint8Array | Int8Array | Uint
 /**
  * @private
  */
-export declare const validArrayTypes: (Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor | Int8ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor | ArrayConstructor)[];
+export declare const validArrayTypes: (ArrayConstructor | Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor | Int8ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor)[];
 /**
  * GPULayer data types.
  */
