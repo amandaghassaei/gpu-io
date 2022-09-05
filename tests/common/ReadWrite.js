@@ -428,11 +428,11 @@ const testLayerWrites = (() => {
 				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${layer._internalType} internally.`);
 			}
 			if (WRAP !== layer._internalWrapS || WRAP !== layer._internalWrapT) {
-				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap [${layer._internalWrapS}, ${layer._internalWrapT}] internally.`);
+				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap ${layer._internalWrapS} internally and patching with fragment shader polyfill.`);
 			}
 			if (composer.gl[FILTER] !== layer._glFilter) {
 				const filter = layer._glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;
-				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally.`);
+				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally and patching with fragment shader polyfill.`);
 			}
 
 			if (TEST_EXTREMA) {
