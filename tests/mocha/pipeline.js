@@ -1,5 +1,6 @@
 {
 	const {
+		GLSL1,
 		GLSL3,
 		WEBGL2,
 		HALF_FLOAT,
@@ -14,82 +15,63 @@
 		LINEAR,
 		REPEAT,
 		CLAMP_TO_EDGE,
-		isWebGL2Supported,
+		_testing,
 	} = GPUIO;
+	const {
+		isIntType,
+	} = _testing;
 
 	const DIM = 30;
 
-	function checkResult(result) {
+	function checkResult(result, expected = SUCCESS) {
 		if (result.status === ERROR) {
 			console.log(result);
 		}
-		assert.equal(result.status, SUCCESS);
+		assert.equal(result.status, expected);
 	}
 
+	// TODO: this only tests webgl2
 	describe('pipeline', () => {
 		[testLayerReads, testLayerWrites].forEach(test => {
 			describe(test.name, () => {
-				[HALF_FLOAT, FLOAT].forEach(TYPE => {
-					it(`${TYPE} + ${isWebGL2Supported() ? 'WebGL2' : 'WebGL1'} + ${isWebGL2Supported() ? 'GLSL3' : 'GLSL1'}`, () => {
-						[1, 2, 3, 4].forEach(NUM_ELEMENTS => {
-							const result = test({
-								TYPE,
-								DIM_X: DIM,
-								DIM_Y: DIM,
-								NUM_ELEMENTS,
-								WEBGL_VERSION: WEBGL2,
-								GLSL_VERSION: GLSL3,
-								WRAP: CLAMP_TO_EDGE,
-								FILTER: NEAREST,
-								TEST_EXTREMA: true,
-							});
-							checkResult(result);
-							[NEAREST, LINEAR].forEach(FILTER => {
-								[CLAMP_TO_EDGE, REPEAT].forEach(WRAP => {
-									const result = test({
+				[WEBGL2].forEach(WEBGL_VERSION => {
+					[GLSL1, GLSL3].forEach(GLSL_VERSION => {
+						[HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(TYPE => {
+							it(`${TYPE} + ${WEBGL_VERSION} + ${GLSL_VERSION}`, () => {
+								[1, 2, 3, 4].forEach(NUM_ELEMENTS => {
+									const extremaResult = test({
 										TYPE,
 										DIM_X: DIM,
 										DIM_Y: DIM,
 										NUM_ELEMENTS,
-										WEBGL_VERSION: WEBGL2,
-										GLSL_VERSION: GLSL3,
-										WRAP,
-										FILTER,
+										WEBGL_VERSION,
+										GLSL_VERSION,
+										WRAP: CLAMP_TO_EDGE,
+										FILTER: NEAREST,
+										TEST_EXTREMA: true,
 									});
-									checkResult(result);
-								});
-							});
-						});
-					});
-				});
-				[UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(TYPE => {
-					it(`${TYPE} + WebGL2 + GLSL3`, () => {
-						[1, 2, 3, 4].forEach(NUM_ELEMENTS => {
-							const result = test({
-								TYPE,
-								DIM_X: DIM,
-								DIM_Y: DIM,
-								NUM_ELEMENTS,
-								WEBGL_VERSION: WEBGL2,
-								GLSL_VERSION: GLSL3,
-								WRAP: CLAMP_TO_EDGE,
-								FILTER: NEAREST,
-								TEST_EXTREMA: true,
-							});
-							checkResult(result);
-							[NEAREST].forEach(FILTER => {
-								[CLAMP_TO_EDGE, REPEAT].forEach(WRAP => {
-									const result = test({
-										TYPE,
-										DIM_X: DIM,
-										DIM_Y: DIM,
-										NUM_ELEMENTS,
-										WEBGL_VERSION: WEBGL2,
-										GLSL_VERSION: GLSL3,
-										WRAP,
-										FILTER,
+									if (GLSL_VERSION === GLSL1 && (TYPE === UNSIGNED_INT || TYPE === INT)) {
+										// UNSIGNED_INT and INT are not fully supported in GLSL1.
+										checkResult(extremaResult, WARNING);
+									} else {
+										checkResult(extremaResult);
+									}
+									[NEAREST, LINEAR].forEach(FILTER => {
+										if (FILTER === LINEAR && isIntType(TYPE)) return; // Don't test LINEAR filtering on int types.
+										[CLAMP_TO_EDGE, REPEAT].forEach(WRAP => {
+											const result = test({
+												TYPE,
+												DIM_X: DIM,
+												DIM_Y: DIM,
+												NUM_ELEMENTS,
+												WEBGL_VERSION,
+												GLSL_VERSION,
+												WRAP,
+												FILTER,
+											});
+											checkResult(result);
+										});
 									});
-									checkResult(result);
 								});
 							});
 						});

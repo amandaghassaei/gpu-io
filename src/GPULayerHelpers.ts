@@ -141,8 +141,7 @@ export function getGPULayerInternalWrap(
 		name: string,
 	},
 ) {
-	const { composer, wrap, name, internalFilter, internalType } = params;
-	const { gl } = composer;
+	const { composer, wrap, internalFilter, internalType } = params;
 
 	// CLAMP_TO_EDGE is always supported.
 	if (wrap === CLAMP_TO_EDGE) {
@@ -751,10 +750,6 @@ export function testFilterWrap(
 	output.dispose();
 	gl.deleteTexture(texture);
 
-	if (!supported) {
-		console.log(values, filtered, internalType, wrap, filter);
-	}
-
 	results.filterWrapSupport[key] = supported;
 	return results.filterWrapSupport[key];
 }
@@ -843,7 +838,12 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		if (internalType === HALF_FLOAT) {
 			// On WebGL 2, EXT_color_buffer_half_float is an alternative to using the EXT_color_buffer_float extension
 			// on platforms that support 16-bit floating point render targets but not 32-bit floating point render targets.
-			getExtension(composer, EXT_COLOR_BUFFER_HALF_FLOAT);
+			const halfFloatExt = getExtension(composer, EXT_COLOR_BUFFER_HALF_FLOAT, true);
+			if (!halfFloatExt) {
+				// Some versions of Firefox (e.g. Firefox v104 on Mac) do not support EXT_COLOR_BUFFER_HALF_FLOAT,
+				// but EXT_COLOR_BUFFER_FLOAT will work instead.
+				getExtension(composer, EXT_COLOR_BUFFER_FLOAT);
+			}
 			// Test attaching texture to framebuffer to be sure half float writing is supported.
 			const valid = testFramebufferAttachment(composer, internalType);
 			if (!valid) {

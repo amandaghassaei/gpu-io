@@ -4438,8 +4438,7 @@ exports.calcGPULayerSize = calcGPULayerSize;
  * @private
  */
 function getGPULayerInternalWrap(params) {
-    var composer = params.composer, wrap = params.wrap, name = params.name, internalFilter = params.internalFilter, internalType = params.internalType;
-    var gl = composer.gl;
+    var composer = params.composer, wrap = params.wrap, internalFilter = params.internalFilter, internalType = params.internalType;
     // CLAMP_TO_EDGE is always supported.
     if (wrap === constants_1.CLAMP_TO_EDGE) {
         return wrap;
@@ -4989,9 +4988,6 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     program.dispose();
     output.dispose();
     gl.deleteTexture(texture);
-    if (!supported) {
-        console.log(values, filtered, internalType, wrap, filter);
-    }
     results.filterWrapSupport[key] = supported;
     return results.filterWrapSupport[key];
 }
@@ -5075,7 +5071,12 @@ function getGPULayerInternalType(params) {
         if (internalType === constants_1.HALF_FLOAT) {
             // On WebGL 2, EXT_color_buffer_half_float is an alternative to using the EXT_color_buffer_float extension
             // on platforms that support 16-bit floating point render targets but not 32-bit floating point render targets.
-            (0, extensions_1.getExtension)(composer, extensions_1.EXT_COLOR_BUFFER_HALF_FLOAT);
+            var halfFloatExt = (0, extensions_1.getExtension)(composer, extensions_1.EXT_COLOR_BUFFER_HALF_FLOAT, true);
+            if (!halfFloatExt) {
+                // Some versions of Firefox (e.g. Firefox v104 on Mac) do not support EXT_COLOR_BUFFER_HALF_FLOAT,
+                // but EXT_COLOR_BUFFER_FLOAT will work instead.
+                (0, extensions_1.getExtension)(composer, extensions_1.EXT_COLOR_BUFFER_FLOAT);
+            }
             // Test attaching texture to framebuffer to be sure half float writing is supported.
             var valid = testFramebufferAttachment(composer, internalType);
             if (!valid) {
