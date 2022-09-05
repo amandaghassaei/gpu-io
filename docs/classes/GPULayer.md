@@ -343,7 +343,7 @@ ___
 
 ### savePNG
 
-▸ **savePNG**(`params`): `void`
+▸ **savePNG**(`params?`): `void`
 
 Save the current state of this GPULayer to png.
 
@@ -352,10 +352,10 @@ Save the current state of this GPULayer to png.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | PNG parameters. |
-| `params.filename` | `string` | PNG filename (no extension). |
+| `params.filename?` | `string` | PNG filename (no extension, defaults to the name of the GPULayer). |
 | `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
-| `params.multiplier?` | `number` | Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types). |
-| `params.callback` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
+| `params.multiplier?` | `number` | Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1). |
+| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
 
 #### Returns
 

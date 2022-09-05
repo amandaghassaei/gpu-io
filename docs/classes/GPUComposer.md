@@ -36,6 +36,7 @@
 - [drawLayerAsVectorField](GPUComposer.md#drawlayerasvectorfield)
 - [drawLayerMagnitude](GPUComposer.md#drawlayermagnitude)
 - [resetThreeState](GPUComposer.md#resetthreestate)
+- [savePNG](GPUComposer.md#savepng)
 - [tick](GPUComposer.md#tick)
 - [dispose](GPUComposer.md#dispose)
 
@@ -455,6 +456,28 @@ ___
 ### resetThreeState
 
 ▸ **resetThreeState**(): `void`
+
+#### Returns
+
+`void`
+
+___
+
+### savePNG
+
+▸ **savePNG**(`params?`): `void`
+
+Save the current state of the canvas to png.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | PNG parameters. |
+| `params.filename?` | `string` | PNG filename (no extension). |
+| `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
+| `params.multiplier?` | `number` | - |
+| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
 
 #### Returns
 
