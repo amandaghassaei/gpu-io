@@ -6304,11 +6304,13 @@ function getExtension(composer, extensionName, optional) {
     if (extension) {
         // Cache this extension.
         _extensions[extensionName] = extension;
-        console.log("Loaded extension: ".concat(extensionName, "."));
+        if (composer.verboseLogging)
+            console.log("Loaded extension: ".concat(extensionName, "."));
     }
     else {
         _extensions[extensionName] = false; // Cache the bad extension lookup.
-        console.warn("Unsupported ".concat(optional ? 'optional ' : '', "extension: ").concat(extensionName, "."));
+        if (composer.verboseLogging)
+            console.log("Unsupported ".concat(optional ? 'optional ' : '', "extension: ").concat(extensionName, "."));
     }
     // If the extension is not optional, throw error.
     if (!extension && !optional) {

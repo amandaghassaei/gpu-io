@@ -42,10 +42,10 @@ export function getExtension(
 	if (extension) {
 		// Cache this extension.
 		_extensions[extensionName] = extension;
-		console.log(`Loaded extension: ${extensionName}.`);
+		if (composer.verboseLogging) console.log(`Loaded extension: ${extensionName}.`);
 	} else {
 		_extensions[extensionName] = false; // Cache the bad extension lookup.
-		console.warn(`Unsupported ${optional ? 'optional ' : ''}extension: ${extensionName}.`);
+		if (composer.verboseLogging) console.log(`Unsupported ${optional ? 'optional ' : ''}extension: ${extensionName}.`);
 	}
 	// If the extension is not optional, throw error.
 	if (!extension && !optional) {
