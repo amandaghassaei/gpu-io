@@ -1,7 +1,7 @@
 {
   "name": "gpu-io",
   "version": "0.0.1",
-  "description": "A GPGPU library for WebGL",
+  "description": "A GPU computing library for WebGL",
   "keywords": [
     "gpgpu",
     "gpu",
