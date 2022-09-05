@@ -23,8 +23,11 @@ const {
 
 MicroModal.init();
 
+const browserReport = browserReportSync();
+
 document.getElementById('info').innerHTML =  `
-Browser: ${getBrowserVersion()}<br/>
+Browser: ${browserReport.browser.name} v${browserReport.browser.version}<br/>
+Operating System: ${browserReport.os.name} v${browserReport.os.version}<br/>
 WebGL2 Supported: ${isWebGL2Supported()}<br/>
 Vertex shader mediump precision handled as: ${getVertexShaderMediumpPrecision()}<br/>
 Fragment shader mediump precision handled as: ${getFragmentShaderMediumpPrecision()}<br/>
@@ -125,22 +128,6 @@ function makeColumn(results, extremaResults, title) {
 		container.appendChild(link);
 	});
 	return container;
-}
-
-function getBrowserVersion() {
-	var ua = navigator.userAgent, tem, 
-	M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
-	if (/trident/i.test(M[1])) {
-		tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
-		return 'IE ' + (tem[1] || '');
-	}
-	if (M[1] === 'Chrome') {
-		tem = ua.match(/\b(OPR|Edge)\/(\d+)/);
-		if(tem != null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
-	}
-	M = M[2] ? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
-	if ((tem = ua.match(/version\/(\d+)/i)) != null) M.splice(1, 1, tem[1]);
-	return M.join(' v');
 }
 
 function isWebGL2Supported() {
