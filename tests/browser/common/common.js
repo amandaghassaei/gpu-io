@@ -28,6 +28,7 @@ const browserReport = browserReportSync();
 document.getElementById('info').innerHTML =  `
 Browser: ${browserReport.browser.name} v${browserReport.browser.version}<br/>
 Operating System: ${browserReport.os.name} v${browserReport.os.version}<br/>
+<br/>
 WebGL2 Supported: ${isWebGL2Supported()}<br/>
 Vertex shader mediump precision handled as: ${getVertexShaderMediumpPrecision()}<br/>
 Fragment shader mediump precision handled as: ${getFragmentShaderMediumpPrecision()}<br/>
