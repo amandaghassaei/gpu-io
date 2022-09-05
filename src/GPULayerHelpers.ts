@@ -48,12 +48,12 @@ import {
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
-import { isWebGL2 } from './utils';
+import { isIntType, isUnsignedIntType, isWebGL2 } from './utils';
 
 // Memoize results.
 const results = {
 	framebufferWriteSupport: {} as { [key: string]: boolean },
-	floatLinearFilterSupport: {} as { [key: string]: boolean },
+	filterWrapSupport: {} as { [key: string]: boolean },
 }
 
 /**
@@ -136,33 +136,33 @@ export function getGPULayerInternalWrap(
 	params: {
 		composer: GPUComposer,
 		wrap: GPULayerWrap,
+		internalFilter: GPULayerFilter,
+		internalType: GPULayerType,
 		name: string,
 	},
 ) {
-	const { composer, wrap, name } = params;
+	const { composer, wrap, name, internalFilter, internalType } = params;
 	const { gl } = composer;
-	// Webgl2.0 supports all combinations of types and filtering.
-	if (isWebGL2(gl)) {
-		return wrap;
-	}
+
 	// CLAMP_TO_EDGE is always supported.
 	if (wrap === CLAMP_TO_EDGE) {
 		return wrap;
 	}
-	if (!isWebGL2(gl)) {
-		// TODO: we may want to handle this in the frag shader.
-		// REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 textures in safari.
-		// I've tested this and it seems that some power of 2 textures will work (512 x 512),
-		// but not others (1024x1024), so let's just change all WebGL 1.0 to CLAMP.
-		// Without this, we currently get an error at drawArrays():
-		// "WebGL: drawArrays: texture bound to texture unit 0 is not renderable.
-		// It maybe non-power-of-2 and have incompatible texture filtering or is not
-		// 'texture complete', or it is a float/half-float type with linear filtering and
-		// without the relevant float/half-float linear extension enabled."
-		console.warn(`Falling back to CLAMP_TO_EDGE wrapping for GPULayer "${name}" for WebGL 1.`);
-		return CLAMP_TO_EDGE;
+
+	// Test if wrap/filter combo is actually supported by running some numbers through.
+	if (testFilterWrap(composer, internalType, internalFilter, wrap)) {
+		return wrap;
 	}
-	return wrap;
+	// If not, convert to CLAMP_TO_EDGE and polyfill in fragment shader.
+	return CLAMP_TO_EDGE;
+	// REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 textures in safari.
+	// I've tested this and it seems that some power of 2 textures will work (512 x 512),
+	// but not others (1024x1024), so let's just change all WebGL 1.0 to CLAMP.
+	// Without this, we currently get an error at drawArrays():
+	// "WebGL: drawArrays: texture bound to texture unit 0 is not renderable.
+	// It maybe non-power-of-2 and have incompatible texture filtering or is not
+	// 'texture complete', or it is a float/half-float type with linear filtering and
+	// without the relevant float/half-float linear extension enabled."
 }
 
 /**
@@ -187,13 +187,13 @@ export function getGPULayerInternalFilter(
 	if (internalType === HALF_FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
 			|| getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFloatLinearFiltering(composer, internalType)) {
+		if (!extension || !testFilterWrap(composer, internalType, LINEAR, CLAMP_TO_EDGE)) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	} if (internalType === FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFloatLinearFiltering(composer, internalType)) {
+		if (!extension || !testFilterWrap(composer, internalType, LINEAR, CLAMP_TO_EDGE)) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}
@@ -272,6 +272,7 @@ export function getGLTextureParameters(
 					throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 			}
 		// The following lines of code are not hit now that we have cast UNSIGNED_BYTE types to HALF_FLOAT.
+		// See comments in shouldCastIntTypeAsFloat for more information.
 		// } else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
 		// 	// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
 		// 	if (writable) {
@@ -600,61 +601,60 @@ export function testFramebufferAttachment(
 }
 
 /**
- * Rigorous method for testing whether float/half float linear filtering is supported
+ * Rigorous method for testing whether a filter/wrap combination is supported
  * by the current browser.  I found that some versions of WebGL2 mobile safari
  * may support the OES_texture_float_linear and EXT_color_buffer_float, but still
- * do not linearly interpolate float textures.
+ * do not linearly interpolate float textures or wrap only for power-of-two textures.
  * @private
  */
-export function testFloatLinearFiltering(
+export function testFilterWrap(
 	composer: GPUComposer,
-	internalType: typeof FLOAT | typeof HALF_FLOAT,
+	internalType: GPULayerType,
+	filter: GPULayerFilter,
+	wrap: GPULayerWrap,
 ) {
-	// TODO: add test.
 	const { gl, glslVersion } = composer;
 
 	// Memoize results for a given set of inputs.
-	const key = `${isWebGL2(gl)},${internalType},${glslVersion === GLSL3 ? '3' : '1'}`;
-	if (results.floatLinearFilterSupport[key] !== undefined) {
-		return results.floatLinearFilterSupport[key];
+	const key = `${isWebGL2(gl)},${internalType},${filter},${wrap},${glslVersion === GLSL3 ? '3' : '1'}`;
+	if (results.filterWrapSupport[key] !== undefined) {
+		return results.filterWrapSupport[key];
 	}
 
 	const texture = gl.createTexture();
 	if (!texture) {
-		results.floatLinearFilterSupport[key] = false;
-		return results.floatLinearFilterSupport[key];
+		results.filterWrapSupport[key] = false;
+		return results.filterWrapSupport[key];
 	}
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
-	// Default to most widely supported settings.
-	const wrap = gl[CLAMP_TO_EDGE];
-	// Use linear filtering.
-	const filter = gl[LINEAR];
-	// Use non-power of two dimensions to check for more universal support.
-	// (In case size of GPULayer is changed at a later point).
+	const glWrap = gl[wrap];
+	const glFilter = gl[filter];
+	// Use non power of two dimensions to check for more universal support.
 	const width = 3;
 	const height = 3;
 	const numComponents = 1;
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glWrap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
 
 	const { glInternalFormat, glFormat, glType, glNumChannels } = getGLTextureParameters({
 		composer,
 		name: 'testFloatLinearFiltering',
 		numComponents,
-		writable: true,
 		internalType,
+		writable: true,
 	});
 	// Init texture with values.
 	const values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
-	let valuesTyped: Float32Array | Uint16Array = new Float32Array(values.length * glNumChannels);
+	let valuesTyped = initArrayForType(internalType, values.length * glNumChannels, true);
 	for (let i = 0; i < values.length; i++) {
 		valuesTyped[i * glNumChannels] = values[i];
+		values[i] = valuesTyped[i * glNumChannels]; // Cast as int/uint if needed.
 	}
 	if (internalType === HALF_FLOAT) {
-		// Cast values as Uint16Array.
+		// Cast values as Uint16Array for HALF_FLOAT.
 		const valuesTyped16 = new Uint16Array(valuesTyped.length);
 		const float16View =  new DataView(valuesTyped16.buffer);
 		for (let i = 0; i < valuesTyped.length; i++) {
@@ -665,6 +665,7 @@ export function testFloatLinearFiltering(
 	gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, valuesTyped);
 
 	// Init a GPULayer to write to.
+	// Must use CLAMP_TO_EDGE/NEAREST on this GPULayer to avoid infinite loop.
 	const output = new GPULayer(composer, {
 		name: 'testFloatLinearFiltering-output',
 		type: internalType,
@@ -676,24 +677,38 @@ export function testFloatLinearFiltering(
 		writable: true,
 	});
 
+	const offset = filter === LINEAR ? 0.5 : 1;
 	// Run program to perform linear filter.
 	const program = new GPUProgram(composer, {
 		name: 'testFloatLinearFiltering',
 		fragmentShader: `
 			in vec2 v_UV;
-			uniform sampler2D u_input;
 			uniform vec2 u_offset;
-			out float out_fragColor;
+			#ifdef GPUIO_INT
+				uniform isampler2D u_input;
+				out int out_fragColor;
+			#endif
+			#ifdef GPUIO_UINT
+				uniform usampler2D u_input;
+				out uint out_fragColor;
+			#endif
+			#ifdef GPUIO_FLOAT
+				uniform sampler2D u_input;
+				out float out_fragColor;
+			#endif
 			void main() {
 				out_fragColor = texture(u_input, v_UV + u_offset).x;
 			}`,
 		uniforms: [
 			{
 				name: 'u_offset',
-				value: [0.5 / width, 0.5 / height],
+				value: [offset / width, offset / height],
 				type: FLOAT,
 			},
 		],
+		defines: {
+			[isUnsignedIntType(internalType) ? 'GPUIO_UINT' : (isIntType(internalType) ? 'GPUIO_INT': 'GPUIO_FLOAT')]: '1',
+		}
 	});
 
 	composer.resize(width, height);
@@ -703,18 +718,31 @@ export function testFloatLinearFiltering(
 		output,
 	});
 
-	const expected = [
-		(values[0] + values[1] + values[3] + values[4]) / 4, (values[1] + values[2] + values[4] + values[5]) / 4, (values[2] + values[5]) / 2,
-		(values[6] + values[7] + values[3] + values[4]) / 4, (values[7] + values[8] + values[4] + values[5]) / 4, (values[8] + values[5]) / 2,
-		(values[6] + values[7]) / 2, (values[7] + values[8]) / 2, values[8]];
 	const filtered = output.getValues();
 	let supported = true;
-	const tol = internalType === HALF_FLOAT ? 1e-2 : 1e-4;
-	for (let i = 0; i < filtered.length; i++) {
-		if (Math.abs((expected[i] - filtered[i]) / expected[i]) > tol) {
-			// console.log(key, internalType, Math.abs((expected[i] - filtered[i]) / expected[i]));
-			supported = false;
-			break;
+	const tol = isIntType(internalType) ? 0 : (internalType === HALF_FLOAT ? 1e-2 : 1e-4);
+	function wrapValue(val: number, max: number) {
+		if (wrap === CLAMP_TO_EDGE) return Math.max(0, Math.min(max - 1, val));
+		return (val + max) % max;
+	}
+	for (let x = 0; x < width; x++) {
+		for (let y = 0; y < height; y++) {
+			let expected;
+			if (filter === LINEAR) {
+				expected = (values[y * width + x] +
+					values[y * width + wrapValue(x + 1, width)] +
+					values[wrapValue(y + 1, height) * width + x] +
+					values[wrapValue(y + 1, height) * width + wrapValue(x + 1, width)]) / 4;
+			} else {
+				const _x = wrapValue(x + offset, width);
+				const _y = wrapValue(y + offset, height);
+				expected = values[_y * width + _x];
+			}
+			const i = y * width + x;
+			if (Math.abs((expected - filtered[i]) / expected) > tol) {
+				supported = false;
+				break;
+			}
 		}
 	}
 
@@ -723,8 +751,12 @@ export function testFloatLinearFiltering(
 	output.dispose();
 	gl.deleteTexture(texture);
 
-	results.floatLinearFilterSupport[key] = supported;
-	return results.floatLinearFilterSupport[key];
+	if (!supported) {
+		console.log(values, filtered, internalType, wrap, filter);
+	}
+
+	results.filterWrapSupport[key] = supported;
+	return results.filterWrapSupport[key];
 }
 
 /**

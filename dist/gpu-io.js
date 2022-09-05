@@ -2264,7 +2264,7 @@ var defaultVertexShaderSource = __webpack_require__(288);
 var GPUComposer = /** @class */ (function () {
     function GPUComposer(params) {
         var _a;
-        this._errorState = false;
+        this._errorThrown = false;
         // Store multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
         // Keep track of all GL extensions that have been loaded.
@@ -2345,10 +2345,10 @@ var GPUComposer = /** @class */ (function () {
         // Save callback in case we run into an error.
         var self = this;
         this._errorCallback = function (message) {
-            if (self._errorState) {
+            if (self._errorThrown) {
                 return;
             }
-            self._errorState = true;
+            self._errorThrown = true;
             params.errorCallback ? params.errorCallback(message) : (0, constants_1.DEFAULT_ERROR_CALLBACK)(message);
         };
         var canvas = params.canvas;
@@ -2882,12 +2882,8 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step for entire fullscreen quad.
     GPUComposer.prototype.step = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState;
+        var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this._drawSetup(glProgram, true, input, output);
@@ -2903,14 +2899,10 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program only for a strip of px along the boundary.
     GPUComposer.prototype.stepBoundary = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState;
+        var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this._drawSetup(glProgram, false, input, output);
@@ -2948,14 +2940,10 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program for all but a strip of px along the boundary.
     GPUComposer.prototype.stepNonBoundary = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState;
+        var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this._drawSetup(glProgram, false, input, output);
@@ -2972,12 +2960,8 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program only for a circular spot.
     GPUComposer.prototype.stepCircle = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         var program = params.program, position = params.position, radius = params.radius, input = params.input, output = params.output;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         var glProgram = program._defaultProgram;
         // Do setup - this must come first.
         this._drawSetup(glProgram, false, input, output);
@@ -2997,14 +2981,10 @@ var GPUComposer = /** @class */ (function () {
     };
     // Step program only for a thickened line segment (rounded end caps available).
     GPUComposer.prototype.stepSegment = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState;
+        var gl = this.gl;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         var glProgram = program._segmentProgram;
         // Do setup - this must come first.
         this._drawSetup(glProgram, false, input, output);
@@ -3049,11 +3029,7 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, input = params.input, output = params.output;
         var vertices = params.positions;
         var closeLoop = !!params.closeLoop;
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, _errorState = _a._errorState;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         // Offset vertices.
         var halfThickness = params.thickness / 2;
         var numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
@@ -3214,11 +3190,7 @@ var GPUComposer = /** @class */ (function () {
     };
     GPUComposer.prototype.stepTriangleStrip = function (params) {
         var program = params.program, input = params.input, output = params.output, positions = params.positions, uvs = params.uvs, normals = params.normals;
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, _errorState = _a._errorState;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         var glProgram = (uvs ?
             (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
             (normals ? program._defaultProgramWithNormal : program._defaultProgram));
@@ -3247,12 +3219,8 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.stepLines = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         var indices = params.indices, uvs = params.uvs, normals = params.normals, input = params.input, output = params.output, program = params.program;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         // Check that params are valid.
         if (params.closeLoop && indices) {
             throw new Error("GPUComposer.stepLines() can't be called with closeLoop == true and indices.");
@@ -3306,12 +3274,8 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height;
         var positions = params.positions, output = params.output;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         // Check that numPoints is valid.
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
             throw new Error("GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
@@ -3358,12 +3322,8 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsLines = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         var positions = params.positions, output = params.output;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         // Check that positions is valid.
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
             throw new Error("GPUComposer.drawLayerAsLines() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
@@ -3434,12 +3394,8 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsVectorField = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height;
         var data = params.data, output = params.output;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         // Check that field is valid.
         if (data.numComponents !== 2) {
             throw new Error("GPUComposer.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer \"".concat(data.name, "\" with ").concat(data.numComponents, " components."));
@@ -3484,12 +3440,8 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerMagnitude = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState;
+        var gl = this.gl;
         var data = params.data, output = params.output;
-        // Ignore if we are in error state.
-        if (_errorState) {
-            return;
-        }
         var program = this._vectorMagnitudeProgramForType(data.type);
         var color = params.color || [1, 0, 0]; // Default to red.
         program.setUniform('u_color', color, constants_1.FLOAT);
@@ -3763,11 +3715,13 @@ var GPULayer = /** @class */ (function () {
         this._glType = glType;
         this._glNumChannels = glNumChannels;
         // Set internal filtering/wrap types.
-        this._internalFilter = (0, GPULayerHelpers_1.getGPULayerInternalFilter)({ composer: composer, filter: filter, internalType: internalType, name: name });
-        this._glFilter = gl[this._internalFilter];
-        this._internalWrapS = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapS, name: name });
+        // Make sure that we set filter BEFORE setting wrap.
+        var internalFilter = (0, GPULayerHelpers_1.getGPULayerInternalFilter)({ composer: composer, filter: filter, internalType: internalType, name: name });
+        this._internalFilter = internalFilter;
+        this._glFilter = gl[internalFilter];
+        this._internalWrapS = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapS, internalFilter: internalFilter, internalType: internalType, name: name });
         this._glWrapS = gl[this._internalWrapS];
-        this._internalWrapT = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapT, name: name });
+        this._internalWrapT = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapT, internalFilter: internalFilter, internalType: internalType, name: name });
         this._glWrapT = gl[this._internalWrapT];
         // Num buffers is the number of states to store for this data.
         var numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -4137,7 +4091,7 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.getValues = function () {
         var _a = this, width = _a.width, height = _a.height, _composer = _a._composer, numComponents = _a.numComponents, type = _a.type;
-        var gl = _composer.gl, glslVersion = _composer.glslVersion;
+        var gl = _composer.gl;
         // In case GPULayer was not the last output written to.
         this._bindFramebuffer();
         var _b = this, _glNumChannels = _b._glNumChannels, _glType = _b._glType, _glFormat = _b._glFormat, _internalType = _b._internalType;
@@ -4399,7 +4353,7 @@ exports.GPULayer = GPULayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFloatLinearFiltering = exports.testFramebufferAttachment = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFilterWrap = exports.testFramebufferAttachment = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
 var float16_1 = __webpack_require__(533);
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
@@ -4410,7 +4364,7 @@ var utils_1 = __webpack_require__(593);
 // Memoize results.
 var results = {
     framebufferWriteSupport: {},
-    floatLinearFilterSupport: {},
+    filterWrapSupport: {},
 };
 /**
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
@@ -4484,30 +4438,26 @@ exports.calcGPULayerSize = calcGPULayerSize;
  * @private
  */
 function getGPULayerInternalWrap(params) {
-    var composer = params.composer, wrap = params.wrap, name = params.name;
+    var composer = params.composer, wrap = params.wrap, name = params.name, internalFilter = params.internalFilter, internalType = params.internalType;
     var gl = composer.gl;
-    // Webgl2.0 supports all combinations of types and filtering.
-    if ((0, utils_1.isWebGL2)(gl)) {
-        return wrap;
-    }
     // CLAMP_TO_EDGE is always supported.
     if (wrap === constants_1.CLAMP_TO_EDGE) {
         return wrap;
     }
-    if (!(0, utils_1.isWebGL2)(gl)) {
-        // TODO: we may want to handle this in the frag shader.
-        // REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 textures in safari.
-        // I've tested this and it seems that some power of 2 textures will work (512 x 512),
-        // but not others (1024x1024), so let's just change all WebGL 1.0 to CLAMP.
-        // Without this, we currently get an error at drawArrays():
-        // "WebGL: drawArrays: texture bound to texture unit 0 is not renderable.
-        // It maybe non-power-of-2 and have incompatible texture filtering or is not
-        // 'texture complete', or it is a float/half-float type with linear filtering and
-        // without the relevant float/half-float linear extension enabled."
-        console.warn("Falling back to CLAMP_TO_EDGE wrapping for GPULayer \"".concat(name, "\" for WebGL 1."));
-        return constants_1.CLAMP_TO_EDGE;
+    // Test if wrap/filter combo is actually supported by running some numbers through.
+    if (testFilterWrap(composer, internalType, internalFilter, wrap)) {
+        return wrap;
     }
-    return wrap;
+    // If not, convert to CLAMP_TO_EDGE and polyfill in fragment shader.
+    return constants_1.CLAMP_TO_EDGE;
+    // REPEAT and MIRROR_REPEAT wrap not supported for non-power of 2 textures in safari.
+    // I've tested this and it seems that some power of 2 textures will work (512 x 512),
+    // but not others (1024x1024), so let's just change all WebGL 1.0 to CLAMP.
+    // Without this, we currently get an error at drawArrays():
+    // "WebGL: drawArrays: texture bound to texture unit 0 is not renderable.
+    // It maybe non-power-of-2 and have incompatible texture filtering or is not
+    // 'texture complete', or it is a float/half-float type with linear filtering and
+    // without the relevant float/half-float linear extension enabled."
 }
 exports.getGPULayerInternalWrap = getGPULayerInternalWrap;
 /**
@@ -4524,14 +4474,14 @@ function getGPULayerInternalFilter(params) {
     if (internalType === constants_1.HALF_FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
             || (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFloatLinearFiltering(composer, internalType)) {
+        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, constants_1.CLAMP_TO_EDGE)) {
             console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
     if (internalType === constants_1.FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFloatLinearFiltering(composer, internalType)) {
+        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, constants_1.CLAMP_TO_EDGE)) {
             console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
@@ -4596,6 +4546,7 @@ function getGLTextureParameters(params) {
                     throw new Error("Unsupported glNumChannels: ".concat(glNumChannels, " for GPULayer \"").concat(name, "\"."));
             }
             // The following lines of code are not hit now that we have cast UNSIGNED_BYTE types to HALF_FLOAT.
+            // See comments in shouldCastIntTypeAsFloat for more information.
             // } else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
             // 	// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
             // 	if (writable) {
@@ -4917,54 +4868,52 @@ function testFramebufferAttachment(composer, internalType) {
 }
 exports.testFramebufferAttachment = testFramebufferAttachment;
 /**
- * Rigorous method for testing whether float/half float linear filtering is supported
+ * Rigorous method for testing whether a filter/wrap combination is supported
  * by the current browser.  I found that some versions of WebGL2 mobile safari
  * may support the OES_texture_float_linear and EXT_color_buffer_float, but still
- * do not linearly interpolate float textures.
+ * do not linearly interpolate float textures or wrap only for power-of-two textures.
  * @private
  */
-function testFloatLinearFiltering(composer, internalType) {
-    // TODO: add test.
+function testFilterWrap(composer, internalType, filter, wrap) {
+    var _a;
     var gl = composer.gl, glslVersion = composer.glslVersion;
     // Memoize results for a given set of inputs.
-    var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
-    if (results.floatLinearFilterSupport[key] !== undefined) {
-        return results.floatLinearFilterSupport[key];
+    var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(filter, ",").concat(wrap, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
+    if (results.filterWrapSupport[key] !== undefined) {
+        return results.filterWrapSupport[key];
     }
     var texture = gl.createTexture();
     if (!texture) {
-        results.floatLinearFilterSupport[key] = false;
-        return results.floatLinearFilterSupport[key];
+        results.filterWrapSupport[key] = false;
+        return results.filterWrapSupport[key];
     }
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    // Default to most widely supported settings.
-    var wrap = gl[constants_1.CLAMP_TO_EDGE];
-    // Use linear filtering.
-    var filter = gl[constants_1.LINEAR];
-    // Use non-power of two dimensions to check for more universal support.
-    // (In case size of GPULayer is changed at a later point).
+    var glWrap = gl[wrap];
+    var glFilter = gl[filter];
+    // Use non power of two dimensions to check for more universal support.
     var width = 3;
     var height = 3;
     var numComponents = 1;
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-    var _a = getGLTextureParameters({
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glWrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
+    var _b = getGLTextureParameters({
         composer: composer,
         name: 'testFloatLinearFiltering',
         numComponents: numComponents,
-        writable: true,
         internalType: internalType,
-    }), glInternalFormat = _a.glInternalFormat, glFormat = _a.glFormat, glType = _a.glType, glNumChannels = _a.glNumChannels;
+        writable: true,
+    }), glInternalFormat = _b.glInternalFormat, glFormat = _b.glFormat, glType = _b.glType, glNumChannels = _b.glNumChannels;
     // Init texture with values.
     var values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
-    var valuesTyped = new Float32Array(values.length * glNumChannels);
+    var valuesTyped = initArrayForType(internalType, values.length * glNumChannels, true);
     for (var i = 0; i < values.length; i++) {
         valuesTyped[i * glNumChannels] = values[i];
+        values[i] = valuesTyped[i * glNumChannels]; // Cast as int/uint if needed.
     }
     if (internalType === constants_1.HALF_FLOAT) {
-        // Cast values as Uint16Array.
+        // Cast values as Uint16Array for HALF_FLOAT.
         var valuesTyped16 = new Uint16Array(valuesTyped.length);
         var float16View = new DataView(valuesTyped16.buffer);
         for (var i = 0; i < valuesTyped.length; i++) {
@@ -4974,6 +4923,7 @@ function testFloatLinearFiltering(composer, internalType) {
     }
     gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, valuesTyped);
     // Init a GPULayer to write to.
+    // Must use CLAMP_TO_EDGE/NEAREST on this GPULayer to avoid infinite loop.
     var output = new GPULayer_1.GPULayer(composer, {
         name: 'testFloatLinearFiltering-output',
         type: internalType,
@@ -4984,17 +4934,21 @@ function testFloatLinearFiltering(composer, internalType) {
         filter: constants_1.NEAREST,
         writable: true,
     });
+    var offset = filter === constants_1.LINEAR ? 0.5 : 1;
     // Run program to perform linear filter.
     var program = new GPUProgram_1.GPUProgram(composer, {
         name: 'testFloatLinearFiltering',
-        fragmentShader: "\n\t\t\tin vec2 v_UV;\n\t\t\tuniform sampler2D u_input;\n\t\t\tuniform vec2 u_offset;\n\t\t\tout float out_fragColor;\n\t\t\tvoid main() {\n\t\t\t\tout_fragColor = texture(u_input, v_UV + u_offset).x;\n\t\t\t}",
+        fragmentShader: "\n\t\t\tin vec2 v_UV;\n\t\t\tuniform vec2 u_offset;\n\t\t\t#ifdef GPUIO_INT\n\t\t\t\tuniform isampler2D u_input;\n\t\t\t\tout int out_fragColor;\n\t\t\t#endif\n\t\t\t#ifdef GPUIO_UINT\n\t\t\t\tuniform usampler2D u_input;\n\t\t\t\tout uint out_fragColor;\n\t\t\t#endif\n\t\t\t#ifdef GPUIO_FLOAT\n\t\t\t\tuniform sampler2D u_input;\n\t\t\t\tout float out_fragColor;\n\t\t\t#endif\n\t\t\tvoid main() {\n\t\t\t\tout_fragColor = texture(u_input, v_UV + u_offset).x;\n\t\t\t}",
         uniforms: [
             {
                 name: 'u_offset',
-                value: [0.5 / width, 0.5 / height],
+                value: [offset / width, offset / height],
                 type: constants_1.FLOAT,
             },
         ],
+        defines: (_a = {},
+            _a[(0, utils_1.isUnsignedIntType)(internalType) ? 'GPUIO_UINT' : ((0, utils_1.isIntType)(internalType) ? 'GPUIO_INT' : 'GPUIO_FLOAT')] = '1',
+            _a)
     });
     composer.resize(width, height);
     composer.step({
@@ -5002,29 +4956,46 @@ function testFloatLinearFiltering(composer, internalType) {
         input: texture,
         output: output,
     });
-    var expected = [
-        (values[0] + values[1] + values[3] + values[4]) / 4, (values[1] + values[2] + values[4] + values[5]) / 4, (values[2] + values[5]) / 2,
-        (values[6] + values[7] + values[3] + values[4]) / 4, (values[7] + values[8] + values[4] + values[5]) / 4, (values[8] + values[5]) / 2,
-        (values[6] + values[7]) / 2, (values[7] + values[8]) / 2, values[8]
-    ];
     var filtered = output.getValues();
     var supported = true;
-    var tol = internalType === constants_1.HALF_FLOAT ? 1e-2 : 1e-4;
-    for (var i = 0; i < filtered.length; i++) {
-        if (Math.abs((expected[i] - filtered[i]) / expected[i]) > tol) {
-            // console.log(key, internalType, Math.abs((expected[i] - filtered[i]) / expected[i]));
-            supported = false;
-            break;
+    var tol = (0, utils_1.isIntType)(internalType) ? 0 : (internalType === constants_1.HALF_FLOAT ? 1e-2 : 1e-4);
+    function wrapValue(val, max) {
+        if (wrap === constants_1.CLAMP_TO_EDGE)
+            return Math.max(0, Math.min(max - 1, val));
+        return (val + max) % max;
+    }
+    for (var x = 0; x < width; x++) {
+        for (var y = 0; y < height; y++) {
+            var expected = void 0;
+            if (filter === constants_1.LINEAR) {
+                expected = (values[y * width + x] +
+                    values[y * width + wrapValue(x + 1, width)] +
+                    values[wrapValue(y + 1, height) * width + x] +
+                    values[wrapValue(y + 1, height) * width + wrapValue(x + 1, width)]) / 4;
+            }
+            else {
+                var _x = wrapValue(x + offset, width);
+                var _y = wrapValue(y + offset, height);
+                expected = values[_y * width + _x];
+            }
+            var i = y * width + x;
+            if (Math.abs((expected - filtered[i]) / expected) > tol) {
+                supported = false;
+                break;
+            }
         }
     }
     // Clear out allocated memory.
     program.dispose();
     output.dispose();
     gl.deleteTexture(texture);
-    results.floatLinearFilterSupport[key] = supported;
-    return results.floatLinearFilterSupport[key];
+    if (!supported) {
+        console.log(values, filtered, internalType, wrap, filter);
+    }
+    results.filterWrapSupport[key] = supported;
+    return results.filterWrapSupport[key];
 }
-exports.testFloatLinearFiltering = testFloatLinearFiltering;
+exports.testFilterWrap = testFilterWrap;
 /**
  * Get the GL type to use internally in GPULayer, based on browser support.
  * @private

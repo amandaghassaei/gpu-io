@@ -19,8 +19,10 @@ declare const _testing: {
     getGPULayerInternalWrap(params: {
         composer: GPUComposer;
         wrap: import("./constants").GPULayerWrap;
+        internalFilter: import("./constants").GPULayerFilter;
+        internalType: import("./constants").GPULayerType;
         name: string;
-    }): import("./constants").GPULayerWrap;
+    }): "REPEAT" | "CLAMP_TO_EDGE";
     getGPULayerInternalFilter(params: {
         composer: GPUComposer;
         filter: import("./constants").GPULayerFilter;
@@ -41,7 +43,7 @@ declare const _testing: {
         glNumChannels: number;
     };
     testFramebufferAttachment(composer: GPUComposer, internalType: import("./constants").GPULayerType): boolean;
-    testFloatLinearFiltering(composer: GPUComposer, internalType: "HALF_FLOAT" | "FLOAT"): boolean;
+    testFilterWrap(composer: GPUComposer, internalType: import("./constants").GPULayerType, filter: import("./constants").GPULayerFilter, wrap: import("./constants").GPULayerWrap): boolean;
     getGPULayerInternalType(params: {
         composer: GPUComposer;
         type: import("./constants").GPULayerType;

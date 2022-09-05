@@ -1,4 +1,4 @@
-import { FLOAT, GPULayerFilter, GPULayerType, GPULayerWrap, HALF_FLOAT, GPULayerNumComponents, GPULayerArray } from './constants';
+import { GPULayerFilter, GPULayerType, GPULayerWrap, GPULayerNumComponents, GPULayerArray } from './constants';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 /**
@@ -28,8 +28,10 @@ export declare function calcGPULayerSize(size: number | [number, number], name: 
 export declare function getGPULayerInternalWrap(params: {
     composer: GPUComposer;
     wrap: GPULayerWrap;
+    internalFilter: GPULayerFilter;
+    internalType: GPULayerType;
     name: string;
-}): GPULayerWrap;
+}): "REPEAT" | "CLAMP_TO_EDGE";
 /**
  * Get the GL filter type to use internally in GPULayer, based on browser support.
  * @private
@@ -67,13 +69,13 @@ export declare function getGLTextureParameters(params: {
  */
 export declare function testFramebufferAttachment(composer: GPUComposer, internalType: GPULayerType): boolean;
 /**
- * Rigorous method for testing whether float/half float linear filtering is supported
+ * Rigorous method for testing whether a filter/wrap combination is supported
  * by the current browser.  I found that some versions of WebGL2 mobile safari
  * may support the OES_texture_float_linear and EXT_color_buffer_float, but still
- * do not linearly interpolate float textures.
+ * do not linearly interpolate float textures or wrap only for power-of-two textures.
  * @private
  */
-export declare function testFloatLinearFiltering(composer: GPUComposer, internalType: typeof FLOAT | typeof HALF_FLOAT): boolean;
+export declare function testFilterWrap(composer: GPUComposer, internalType: GPULayerType, filter: GPULayerFilter, wrap: GPULayerWrap): boolean;
 /**
  * Get the GL type to use internally in GPULayer, based on browser support.
  * @private

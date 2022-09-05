@@ -29,7 +29,7 @@
 		shouldCastIntTypeAsFloat,
 		getGLTextureParameters,
 		testFramebufferAttachment,
-		testFloatLinearFiltering,
+		testFilterWrap,
 		getGPULayerInternalType,
 		minMaxValuesForType,
 		validateGPULayerArray,
@@ -39,6 +39,7 @@
 		getExtension,
 		OES_TEXTURE_FLOAT,
 		OES_TEXTURE_HALF_FLOAT,
+		isIntType,
 	} = _testing;
 	const { getFloat16 } = float16;
 
@@ -122,14 +123,14 @@
 		});
 		describe('getGPULayerInternalWrap', () => {
 			it('should always support CLAMP_TO_EDGE wrapping', () => {
-				assert.equal(getGPULayerInternalWrap({ composer: composer1, wrap: CLAMP_TO_EDGE, name: 'test' }), CLAMP_TO_EDGE);
-				assert.equal(getGPULayerInternalWrap({ composer: composer2, wrap: CLAMP_TO_EDGE, name: 'test' }), CLAMP_TO_EDGE);
-				assert.equal(getGPULayerInternalWrap({ composer: composer3, wrap: CLAMP_TO_EDGE, name: 'test' }), CLAMP_TO_EDGE);
+				assert.equal(getGPULayerInternalWrap({ composer: composer1, wrap: CLAMP_TO_EDGE, name: 'test', internalFilter: NEAREST, internalType: HALF_FLOAT }), CLAMP_TO_EDGE);
+				assert.equal(getGPULayerInternalWrap({ composer: composer2, wrap: CLAMP_TO_EDGE, name: 'test', internalFilter: NEAREST, internalType: HALF_FLOAT }), CLAMP_TO_EDGE);
+				assert.equal(getGPULayerInternalWrap({ composer: composer3, wrap: CLAMP_TO_EDGE, name: 'test', internalFilter: NEAREST, internalType: HALF_FLOAT }), CLAMP_TO_EDGE);
 			});
-			it('should support CLAMP_TO_EDGE wrapping in WebGL2', () => {
-				assert.equal(getGPULayerInternalWrap({ composer: composer1, wrap: REPEAT, name: 'test' }), CLAMP_TO_EDGE);
-				assert.equal(getGPULayerInternalWrap({ composer: composer2, wrap: REPEAT, name: 'test' }), REPEAT);
-				assert.equal(getGPULayerInternalWrap({ composer: composer3, wrap: REPEAT, name: 'test' }), REPEAT);
+			it('should support REPEAT wrapping in WebGL2', () => {
+				assert.equal(getGPULayerInternalWrap({ composer: composer1, wrap: REPEAT, name: 'test', internalFilter: NEAREST, internalType: HALF_FLOAT }), CLAMP_TO_EDGE);
+				assert.equal(getGPULayerInternalWrap({ composer: composer2, wrap: REPEAT, name: 'test', internalFilter: NEAREST, internalType: HALF_FLOAT }), REPEAT);
+				assert.equal(getGPULayerInternalWrap({ composer: composer3, wrap: REPEAT, name: 'test', internalFilter: NEAREST, internalType: HALF_FLOAT }), REPEAT);
 			});
 		});
 		describe('getGPULayerInternalFilter', () => {
@@ -250,7 +251,6 @@
 			it('should succeed for all combinations', () => {
 				[composer1, composer2, composer3].forEach(composer => {
 					[FLOAT, HALF_FLOAT].forEach(type => {
-						console.log(`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`)
 						assert.equal(testFramebufferAttachment(
 							composer,
 							getGPULayerInternalType({
@@ -264,13 +264,30 @@
 				});
 			});
 		});
-		describe('testFloatLinearFiltering', () => {
-			it('should succeed for all combinations', () => {
+		describe('testFilterWrap', () => {
+			it('should succeed for most combinations', () => {
 				[composer1, composer2, composer3].forEach(composer => {
-					[FLOAT, HALF_FLOAT].forEach(type => {
-						console.log(`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`)
-						assert.equal(testFloatLinearFiltering(composer, type), true,
-							`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`);
+					[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
+						[LINEAR, NEAREST].forEach(filter => {
+							// Don't test int types with LINEAR filtering.
+							if (filter === LINEAR && isIntType(type)) return;
+							[REPEAT, CLAMP_TO_EDGE].forEach(wrap => {
+								[true, false].forEach(writable => {
+									const internalType = getGPULayerInternalType({
+										composer,
+										type,
+										writable,
+										name: 'testFilterWrap',
+									});
+									const internalFilter = getGPULayerInternalFilter({ composer, filter, internalType, name: 'testFilterWrap', });
+									let expected = true;
+									// We do not expect this to succeed for WebGL1 + REPEAT + FLOAT/HALF_FLOAT
+									if (composer === composer1 && wrap === REPEAT && !isIntType(internalType)) expected = false;
+									assert.equal(testFilterWrap(composer, internalType, internalFilter, wrap), expected,
+										`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${internalType} + ${internalFilter} + ${wrap}`);
+								});
+							});
+						});
 					});
 				});
 			});

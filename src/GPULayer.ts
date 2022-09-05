@@ -302,12 +302,15 @@ export class GPULayer {
 		this._glNumChannels = glNumChannels;
 
 		// Set internal filtering/wrap types.
-		this._internalFilter = getGPULayerInternalFilter({ composer, filter, internalType, name });
-		this._glFilter = gl[this._internalFilter];
-		this._internalWrapS = getGPULayerInternalWrap({ composer, wrap: wrapS, name });
+		// Make sure that we set filter BEFORE setting wrap.
+		const internalFilter = getGPULayerInternalFilter({ composer, filter, internalType, name });
+		this._internalFilter = internalFilter;
+		this._glFilter = gl[internalFilter];
+		this._internalWrapS = getGPULayerInternalWrap({ composer, wrap: wrapS, internalFilter, internalType, name });
 		this._glWrapS = gl[this._internalWrapS];
-		this._internalWrapT = getGPULayerInternalWrap({ composer, wrap: wrapT, name });
+		this._internalWrapT = getGPULayerInternalWrap({ composer, wrap: wrapT, internalFilter, internalType, name });
 		this._glWrapT = gl[this._internalWrapT];
+		
 
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -701,7 +704,7 @@ export class GPULayer {
 	 */
 	getValues() {
 		const { width, height, _composer, numComponents, type } = this;
-		const { gl, glslVersion } = _composer;
+		const { gl } = _composer;
 
 		// In case GPULayer was not the last output written to.
 		this._bindFramebuffer();

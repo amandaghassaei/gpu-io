@@ -10,7 +10,7 @@ export declare class GPUComposer {
     readonly floatPrecision: GLSLPrecision;
     private _width;
     private _height;
-    private _errorState;
+    private _errorThrown;
     /**
      * @private
      */

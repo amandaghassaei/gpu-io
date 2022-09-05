@@ -81,7 +81,7 @@ export class GPUComposer {
 	private _width!: number;
 	private _height!: number;
 
-	private _errorState = false;
+	private _errorThrown = false;
 	/**
 	 * @private
 	 */
@@ -231,10 +231,10 @@ export class GPUComposer {
 		// Save callback in case we run into an error.
 		const self = this;
 		this._errorCallback = (message: string) => {
-			if (self._errorState) {
+			if (self._errorThrown) {
 				return;
 			}
-			self._errorState = true;
+			self._errorThrown = true;
 			params.errorCallback ? params.errorCallback(message) : DEFAULT_ERROR_CALLBACK(message);
 		}
 
@@ -871,13 +871,8 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState } = this;
+		const { gl } = this;
 		const { program, input, output } = params;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		const glProgram = program._defaultProgram!;
 
@@ -906,15 +901,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState} = this;
+		const { gl } = this;
 		const { program, input, output } = params;
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		const glProgram = program._defaultProgram!;
 
@@ -963,15 +953,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState } = this;
+		const { gl } = this;
 		const { program, input, output } = params;
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		const glProgram = program._defaultProgram!;
 
@@ -1003,13 +988,8 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, _width, _height } = this;
+		const { gl, _width, _height } = this;
 		const { program, position, radius, input, output } = params;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		const glProgram = program._defaultProgram!;
 
@@ -1046,15 +1026,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState } = this;
+		const { gl } = this;
 		const { program, position1, position2, thickness, input, output } = params;
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		const glProgram = program._segmentProgram!;
 
@@ -1117,12 +1092,7 @@ export class GPUComposer {
 		const vertices = params.positions;
 		const closeLoop = !!params.closeLoop;
 		
-		const { gl, _width, _height, _errorState } = this;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
+		const { gl, _width, _height } = this
 
 		// Offset vertices.
 		const halfThickness = params.thickness / 2;
@@ -1307,12 +1277,7 @@ export class GPUComposer {
 	) {
 
 		const { program, input, output, positions, uvs, normals } = params;
-		const { gl, _width, _height, _errorState } = this;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
+		const { gl, _width, _height } = this;
 
 		const glProgram = (uvs ?
 			(normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
@@ -1359,13 +1324,9 @@ export class GPUComposer {
 		closeLoop?: boolean,
 		shouldBlendAlpha?: boolean,
 	}) {
-		const { gl, _errorState, _width, _height } = this;
+		const { gl, _width, _height } = this;
 		const { indices, uvs, normals, input, output, program } = params;
 
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 		// Check that params are valid.
 		if (params.closeLoop && indices) {
 			throw new Error(`GPUComposer.stepLines() can't be called with closeLoop == true and indices.`);
@@ -1436,13 +1397,8 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, _pointIndexArray, _width, _height } = this;
+		const { gl, _pointIndexArray, _width, _height } = this;
 		const { positions, output } = params;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		// Check that numPoints is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
@@ -1510,13 +1466,8 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, _width, _height } = this;
+		const { gl, _width, _height } = this;
 		const { positions, output } = params;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		// Check that positions is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
@@ -1601,13 +1552,8 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState, _vectorFieldIndexArray, _width, _height } = this;
+		const { gl, _vectorFieldIndexArray, _width, _height } = this;
 		const { data, output } = params;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		// Check that field is valid.
 		if (data.numComponents !== 2) {
@@ -1667,13 +1613,8 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _errorState } = this;
+		const { gl } = this;
 		const { data, output } = params;
-
-		// Ignore if we are in error state.
-		if (_errorState) {
-			return;
-		}
 
 		const program = this._vectorMagnitudeProgramForType(data.type);
 		const color = params.color || [1, 0, 0]; // Default to red.
