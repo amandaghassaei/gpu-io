@@ -73,17 +73,24 @@ function main({ gui, contextID, glslVersion}) {
 				lowp int se = int(texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r);
 				lowp int sw = int(texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r);
 				lowp int numLiving = n + s + e + w + ne + nw + se + sw;
-				if (state == 0){
-					lowp uint mask = u_birthRules & uint(1 << (numLiving - 1));
-					if (mask > uint(0)) {
-						state = 1;
-					}
-				} else {
-					lowp uint mask = u_survivalRules & uint(1 << (numLiving - 1));
-					if (mask == uint(0)) {
-						state = 0;
-					}
-				}
+				
+				// Using some tricks here to remove conditionals (they cause significant slowdowns).
+				// Leaving the old code here for clarity, replaced by the lines below.
+				// if (state == 0){
+				// 	lowp uint mask = u_birthRules & uint(1 << (numLiving - 1));
+				// 	if (mask > uint(0)) {
+				// 		state = 1;
+				// 	}
+				// } else {
+				// 	lowp uint mask = u_survivalRules & uint(1 << (numLiving - 1));
+				// 	if (mask == uint(0)) {
+				// 		state = 0;
+				// 	}
+				// }
+				// The following lines give the same result without conditionals.
+				lowp uint mask = (u_survivalRules * uint(state) + u_birthRules * uint(1 - state)) & uint(1 << (numLiving - 1));
+				state = min(int(mask), 1);
+
 				out_fragColor = state;
 			}`,
 		uniforms: [

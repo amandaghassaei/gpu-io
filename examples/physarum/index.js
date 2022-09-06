@@ -188,20 +188,24 @@ function main({ gui, glslVersion, contextID }) {
 				float middleState = sense(position, heading);
 				float leftState = sense(position, heading + u_sensorAngle);
 				float rightState = sense(position, heading - u_sensorAngle);
-				if (middleState > rightState && middleState < leftState) {
-					// Rotate left.
-					heading += u_rotationAngle;
-				} else if (middleState < rightState && middleState > leftState) {
-					// Rotate right.
-					heading -= u_rotationAngle;
-				} else if (middleState < rightState && middleState < leftState) {
-					// Choose randomly.
-					heading += u_rotationAngle * (u_randomDir ? 1.0 : -1.0);
-				} // else do nothing.
+				// Using some tricks here to remove conditionals (they cause significant slowdowns).
+				// Leaving the old code here for clarity, replaced by the lines below.
+				// if (middleState > rightState && middleState < leftState) {
+				// 	// Rotate left.
+				// 	heading += u_rotationAngle;
+				// } else if (middleState < rightState && middleState > leftState) {
+				// 	// Rotate right.
+				// 	heading -= u_rotationAngle;
+				// } else if (middleState < rightState && middleState < leftState) {
+				// 	// Choose randomly.
+				// 	heading += u_rotationAngle * (u_randomDir ? 1.0 : -1.0);
+				// } // else do nothing.
+				// The following lines give the same result without conditionals.
+				heading += mix(u_rotationAngle, -u_rotationAngle, step(middleState * leftState, rightState * middleState));
+				heading += mix(u_rotationAngle, -u_rotationAngle, u_randomDir) * step(middleState * middleState, rightState * leftState);
 
 				// Wrap heading around 2PI.
-				if (heading < 0.0) heading += TWO_PI;
-				else if (heading > TWO_PI) heading -= TWO_PI;
+				heading = mod(heading + TWO_PI, TWO_PI);
 
 				out_fragColor = heading;
 			}`,
@@ -268,28 +272,36 @@ function main({ gui, glslVersion, contextID }) {
 				vec2 displacement = positionInfo.zw;
 				vec2 position = absolute + displacement;
 
-				// Step in direction of heading.
+				// Move in direction of heading.
 				float heading = texture(u_particlesHeading, v_UV).r;
-				vec2 step = u_stepSize * vec2(cos(heading), sin(heading));
+				vec2 move = u_stepSize * vec2(cos(heading), sin(heading));
+				vec2 nextDisplacement = displacement + move;
 				
 				// If displacement is large enough, merge with abs position.
 				// This method reduces floating point error in position.
-				vec2 nextDisplacement = displacement + step;
-				if (dot(nextDisplacement, nextDisplacement) > 30.0) {
-					absolute += nextDisplacement;
-					nextDisplacement = vec2(0);
-					// Also check if we've wrapped.
-					if (absolute.x < 0.0) {
-						absolute.x = absolute.x + u_dimensions.x;
-					} else if (absolute.x >= u_dimensions.x) {
-						absolute.x = absolute.x - u_dimensions.x;
-					}
-					if (absolute.y < 0.0) {
-						absolute.y = absolute.y + u_dimensions.y;
-					} else if (absolute.y >= u_dimensions.y) {
-						absolute.y = absolute.y - u_dimensions.y;
-					}
-				}
+				// Using some tricks here to remove conditionals (they cause significant slowdowns).
+				// Leaving the old code here for clarity, replaced by the lines below.
+				// if (dot(nextDisplacement, nextDisplacement) > 30.0) {
+				// 	absolute += nextDisplacement;
+				// 	nextDisplacement = vec2(0);
+				// 	// Also check if we've wrapped.
+				// 	if (absolute.x < 0.0) {
+				// 			absolute.x = absolute.x + u_dimensions.x;
+				// 	} else if (absolute.x >= u_dimensions.x) {
+				// 			absolute.x = absolute.x - u_dimensions.x;
+				// 	}
+				// 	if (absolute.y < 0.0) {
+				// 			absolute.y = absolute.y + u_dimensions.y;
+				// 	} else if (absolute.y >= u_dimensions.y) {
+				// 			absolute.y = absolute.y - u_dimensions.y;
+				// 	}
+				// }
+				// The following lines give the same result without conditionals.
+				float shouldMerge = step(30.0, dot(nextDisplacement, nextDisplacement));
+				absolute += shouldMerge * nextDisplacement;
+				nextDisplacement = mix(nextDisplacement, vec2(0), shouldMerge);
+				absolute = mod(absolute + u_dimensions, u_dimensions);
+
 				out_fragColor = vec4(absolute, nextDisplacement);
 			}`,
 		uniforms: [
@@ -376,6 +388,11 @@ function main({ gui, glslVersion, contextID }) {
 			void main() {
 				vec2 halfPx = u_pxSize / 2.0;
 				// Use built-in interpolation to reduce 9 samples to 4.
+				// This is not the same as the flat kernel described in Jones 2010.
+				// This kernel has weighting:
+				// 1/16 1/8 1/16
+				// 1/8  1/4  1/8
+				// 1/16 1/8 1/16
 				float prevStateNE = texture(u_trail, v_UV + halfPx).x;
 				float prevStateNW = texture(u_trail, v_UV + vec2(-halfPx.x, halfPx.y)).x;
 				float prevStateSE = texture(u_trail, v_UV + vec2(halfPx.x, -halfPx.y)).x;
