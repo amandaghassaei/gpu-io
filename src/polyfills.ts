@@ -1,10 +1,10 @@
 import {
-	FLOAT,
-	INT,
-	UniformType,
+	CLAMP_TO_EDGE,
+	GPULayerFilter,
+	GPULayerWrap,
+	NEAREST,
 } from './constants';
 import { getSampler2DsInProgram } from './regex';
-import { isArray } from './checks';
 
 /**
  * Wrap/filter type to use in polyfill.
@@ -14,14 +14,22 @@ import { isArray } from './checks';
  * (3) Wrap and filtering need polyfill.
  * (4) Filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
  */
+export const SAMPLER2D_WRAP_REPEAT_UNIFORM = 'u_gpuio_wrap_repeat';
 
-const SAMPLER2D_WRAP_REPEAT_UNIFORM = 'u_gpuio_wrap_repeat';
 /**
  * Wrap type to use in polyfill.
  * (0) CLAMP_TO_EDGE filtering.
  * (1) REPEAT filtering.
+ * @private
  */
-const SAMPLER2D_WRAP_UNIFORM = 'u_gpuio_wrap';
+export const SAMPLER2D_WRAP_X = 'gpuio_wrap_x';
+/**
+ * Wrap type to use in polyfill.
+ * (0) CLAMP_TO_EDGE filtering.
+ * (1) REPEAT filtering.
+ * @private
+ */
+export const SAMPLER2D_WRAP_Y = 'gpuio_wrap_y';
 
 /**
  * Filter type to use in polyfill.
@@ -30,168 +38,168 @@ const SAMPLER2D_WRAP_UNIFORM = 'u_gpuio_wrap';
  * (0) LINEAR filtering.
  * @private
  */
-const SAMPLER2D_FILTER_UNIFORM = 'u_gpuio_filter';
+export const SAMPLER2D_FILTER = 'gpuio_filter';
 
 /**
  * UV size of half a pixel for this texture.
  * @private
  */
-const SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
+export const SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
 
 /**
  * Dimensions of texture
  * @private
  */
- const SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
+export const SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
+
+function wrapEnum(wrap: GPULayerWrap) {
+	if (wrap === CLAMP_TO_EDGE) return '0';
+	return '1'; // REPEAT.
+}
+
+function filterEnum(filter: GPULayerFilter) {
+	if (filter === NEAREST) return '0';
+	return '1'; // LINEAR.
+}
 
 /**
  * Override texture function to perform repeat wrap.
- * Value of u_gpuio_wrap_repeat:
+ * Value of SAMPLER2D_WRAP_REPEAT_UNIFORM:
  * (0) No polyfills.
  * (1) GPUIO_TEXTURE_WRAP -> filtering is NEAREST and wrap needs polyfill.
  * (2) GPUIO_TEXTURE_FILTER -> wrap is supported, but filtering needs polyfill.
  * (3) GPUIO_TEXTURE_WRAP_FILTER -> wrap and filtering need polyfill.
- * (4) GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY -> filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
  * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
  * @private
  */
 export function texturePolyfill(shaderSource: string) {
 	const textureCalls = shaderSource.match(/\btexture\(/g);
 	if (!textureCalls || textureCalls.length === 0) return shaderSource;
-	const samplerUniformNames = getSampler2DsInProgram(shaderSource);
-	if (samplerUniformNames.length === 0) return shaderSource;
-	samplerUniformNames.forEach((samplerName, i) => {
-		const regex = new RegExp(`\\btexture\\(\\s?${samplerName}\\b`, 'gs');
-		shaderSource = shaderSource.replace(regex, `GPUIO_TEXTURE_POLYFILL(${samplerName}, ${i}`);
+	const samplerUniforms = getSampler2DsInProgram(shaderSource);
+	if (samplerUniforms.length === 0) return shaderSource;
+	samplerUniforms.forEach((name, i) => {
+		const regex = new RegExp(`\\btexture\\(\\s?${name}\\b`, 'gs');
+		shaderSource = shaderSource.replace(regex, `GPUIO_TEXTURE_POLYFILL${i}(${name}`);
 	});
 	const remainingTextureCalls = shaderSource.match(/\btexture\(/g);
 	if (remainingTextureCalls?.length) {
 		console.warn('Fragment shader polyfill has missed some calls to texture().', shaderSource);
 	}
 	
-	// Switch is not actually allowed in GLSL1, so use large if statement.
-	let switchStatementFloat = '';
-	let switchStatementInt = '';
-	let samplerParamsUniforms: {[key: string] : { value: number | [number, number], type: UniformType } } = {};
-	for (let i = 0; i < samplerUniformNames.length; i++) {
-		samplerParamsUniforms[`${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i}`] = { value: 0, type: INT };
-		samplerParamsUniforms[`${SAMPLER2D_WRAP_UNIFORM}${i}`] = { value: [0, 0], type: INT };
-		samplerParamsUniforms[`${SAMPLER2D_HALF_PX_UNIFORM}${i}`] = { value: [0, 0], type: FLOAT };
-		samplerParamsUniforms[`${SAMPLER2D_DIMENSIONS_UNIFORM}${i}`] = { value: [0, 0], type: FLOAT };
-		// samplerUniforms[`${SAMPLER2D_FILTER_UNIFORM}${i}`] = 0;
-		switchStatementFloat += `
-	${ i > 0 ? 'else ' : ''}if (index == ${i}) {
-		if (${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i} == 0) {
-			return texture(sampler, uv);
-		} else if (${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i} == 1) {
-			return GPUIO_TEXTURE_WRAP(sampler, uv, ${SAMPLER2D_WRAP_UNIFORM}${i}, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
-		} else if (${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i} == 2) {
-			return GPUIO_TEXTURE_FILTER(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
-		} else if (${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i} == 3) {
-			return GPUIO_TEXTURE_WRAP_FILTER(sampler, uv, ${SAMPLER2D_WRAP_UNIFORM}${i}, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
-		} else if (${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i} == 4) {
-			return GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY(sampler, uv, ${SAMPLER2D_WRAP_UNIFORM}${i}, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
-		}
-	}\n`;
-		switchStatementInt += `
-	${ i > 0 ? 'else ' : ''}if (index == ${i}) {
-		if (${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i} == 0) {
-			return texture(sampler, uv);
-		} else if (${SAMPLER2D_WRAP_REPEAT_UNIFORM}${i} == 1) {
-			return GPUIO_TEXTURE_WRAP(sampler, uv, ${SAMPLER2D_WRAP_UNIFORM}${i}, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
-		}
-	}\n`;
+	let polyfillUniforms: {[key: string] : string } = {};
+	let polyfillDefines: {[key: string] : string } = {};
+	for (let i = 0; i < samplerUniforms.length; i++) {
+		polyfillUniforms[`${SAMPLER2D_HALF_PX_UNIFORM}${i}`] = 'vec2';
+		polyfillUniforms[`${SAMPLER2D_DIMENSIONS_UNIFORM}${i}`] = 'vec2';
+		polyfillDefines[`${SAMPLER2D_WRAP_X}${i}`] = '0';
+		polyfillDefines[`${SAMPLER2D_WRAP_Y}${i}`] = '0';
+		polyfillDefines[`${SAMPLER2D_FILTER}${i}`] = '0';
+	}
+
+	function make_GPUIO_TEXTURE_POLYFILL(i: number, prefix: string) {
+		return `
+${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 uv) {
+	#if (${SAMPLER2D_FILTER}${i} == 0)
+		#if (${SAMPLER2D_WRAP_X}${i} == 0)
+			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
+				return texture(sampler, uv);
+			#else
+				return GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
+			#endif
+		#else
+			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
+				return GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
+			#else
+				return GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
+			#endif
+		#endif
+	#else
+		#if (${SAMPLER2D_WRAP_X}${i} == 0)
+			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+			#endif
+		#else
+			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+			#endif
+		#endif
+	#endif
+}\n`;
+	}
+
+	
+	function make_GPUIO_TEXTURE_WRAP(prefix: string) {
+		return `
+${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture(sampler, vec2(u, v));
+}
+${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);
+	return texture(sampler, vec2(u, v));
+}
+${prefix}vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture(sampler, vec2(u, v));
+}\n`;
+	}
+
+	function make_GPUIO_BILINEAR_INTERP(
+		wrapType: string | null ) {
+		const lookupFunction = wrapType ? `GPUIO_TEXTURE_WRAP_${wrapType}` : 'texture';
+		const extraParams =  wrapType ? `, halfPx` : '';
+		return`
+vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
+	vec2 baseUV = uv - halfPx;
+	vec4 minmin = ${lookupFunction}(sampler, baseUV${extraParams});
+	vec4 maxmin = ${lookupFunction}(sampler, uv + vec2(halfPx.x, -halfPx.y)${extraParams});
+	vec4 minmax = ${lookupFunction}(sampler, uv + vec2(-halfPx.x, halfPx.y)${extraParams});
+	vec4 maxmax = ${lookupFunction}(sampler, uv + halfPx${extraParams});
+	vec2 t = fract(baseUV * dimensions);
+	vec4 yMin = mix(minmin, maxmin, t.x);
+	vec4 yMax = mix(minmax, maxmax, t.x);
+	return mix(yMin, yMax, t.y);
+}\n`;
 	}
 
 	return `
-${ Object.keys(samplerParamsUniforms).map((key) => {
-	const type = isArray(samplerParamsUniforms[key].value) ?
-		(samplerParamsUniforms[key].type === FLOAT ? 'vec2' : 'ivec2' ) :
-		(samplerParamsUniforms[key].type === FLOAT ? 'float' : 'int' );
-	return `uniform ${ type } ${key};`;
-}).join('\n') }
+${ Object.keys(polyfillDefines).map((key) => `#define ${key} ${polyfillDefines[key]}`).join('\n') }
+${ Object.keys(polyfillUniforms).map((key) => `uniform ${polyfillUniforms[key]} ${key};`).join('\n') }
 
-float GPUIO_WRAP_UV_COORD(float coord, int wrapType, float halfPx) {
-	if (wrapType == 0) {
-		if (coord < halfPx) coord = halfPx;
-		else if (coord > 1.0 - halfPx) coord = 1.0 - halfPx;
-	} else {
-		if (coord < 0.0) coord += ceil(abs(coord));
-		else if (coord >= 1.0) coord -= floor(coord);
-	}
-	return coord;
+float GPUIO_WRAP_REPEAT_UV_COORD(float coord) {
+	return fract(coord + ceil(abs(coord)));
+}
+float GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {
+	return max(halfPx, min(1.0 - halfPx, coord));
 }
 
-vec4 GPUIO_TEXTURE_WRAP(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {
-	float u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);
-	float v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);
-	return texture(sampler, vec2(u, v));
-}
+${ make_GPUIO_TEXTURE_WRAP('') }
 #if (__VERSION__ == 300)
-uvec4 GPUIO_TEXTURE_WRAP(usampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {
-	float u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);
-	float v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);
-	return texture(sampler, vec2(u, v));
-}
-ivec4 GPUIO_TEXTURE_WRAP(isampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {
-	float u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);
-	float v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);
-	return texture(sampler, vec2(u, v));
-}
+${ ['u', 'i'].map(prefix => make_GPUIO_TEXTURE_WRAP(prefix)).join('\n') }
 #endif
 
-vec4 GPUIO_BILINEAR_INTERP(sampler2D sampler, vec2 uv, vec2 halfPx, vec2 dimensions) {
-	vec2 baseUV = uv - halfPx;
-	vec4 minmin = texture(sampler, baseUV);
-	vec4 maxmin = texture(sampler, uv + vec2(halfPx.x, -halfPx.y));
-	vec4 minmax = texture(sampler, uv + vec2(-halfPx.x, halfPx.y));
-	vec4 maxmax = texture(sampler, uv + halfPx);
-	vec2 t = fract(baseUV * dimensions);
-	vec4 yMin = mix(minmin, maxmin, t.x);
-	vec4 yMax = mix(minmax, maxmax, t.x);
-	return mix(yMin, yMax, t.y);
-}
+${ [ null,
+	'REPEAT_REPEAT',
+	'REPEAT_CLAMP',
+	'CLAMP_REPEAT',
+].map(wrap => make_GPUIO_BILINEAR_INTERP(wrap)).join('\n') }
 
-vec4 GPUIO_BILINEAR_INTERP_WRAP(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {
-	vec2 baseUV = uv - halfPx;
-	vec4 minmin = GPUIO_TEXTURE_WRAP(sampler, baseUV, wrapType, halfPx);
-	vec4 maxmin = GPUIO_TEXTURE_WRAP(sampler, uv + vec2(halfPx.x, -halfPx.y), wrapType, halfPx);
-	vec4 minmax = GPUIO_TEXTURE_WRAP(sampler, uv + vec2(-halfPx.x, halfPx.y), wrapType, halfPx);
-	vec4 maxmax = GPUIO_TEXTURE_WRAP(sampler, uv + halfPx, wrapType, halfPx);
-	vec2 t = fract(baseUV * dimensions);
-	vec4 yMin = mix(minmin, maxmin, t.x);
-	vec4 yMax = mix(minmax, maxmax, t.x);
-	return mix(yMin, yMax, t.y);
-}
-
-vec4 GPUIO_TEXTURE_FILTER(sampler2D sampler, vec2 uv, vec2 halfPx, vec2 dimensions) {
-	return GPUIO_BILINEAR_INTERP(sampler, uv, halfPx, dimensions);
-}
-
-vec4 GPUIO_TEXTURE_WRAP_FILTER(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {
-	return GPUIO_BILINEAR_INTERP_WRAP(sampler, uv, wrapType, halfPx, dimensions);
-}
-
-vec4 GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {
-	if (uv.x < halfPx.x || 1.0 - uv.x < halfPx.x || uv.y < halfPx.y || 1.0 - uv.y < halfPx.y) {
-		return GPUIO_BILINEAR_INTERP_WRAP(sampler, uv, wrapType, halfPx, dimensions);
-	}
-	return texture(sampler, uv);
-}
-
-vec4 GPUIO_TEXTURE_POLYFILL(sampler2D sampler, int index, vec2 uv) {
-${switchStatementFloat}
-	return texture(sampler, uv);
-}
+${ samplerUniforms.map(( uniform, index) => {
+	return make_GPUIO_TEXTURE_POLYFILL(index, '');
+}).join('\n') }
 #if (__VERSION__ == 300)
-ivec4 GPUIO_TEXTURE_POLYFILL(isampler2D sampler, int index, vec2 uv) {
-${switchStatementInt}
-	return texture(sampler, uv);
-}
-uvec4 GPUIO_TEXTURE_POLYFILL(usampler2D sampler, int index, vec2 uv) {
-${switchStatementInt}
-	return texture(sampler, uv);
-}
+${ ['u', 'i'].map(prefix => {
+	return samplerUniforms.map(( uniform, index) => {
+		return make_GPUIO_TEXTURE_POLYFILL(index, prefix);
+	}).join('\n');
+}).join('\n') }
 #endif
 
 ${shaderSource}`;

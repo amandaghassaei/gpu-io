@@ -713,7 +713,8 @@ export function testFilterWrap(
 	composer.resize(width, height);
 	composer.step({
 		program,
-		input: texture,
+		// This may fail if things change significantly in GPUProgram._setInternalFragmentUniforms.
+		input: { texture, layer: { width, height } as GPULayer },
 		output,
 	});
 

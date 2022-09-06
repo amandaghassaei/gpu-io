@@ -7,6 +7,12 @@ import { GPUProgram } from './GPUProgram';
  */
 declare const _testing: {
     texturePolyfill(shaderSource: string): string;
+    SAMPLER2D_WRAP_REPEAT_UNIFORM: "u_gpuio_wrap_repeat";
+    SAMPLER2D_WRAP_X: "gpuio_wrap_x";
+    SAMPLER2D_WRAP_Y: "gpuio_wrap_y";
+    SAMPLER2D_FILTER: "gpuio_filter";
+    SAMPLER2D_HALF_PX_UNIFORM: "u_gpuio_half_px";
+    SAMPLER2D_DIMENSIONS_UNIFORM: "u_gpuio_dimensions";
     initArrayForType(type: import("./constants").GPULayerType, length: number, halfFloatsAsFloats?: boolean): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
     calcGPULayerSize(size: number | [number, number], name: string, verboseLogging: boolean): {
         width: number;
@@ -76,7 +82,7 @@ declare const _testing: {
     castVaryingToFloat(shaderSource: string): string;
     glsl1VertexOut(shaderSource: string): string;
     glsl1FragmentIn(shaderSource: string): string;
-    getFragmentOutType(shaderSource: string, name: string): "vec2" | "ivec2" | "float" | "int" | "vec3" | "vec4" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
+    getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
     glsl1FragmentOut(shaderSource: string, name: string): string;
     checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): boolean;
     glsl1Texture(shaderSource: string): string;

@@ -41,6 +41,7 @@ import {
 	BOOL_3D_UNIFORM,
 	BOOL_4D_UNIFORM,
 	GLSL3,
+	GPULayerState,
 } from './constants';
 import {
 	compileShader,
@@ -490,9 +491,11 @@ export class GPUProgram {
 	 */
 	_setInternalFragmentUniforms(
 		program: WebGLProgram,
-		width: number,
-		height: number,
+		textures: GPULayerState[],
 	) {
+		// !!!!!!!!!!!!!!
+		// Be sure to update GPULayerHelpers.testFilterWrap if major changes are made to this routine.
+		// Currently only expecting to fetch width, and height from GPULayerState.layer.
 		if (!program) {
 			throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
 		}

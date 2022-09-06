@@ -1,5 +1,5 @@
 import { GPULayer } from './GPULayer';
-import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision } from './constants';
+import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision, GPULayerState } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
@@ -108,6 +108,7 @@ export declare class GPUComposer {
     resize(width: number, height: number): void;
     private _drawSetup;
     private _setBlendMode;
+    private _indexOfLayerInArray;
     private _addLayerToInputs;
     private _passThroughLayerDataFromInputToOutput;
     private _setOutputLayer;
@@ -117,20 +118,20 @@ export declare class GPUComposer {
     private _setUVAttribute;
     step(params: {
         program: GPUProgram;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         shouldBlendAlpha?: boolean;
     }): void;
     stepBoundary(params: {
         program: GPUProgram;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
         shouldBlendAlpha?: boolean;
     }): void;
     stepNonBoundary(params: {
         program: GPUProgram;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         shouldBlendAlpha?: boolean;
     }): void;
@@ -138,7 +139,7 @@ export declare class GPUComposer {
         program: GPUProgram;
         position: [number, number];
         radius: number;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         numSegments?: number;
         shouldBlendAlpha?: boolean;
@@ -148,7 +149,7 @@ export declare class GPUComposer {
         position1: [number, number];
         position2: [number, number];
         thickness: number;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         endCaps?: boolean;
         numCapSegments?: number;
@@ -158,7 +159,7 @@ export declare class GPUComposer {
         program: GPUProgram;
         positions: [number, number][];
         thickness: number;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         closeLoop?: boolean;
         includeUVs?: boolean;
@@ -170,7 +171,7 @@ export declare class GPUComposer {
         positions: Float32Array;
         normals?: Float32Array;
         uvs?: Float32Array;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         count?: number;
         shouldBlendAlpha?: boolean;
@@ -181,7 +182,7 @@ export declare class GPUComposer {
         indices?: Uint16Array | Uint32Array | Int16Array | Int32Array;
         normals?: Float32Array;
         uvs?: Float32Array;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         count?: number;
         closeLoop?: boolean;
@@ -190,7 +191,7 @@ export declare class GPUComposer {
     drawLayerAsPoints(params: {
         positions: GPULayer;
         program?: GPUProgram;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         pointSize?: number;
         count?: number;
@@ -203,7 +204,7 @@ export declare class GPUComposer {
         positions: GPULayer;
         indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array;
         program?: GPUProgram;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         count?: number;
         color?: [number, number, number];
@@ -215,7 +216,7 @@ export declare class GPUComposer {
     drawLayerAsVectorField(params: {
         data: GPULayer;
         program?: GPUProgram;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         vectorSpacing?: number;
         vectorScale?: number;
@@ -224,7 +225,7 @@ export declare class GPUComposer {
     }): void;
     drawLayerMagnitude(params: {
         data: GPULayer;
-        input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         scale?: number;
         color?: [number, number, number];

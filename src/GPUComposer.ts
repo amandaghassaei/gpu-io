@@ -45,6 +45,7 @@ import {
 	PRECISION_HIGH_P,
 	DEFAULT_ERROR_CALLBACK,
 	BOOL,
+	GPULayerState,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -704,7 +705,7 @@ export class GPUComposer {
 		gpuProgram: GPUProgram,
 		program: WebGLProgram,
 		fullscreenRender: boolean,
-		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer,
 	) {
 		const { gl } = this;
@@ -717,16 +718,16 @@ export class GPUComposer {
 
 		// Get a shallow copy of current textures.
 		// This line must come before this.setOutput() as it depends on current internal state.
-		const inputTextures: WebGLTexture[] = [];
+		const inputTextures: GPULayerState[] = [];
 		if (input) {
-			if (input.constructor === WebGLTexture) {
-				inputTextures.push(input as WebGLTexture);
+			if ((input as GPULayerState).layer) {
+				inputTextures.push(input as GPULayerState);
 			} else if (input.constructor === GPULayer) {
 				inputTextures.push((input as GPULayer).currentState);
 			} else {
-				for (let i = 0; i < (input as (GPULayer | WebGLTexture)[]).length; i++) {
-					const layer = (input as (GPULayer | WebGLTexture)[])[i];
-					inputTextures.push((layer as GPULayer).currentState ? (layer as GPULayer).currentState : layer as WebGLTexture)
+				for (let i = 0; i < (input as (GPULayer | GPULayerState)[]).length; i++) {
+					const layer = (input as (GPULayer | GPULayerState)[])[i];
+					inputTextures.push((layer as GPULayer).currentState ? (layer as GPULayer).currentState : layer as GPULayerState);
 				}
 			}
 		}
@@ -737,15 +738,13 @@ export class GPUComposer {
 
 		// Set current program.
 		gl.useProgram(program);
-		const width = output ? output.width : this._width;
-		const height = output ? output.height : this._height;
-		gpuProgram._setInternalFragmentUniforms(program, width, height);
 
 		// Set input textures.
 		for (let i = 0; i < inputTextures.length; i++) {
 			gl.activeTexture(gl.TEXTURE0 + i);
-			gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
+			gl.bindTexture(gl.TEXTURE_2D, inputTextures[i].texture);
 		}
+		gpuProgram._setInternalFragmentUniforms(program, inputTextures);
 	}
 
 	private _setBlendMode(shouldBlendAlpha?: boolean) {
@@ -756,28 +755,30 @@ export class GPUComposer {
 		}
 	}
 
+	private _indexOfLayerInArray(layer: GPULayer, array: (GPULayer | GPULayerState)[]) {
+		return array.findIndex(item => item === layer || (item as GPULayerState).layer === layer);
+	}
+
 	private _addLayerToInputs(
 		layer: GPULayer,
-		input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+		input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 	) {
 		// Add layer to end of input if needed.
-		let _inputLayers = input;
-		if (isArray(_inputLayers)) {
-			const index = (_inputLayers as (GPULayer | WebGLTexture)[]).indexOf(layer);
-			if (index < 0) {
-				(_inputLayers as (GPULayer | WebGLTexture)[]).push(layer);
-			} 
-		} else {
-			if (_inputLayers !== layer) {
-				const previous = _inputLayers;
-				_inputLayers = [];
-				if (previous) (_inputLayers as (GPULayer | WebGLTexture)[]).push(previous);
-				(_inputLayers as (GPULayer | WebGLTexture)[]).push(layer);
-			} else {
-				_inputLayers = [_inputLayers];
-			}
+		// Do this with no mutations.
+		if (input === undefined) {
+			return [layer];
 		}
-		return _inputLayers as (GPULayer | WebGLTexture)[];
+		if (isArray(input)) {
+			// Return input with layer added if needed.
+			if (this._indexOfLayerInArray(layer, (input as (GPULayer | GPULayerState)[])) >= 0) {
+				return input  as (GPULayer | GPULayerState)[];
+			}
+			return [...(input as (GPULayer | GPULayerState)[]), layer];
+		}
+		if (input === layer || (input as GPULayerState).layer === layer) {
+			return [input as GPULayerState];
+		}
+		return [(input as GPULayer | GPULayerState), layer];
 	}
 
 	private _passThroughLayerDataFromInputToOutput(state: GPULayer) {
@@ -792,7 +793,7 @@ export class GPUComposer {
 
 	private _setOutputLayer(
 		fullscreenRender: boolean,
-		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer, // Undefined renders to screen.
 	) {
 		const { gl } = this;
@@ -807,8 +808,8 @@ export class GPUComposer {
 		}
 
 		// Check if output is same as one of input layers.
-		// TODO: do a better job of checking if input is a texture of same GPULayer as output.
-		if (input && ((input === output) || (isArray(input) && (input as (GPULayer | WebGLTexture)[]).indexOf(output) > -1))) {
+		if (input && ((input === output || (input as GPULayerState).layer === output) ||
+			(isArray(input) && this._indexOfLayerInArray(output, input as (GPULayer | GPULayerState)[]) >= 0))) {
 			if (output.numBuffers === 1) {
 				throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
 			}
@@ -870,7 +871,7 @@ export class GPUComposer {
 	step(
 		params: {
 			program: GPUProgram,
-			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			shouldBlendAlpha?: boolean,
 		},
@@ -899,7 +900,7 @@ export class GPUComposer {
 	stepBoundary(
 		params: {
 			program: GPUProgram,
-			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
 			shouldBlendAlpha?: boolean,
@@ -952,7 +953,7 @@ export class GPUComposer {
 	stepNonBoundary(
 		params: {
 			program: GPUProgram,
-			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			shouldBlendAlpha?: boolean,
 		},
@@ -986,7 +987,7 @@ export class GPUComposer {
 			program: GPUProgram,
 			position: [number, number], // Position is in units of pixels.
 			radius: number, // Radius is in units of pixels.
-			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			numSegments?: number,
 			shouldBlendAlpha?: boolean,
@@ -1023,7 +1024,7 @@ export class GPUComposer {
 			position1: [number, number], // Position is in units of pixels.
 			position2: [number, number], // Position is in units of pixels.
 			thickness: number, // Thickness is in units of pixels.
-			input?:  (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			endCaps?: boolean,
 			numCapSegments?: number,
@@ -1084,7 +1085,7 @@ export class GPUComposer {
 			program: GPUProgram,
 			positions: [number, number][],
 			thickness: number, // Thickness of line is in units of pixels.
-			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			closeLoop?: boolean,
 			includeUVs?: boolean,
@@ -1273,7 +1274,7 @@ export class GPUComposer {
 			positions: Float32Array,
 			normals?: Float32Array,
 			uvs?: Float32Array,
-			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			count?: number,
 			shouldBlendAlpha?: boolean,
@@ -1322,7 +1323,7 @@ export class GPUComposer {
 		indices?: Uint16Array | Uint32Array | Int16Array | Int32Array,
 		normals?: Float32Array,
 		uvs?: Float32Array,
-		input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer, // Undefined renders to screen.
 		count?: number,
 		closeLoop?: boolean,
@@ -1391,7 +1392,7 @@ export class GPUComposer {
 		params: {
 			positions: GPULayer, // Positions in units of pixels.
 			program?: GPUProgram,
-			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer,
 			pointSize?: number,
 			count?: number,
@@ -1429,7 +1430,7 @@ export class GPUComposer {
 		this._drawSetup(program, glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
+		program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
 		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, BOOL);
@@ -1460,7 +1461,7 @@ export class GPUComposer {
 			positions: GPULayer,
 			indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
 			program?: GPUProgram,
-			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer,
 			count?: number,
 			color?: [number, number, number],
@@ -1501,7 +1502,7 @@ export class GPUComposer {
 		const count = params.count ? params.count : indices.length;
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), INT);
+		program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
 		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
 		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, BOOL);
@@ -1548,7 +1549,7 @@ export class GPUComposer {
 		params: {
 			data: GPULayer,
 			program?: GPUProgram,
-			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer,
 			vectorSpacing?: number,
 			vectorScale?: number,
@@ -1584,7 +1585,7 @@ export class GPUComposer {
 		this._drawSetup(program, glProgram, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), INT);
+		program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), INT);
 		// Set default scale.
 		const vectorScale = params.vectorScale || 1;
 		program._setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / _width, vectorScale / _height], FLOAT);
@@ -1610,7 +1611,7 @@ export class GPUComposer {
 	drawLayerMagnitude(
 		params: {
 			data: GPULayer,
-			input?: (GPULayer | WebGLTexture)[] | GPULayer | WebGLTexture,
+			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer,
 			scale?: number,
 			color?: [number, number, number],
@@ -1635,7 +1636,7 @@ export class GPUComposer {
 		this._drawSetup(program, glProgram, true, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), INT);
+		program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());

@@ -1,5 +1,5 @@
 import { GPUComposer } from './GPUComposer';
-import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap } from './constants';
+import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap, GPULayerState } from './constants';
 import { Texture } from 'three';
 export declare class GPULayer {
     private readonly _composer;
@@ -148,17 +148,17 @@ export declare class GPULayer {
      */
     incrementBufferIndex(): void;
     /**
-     * Get the current state as a GLTexture.
+     * Get the current state as a GPULayerState object.
      */
-    get currentState(): WebGLTexture;
+    get currentState(): GPULayerState;
     /**
-     * Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
+     * Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
      */
-    get lastState(): WebGLTexture;
+    get lastState(): GPULayerState;
     /**
-     * Get the state at a specified index as a GLTexture.
+     * Get the state at a specified index as a GPULayerState object.
      */
-    getStateAtIndex(index: number): WebGLTexture;
+    getStateAtIndex(index: number): GPULayerState;
     /**
      * Binds this GPULayer's current framebuffer as the draw target.
      */

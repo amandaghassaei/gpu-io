@@ -34,6 +34,7 @@ import {
 	validFilters,
 	validWraps,
 	validDataTypes,
+	GPULayerState,
  } from './constants';
 import {
 	readyToRead,
@@ -518,14 +519,14 @@ export class GPULayer {
 	}
 
 	/**
-	 * Get the current state as a GLTexture.
+	 * Get the current state as a GPULayerState object.
 	 */
 	get currentState() {
 		return this.getStateAtIndex(this.bufferIndex);
 	}
 
 	/**
-	 * Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
+	 * Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
 	 */
 	get lastState() {
 		if (this.numBuffers === 1) {
@@ -535,9 +536,9 @@ export class GPULayer {
 	}
 
 	/**
-	 * Get the state at a specified index as a GLTexture.
+	 * Get the state at a specified index as a GPULayerState object.
 	 */
-	getStateAtIndex(index: number) {
+	getStateAtIndex(index: number): GPULayerState {
 		const { numBuffers, _textureOverrides, _buffers } = this;
 		if (index < 0 && index > -numBuffers) {
 			index += numBuffers; // Slightly negative numbers are ok.
@@ -551,8 +552,11 @@ export class GPULayer {
 				index = index % numBuffers;
 			}
 		}
-		if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
-		return _buffers[index].texture;
+		// if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
+		return {
+			texture: _buffers[index].texture,
+			layer: this,
+		};
 	}
 
 	/**
@@ -593,7 +597,7 @@ export class GPULayer {
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
 		for (let i = startIndex; i < endIndex; i++) {
-			const texture = this.getStateAtIndex(i);
+			const { texture } = this.getStateAtIndex(i);
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 			gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
 		}
@@ -688,7 +692,7 @@ export class GPULayer {
 				}
 			}
 			for (let i = startIndex; i < endIndex; i++) {
-				const texture = this.getStateAtIndex(i);
+				const { texture } = this.getStateAtIndex(i);
 				gl.bindTexture(gl.TEXTURE_2D, texture);
 				gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, array);
 			}

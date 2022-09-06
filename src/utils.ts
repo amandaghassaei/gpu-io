@@ -201,7 +201,7 @@ export function compileShader(
 	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!success) {
 		// Something went wrong during compilation - print shader source (with line number) and the error.
-		console.log(fullShaderSource.split('\n').map((line, i) => `${i + 1}\t${line}`).join('\n'));
+		console.log(fullShaderSource.split('\n').map((line, i) => `${i + 2}\t${line}`).join('\n'));
 		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'} shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
 		return null;
 	}

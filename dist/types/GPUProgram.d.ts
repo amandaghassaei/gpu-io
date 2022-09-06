@@ -1,5 +1,5 @@
 import { GPUComposer } from './GPUComposer';
-import { UniformType, UniformValue, CompileTimeVars, UniformParams } from './constants';
+import { UniformType, UniformValue, CompileTimeVars, UniformParams, GPULayerState } from './constants';
 export declare class GPUProgram {
     private readonly _composer;
     /**
@@ -86,7 +86,7 @@ export declare class GPUProgram {
      * Set internal fragment shader uniforms for GPUProgram.
      * @private
      */
-    _setInternalFragmentUniforms(program: WebGLProgram, width: number, height: number): void;
+    _setInternalFragmentUniforms(program: WebGLProgram, textures: GPULayerState[]): void;
     /**
      * Set vertex shader uniform for GPUProgram.
      * @private

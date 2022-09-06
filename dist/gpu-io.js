@@ -2749,7 +2749,7 @@ var GPUComposer = /** @class */ (function () {
         // This line must come before this.setOutput() as it depends on current internal state.
         var inputTextures = [];
         if (input) {
-            if (input.constructor === WebGLTexture) {
+            if (input.layer) {
                 inputTextures.push(input);
             }
             else if (input.constructor === GPULayer_1.GPULayer) {
@@ -2767,14 +2767,12 @@ var GPUComposer = /** @class */ (function () {
         this._setOutputLayer(fullscreenRender, input, output);
         // Set current program.
         gl.useProgram(program);
-        var width = output ? output.width : this._width;
-        var height = output ? output.height : this._height;
-        gpuProgram._setInternalFragmentUniforms(program, width, height);
         // Set input textures.
         for (var i = 0; i < inputTextures.length; i++) {
             gl.activeTexture(gl.TEXTURE0 + i);
-            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i]);
+            gl.bindTexture(gl.TEXTURE_2D, inputTextures[i].texture);
         }
+        gpuProgram._setInternalFragmentUniforms(program, inputTextures);
     };
     GPUComposer.prototype._setBlendMode = function (shouldBlendAlpha) {
         var gl = this.gl;
@@ -2783,28 +2781,26 @@ var GPUComposer = /** @class */ (function () {
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
     };
+    GPUComposer.prototype._indexOfLayerInArray = function (layer, array) {
+        return array.findIndex(function (item) { return item === layer || item.layer === layer; });
+    };
     GPUComposer.prototype._addLayerToInputs = function (layer, input) {
         // Add layer to end of input if needed.
-        var _inputLayers = input;
-        if ((0, checks_1.isArray)(_inputLayers)) {
-            var index = _inputLayers.indexOf(layer);
-            if (index < 0) {
-                _inputLayers.push(layer);
-            }
+        // Do this with no mutations.
+        if (input === undefined) {
+            return [layer];
         }
-        else {
-            if (_inputLayers !== layer) {
-                var previous = _inputLayers;
-                _inputLayers = [];
-                if (previous)
-                    _inputLayers.push(previous);
-                _inputLayers.push(layer);
+        if ((0, checks_1.isArray)(input)) {
+            // Return input with layer added if needed.
+            if (this._indexOfLayerInArray(layer, input) >= 0) {
+                return input;
             }
-            else {
-                _inputLayers = [_inputLayers];
-            }
+            return __spreadArray(__spreadArray([], input, true), [layer], false);
         }
-        return _inputLayers;
+        if (input === layer || input.layer === layer) {
+            return [input];
+        }
+        return [input, layer];
     };
     GPUComposer.prototype._passThroughLayerDataFromInputToOutput = function (state) {
         // TODO: figure out the fastest way to copy a texture.
@@ -2826,8 +2822,8 @@ var GPUComposer = /** @class */ (function () {
             return;
         }
         // Check if output is same as one of input layers.
-        // TODO: do a better job of checking if input is a texture of same GPULayer as output.
-        if (input && ((input === output) || ((0, checks_1.isArray)(input) && input.indexOf(output) > -1))) {
+        if (input && ((input === output || input.layer === output) ||
+            ((0, checks_1.isArray)(input) && this._indexOfLayerInArray(output, input) >= 0))) {
             if (output.numBuffers === 1) {
                 throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
             }
@@ -3300,7 +3296,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
         program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, constants_1.BOOL);
@@ -3351,7 +3347,7 @@ var GPUComposer = /** @class */ (function () {
         var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(params.count || positions.length);
         var count = params.count ? params.count : indices.length;
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_positions', input.indexOf(positions), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
         program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, constants_1.BOOL);
@@ -3421,7 +3417,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         this._drawSetup(program, glProgram, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_vectors', input.indexOf(data), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), constants_1.INT);
         // Set default scale.
         var vectorScale = params.vectorScale || 1;
         program._setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / _width, vectorScale / _height], constants_1.FLOAT);
@@ -3457,7 +3453,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         this._drawSetup(program, glProgram, true, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_data', input.indexOf(data), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
@@ -3909,7 +3905,7 @@ var GPULayer = /** @class */ (function () {
     };
     Object.defineProperty(GPULayer.prototype, "currentState", {
         /**
-         * Get the current state as a GLTexture.
+         * Get the current state as a GPULayerState object.
          */
         get: function () {
             return this.getStateAtIndex(this.bufferIndex);
@@ -3919,7 +3915,7 @@ var GPULayer = /** @class */ (function () {
     });
     Object.defineProperty(GPULayer.prototype, "lastState", {
         /**
-         * Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
+         * Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
          */
         get: function () {
             if (this.numBuffers === 1) {
@@ -3931,7 +3927,7 @@ var GPULayer = /** @class */ (function () {
         configurable: true
     });
     /**
-     * Get the state at a specified index as a GLTexture.
+     * Get the state at a specified index as a GPULayerState object.
      */
     GPULayer.prototype.getStateAtIndex = function (index) {
         var _a = this, numBuffers = _a.numBuffers, _textureOverrides = _a._textureOverrides, _buffers = _a._buffers;
@@ -3948,9 +3944,11 @@ var GPULayer = /** @class */ (function () {
                 index = index % numBuffers;
             }
         }
-        if (_textureOverrides && _textureOverrides[index])
-            return _textureOverrides[index];
-        return _buffers[index].texture;
+        // if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
+        return {
+            texture: _buffers[index].texture,
+            layer: this,
+        };
     };
     /**
      * Binds this GPULayer's current framebuffer as the draw target.
@@ -3986,7 +3984,7 @@ var GPULayer = /** @class */ (function () {
         var startIndex = applyToAllBuffers ? 0 : bufferIndex;
         var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
         for (var i = startIndex; i < endIndex; i++) {
-            var texture = this.getStateAtIndex(i);
+            var texture = this.getStateAtIndex(i).texture;
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
         }
@@ -4079,7 +4077,7 @@ var GPULayer = /** @class */ (function () {
                 }
             }
             for (var i = startIndex; i < endIndex; i++) {
-                var texture = this.getStateAtIndex(i);
+                var texture = this.getStateAtIndex(i).texture;
                 gl.bindTexture(gl.TEXTURE_2D, texture);
                 gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, array);
             }
@@ -4955,7 +4953,8 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     composer.resize(width, height);
     composer.step({
         program: program,
-        input: texture,
+        // This may fail if things change significantly in GPUProgram._setInternalFragmentUniforms.
+        input: { texture: texture, layer: { width: width, height: height } },
         output: output,
     });
     var filtered = output.getValues();
@@ -5653,7 +5652,10 @@ var GPUProgram = /** @class */ (function () {
      * Set internal fragment shader uniforms for GPUProgram.
      * @private
      */
-    GPUProgram.prototype._setInternalFragmentUniforms = function (program, width, height) {
+    GPUProgram.prototype._setInternalFragmentUniforms = function (program, textures) {
+        // !!!!!!!!!!!!!!
+        // Be sure to update GPULayerHelpers.testFilterWrap if major changes are made to this routine.
+        // Currently only expecting to fetch width, and height from GPULayerState.layer.
         if (!program) {
             throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
         }
@@ -5975,10 +5977,10 @@ exports.isBoolean = isBoolean;
 
 "use strict";
 
+// Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = void 0;
-// Data types.
 /**
  * Half float data type.
  */
@@ -6418,10 +6420,9 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.texturePolyfill = void 0;
+exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = exports.SAMPLER2D_WRAP_REPEAT_UNIFORM = void 0;
 var constants_1 = __webpack_require__(601);
 var regex_1 = __webpack_require__(126);
-var checks_1 = __webpack_require__(707);
 /**
  * Wrap/filter type to use in polyfill.
  * (0) No polyfills.
@@ -6430,13 +6431,21 @@ var checks_1 = __webpack_require__(707);
  * (3) Wrap and filtering need polyfill.
  * (4) Filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
  */
-var SAMPLER2D_WRAP_REPEAT_UNIFORM = 'u_gpuio_wrap_repeat';
+exports.SAMPLER2D_WRAP_REPEAT_UNIFORM = 'u_gpuio_wrap_repeat';
 /**
  * Wrap type to use in polyfill.
  * (0) CLAMP_TO_EDGE filtering.
  * (1) REPEAT filtering.
+ * @private
  */
-var SAMPLER2D_WRAP_UNIFORM = 'u_gpuio_wrap';
+exports.SAMPLER2D_WRAP_X = 'gpuio_wrap_x';
+/**
+ * Wrap type to use in polyfill.
+ * (0) CLAMP_TO_EDGE filtering.
+ * (1) REPEAT filtering.
+ * @private
+ */
+exports.SAMPLER2D_WRAP_Y = 'gpuio_wrap_y';
 /**
  * Filter type to use in polyfill.
  * For now we are not using this, but will be needed if more filters added later.
@@ -6444,25 +6453,34 @@ var SAMPLER2D_WRAP_UNIFORM = 'u_gpuio_wrap';
  * (0) LINEAR filtering.
  * @private
  */
-var SAMPLER2D_FILTER_UNIFORM = 'u_gpuio_filter';
+exports.SAMPLER2D_FILTER = 'gpuio_filter';
 /**
  * UV size of half a pixel for this texture.
  * @private
  */
-var SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
+exports.SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
 /**
  * Dimensions of texture
  * @private
  */
-var SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
+exports.SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
+function wrapEnum(wrap) {
+    if (wrap === constants_1.CLAMP_TO_EDGE)
+        return '0';
+    return '1'; // REPEAT.
+}
+function filterEnum(filter) {
+    if (filter === constants_1.NEAREST)
+        return '0';
+    return '1'; // LINEAR.
+}
 /**
  * Override texture function to perform repeat wrap.
- * Value of u_gpuio_wrap_repeat:
+ * Value of SAMPLER2D_WRAP_REPEAT_UNIFORM:
  * (0) No polyfills.
  * (1) GPUIO_TEXTURE_WRAP -> filtering is NEAREST and wrap needs polyfill.
  * (2) GPUIO_TEXTURE_FILTER -> wrap is supported, but filtering needs polyfill.
  * (3) GPUIO_TEXTURE_WRAP_FILTER -> wrap and filtering need polyfill.
- * (4) GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY -> filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
  * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
  * @private
  */
@@ -6470,36 +6488,48 @@ function texturePolyfill(shaderSource) {
     var textureCalls = shaderSource.match(/\btexture\(/g);
     if (!textureCalls || textureCalls.length === 0)
         return shaderSource;
-    var samplerUniformNames = (0, regex_1.getSampler2DsInProgram)(shaderSource);
-    if (samplerUniformNames.length === 0)
+    var samplerUniforms = (0, regex_1.getSampler2DsInProgram)(shaderSource);
+    if (samplerUniforms.length === 0)
         return shaderSource;
-    samplerUniformNames.forEach(function (samplerName, i) {
-        var regex = new RegExp("\\btexture\\(\\s?".concat(samplerName, "\\b"), 'gs');
-        shaderSource = shaderSource.replace(regex, "GPUIO_TEXTURE_POLYFILL(".concat(samplerName, ", ").concat(i));
+    samplerUniforms.forEach(function (name, i) {
+        var regex = new RegExp("\\btexture\\(\\s?".concat(name, "\\b"), 'gs');
+        shaderSource = shaderSource.replace(regex, "GPUIO_TEXTURE_POLYFILL".concat(i, "(").concat(name));
     });
     var remainingTextureCalls = shaderSource.match(/\btexture\(/g);
     if (remainingTextureCalls === null || remainingTextureCalls === void 0 ? void 0 : remainingTextureCalls.length) {
         console.warn('Fragment shader polyfill has missed some calls to texture().', shaderSource);
     }
-    // Switch is not actually allowed in GLSL1, so use large if statement.
-    var switchStatementFloat = '';
-    var switchStatementInt = '';
-    var samplerParamsUniforms = {};
-    for (var i = 0; i < samplerUniformNames.length; i++) {
-        samplerParamsUniforms["".concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i)] = { value: 0, type: constants_1.INT };
-        samplerParamsUniforms["".concat(SAMPLER2D_WRAP_UNIFORM).concat(i)] = { value: [0, 0], type: constants_1.INT };
-        samplerParamsUniforms["".concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i)] = { value: [0, 0], type: constants_1.FLOAT };
-        samplerParamsUniforms["".concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i)] = { value: [0, 0], type: constants_1.FLOAT };
-        // samplerUniforms[`${SAMPLER2D_FILTER_UNIFORM}${i}`] = 0;
-        switchStatementFloat += "\n\t".concat(i > 0 ? 'else ' : '', "if (index == ").concat(i, ") {\n\t\tif (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 0) {\n\t\t\treturn texture(sampler, uv);\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 1) {\n\t\t\treturn GPUIO_TEXTURE_WRAP(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 2) {\n\t\t\treturn GPUIO_TEXTURE_FILTER(sampler, uv, ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 3) {\n\t\t\treturn GPUIO_TEXTURE_WRAP_FILTER(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 4) {\n\t\t\treturn GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t}\n\t}\n");
-        switchStatementInt += "\n\t".concat(i > 0 ? 'else ' : '', "if (index == ").concat(i, ") {\n\t\tif (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 0) {\n\t\t\treturn texture(sampler, uv);\n\t\t} else if (").concat(SAMPLER2D_WRAP_REPEAT_UNIFORM).concat(i, " == 1) {\n\t\t\treturn GPUIO_TEXTURE_WRAP(sampler, uv, ").concat(SAMPLER2D_WRAP_UNIFORM).concat(i, ", ").concat(SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t}\n\t}\n");
+    var polyfillUniforms = {};
+    var polyfillDefines = {};
+    for (var i = 0; i < samplerUniforms.length; i++) {
+        polyfillUniforms["".concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i)] = 'vec2';
+        polyfillUniforms["".concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i)] = 'vec2';
+        polyfillDefines["".concat(exports.SAMPLER2D_WRAP_X).concat(i)] = '0';
+        polyfillDefines["".concat(exports.SAMPLER2D_WRAP_Y).concat(i)] = '0';
+        polyfillDefines["".concat(exports.SAMPLER2D_FILTER).concat(i)] = '0';
     }
-    return "\n".concat(Object.keys(samplerParamsUniforms).map(function (key) {
-        var type = (0, checks_1.isArray)(samplerParamsUniforms[key].value) ?
-            (samplerParamsUniforms[key].type === constants_1.FLOAT ? 'vec2' : 'ivec2') :
-            (samplerParamsUniforms[key].type === constants_1.FLOAT ? 'float' : 'int');
-        return "uniform ".concat(type, " ").concat(key, ";");
-    }).join('\n'), "\n\nfloat GPUIO_WRAP_UV_COORD(float coord, int wrapType, float halfPx) {\n\tif (wrapType == 0) {\n\t\tif (coord < halfPx) coord = halfPx;\n\t\telse if (coord > 1.0 - halfPx) coord = 1.0 - halfPx;\n\t} else {\n\t\tif (coord < 0.0) coord += ceil(abs(coord));\n\t\telse if (coord >= 1.0) coord -= floor(coord);\n\t}\n\treturn coord;\n}\n\nvec4 GPUIO_TEXTURE_WRAP(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\n#if (__VERSION__ == 300)\nuvec4 GPUIO_TEXTURE_WRAP(usampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\nivec4 GPUIO_TEXTURE_WRAP(isampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_UV_COORD(uv.x, wrapType.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_UV_COORD(uv.y, wrapType.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\n#endif\n\nvec4 GPUIO_BILINEAR_INTERP(sampler2D sampler, vec2 uv, vec2 halfPx, vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = texture(sampler, baseUV);\n\tvec4 maxmin = texture(sampler, uv + vec2(halfPx.x, -halfPx.y));\n\tvec4 minmax = texture(sampler, uv + vec2(-halfPx.x, halfPx.y));\n\tvec4 maxmax = texture(sampler, uv + halfPx);\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n\nvec4 GPUIO_BILINEAR_INTERP_WRAP(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = GPUIO_TEXTURE_WRAP(sampler, baseUV, wrapType, halfPx);\n\tvec4 maxmin = GPUIO_TEXTURE_WRAP(sampler, uv + vec2(halfPx.x, -halfPx.y), wrapType, halfPx);\n\tvec4 minmax = GPUIO_TEXTURE_WRAP(sampler, uv + vec2(-halfPx.x, halfPx.y), wrapType, halfPx);\n\tvec4 maxmax = GPUIO_TEXTURE_WRAP(sampler, uv + halfPx, wrapType, halfPx);\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n\nvec4 GPUIO_TEXTURE_FILTER(sampler2D sampler, vec2 uv, vec2 halfPx, vec2 dimensions) {\n\treturn GPUIO_BILINEAR_INTERP(sampler, uv, halfPx, dimensions);\n}\n\nvec4 GPUIO_TEXTURE_WRAP_FILTER(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {\n\treturn GPUIO_BILINEAR_INTERP_WRAP(sampler, uv, wrapType, halfPx, dimensions);\n}\n\nvec4 GPUIO_TEXTURE_WRAP_FILTER_BOUNDARY(sampler2D sampler, vec2 uv, ivec2 wrapType, vec2 halfPx, vec2 dimensions) {\n\tif (uv.x < halfPx.x || 1.0 - uv.x < halfPx.x || uv.y < halfPx.y || 1.0 - uv.y < halfPx.y) {\n\t\treturn GPUIO_BILINEAR_INTERP_WRAP(sampler, uv, wrapType, halfPx, dimensions);\n\t}\n\treturn texture(sampler, uv);\n}\n\nvec4 GPUIO_TEXTURE_POLYFILL(sampler2D sampler, int index, vec2 uv) {\n").concat(switchStatementFloat, "\n\treturn texture(sampler, uv);\n}\n#if (__VERSION__ == 300)\nivec4 GPUIO_TEXTURE_POLYFILL(isampler2D sampler, int index, vec2 uv) {\n").concat(switchStatementInt, "\n\treturn texture(sampler, uv);\n}\nuvec4 GPUIO_TEXTURE_POLYFILL(usampler2D sampler, int index, vec2 uv) {\n").concat(switchStatementInt, "\n\treturn texture(sampler, uv);\n}\n#endif\n\n").concat(shaderSource);
+    function make_GPUIO_TEXTURE_POLYFILL(i, prefix) {
+        return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_POLYFILL").concat(i, "(const ").concat(prefix, "sampler2D sampler, vec2 uv) {\n\t#if (").concat(exports.SAMPLER2D_FILTER).concat(i, " == 0)\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn texture(sampler, uv);\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#else\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#endif\n}\n");
+    }
+    function make_GPUIO_TEXTURE_WRAP(prefix) {
+        return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);\n\tfloat v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);\n\treturn texture(sampler, vec2(u, v));\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);\n\tfloat v = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);\n\treturn texture(sampler, vec2(u, v));\n}\n");
+    }
+    function make_GPUIO_BILINEAR_INTERP(wrapType) {
+        var lookupFunction = wrapType ? "GPUIO_TEXTURE_WRAP_".concat(wrapType) : 'texture';
+        var extraParams = wrapType ? ", halfPx" : '';
+        return "\nvec4 GPUIO_TEXTURE_BILINEAR_INTERP".concat(wrapType ? "_WRAP_".concat(wrapType) : '', "(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = ").concat(lookupFunction, "(sampler, baseUV").concat(extraParams, ");\n\tvec4 maxmin = ").concat(lookupFunction, "(sampler, uv + vec2(halfPx.x, -halfPx.y)").concat(extraParams, ");\n\tvec4 minmax = ").concat(lookupFunction, "(sampler, uv + vec2(-halfPx.x, halfPx.y)").concat(extraParams, ");\n\tvec4 maxmax = ").concat(lookupFunction, "(sampler, uv + halfPx").concat(extraParams, ");\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n");
+    }
+    return "\n".concat(Object.keys(polyfillDefines).map(function (key) { return "#define ".concat(key, " ").concat(polyfillDefines[key]); }).join('\n'), "\n").concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nfloat GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n\treturn max(halfPx, min(1.0 - halfPx, coord));\n}\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
+        'REPEAT_REPEAT',
+        'REPEAT_CLAMP',
+        'CLAMP_REPEAT',
+    ].map(function (wrap) { return make_GPUIO_BILINEAR_INTERP(wrap); }).join('\n'), "\n\n").concat(samplerUniforms.map(function (uniform, index) {
+        return make_GPUIO_TEXTURE_POLYFILL(index, '');
+    }).join('\n'), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) {
+        return samplerUniforms.map(function (uniform, index) {
+            return make_GPUIO_TEXTURE_POLYFILL(index, prefix);
+        }).join('\n');
+    }).join('\n'), "\n#endif\n\n").concat(shaderSource);
 }
 exports.texturePolyfill = texturePolyfill;
 
@@ -6961,7 +6991,7 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print shader source (with line number) and the error.
-        console.log(fullShaderSource.split('\n').map(function (line, i) { return "".concat(i + 1, "\t").concat(line); }).join('\n'));
+        console.log(fullShaderSource.split('\n').map(function (line, i) { return "".concat(i + 2, "\t").concat(line); }).join('\n'));
         errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', " shader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
         return null;
     }

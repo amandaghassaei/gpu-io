@@ -35,7 +35,7 @@ export declare function glsl1FragmentIn(shaderSource: string): string;
  * Only exported for testing.
  * @private
  */
-export declare function getFragmentOutType(shaderSource: string, name: string): "vec2" | "ivec2" | "float" | "int" | "vec3" | "vec4" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
+export declare function getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
 /**
  * Convert out_fragColor to gl_FragColor.
  * @private

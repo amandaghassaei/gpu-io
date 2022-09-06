@@ -1,4 +1,7 @@
 // Data types.
+
+import { GPULayer } from './GPULayer';
+
 /**
  * Half float data type.
  */
@@ -101,6 +104,14 @@ export type GPULayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;// | typeof MIRR
  * @private
  */
 export const validWraps = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
+/**
+ * GPULayer state.
+ * @private
+ */
+export type GPULayerState = {
+	texture: WebGLTexture,
+	layer: GPULayer,
+}
 
 
 // TODO: change this?

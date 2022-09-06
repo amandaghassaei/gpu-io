@@ -1,3 +1,4 @@
+import { GPULayer } from './GPULayer';
 /**
  * Half float data type.
  */
@@ -61,7 +62,7 @@ export declare type GPULayerArray = Float32Array | Uint8Array | Int8Array | Uint
 /**
  * @private
  */
-export declare const validArrayTypes: (ArrayConstructor | Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor | Int8ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor)[];
+export declare const validArrayTypes: (Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor | Int8ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor | ArrayConstructor)[];
 /**
  * GPULayer data types.
  */
@@ -93,6 +94,14 @@ export declare type GPULayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;
  * @private
  */
 export declare const validWraps: string[];
+/**
+ * GPULayer state.
+ * @private
+ */
+export declare type GPULayerState = {
+    texture: WebGLTexture;
+    layer: GPULayer;
+};
 /**
  * @private
  */
