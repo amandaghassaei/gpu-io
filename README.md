@@ -44,10 +44,16 @@ import { GPUComposer, GPULayer, GPUProgram } from 'gpu-io';
 
 ### Import into HTML
 
-*OR* you can add [gpu-io.js](./dist/gpu-io.js) to your html directly:
+*OR* you can add [gpu-io.js](https://raw.githubusercontent.com/amandaghassaei/gpu-io/main/dist/gpu-io.js) or [gpu-io.min.js](https://raw.githubusercontent.com/amandaghassaei/gpu-io/main/dist/gpu-io.min.js) to your html directly:
 
 ```html
-<script src="gpu-io.js"></script>
+<html>
+  <head>
+    <script src="gpu-io.js"></script>
+  </head>
+  <body>
+  </body>
+</html>
 ```
 
 GPUIO will be accessible globally:
@@ -58,10 +64,12 @@ const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
 
 ## API
 
-Full API documentation can be found in the [docs/](./docs/)
+Full API documentation can be found in the [docs/](https://github.com/amandaghassaei/gpu-io/tree/main/docs)
 
 
 ## Examples
+
+Source code for all examples can be found in [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
 
 - [Conway's Game of Life](http://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
 - [Physarum Transport Network](http://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
@@ -187,7 +195,7 @@ My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially laun
 
 ### Precision
 
-By default all shaders in this library are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.glsl](./src/glsl/common/precision.glsl).
+By default all shaders in this library are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.glsl](https://github.com/amandaghassaei/gpu-io/blob/main/src/glsl/common/precision.glsl).
 
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
 ```js
@@ -289,13 +297,13 @@ npm run build
 
 ### Testing
 
-I'm using mocha + karma + chai + headless Chrome to test the WebGL components of this library, following the setup described in [Automated testing with Headless Chrome](https://developer.chrome.com/blog/headless-karma-mocha-chai/).  Those tests are located in [tests/mocha/](./tests/mocha/).  To run the automated tests, run:
+I'm using mocha + karma + chai + headless Chrome to test the WebGL components of this library, following the setup described in [Automated testing with Headless Chrome](https://developer.chrome.com/blog/headless-karma-mocha-chai/).  Those tests are located in [tests/mocha/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/mocha/).  To run the automated tests, run:
 
 ```
 npm run test
 ```
 
-I've also included a few html pages (in the [tests/browser/](./tests/browser/) directory) for testing various functions of this library in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
+I've also included a few html pages (in the [tests/browser/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/browser/) directory) for testing various functions of this library in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
 
 To run these tests locally:
 
