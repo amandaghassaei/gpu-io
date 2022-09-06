@@ -6,11 +6,13 @@ import { GPUProgram } from './GPUProgram';
  * @private
  */
 declare const _testing: {
-    texturePolyfill(shaderSource: string): string;
-    SAMPLER2D_WRAP_REPEAT_UNIFORM: "u_gpuio_wrap_repeat";
-    SAMPLER2D_WRAP_X: "gpuio_wrap_x";
-    SAMPLER2D_WRAP_Y: "gpuio_wrap_y";
-    SAMPLER2D_FILTER: "gpuio_filter";
+    texturePolyfill(shaderSource: string): {
+        shaderSource: string;
+        samplerUniforms: string[];
+    };
+    SAMPLER2D_WRAP_X: "GPUIO_WRAP_X";
+    SAMPLER2D_WRAP_Y: "GPUIO_WRAP_Y";
+    SAMPLER2D_FILTER: "GPUIO_FILTER";
     SAMPLER2D_HALF_PX_UNIFORM: "u_gpuio_half_px";
     SAMPLER2D_DIMENSIONS_UNIFORM: "u_gpuio_dimensions";
     initArrayForType(type: import("./constants").GPULayerType, length: number, halfFloatsAsFloats?: boolean): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;

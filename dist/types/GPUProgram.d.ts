@@ -1,5 +1,5 @@
 import { GPUComposer } from './GPUComposer';
-import { UniformType, UniformValue, CompileTimeVars, UniformParams, GPULayerState } from './constants';
+import { UniformType, UniformValue, CompileTimeVars, PROGRAM_NAME_INTERNAL, UniformParams, GPULayerState } from './constants';
 export declare class GPUProgram {
     private readonly _composer;
     /**
@@ -12,6 +12,7 @@ export declare class GPUProgram {
     private readonly _uniforms;
     private readonly _programs;
     private readonly _programsKeyLookup;
+    private readonly _samplerUniformsIndices;
     /**
      * Create a GPUProgram.
      * @param composer - The current GPUComposer instance.
@@ -37,39 +38,7 @@ export declare class GPUProgram {
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    private _getProgramWithName;
-    /**
-     * @private
-     */
-    get _defaultProgram(): WebGLProgram | undefined;
-    /**
-     * @private
-     */
-    get _defaultProgramWithUV(): WebGLProgram | undefined;
-    /**
-     * @private
-     */
-    get _defaultProgramWithNormal(): WebGLProgram | undefined;
-    /**
-     * @private
-     */
-    get _defaultProgramWithUVNormal(): WebGLProgram | undefined;
-    /**
-     * @private
-     */
-    get _segmentProgram(): WebGLProgram | undefined;
-    /**
-     * @private
-     */
-    get _layerPointsProgram(): WebGLProgram | undefined;
-    /**
-     * @private
-     */
-    get _layerVectorFieldProgram(): WebGLProgram | undefined;
-    /**
-     * @private
-     */
-    get _layerLinesProgram(): WebGLProgram | undefined;
+    _getProgramWithName(name: PROGRAM_NAME_INTERNAL, input: GPULayerState[]): WebGLProgram | undefined;
     /**
      * Set uniform for GLProgram.
      * @private
@@ -86,7 +55,7 @@ export declare class GPUProgram {
      * Set internal fragment shader uniforms for GPUProgram.
      * @private
      */
-    _setInternalFragmentUniforms(program: WebGLProgram, textures: GPULayerState[]): void;
+    _setInternalFragmentUniforms(program: WebGLProgram, input: GPULayerState[]): void;
     /**
      * Set vertex shader uniform for GPUProgram.
      * @private

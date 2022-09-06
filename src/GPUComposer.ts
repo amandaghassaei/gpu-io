@@ -703,21 +703,17 @@ export class GPUComposer {
 
 	private _drawSetup(
 		gpuProgram: GPUProgram,
-		program: WebGLProgram,
+		programName: PROGRAM_NAME_INTERNAL,
 		fullscreenRender: boolean,
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer,
 	) {
 		const { gl } = this;
-		// Check if we are in an error state.
-		if (!program) {
-			return;
-		}
 
 		// CAUTION: the order of these next few lines is important.
 
 		// Get a shallow copy of current textures.
-		// This line must come before this.setOutput() as it depends on current internal state.
+		// This line must come before this._setOutputLayer() as it depends on current internal state.
 		const inputTextures: GPULayerState[] = [];
 		if (input) {
 			if ((input as GPULayerState).layer) {
@@ -732,6 +728,8 @@ export class GPUComposer {
 			}
 		}
 
+		const program = gpuProgram._getProgramWithName(programName, inputTextures)!;
+
 		// Set output framebuffer.
 		// This may modify WebGL internal state.
 		this._setOutputLayer(fullscreenRender, input, output);
@@ -745,6 +743,7 @@ export class GPUComposer {
 			gl.bindTexture(gl.TEXTURE_2D, inputTextures[i].texture);
 		}
 		gpuProgram._setInternalFragmentUniforms(program, inputTextures);
+		return program;
 	}
 
 	private _setBlendMode(shouldBlendAlpha?: boolean) {
@@ -879,10 +878,8 @@ export class GPUComposer {
 		const { gl } = this;
 		const { program, input, output } = params;
 
-		const glProgram = program._defaultProgram!;
-
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, true, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, true, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
@@ -911,10 +908,8 @@ export class GPUComposer {
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
 
-		const glProgram = program._defaultProgram!;
-
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, false, input, output);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
@@ -963,10 +958,8 @@ export class GPUComposer {
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
 
-		const glProgram = program._defaultProgram!;
-
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, false, input, output);
 
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
@@ -996,10 +989,8 @@ export class GPUComposer {
 		const { gl, _width, _height } = this;
 		const { program, position, radius, input, output } = params;
 
-		const glProgram = program._defaultProgram!;
-
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], FLOAT);
@@ -1036,10 +1027,8 @@ export class GPUComposer {
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
 
-		const glProgram = program._segmentProgram!;
-
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, SEGMENT_PROGRAM_NAME, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, FLOAT);
@@ -1237,13 +1226,13 @@ export class GPUComposer {
 			}
 		}
 
-		const glProgram = (uvs ?
-			(normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
-			(normals ? program._defaultProgramWithNormal : program._defaultProgram)
+		const programName = (uvs ?
+			(normals ? DEFAULT_W_UV_NORMAL_PROGRAM_NAME : DEFAULT_W_UV_PROGRAM_NAME) :
+			(normals ? DEFAULT_W_NORMAL_PROGRAM_NAME : DEFAULT_PROGRAM_NAME)
 		)!;
 
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, programName, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
@@ -1284,13 +1273,13 @@ export class GPUComposer {
 		const { program, input, output, positions, uvs, normals } = params;
 		const { gl, _width, _height } = this;
 
-		const glProgram = (uvs ?
-			(normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
-			(normals ? program._defaultProgramWithNormal : program._defaultProgram)
+		const programName = (uvs ?
+			(normals ? DEFAULT_W_UV_NORMAL_PROGRAM_NAME : DEFAULT_W_UV_PROGRAM_NAME) :
+			(normals ? DEFAULT_W_NORMAL_PROGRAM_NAME : DEFAULT_PROGRAM_NAME)
 		)!;
 
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, programName, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
@@ -1337,13 +1326,13 @@ export class GPUComposer {
 			throw new Error(`GPUComposer.stepLines() can't be called with closeLoop == true and indices.`);
 		}
 		
-		const glProgram = (uvs ?
-			(normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
-			(normals ? program._defaultProgramWithNormal : program._defaultProgram)
+		const programName = (uvs ?
+			(normals ? DEFAULT_W_UV_NORMAL_PROGRAM_NAME : DEFAULT_W_UV_PROGRAM_NAME) :
+			(normals ? DEFAULT_W_NORMAL_PROGRAM_NAME : DEFAULT_PROGRAM_NAME)
 		)!;
 
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, programName, false, input, output);
 
 		const count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
 
@@ -1421,13 +1410,12 @@ export class GPUComposer {
 			const color = params.color || [1, 0, 0]; // Default of red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._layerPointsProgram!;
 
 		// Add positions to end of input if needed.
 		const input = this._addLayerToInputs(positions, params.input);
 
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, LAYER_POINTS_PROGRAM_NAME, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), INT);
@@ -1489,13 +1477,12 @@ export class GPUComposer {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._layerLinesProgram!;
 
 		// Add positionLayer to end of input if needed.
 		const input = this._addLayerToInputs(positions, params.input);
 
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, LAYER_LINES_PROGRAM_NAME, false, input, output);
 
 		// TODO: cache indexArray if no indices passed in.
 		const indices = params.indices ? params.indices : initSequentialFloatArray(params.count || positions.length);
@@ -1576,13 +1563,12 @@ export class GPUComposer {
 			const color = params.color || [1, 0, 0]; // Default to red.
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
-		const glProgram = program._layerVectorFieldProgram!;
 
 		// Add data to end of input if needed.
 		const input = this._addLayerToInputs(data, params.input);
 
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, false, input, output);
+		const glProgram = this._drawSetup(program, LAYER_VECTOR_FIELD_PROGRAM_NAME, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), INT);
@@ -1628,12 +1614,10 @@ export class GPUComposer {
 		program.setUniform('u_scale', scale, FLOAT);
 		program.setUniform('u_internal_numDimensions', data.numComponents, INT);
 
-		const glProgram = program._defaultProgram!;
-
 		// Add data to end of input if needed.
 		const input = this._addLayerToInputs(data, params.input);
 		// Do setup - this must come first.
-		this._drawSetup(program, glProgram, true, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, true, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), INT);

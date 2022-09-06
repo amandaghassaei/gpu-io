@@ -7,38 +7,27 @@ import {
 import { getSampler2DsInProgram } from './regex';
 
 /**
- * Wrap/filter type to use in polyfill.
- * (0) No polyfills.
- * (1) Filtering is NEAREST and wrap needs polyfill.
- * (2) Wrap is supported, but filtering needs polyfill.
- * (3) Wrap and filtering need polyfill.
- * (4) Filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
- */
-export const SAMPLER2D_WRAP_REPEAT_UNIFORM = 'u_gpuio_wrap_repeat';
-
-/**
  * Wrap type to use in polyfill.
- * (0) CLAMP_TO_EDGE filtering.
- * (1) REPEAT filtering.
+ * (0) Default behavior (no polyfill).
+ * (1) REPEAT polyfill.
  * @private
  */
-export const SAMPLER2D_WRAP_X = 'gpuio_wrap_x';
+export const SAMPLER2D_WRAP_X = 'GPUIO_WRAP_X';
 /**
  * Wrap type to use in polyfill.
- * (0) CLAMP_TO_EDGE filtering.
- * (1) REPEAT filtering.
+ * (0) Default behavior (no polyfill).
+ * (1) REPEAT polyfill.
  * @private
  */
-export const SAMPLER2D_WRAP_Y = 'gpuio_wrap_y';
+export const SAMPLER2D_WRAP_Y = 'GPUIO_WRAP_Y';
 
 /**
  * Filter type to use in polyfill.
- * For now we are not using this, but will be needed if more filters added later.
- * NEAREST is always supported, so we don't need to polyfill.
- * (0) LINEAR filtering.
+ * (0) Default behavior (no polyfill).
+ * (0) LINEAR polyfill.
  * @private
  */
-export const SAMPLER2D_FILTER = 'gpuio_filter';
+export const SAMPLER2D_FILTER = 'GPUIO_FILTER';
 
 /**
  * UV size of half a pixel for this texture.
@@ -52,31 +41,26 @@ export const SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
  */
 export const SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
 
-function wrapEnum(wrap: GPULayerWrap) {
-	if (wrap === CLAMP_TO_EDGE) return '0';
-	return '1'; // REPEAT.
-}
+// function wrapEnum(wrap: GPULayerWrap) {
+// 	if (wrap === CLAMP_TO_EDGE) return '0';
+// 	return '1'; // REPEAT.
+// }
 
-function filterEnum(filter: GPULayerFilter) {
-	if (filter === NEAREST) return '0';
-	return '1'; // LINEAR.
-}
+// function filterEnum(filter: GPULayerFilter) {
+// 	if (filter === NEAREST) return '0';
+// 	return '1'; // LINEAR.
+// }
 
 /**
- * Override texture function to perform repeat wrap.
- * Value of SAMPLER2D_WRAP_REPEAT_UNIFORM:
- * (0) No polyfills.
- * (1) GPUIO_TEXTURE_WRAP -> filtering is NEAREST and wrap needs polyfill.
- * (2) GPUIO_TEXTURE_FILTER -> wrap is supported, but filtering needs polyfill.
- * (3) GPUIO_TEXTURE_WRAP_FILTER -> wrap and filtering need polyfill.
+ * Override texture function to perform polyfill filter/wrap.
  * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
  * @private
  */
 export function texturePolyfill(shaderSource: string) {
 	const textureCalls = shaderSource.match(/\btexture\(/g);
-	if (!textureCalls || textureCalls.length === 0) return shaderSource;
+	if (!textureCalls || textureCalls.length === 0) return { shaderSource, samplerUniforms: [] };
 	const samplerUniforms = getSampler2DsInProgram(shaderSource);
-	if (samplerUniforms.length === 0) return shaderSource;
+	if (samplerUniforms.length === 0) return { shaderSource, samplerUniforms };
 	samplerUniforms.forEach((name, i) => {
 		const regex = new RegExp(`\\btexture\\(\\s?${name}\\b`, 'gs');
 		shaderSource = shaderSource.replace(regex, `GPUIO_TEXTURE_POLYFILL${i}(${name}`);
@@ -89,8 +73,10 @@ export function texturePolyfill(shaderSource: string) {
 	let polyfillUniforms: {[key: string] : string } = {};
 	let polyfillDefines: {[key: string] : string } = {};
 	for (let i = 0; i < samplerUniforms.length; i++) {
+		// Init uniforms with a type.
 		polyfillUniforms[`${SAMPLER2D_HALF_PX_UNIFORM}${i}`] = 'vec2';
 		polyfillUniforms[`${SAMPLER2D_DIMENSIONS_UNIFORM}${i}`] = 'vec2';
+		// Init defines with a starting value.
 		polyfillDefines[`${SAMPLER2D_WRAP_X}${i}`] = '0';
 		polyfillDefines[`${SAMPLER2D_WRAP_Y}${i}`] = '0';
 		polyfillDefines[`${SAMPLER2D_FILTER}${i}`] = '0';
@@ -131,7 +117,6 @@ ${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 
 }\n`;
 	}
 
-	
 	function make_GPUIO_TEXTURE_WRAP(prefix: string) {
 		return `
 ${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
@@ -169,8 +154,8 @@ vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const
 }\n`;
 	}
 
-	return `
-${ Object.keys(polyfillDefines).map((key) => `#define ${key} ${polyfillDefines[key]}`).join('\n') }
+	shaderSource = `
+TEXTURE_POLYFILL_DEFINE_PLACEHOLDER
 ${ Object.keys(polyfillUniforms).map((key) => `uniform ${polyfillUniforms[key]} ${key};`).join('\n') }
 
 float GPUIO_WRAP_REPEAT_UV_COORD(float coord) {
@@ -191,17 +176,21 @@ ${ [ null,
 	'CLAMP_REPEAT',
 ].map(wrap => make_GPUIO_BILINEAR_INTERP(wrap)).join('\n') }
 
-${ samplerUniforms.map(( uniform, index) => {
+${ samplerUniforms.map((uniform, index) => {
 	return make_GPUIO_TEXTURE_POLYFILL(index, '');
 }).join('\n') }
 #if (__VERSION__ == 300)
 ${ ['u', 'i'].map(prefix => {
-	return samplerUniforms.map(( uniform, index) => {
+	return samplerUniforms.map((uniform, index) => {
 		return make_GPUIO_TEXTURE_POLYFILL(index, prefix);
 	}).join('\n');
 }).join('\n') }
 #endif
 
 ${shaderSource}`;
+	return {
+		shaderSource,
+		samplerUniforms,
+	}
 }
 

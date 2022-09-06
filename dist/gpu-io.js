@@ -2738,15 +2738,11 @@ var GPUComposer = /** @class */ (function () {
         this._height = height;
     };
     ;
-    GPUComposer.prototype._drawSetup = function (gpuProgram, program, fullscreenRender, input, output) {
+    GPUComposer.prototype._drawSetup = function (gpuProgram, programName, fullscreenRender, input, output) {
         var gl = this.gl;
-        // Check if we are in an error state.
-        if (!program) {
-            return;
-        }
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
-        // This line must come before this.setOutput() as it depends on current internal state.
+        // This line must come before this._setOutputLayer() as it depends on current internal state.
         var inputTextures = [];
         if (input) {
             if (input.layer) {
@@ -2762,6 +2758,7 @@ var GPUComposer = /** @class */ (function () {
                 }
             }
         }
+        var program = gpuProgram._getProgramWithName(programName, inputTextures);
         // Set output framebuffer.
         // This may modify WebGL internal state.
         this._setOutputLayer(fullscreenRender, input, output);
@@ -2773,6 +2770,7 @@ var GPUComposer = /** @class */ (function () {
             gl.bindTexture(gl.TEXTURE_2D, inputTextures[i].texture);
         }
         gpuProgram._setInternalFragmentUniforms(program, inputTextures);
+        return program;
     };
     GPUComposer.prototype._setBlendMode = function (shouldBlendAlpha) {
         var gl = this.gl;
@@ -2883,9 +2881,8 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.step = function (params) {
         var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
-        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, true, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
@@ -2902,9 +2899,8 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
-        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, false, input, output);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
@@ -2943,9 +2939,8 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
-        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, false, input, output);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], constants_1.FLOAT);
@@ -2961,9 +2956,8 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.stepCircle = function (params) {
         var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         var program = params.program, position = params.position, radius = params.radius, input = params.input, output = params.output;
-        var glProgram = program._defaultProgram;
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
@@ -2984,9 +2978,8 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
-        var glProgram = program._segmentProgram;
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.SEGMENT_PROGRAM_NAME, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
@@ -3161,11 +3154,11 @@ var GPUComposer = /** @class */ (function () {
                 normals[vertices.length * 8 + 3] = normals[3];
             }
         }
-        var glProgram = (uvs ?
-            (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
-            (normals ? program._defaultProgramWithNormal : program._defaultProgram));
+        var programName = (uvs ?
+            (normals ? constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_W_UV_PROGRAM_NAME) :
+            (normals ? constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_PROGRAM_NAME));
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, programName, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
@@ -3190,11 +3183,11 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.stepTriangleStrip = function (params) {
         var program = params.program, input = params.input, output = params.output, positions = params.positions, uvs = params.uvs, normals = params.normals;
         var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
-        var glProgram = (uvs ?
-            (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
-            (normals ? program._defaultProgramWithNormal : program._defaultProgram));
+        var programName = (uvs ?
+            (normals ? constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_W_UV_PROGRAM_NAME) :
+            (normals ? constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_PROGRAM_NAME));
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, programName, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
@@ -3224,11 +3217,11 @@ var GPUComposer = /** @class */ (function () {
         if (params.closeLoop && indices) {
             throw new Error("GPUComposer.stepLines() can't be called with closeLoop == true and indices.");
         }
-        var glProgram = (uvs ?
-            (normals ? program._defaultProgramWithUVNormal : program._defaultProgramWithUV) :
-            (normals ? program._defaultProgramWithNormal : program._defaultProgram));
+        var programName = (uvs ?
+            (normals ? constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_W_UV_PROGRAM_NAME) :
+            (normals ? constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_PROGRAM_NAME));
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, programName, false, input, output);
         var count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
@@ -3290,11 +3283,10 @@ var GPUComposer = /** @class */ (function () {
             var color = params.color || [1, 0, 0]; // Default of red.
             program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
         }
-        var glProgram = program._layerPointsProgram;
         // Add positions to end of input if needed.
         var input = this._addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.LAYER_POINTS_PROGRAM_NAME, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
@@ -3338,11 +3330,10 @@ var GPUComposer = /** @class */ (function () {
             var color = params.color || [1, 0, 0]; // Default to red.
             program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
         }
-        var glProgram = program._layerLinesProgram;
         // Add positionLayer to end of input if needed.
         var input = this._addLayerToInputs(positions, params.input);
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.LAYER_LINES_PROGRAM_NAME, false, input, output);
         // TODO: cache indexArray if no indices passed in.
         var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(params.count || positions.length);
         var count = params.count ? params.count : indices.length;
@@ -3411,11 +3402,10 @@ var GPUComposer = /** @class */ (function () {
             var color = params.color || [1, 0, 0]; // Default to red.
             program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
         }
-        var glProgram = program._layerVectorFieldProgram;
         // Add data to end of input if needed.
         var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), constants_1.INT);
         // Set default scale.
@@ -3447,11 +3437,10 @@ var GPUComposer = /** @class */ (function () {
         var scale = params.scale || 1;
         program.setUniform('u_scale', scale, constants_1.FLOAT);
         program.setUniform('u_internal_numDimensions', data.numComponents, constants_1.INT);
-        var glProgram = program._defaultProgram;
         // Add data to end of input if needed.
         var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        this._drawSetup(program, glProgram, true, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
@@ -5240,6 +5229,7 @@ exports.GPUProgram = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
+var polyfills_1 = __webpack_require__(360);
 var GPUProgram = /** @class */ (function () {
     /**
      * Create a GPUProgram.
@@ -5251,6 +5241,7 @@ var GPUProgram = /** @class */ (function () {
      * @param params.defines - Compile-time #define variables to include with fragment shader.
      */
     function GPUProgram(composer, params) {
+        var _this = this;
         // #define variables for fragment shader program.
         this._defines = {};
         // Uniform locations, values, and types.
@@ -5261,6 +5252,8 @@ var GPUProgram = /** @class */ (function () {
         this._programs = {};
         // Reverse lookup for above.
         this._programsKeyLookup = new WeakMap();
+        // Store the index of input sampler2D in input array.
+        this._samplerUniformsIndices = [];
         // Check constructor parameters.
         var name = (params || {}).name;
         if (!composer) {
@@ -5295,12 +5288,20 @@ var GPUProgram = /** @class */ (function () {
         var fragmentShaderSource = (0, checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
-        this._fragmentShaderSource = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name);
+        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms;
+        this._fragmentShaderSource = shaderSource;
+        samplerUniforms.forEach(function (name, i) {
+            _this._samplerUniformsIndices.push({
+                name: name,
+                inputIndex: 0,
+                shaderIndex: i,
+            });
+        });
         this._compile(defines); // Compiling also saves defines.
         // Set program uniforms.
         if (uniforms) {
             for (var i = 0; i < uniforms.length; i++) {
-                var _a = uniforms[i], name_1 = _a.name, value = _a.value, type = _a.type;
+                var _b = uniforms[i], name_1 = _b.name, value = _b.value, type = _b.type;
                 this.setUniform(name_1, value, type);
             }
         }
@@ -5344,10 +5345,22 @@ var GPUProgram = /** @class */ (function () {
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    GPUProgram.prototype._getProgramWithName = function (name) {
+    GPUProgram.prototype._getProgramWithName = function (name, input) {
+        var _samplerUniformsIndices = this._samplerUniformsIndices;
+        var key = "".concat(name);
+        for (var i = 0, length_1 = _samplerUniformsIndices.length; i < length_1; i++) {
+            var inputIndex = _samplerUniformsIndices[i].inputIndex;
+            var layer = input[inputIndex].layer;
+            var filter = layer.filter, wrapS = layer.wrapS, wrapT = layer.wrapT, _internalFilter = layer._internalFilter, _internalWrapS = layer._internalWrapS, _internalWrapT = layer._internalWrapT;
+            var wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === constants_1.REPEAT ? 1 : 0);
+            var wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === constants_1.REPEAT ? 1 : 0);
+            var filterVal = filter === _internalFilter ? 0 : (filter === constants_1.LINEAR ? 1 : 0);
+            key += "_IN0_".concat(wrapXVal, "_").concat(wrapYVal, "_").concat(filterVal);
+        }
+        console.log(key);
         // Check if we've already compiled program.
-        if (this._programs[name])
-            return this._programs[name];
+        if (this._programs[key])
+            return this._programs[key];
         // Otherwise, we need to compile a new program on the fly.
         var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _fragmentShader = _a._fragmentShader, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
@@ -5369,90 +5382,10 @@ var GPUProgram = /** @class */ (function () {
             var value = uniform.value, type = uniform.type;
             this._setProgramUniform(program, name, uniformName, value, type);
         }
-        _programs[name] = program;
-        _programsKeyLookup.set(program, name);
+        _programs[key] = program;
+        _programsKeyLookup.set(program, key);
         return program;
     };
-    Object.defineProperty(GPUProgram.prototype, "_defaultProgram", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.DEFAULT_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUProgram.prototype, "_defaultProgramWithUV", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.DEFAULT_W_UV_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUProgram.prototype, "_defaultProgramWithNormal", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUProgram.prototype, "_defaultProgramWithUVNormal", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUProgram.prototype, "_segmentProgram", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.SEGMENT_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUProgram.prototype, "_layerPointsProgram", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.LAYER_POINTS_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUProgram.prototype, "_layerVectorFieldProgram", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GPUProgram.prototype, "_layerLinesProgram", {
-        /**
-         * @private
-         */
-        get: function () {
-            return this._getProgramWithName(constants_1.LAYER_LINES_PROGRAM_NAME);
-        },
-        enumerable: false,
-        configurable: true
-    });
     /**
      * Set uniform for GLProgram.
      * @private
@@ -5591,12 +5524,12 @@ var GPUProgram = /** @class */ (function () {
      */
     GPUProgram.prototype.setUniform = function (name, value, type) {
         var _a;
-        var _b = this, _programs = _b._programs, _uniforms = _b._uniforms, _composer = _b._composer;
+        var _b = this, _programs = _b._programs, _uniforms = _b._uniforms, _composer = _b._composer, _samplerUniformsIndices = _b._samplerUniformsIndices;
         var verboseLogging = _composer.verboseLogging;
         // Check that length of value is correct.
         if ((0, checks_1.isArray)(value)) {
-            var length_1 = value.length;
-            if (length_1 > 4)
+            var length_2 = value.length;
+            if (length_2 > 4)
                 throw new Error("Invalid uniform value: [".concat(value.join(', '), "] passed to GPUProgram \"").concat(this.name, ", uniforms must be of type number[] with length <= 4, number, or boolean.\""));
         }
         var currentType = (_a = _uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
@@ -5620,7 +5553,7 @@ var GPUProgram = /** @class */ (function () {
             _uniforms[name] = { type: currentType, location: {}, value: value };
         }
         else {
-            // Deep check is value has changed.
+            // Deep check if value has changed.
             if ((0, checks_1.isArray)(value)) {
                 var isChanged = true;
                 for (var i = 0; i < value.length; i++) {
@@ -5638,6 +5571,10 @@ var GPUProgram = /** @class */ (function () {
             // Update value.
             _uniforms[name].value = value;
         }
+        var samplerUniform = _samplerUniformsIndices.find(function (uniform) { return uniform.name === name; });
+        if (samplerUniform && currentType === constants_1.INT_1D_UNIFORM) {
+            samplerUniform.inputIndex = value;
+        }
         if (verboseLogging)
             console.log("Setting uniform \"".concat(name, "\" for program \"").concat(this.name, "\" to value ").concat(JSON.stringify(value), " with type ").concat(currentType, "."));
         // Update any active programs.
@@ -5652,20 +5589,54 @@ var GPUProgram = /** @class */ (function () {
      * Set internal fragment shader uniforms for GPUProgram.
      * @private
      */
-    GPUProgram.prototype._setInternalFragmentUniforms = function (program, textures) {
+    GPUProgram.prototype._setInternalFragmentUniforms = function (program, input) {
         // !!!!!!!!!!!!!!
         // Be sure to update GPULayerHelpers.testFilterWrap if major changes are made to this routine.
         // Currently only expecting to fetch width, and height from GPULayerState.layer.
         if (!program) {
             throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
         }
-        var _programsKeyLookup = this._programsKeyLookup;
+        var _a = this, _programsKeyLookup = _a._programsKeyLookup, _samplerUniformsIndices = _a._samplerUniformsIndices;
         var programName = _programsKeyLookup.get(program);
         if (!programName) {
-            throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
+            throw new Error("Could not find valid programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
-        // const internalType = uniformInternalTypeForValue(value, type, uniformName, this.name);
-        // this._setProgramUniform(program, programName, uniformName, value, internalType);
+        // TODO: memoize this.
+        var indexLookup = new Array(_samplerUniformsIndices.length).fill(-1);
+        for (var i = 0, length_3 = _samplerUniformsIndices.length; i < length_3; i++) {
+            var _b = _samplerUniformsIndices[i], inputIndex = _b.inputIndex, shaderIndex = _b.shaderIndex;
+            if (indexLookup[inputIndex] >= 0) {
+                // There is an index collision, this should not happen.
+                console.warn("Found > 1 sampler2D uniforms at texture index ".concat(inputIndex, " for GPUProgram \"").concat(this.name, "\"."));
+            }
+            else {
+                indexLookup[inputIndex] = shaderIndex;
+            }
+        }
+        for (var i = 0, length_4 = input.length; i < length_4; i++) {
+            var _c = input[i].layer, width = _c.width, height = _c.height;
+            var index = indexLookup[i];
+            if (index < 0)
+                continue;
+            var dimensions = [width, height];
+            var dimensionsUniform = "".concat(polyfills_1.SAMPLER2D_DIMENSIONS_UNIFORM).concat(index);
+            // this._setProgramUniform(
+            // 	program,
+            // 	programName,
+            // 	dimensionsUniform,
+            // 	dimensions,
+            // 	FLOAT_2D_UNIFORM,
+            // );
+            var halfPxSize = [0.5 / width, 0.5 / height];
+            var halfPxUniform = "".concat(polyfills_1.SAMPLER2D_HALF_PX_UNIFORM).concat(index);
+            // this._setProgramUniform(
+            // 	program,
+            // 	programName,
+            // 	halfPxUniform,
+            // 	halfPxSize,
+            // 	FLOAT_2D_UNIFORM,
+            // );
+        }
     };
     /**
      * Set vertex shader uniform for GPUProgram.
@@ -5678,7 +5649,7 @@ var GPUProgram = /** @class */ (function () {
         var _programsKeyLookup = this._programsKeyLookup;
         var programName = _programsKeyLookup.get(program);
         if (!programName) {
-            throw new Error("Could not find valid vertex programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
+            throw new Error("Could not find valid programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
         var internalType = (0, utils_1.uniformInternalTypeForValue)(value, type, uniformName, this.name);
         this._setProgramUniform(program, programName, uniformName, value, internalType);
@@ -6420,40 +6391,29 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = exports.SAMPLER2D_WRAP_REPEAT_UNIFORM = void 0;
-var constants_1 = __webpack_require__(601);
+exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
 var regex_1 = __webpack_require__(126);
 /**
- * Wrap/filter type to use in polyfill.
- * (0) No polyfills.
- * (1) Filtering is NEAREST and wrap needs polyfill.
- * (2) Wrap is supported, but filtering needs polyfill.
- * (3) Wrap and filtering need polyfill.
- * (4) Filtering is LINEAR and supported, but wrap needs polyfill and filter needs polyfill at boundary.
- */
-exports.SAMPLER2D_WRAP_REPEAT_UNIFORM = 'u_gpuio_wrap_repeat';
-/**
  * Wrap type to use in polyfill.
- * (0) CLAMP_TO_EDGE filtering.
- * (1) REPEAT filtering.
+ * (0) Default behavior (no polyfill).
+ * (1) REPEAT polyfill.
  * @private
  */
-exports.SAMPLER2D_WRAP_X = 'gpuio_wrap_x';
+exports.SAMPLER2D_WRAP_X = 'GPUIO_WRAP_X';
 /**
  * Wrap type to use in polyfill.
- * (0) CLAMP_TO_EDGE filtering.
- * (1) REPEAT filtering.
+ * (0) Default behavior (no polyfill).
+ * (1) REPEAT polyfill.
  * @private
  */
-exports.SAMPLER2D_WRAP_Y = 'gpuio_wrap_y';
+exports.SAMPLER2D_WRAP_Y = 'GPUIO_WRAP_Y';
 /**
  * Filter type to use in polyfill.
- * For now we are not using this, but will be needed if more filters added later.
- * NEAREST is always supported, so we don't need to polyfill.
- * (0) LINEAR filtering.
+ * (0) Default behavior (no polyfill).
+ * (0) LINEAR polyfill.
  * @private
  */
-exports.SAMPLER2D_FILTER = 'gpuio_filter';
+exports.SAMPLER2D_FILTER = 'GPUIO_FILTER';
 /**
  * UV size of half a pixel for this texture.
  * @private
@@ -6464,33 +6424,26 @@ exports.SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
  * @private
  */
 exports.SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
-function wrapEnum(wrap) {
-    if (wrap === constants_1.CLAMP_TO_EDGE)
-        return '0';
-    return '1'; // REPEAT.
-}
-function filterEnum(filter) {
-    if (filter === constants_1.NEAREST)
-        return '0';
-    return '1'; // LINEAR.
-}
+// function wrapEnum(wrap: GPULayerWrap) {
+// 	if (wrap === CLAMP_TO_EDGE) return '0';
+// 	return '1'; // REPEAT.
+// }
+// function filterEnum(filter: GPULayerFilter) {
+// 	if (filter === NEAREST) return '0';
+// 	return '1'; // LINEAR.
+// }
 /**
- * Override texture function to perform repeat wrap.
- * Value of SAMPLER2D_WRAP_REPEAT_UNIFORM:
- * (0) No polyfills.
- * (1) GPUIO_TEXTURE_WRAP -> filtering is NEAREST and wrap needs polyfill.
- * (2) GPUIO_TEXTURE_FILTER -> wrap is supported, but filtering needs polyfill.
- * (3) GPUIO_TEXTURE_WRAP_FILTER -> wrap and filtering need polyfill.
+ * Override texture function to perform polyfill filter/wrap.
  * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
  * @private
  */
 function texturePolyfill(shaderSource) {
     var textureCalls = shaderSource.match(/\btexture\(/g);
     if (!textureCalls || textureCalls.length === 0)
-        return shaderSource;
+        return { shaderSource: shaderSource, samplerUniforms: [] };
     var samplerUniforms = (0, regex_1.getSampler2DsInProgram)(shaderSource);
     if (samplerUniforms.length === 0)
-        return shaderSource;
+        return { shaderSource: shaderSource, samplerUniforms: samplerUniforms };
     samplerUniforms.forEach(function (name, i) {
         var regex = new RegExp("\\btexture\\(\\s?".concat(name, "\\b"), 'gs');
         shaderSource = shaderSource.replace(regex, "GPUIO_TEXTURE_POLYFILL".concat(i, "(").concat(name));
@@ -6502,8 +6455,10 @@ function texturePolyfill(shaderSource) {
     var polyfillUniforms = {};
     var polyfillDefines = {};
     for (var i = 0; i < samplerUniforms.length; i++) {
+        // Init uniforms with a type.
         polyfillUniforms["".concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i)] = 'vec2';
         polyfillUniforms["".concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i)] = 'vec2';
+        // Init defines with a starting value.
         polyfillDefines["".concat(exports.SAMPLER2D_WRAP_X).concat(i)] = '0';
         polyfillDefines["".concat(exports.SAMPLER2D_WRAP_Y).concat(i)] = '0';
         polyfillDefines["".concat(exports.SAMPLER2D_FILTER).concat(i)] = '0';
@@ -6519,7 +6474,7 @@ function texturePolyfill(shaderSource) {
         var extraParams = wrapType ? ", halfPx" : '';
         return "\nvec4 GPUIO_TEXTURE_BILINEAR_INTERP".concat(wrapType ? "_WRAP_".concat(wrapType) : '', "(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = ").concat(lookupFunction, "(sampler, baseUV").concat(extraParams, ");\n\tvec4 maxmin = ").concat(lookupFunction, "(sampler, uv + vec2(halfPx.x, -halfPx.y)").concat(extraParams, ");\n\tvec4 minmax = ").concat(lookupFunction, "(sampler, uv + vec2(-halfPx.x, halfPx.y)").concat(extraParams, ");\n\tvec4 maxmax = ").concat(lookupFunction, "(sampler, uv + halfPx").concat(extraParams, ");\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n");
     }
-    return "\n".concat(Object.keys(polyfillDefines).map(function (key) { return "#define ".concat(key, " ").concat(polyfillDefines[key]); }).join('\n'), "\n").concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nfloat GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n\treturn max(halfPx, min(1.0 - halfPx, coord));\n}\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
+    shaderSource = "\n".concat(Object.keys(polyfillDefines).map(function (key) { return "#define ".concat(key, " ").concat(polyfillDefines[key]); }).join('\n'), "\n").concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nfloat GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n\treturn max(halfPx, min(1.0 - halfPx, coord));\n}\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
         'REPEAT_REPEAT',
         'REPEAT_CLAMP',
         'CLAMP_REPEAT',
@@ -6530,6 +6485,10 @@ function texturePolyfill(shaderSource) {
             return make_GPUIO_TEXTURE_POLYFILL(index, prefix);
         }).join('\n');
     }).join('\n'), "\n#endif\n\n").concat(shaderSource);
+    return {
+        shaderSource: shaderSource,
+        samplerUniforms: samplerUniforms,
+    };
 }
 exports.texturePolyfill = texturePolyfill;
 
@@ -6987,7 +6946,8 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     gl.shaderSource(shader, fullShaderSource);
     // Compile the shader
     gl.compileShader(shader);
-    // Check if it compiled
+    // TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
+    // Check if it compiled.
     var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!success) {
         // Something went wrong during compilation - print shader source (with line number) and the error.
@@ -7333,6 +7293,7 @@ exports.preprocessVertexShader = preprocessVertexShader;
  * @private
  */
 function preprocessFragmentShader(shaderSource, glslVersion, name) {
+    var _a;
     shaderSource = preprocessShader(shaderSource);
     (0, regex_1.checkFragmentShaderForFragColor)(shaderSource, glslVersion, name);
     // Check if highp supported in fragment shaders.
@@ -7342,11 +7303,12 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
         shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }
     // Add texture() polyfills if needed.
-    shaderSource = (0, polyfills_1.texturePolyfill)(shaderSource);
-    if (glslVersion === constants_1.GLSL3) {
-        return shaderSource;
+    var samplerUniforms;
+    (_a = (0, polyfills_1.texturePolyfill)(shaderSource), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms);
+    if (glslVersion !== constants_1.GLSL3) {
+        shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
     }
-    return convertFragmentShaderToGLSL1(shaderSource, name);
+    return { shaderSource: shaderSource, samplerUniforms: samplerUniforms };
 }
 exports.preprocessFragmentShader = preprocessFragmentShader;
 /**

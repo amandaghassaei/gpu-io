@@ -98,7 +98,10 @@ export declare function preprocessVertexShader(shaderSource: string, glslVersion
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-export declare function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string): string;
+export declare function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string): {
+    shaderSource: string;
+    samplerUniforms: string[];
+};
 /**
  * Check uniforms and return internal WebGL type (e.g. [1234][u]?[if])
  * @private

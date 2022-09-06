@@ -197,7 +197,8 @@ export function compileShader(
 	// Compile the shader
 	gl.compileShader(shader);
 
-	// Check if it compiled
+	// TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
+	// Check if it compiled.
 	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!success) {
 		// Something went wrong during compilation - print shader source (with line number) and the error.
@@ -656,11 +657,12 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 		shaderSource = highpToMediump(shaderSource);
 	}
 	// Add texture() polyfills if needed.
-	shaderSource = texturePolyfill(shaderSource);
-	if (glslVersion === GLSL3) {
-		return shaderSource;
+	let samplerUniforms: string[];
+	({ shaderSource, samplerUniforms } = texturePolyfill(shaderSource));
+	if (glslVersion !== GLSL3) {
+		shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
 	}
-	return convertFragmentShaderToGLSL1(shaderSource, name);
+	return { shaderSource, samplerUniforms };
 }
 
 /**

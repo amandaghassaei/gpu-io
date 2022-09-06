@@ -42,6 +42,10 @@ import {
 	BOOL_4D_UNIFORM,
 	GLSL3,
 	GPULayerState,
+	FLOAT,
+	validDataTypes,
+	REPEAT,
+	LINEAR,
 } from './constants';
 import {
 	compileShader,
@@ -49,6 +53,7 @@ import {
 	initGLProgram,
 	uniformInternalTypeForValue,
 } from './utils';
+import { SAMPLER2D_DIMENSIONS_UNIFORM, SAMPLER2D_HALF_PX_UNIFORM } from './polyfills';
 
 export class GPUProgram {
 	// Keep a reference to GPUComposer.
@@ -72,9 +77,12 @@ export class GPUProgram {
 	// Store WebGLProgram's - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
 	// Each combination of vertex + fragment shader requires a separate WebGLProgram.
 	// These programs are compiled on the fly as needed.
-	private readonly _programs: {[key in PROGRAM_NAME_INTERNAL]?: WebGLProgram } = {};
+	private readonly _programs: {[key: string]: WebGLProgram } = {};
 	// Reverse lookup for above.
-	private readonly _programsKeyLookup = new WeakMap<WebGLProgram, PROGRAM_NAME_INTERNAL>();
+	private readonly _programsKeyLookup = new WeakMap<WebGLProgram, string>();
+
+	// Store the index of input sampler2D in input array.
+	private readonly _samplerUniformsIndices: { name: string, inputIndex: number, shaderIndex: number }[] = [];
 
 	/**
      * Create a GPUProgram.
@@ -133,9 +141,17 @@ export class GPUProgram {
 		const fragmentShaderSource = isString(fragmentShader) ?
 			fragmentShader as string :
 			(fragmentShader as string[]).join('\n');
-		this._fragmentShaderSource = preprocessFragmentShader(
+		const { shaderSource, samplerUniforms } = preprocessFragmentShader(
 			fragmentShaderSource, composer.glslVersion, name,
 		);
+		this._fragmentShaderSource = shaderSource;
+		samplerUniforms.forEach((name, i) => {
+			this._samplerUniformsIndices.push({
+				name,
+				inputIndex: 0, // All uniforms default to 0.
+				shaderIndex: i,
+			});
+		});
 		this._compile(defines); // Compiling also saves defines.
 
 		// Set program uniforms.
@@ -207,9 +223,25 @@ export class GPUProgram {
 	 * Get GLProgram associated with a specific vertex shader.
 	 * @private
 	 */
-	private _getProgramWithName(name: PROGRAM_NAME_INTERNAL) {
+	_getProgramWithName(name: PROGRAM_NAME_INTERNAL, input: GPULayerState[]) {
+		const { _samplerUniformsIndices } = this;
+
+		let key = `${name}`;
+		for (let i = 0, length = _samplerUniformsIndices.length; i < length; i++) {
+			const { inputIndex } = _samplerUniformsIndices[i];
+			const { layer } = input[inputIndex];
+			const {
+				filter, wrapS, wrapT,
+				_internalFilter, _internalWrapS, _internalWrapT,
+			} = layer;
+			const wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === REPEAT ? 1 : 0);
+			const wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === REPEAT ? 1 : 0);
+			const filterVal = filter === _internalFilter ? 0 : (filter === LINEAR ? 1 : 0);
+			key += `_IN0_${wrapXVal}_${wrapYVal}_${filterVal}`;
+		}
+
 		// Check if we've already compiled program.
-		if (this._programs[name]) return this._programs[name];
+		if (this._programs[key]) return this._programs[key];
 
 		// Otherwise, we need to compile a new program on the fly.
 		const { _composer, _uniforms, _fragmentShader, _programs, _programsKeyLookup } = this;
@@ -220,6 +252,12 @@ export class GPUProgram {
 			_errorCallback(`Unable to init vertex shader "${name}" for GPUProgram "${this.name}".`);
 			return;
 		}
+
+		// Add polyfill define declarations.
+		// if (_samplerUniformsIndices.length) {
+		// 	const defines = Object.keys(polyfillDefines).map((key) => `#define ${key} ${polyfillDefines[key]}`).join('\n') }
+		// 	_fragmentShader = _fragmentShader.replace('TEXTURE_POLYFILL_DEFINE_PLACEHOLDER', defines);
+		// }
 
 		const program = initGLProgram(gl, vertexShader, _fragmentShader, this.name, _errorCallback);
 		if (program === undefined) {
@@ -236,57 +274,9 @@ export class GPUProgram {
 			this._setProgramUniform(program, name, uniformName, value, type);
 		}
 
-		_programs[name] = program;
-		_programsKeyLookup.set(program, name);
+		_programs[key] = program;
+		_programsKeyLookup.set(program, key);
 		return program;
-	}
-	/**
-	 * @private
-	 */
-	get _defaultProgram() {
-		return this._getProgramWithName(DEFAULT_PROGRAM_NAME);
-	}
-	/**
-	 * @private
-	 */
-	get _defaultProgramWithUV() {
-		return this._getProgramWithName(DEFAULT_W_UV_PROGRAM_NAME);
-	}
-	/**
-	 * @private
-	 */
-	get _defaultProgramWithNormal() {
-		return this._getProgramWithName(DEFAULT_W_NORMAL_PROGRAM_NAME);
-	}
-	/**
-	 * @private
-	 */
-	get _defaultProgramWithUVNormal() {
-		return this._getProgramWithName(DEFAULT_W_UV_NORMAL_PROGRAM_NAME);
-	}
-	/**
-	 * @private
-	 */
-	get _segmentProgram() {
-		return this._getProgramWithName(SEGMENT_PROGRAM_NAME);
-	}
-	/**
-	 * @private
-	 */
-	get _layerPointsProgram() {
-		return this._getProgramWithName(LAYER_POINTS_PROGRAM_NAME);
-	}
-	/**
-	 * @private
-	 */
-	get _layerVectorFieldProgram() {
-		return this._getProgramWithName(LAYER_VECTOR_FIELD_PROGRAM_NAME);
-	}
-	/**
-	 * @private
-	 */
-	get _layerLinesProgram() {
-		return this._getProgramWithName(LAYER_LINES_PROGRAM_NAME);
 	}
 
 	/**
@@ -429,7 +419,7 @@ export class GPUProgram {
 		value: UniformValue,
 		type?: UniformType,
 	) {
-		const { _programs, _uniforms, _composer } = this;
+		const { _programs, _uniforms, _composer, _samplerUniformsIndices } = this;
 		const { verboseLogging } = _composer;
 
 		// Check that length of value is correct.
@@ -458,7 +448,7 @@ export class GPUProgram {
 			// Init uniform if needed.
 			_uniforms[name] = { type: currentType, location: {}, value };
 		} else {
-			// Deep check is value has changed.
+			// Deep check if value has changed.
 			if (isArray(value)) {
 				let isChanged = true;
 				for (let i = 0; i < (value as number[]).length; i++) {
@@ -473,6 +463,11 @@ export class GPUProgram {
 			}
 			// Update value.
 			_uniforms[name].value = value;
+		}
+
+		const samplerUniform = _samplerUniformsIndices.find((uniform) => uniform.name === name);
+		if (samplerUniform && currentType === INT_1D_UNIFORM) {
+			samplerUniform.inputIndex = value as number;
 		}
 
 		if (verboseLogging) console.log(`Setting uniform "${name}" for program "${this.name}" to value ${JSON.stringify(value)} with type ${currentType}.`)
@@ -491,7 +486,7 @@ export class GPUProgram {
 	 */
 	_setInternalFragmentUniforms(
 		program: WebGLProgram,
-		textures: GPULayerState[],
+		input: GPULayerState[],
 	) {
 		// !!!!!!!!!!!!!!
 		// Be sure to update GPULayerHelpers.testFilterWrap if major changes are made to this routine.
@@ -499,13 +494,47 @@ export class GPUProgram {
 		if (!program) {
 			throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
 		}
-		const { _programsKeyLookup } = this;
+		const { _programsKeyLookup, _samplerUniformsIndices } = this;
 		const programName = _programsKeyLookup.get(program);
 		if (!programName) {
-			throw new Error(`Could not find valid vertex programName for WebGLProgram in GPUProgram "${this.name}".`);
+			throw new Error(`Could not find valid programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
-		// const internalType = uniformInternalTypeForValue(value, type, uniformName, this.name);
-		// this._setProgramUniform(program, programName, uniformName, value, internalType);
+
+		// TODO: memoize this.
+		const indexLookup = new Array(_samplerUniformsIndices.length).fill(-1);
+		for (let i = 0, length = _samplerUniformsIndices.length; i < length; i++) {
+			const { inputIndex, shaderIndex } = _samplerUniformsIndices[i];
+			if (indexLookup[inputIndex] >= 0) {
+				// There is an index collision, this should not happen.
+				console.warn(`Found > 1 sampler2D uniforms at texture index ${inputIndex} for GPUProgram "${this.name}".`);
+			} else {
+				indexLookup[inputIndex] = shaderIndex;
+			}
+		}
+
+		for (let i = 0, length = input.length; i < length; i++) {
+			const { width, height } = input[i].layer;
+			const index = indexLookup[i];
+			if (index < 0) continue;
+			const dimensions = [width, height];
+			const dimensionsUniform = `${SAMPLER2D_DIMENSIONS_UNIFORM}${index}`;
+			// this._setProgramUniform(
+			// 	program,
+			// 	programName,
+			// 	dimensionsUniform,
+			// 	dimensions,
+			// 	FLOAT_2D_UNIFORM,
+			// );
+			const halfPxSize = [0.5 / width, 0.5 / height];
+			const halfPxUniform = `${SAMPLER2D_HALF_PX_UNIFORM}${index}`;
+			// this._setProgramUniform(
+			// 	program,
+			// 	programName,
+			// 	halfPxUniform,
+			// 	halfPxSize,
+			// 	FLOAT_2D_UNIFORM,
+			// );
+		}
 	}
 
 	/**
@@ -524,7 +553,7 @@ export class GPUProgram {
 		const { _programsKeyLookup } = this;
 		const programName = _programsKeyLookup.get(program);
 		if (!programName) {
-			throw new Error(`Could not find valid vertex programName for WebGLProgram in GPUProgram "${this.name}".`);
+			throw new Error(`Could not find valid programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
 		const internalType = uniformInternalTypeForValue(value, type, uniformName, this.name);
 		this._setProgramUniform(program, programName, uniformName, value, internalType);
