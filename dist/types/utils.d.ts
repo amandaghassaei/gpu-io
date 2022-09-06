@@ -31,7 +31,7 @@ export declare function makeShaderHeader(glslVersion: GLSLVersion, intPrecision:
  * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
  * @private
  */
-export declare function compileShader(gl: WebGLRenderingContext | WebGL2RenderingContext, glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, shaderSource: string, shaderType: number, programName: string, errorCallback: ErrorCallback, defines?: CompileTimeVars): WebGLShader | null;
+export declare function compileShader(gl: WebGLRenderingContext | WebGL2RenderingContext, glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, shaderSource: string, shaderType: number, programName: string, errorCallback: ErrorCallback, defines?: CompileTimeVars, checkCompileStatus?: boolean): WebGLShader | null;
 /**
  * Init a WebGL program from vertex and fragment shaders.
  * GLPrograms may be inited on the fly, so keep this efficient.

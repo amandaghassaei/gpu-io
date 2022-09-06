@@ -172,27 +172,30 @@ export function getGPULayerInternalFilter(
 	params: {
 		composer: GPUComposer,
 		filter: GPULayerFilter,
+		wrapS: GPULayerWrap,
+		wrapT: GPULayerWrap,
 		internalType: GPULayerType,
 		name: string,
 	},
 ) {
-	const { composer, internalType, name } = params;
 	let { filter } = params;
 	if (filter === NEAREST) {
 		// NEAREST filtering is always supported.
 		return filter;
 	}
 
+	const { composer, internalType, wrapS, wrapT, name } = params;
+
 	if (internalType === HALF_FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
 			|| getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFilterWrap(composer, internalType, LINEAR, CLAMP_TO_EDGE)) {
+		if (!extension || !testFilterWrap(composer, internalType, LINEAR, wrapS) || !testFilterWrap(composer, internalType, LINEAR, wrapT)) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	} if (internalType === FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFilterWrap(composer, internalType, LINEAR, CLAMP_TO_EDGE)) {
+		if (!extension || !testFilterWrap(composer, internalType, LINEAR, wrapS) || !testFilterWrap(composer, internalType, LINEAR, wrapT)) {
 			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}

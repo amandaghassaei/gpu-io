@@ -388,6 +388,7 @@ const testLayerReads = (() => {
 			const output = outputLayer.getValues();
 
 			let status = SUCCESS;
+			const polyfill = [];
 			const error = [];
 			const log = [];
 			const typeMismatch =  TYPE !== inputLayer._internalType;
@@ -395,11 +396,11 @@ const testLayerReads = (() => {
 				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${inputLayer._internalType} internally.`);
 			}
 			if (WRAP !== inputLayer._internalWrapS || WRAP !== inputLayer._internalWrapT) {
-				error.push(`Unsupported boundary wrap ${WRAP} for the  ${inputLayer._internalWrapS} internally and patching with fragment shader polyfill.`);
+				polyfill.push(`Unsupported boundary wrap ${WRAP} for the  ${inputLayer._internalWrapS} internally and patching with fragment shader polyfill.`);
 			}
 			if (composer.gl[FILTER] !== inputLayer._glFilter) {
 				const filter = inputLayer._glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;
-				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally and patching with fragment shader polyfill.`);
+				polyfill.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally and patching with fragment shader polyfill.`);
 			}
 
 			if (TEST_EXTREMA) {
@@ -448,6 +449,7 @@ const testLayerReads = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					extremaError,
 					extremaWarning,
 					config,
@@ -462,6 +464,7 @@ const testLayerReads = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					config,
 				};
 			}
@@ -475,6 +478,7 @@ const testLayerReads = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					config,
 				};
 			}
@@ -497,6 +501,7 @@ const testLayerReads = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					config,
 				};
 			}
@@ -508,6 +513,7 @@ const testLayerReads = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					config,
 				};
 			}
@@ -521,6 +527,7 @@ const testLayerReads = (() => {
 				status,
 				log,
 				error,
+				polyfill,
 				config,
 			};
 		} catch (error) {

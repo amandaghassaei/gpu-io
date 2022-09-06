@@ -201,8 +201,13 @@ function main({ gui, glslVersion, contextID }) {
 				// 	heading += u_rotationAngle * (u_randomDir ? 1.0 : -1.0);
 				// } // else do nothing.
 				// The following lines give the same result without conditionals.
-				heading += mix(u_rotationAngle, -u_rotationAngle, step(middleState * leftState, rightState * middleState));
-				heading += mix(u_rotationAngle, -u_rotationAngle, u_randomDir) * step(middleState * middleState, rightState * leftState);
+				float rightWeight = step(middleState, rightState);
+				float leftWeight = step(middleState, leftState);
+				heading += mix(
+					rightWeight * mix(u_rotationAngle, -u_rotationAngle, u_randomDir),
+					mix(u_rotationAngle, -u_rotationAngle, rightWeight),
+					abs(leftWeight - rightWeight)
+				);
 
 				// Wrap heading around 2PI.
 				heading = mod(heading + TWO_PI, TWO_PI);
@@ -286,21 +291,20 @@ function main({ gui, glslVersion, contextID }) {
 				// 	nextDisplacement = vec2(0);
 				// 	// Also check if we've wrapped.
 				// 	if (absolute.x < 0.0) {
-				// 			absolute.x = absolute.x + u_dimensions.x;
+				// 		absolute.x = absolute.x + u_dimensions.x;
 				// 	} else if (absolute.x >= u_dimensions.x) {
-				// 			absolute.x = absolute.x - u_dimensions.x;
+				// 		absolute.x = absolute.x - u_dimensions.x;
 				// 	}
 				// 	if (absolute.y < 0.0) {
-				// 			absolute.y = absolute.y + u_dimensions.y;
+				// 		absolute.y = absolute.y + u_dimensions.y;
 				// 	} else if (absolute.y >= u_dimensions.y) {
-				// 			absolute.y = absolute.y - u_dimensions.y;
+				// 		absolute.y = absolute.y - u_dimensions.y;
 				// 	}
 				// }
 				// The following lines give the same result without conditionals.
 				float shouldMerge = step(30.0, dot(nextDisplacement, nextDisplacement));
-				absolute += shouldMerge * nextDisplacement;
-				nextDisplacement = mix(nextDisplacement, vec2(0), shouldMerge);
-				absolute = mod(absolute + u_dimensions, u_dimensions);
+				absolute = mod(absolute + shouldMerge * nextDisplacement + u_dimensions, u_dimensions);
+				nextDisplacement *= (1.0 - shouldMerge);
 
 				out_fragColor = vec4(absolute, nextDisplacement);
 			}`,
@@ -431,7 +435,7 @@ function main({ gui, glslVersion, contextID }) {
 			out float out_fragColor;
 
 			void main() {
-				float distSq = 1.0 - dot(v_UV_local, v_UV_local); // Calc dist from center of touch.
+				float distSq = 1.0 - dot(v_UV_local, v_UV_local); // Calc distsq from center of touch.
 				out_fragColor = texture(u_trail, v_UV).x + distSq * u_depositAmount;
 			}`,
 		uniforms: [

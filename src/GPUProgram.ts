@@ -53,7 +53,7 @@ import {
 	initGLProgram,
 	uniformInternalTypeForValue,
 } from './utils';
-import { SAMPLER2D_DIMENSIONS_UNIFORM, SAMPLER2D_HALF_PX_UNIFORM } from './polyfills';
+import { SAMPLER2D_DIMENSIONS_UNIFORM, SAMPLER2D_FILTER, SAMPLER2D_HALF_PX_UNIFORM, SAMPLER2D_WRAP_X, SAMPLER2D_WRAP_Y } from './polyfills';
 
 export class GPUProgram {
 	// Keep a reference to GPUComposer.
@@ -64,8 +64,8 @@ export class GPUProgram {
 	 */
 	readonly name: string;
 
-	// Compiled fragment shader.
-	private _fragmentShader!: WebGLShader;
+	// Compiled fragment shaders (we hang onto different versions depending on compile-time variables).
+	private _fragmentShaders: {[key: string]: WebGLShader} = {};
 	// Source code for fragment shader.
 	// Hold onto this in case we need to recompile with different #defines.
 	private readonly _fragmentShaderSource: string;
@@ -137,7 +137,7 @@ export class GPUProgram {
 		this._composer = composer;
 		this.name = name;
 
-		// Compile fragment shader.
+		// Preprocess fragment shader source.
 		const fragmentShaderSource = isString(fragmentShader) ?
 			fragmentShader as string :
 			(fragmentShader as string[]).join('\n');
@@ -152,7 +152,11 @@ export class GPUProgram {
 				shaderIndex: i,
 			});
 		});
-		this._compile(defines); // Compiling also saves defines.
+
+		// Save defines.
+		if (defines) {
+			this._defines = { ...defines };
+		}
 
 		// Set program uniforms.
 		if (uniforms) {
@@ -164,12 +168,18 @@ export class GPUProgram {
 	}
 
 	/**
-	 * Compile fragment shader for GPUProgram.
-	 * Used internally, called only one.
+	 * Get fragment shader for GPUProgram, compile new onw if needed.
+	 * Used internally.
 	 * @private
 	 */
-	private _compile(defines?: CompileTimeVars) {
-		const { _composer, name, _fragmentShaderSource, _fragmentShader, _defines } = this;
+	private _getFragmentShader(fragmentId: string, internalDefines: CompileTimeVars, ) {
+		const { _fragmentShaders } = this;
+		if (_fragmentShaders[fragmentId]) {
+			// No need to recompile.
+			return _fragmentShaders[fragmentId];
+		}
+
+		const { _composer, name, _fragmentShaderSource, _defines } = this;
 		const {
 			gl,
 			_errorCallback,
@@ -178,25 +188,15 @@ export class GPUProgram {
 			floatPrecision,
 			intPrecision,
 		} = _composer;
-
-		// Update this.defines if needed.
-		// Passed in defines param may only be a partial list.
-		let definesNeedUpdate = false;
-		if (defines) {
-			const keys = Object.keys(defines);
-			for (let i = 0; i < keys.length; i++) {
-				const key = keys[i];
-				if (_defines[key] !== defines[key]) {
-					definesNeedUpdate = true;
-					_defines[key] = defines[key];
-				}
-			}
-		}
 		
-		if (_fragmentShader && !definesNeedUpdate) {
-			// No need to recompile.
-			return;
+		// Update internalDefines.
+		const keys = Object.keys(internalDefines);
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
+			_defines[key] = internalDefines[key];
 		}
+
+		console.log(`recompiling ${this.name} ${fragmentId}`);
 
 		if (verboseLogging) console.log(`Compiling fragment shader for GPUProgram "${name}" with defines: ${JSON.stringify(_defines)}`);
 		const shader = compileShader(
@@ -209,14 +209,14 @@ export class GPUProgram {
 			name,
 			_errorCallback,
 			_defines,
+			Object.keys(_fragmentShaders).length === 0,
 		);
 		if (!shader) {
 			_errorCallback(`Unable to compile fragment shader for GPUProgram "${name}".`);
 			return;
 		}
-		this._fragmentShader = shader;
-		
-		// If we decided to call this multiple times, we will need to attach the shader to all existing programs.
+		_fragmentShaders[fragmentId] = shader;
+		return _fragmentShaders[fragmentId];
 	}
 
 	/**
@@ -226,7 +226,8 @@ export class GPUProgram {
 	_getProgramWithName(name: PROGRAM_NAME_INTERNAL, input: GPULayerState[]) {
 		const { _samplerUniformsIndices } = this;
 
-		let key = `${name}`;
+		let fragmentId = '';
+		const fragmentDefines: CompileTimeVars = {};
 		for (let i = 0, length = _samplerUniformsIndices.length; i < length; i++) {
 			const { inputIndex } = _samplerUniformsIndices[i];
 			const { layer } = input[inputIndex];
@@ -237,14 +238,18 @@ export class GPUProgram {
 			const wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === REPEAT ? 1 : 0);
 			const wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === REPEAT ? 1 : 0);
 			const filterVal = filter === _internalFilter ? 0 : (filter === LINEAR ? 1 : 0);
-			key += `_IN0_${wrapXVal}_${wrapYVal}_${filterVal}`;
+			fragmentId += `_IN${i}_${wrapXVal}_${wrapYVal}_${filterVal}`;
+			fragmentDefines[`${SAMPLER2D_WRAP_X}${i}`] = `${wrapXVal}`;
+			fragmentDefines[`${SAMPLER2D_WRAP_Y}${i}`] = `${wrapYVal}`;
+			fragmentDefines[`${SAMPLER2D_FILTER}${i}`] = `${filterVal}`;
 		}
+		const key = `${name}${fragmentId}`;
 
 		// Check if we've already compiled program.
 		if (this._programs[key]) return this._programs[key];
 
 		// Otherwise, we need to compile a new program on the fly.
-		const { _composer, _uniforms, _fragmentShader, _programs, _programsKeyLookup } = this;
+		const { _composer, _uniforms, _fragmentShaders, _programs, _programsKeyLookup } = this;
 		const { gl, _errorCallback } = _composer;
 
 		const vertexShader = _composer._getVertexShaderWithName(name, this.name);
@@ -253,13 +258,13 @@ export class GPUProgram {
 			return;
 		}
 
-		// Add polyfill define declarations.
-		// if (_samplerUniformsIndices.length) {
-		// 	const defines = Object.keys(polyfillDefines).map((key) => `#define ${key} ${polyfillDefines[key]}`).join('\n') }
-		// 	_fragmentShader = _fragmentShader.replace('TEXTURE_POLYFILL_DEFINE_PLACEHOLDER', defines);
-		// }
+		const fragmentShader = this._getFragmentShader(fragmentId, fragmentDefines);
+		if (fragmentShader === undefined) {
+			_errorCallback(`Unable to init fragment shader "${fragmentId}" for GPUProgram "${this.name}".`);
+			return;
+		}
 
-		const program = initGLProgram(gl, vertexShader, _fragmentShader, this.name, _errorCallback);
+		const program = initGLProgram(gl, vertexShader, fragmentShader, this.name, _errorCallback);
 		if (program === undefined) {
 			_errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
 			return;
@@ -563,7 +568,7 @@ export class GPUProgram {
 	 * Deallocate GPUProgram instance and associated WebGL properties.
 	 */
 	dispose() {
-		const { _composer, _fragmentShader, _programs, _programsKeyLookup } = this;
+		const { _composer, _fragmentShaders, _programs, _programsKeyLookup } = this;
 		const { gl, verboseLogging } = _composer;
 
 		if (verboseLogging) console.log(`Deallocating GPUProgram "${this.name}".`);
@@ -580,10 +585,12 @@ export class GPUProgram {
 			delete this._programs[key as PROGRAM_NAME_INTERNAL];
 		});
 
-		// Delete fragment shader.
-		gl.deleteShader(_fragmentShader);
+		// Delete fragment shaders.
+		Object.values(_fragmentShaders).forEach(shader => {
+			gl.deleteShader(shader);
+		});
 		// @ts-ignore
-		delete this._fragmentShader;
+		delete this._fragmentShaders;
 		// Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
 
 		// Delete all references.

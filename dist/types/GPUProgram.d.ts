@@ -6,7 +6,7 @@ export declare class GPUProgram {
      * Name of GPUProgram, used for error logging.
      */
     readonly name: string;
-    private _fragmentShader;
+    private _fragmentShaders;
     private readonly _fragmentShaderSource;
     private readonly _defines;
     private readonly _uniforms;
@@ -29,11 +29,11 @@ export declare class GPUProgram {
         defines?: CompileTimeVars;
     });
     /**
-     * Compile fragment shader for GPUProgram.
-     * Used internally, called only one.
+     * Get fragment shader for GPUProgram, compile new onw if needed.
+     * Used internally.
      * @private
      */
-    private _compile;
+    private _getFragmentShader;
     /**
      * Get GLProgram associated with a specific vertex shader.
      * @private

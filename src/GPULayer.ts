@@ -304,7 +304,7 @@ export class GPULayer {
 
 		// Set internal filtering/wrap types.
 		// Make sure that we set filter BEFORE setting wrap.
-		const internalFilter = getGPULayerInternalFilter({ composer, filter, internalType, name });
+		const internalFilter = getGPULayerInternalFilter({ composer, filter, wrapS, wrapT, internalType, name });
 		this._internalFilter = internalFilter;
 		this._glFilter = gl[internalFilter];
 		this._internalWrapS = getGPULayerInternalWrap({ composer, wrap: wrapS, internalFilter, internalType, name });

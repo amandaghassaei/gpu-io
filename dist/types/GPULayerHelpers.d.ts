@@ -39,6 +39,8 @@ export declare function getGPULayerInternalWrap(params: {
 export declare function getGPULayerInternalFilter(params: {
     composer: GPUComposer;
     filter: GPULayerFilter;
+    wrapS: GPULayerWrap;
+    wrapT: GPULayerWrap;
     internalType: GPULayerType;
     name: string;
 }): GPULayerFilter;

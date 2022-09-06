@@ -679,6 +679,7 @@ export class GPUComposer {
 				programName,
 				_errorCallback,
 				vertexShader.defines,
+				true,
 			);
 			if (!shader) {
 				_errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${programName}".`);

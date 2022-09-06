@@ -35,6 +35,8 @@ declare const _testing: {
     getGPULayerInternalFilter(params: {
         composer: GPUComposer;
         filter: import("./constants").GPULayerFilter;
+        wrapS: import("./constants").GPULayerWrap;
+        wrapT: import("./constants").GPULayerWrap;
         internalType: import("./constants").GPULayerType;
         name: string;
     }): import("./constants").GPULayerFilter;

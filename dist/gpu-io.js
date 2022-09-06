@@ -2717,7 +2717,7 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("Error compiling GPUProgram \"".concat(programName, "\": no source for vertex shader with name \"").concat(name, "\"."));
             }
             var preprocessedSrc = (0, utils_1.preprocessVertexShader)(vertexShader.src, glslVersion);
-            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexShader.defines);
+            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexShader.defines, true);
             if (!shader) {
                 _errorCallback("Unable to compile \"".concat(name, "\" vertex shader for GPUProgram \"").concat(programName, "\"."));
                 return;
@@ -3704,7 +3704,7 @@ var GPULayer = /** @class */ (function () {
         this._glNumChannels = glNumChannels;
         // Set internal filtering/wrap types.
         // Make sure that we set filter BEFORE setting wrap.
-        var internalFilter = (0, GPULayerHelpers_1.getGPULayerInternalFilter)({ composer: composer, filter: filter, internalType: internalType, name: name });
+        var internalFilter = (0, GPULayerHelpers_1.getGPULayerInternalFilter)({ composer: composer, filter: filter, wrapS: wrapS, wrapT: wrapT, internalType: internalType, name: name });
         this._internalFilter = internalFilter;
         this._glFilter = gl[internalFilter];
         this._internalWrapS = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapS, internalFilter: internalFilter, internalType: internalType, name: name });
@@ -4454,23 +4454,23 @@ exports.getGPULayerInternalWrap = getGPULayerInternalWrap;
  * @private
  */
 function getGPULayerInternalFilter(params) {
-    var composer = params.composer, internalType = params.internalType, name = params.name;
     var filter = params.filter;
     if (filter === constants_1.NEAREST) {
         // NEAREST filtering is always supported.
         return filter;
     }
+    var composer = params.composer, internalType = params.internalType, wrapS = params.wrapS, wrapT = params.wrapT, name = params.name;
     if (internalType === constants_1.HALF_FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
             || (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, constants_1.CLAMP_TO_EDGE)) {
+        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapS) || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapT)) {
             console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
     if (internalType === constants_1.FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, constants_1.CLAMP_TO_EDGE)) {
+        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapS) || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapT)) {
             console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
@@ -5220,10 +5220,21 @@ exports.validateGPULayerArray = validateGPULayerArray;
 /***/ }),
 
 /***/ 664:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUProgram = void 0;
 var checks_1 = __webpack_require__(707);
@@ -5242,6 +5253,8 @@ var GPUProgram = /** @class */ (function () {
      */
     function GPUProgram(composer, params) {
         var _this = this;
+        // Compiled fragment shaders (we hang onto different versions depending on compile-time variables).
+        this._fragmentShaders = {};
         // #define variables for fragment shader program.
         this._defines = {};
         // Uniform locations, values, and types.
@@ -5284,7 +5297,7 @@ var GPUProgram = /** @class */ (function () {
         // Save arguments.
         this._composer = composer;
         this.name = name;
-        // Compile fragment shader.
+        // Preprocess fragment shader source.
         var fragmentShaderSource = (0, checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
@@ -5297,7 +5310,10 @@ var GPUProgram = /** @class */ (function () {
                 shaderIndex: i,
             });
         });
-        this._compile(defines); // Compiling also saves defines.
+        // Save defines.
+        if (defines) {
+            this._defines = __assign({}, defines);
+        }
         // Set program uniforms.
         if (uniforms) {
             for (var i = 0; i < uniforms.length; i++) {
@@ -5307,39 +5323,34 @@ var GPUProgram = /** @class */ (function () {
         }
     }
     /**
-     * Compile fragment shader for GPUProgram.
-     * Used internally, called only one.
+     * Get fragment shader for GPUProgram, compile new onw if needed.
+     * Used internally.
      * @private
      */
-    GPUProgram.prototype._compile = function (defines) {
-        var _a = this, _composer = _a._composer, name = _a.name, _fragmentShaderSource = _a._fragmentShaderSource, _fragmentShader = _a._fragmentShader, _defines = _a._defines;
-        var gl = _composer.gl, _errorCallback = _composer._errorCallback, verboseLogging = _composer.verboseLogging, glslVersion = _composer.glslVersion, floatPrecision = _composer.floatPrecision, intPrecision = _composer.intPrecision;
-        // Update this.defines if needed.
-        // Passed in defines param may only be a partial list.
-        var definesNeedUpdate = false;
-        if (defines) {
-            var keys = Object.keys(defines);
-            for (var i = 0; i < keys.length; i++) {
-                var key = keys[i];
-                if (_defines[key] !== defines[key]) {
-                    definesNeedUpdate = true;
-                    _defines[key] = defines[key];
-                }
-            }
-        }
-        if (_fragmentShader && !definesNeedUpdate) {
+    GPUProgram.prototype._getFragmentShader = function (fragmentId, internalDefines) {
+        var _fragmentShaders = this._fragmentShaders;
+        if (_fragmentShaders[fragmentId]) {
             // No need to recompile.
-            return;
+            return _fragmentShaders[fragmentId];
         }
+        var _a = this, _composer = _a._composer, name = _a.name, _fragmentShaderSource = _a._fragmentShaderSource, _defines = _a._defines;
+        var gl = _composer.gl, _errorCallback = _composer._errorCallback, verboseLogging = _composer.verboseLogging, glslVersion = _composer.glslVersion, floatPrecision = _composer.floatPrecision, intPrecision = _composer.intPrecision;
+        // Update internalDefines.
+        var keys = Object.keys(internalDefines);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            _defines[key] = internalDefines[key];
+        }
+        console.log("recompiling ".concat(this.name, " ").concat(fragmentId));
         if (verboseLogging)
             console.log("Compiling fragment shader for GPUProgram \"".concat(name, "\" with defines: ").concat(JSON.stringify(_defines)));
-        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _defines);
+        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _defines, Object.keys(_fragmentShaders).length === 0);
         if (!shader) {
             _errorCallback("Unable to compile fragment shader for GPUProgram \"".concat(name, "\"."));
             return;
         }
-        this._fragmentShader = shader;
-        // If we decided to call this multiple times, we will need to attach the shader to all existing programs.
+        _fragmentShaders[fragmentId] = shader;
+        return _fragmentShaders[fragmentId];
     };
     /**
      * Get GLProgram associated with a specific vertex shader.
@@ -5347,7 +5358,8 @@ var GPUProgram = /** @class */ (function () {
      */
     GPUProgram.prototype._getProgramWithName = function (name, input) {
         var _samplerUniformsIndices = this._samplerUniformsIndices;
-        var key = "".concat(name);
+        var fragmentId = '';
+        var fragmentDefines = {};
         for (var i = 0, length_1 = _samplerUniformsIndices.length; i < length_1; i++) {
             var inputIndex = _samplerUniformsIndices[i].inputIndex;
             var layer = input[inputIndex].layer;
@@ -5355,21 +5367,29 @@ var GPUProgram = /** @class */ (function () {
             var wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === constants_1.REPEAT ? 1 : 0);
             var wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === constants_1.REPEAT ? 1 : 0);
             var filterVal = filter === _internalFilter ? 0 : (filter === constants_1.LINEAR ? 1 : 0);
-            key += "_IN0_".concat(wrapXVal, "_").concat(wrapYVal, "_").concat(filterVal);
+            fragmentId += "_IN".concat(i, "_").concat(wrapXVal, "_").concat(wrapYVal, "_").concat(filterVal);
+            fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_X).concat(i)] = "".concat(wrapXVal);
+            fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_Y).concat(i)] = "".concat(wrapYVal);
+            fragmentDefines["".concat(polyfills_1.SAMPLER2D_FILTER).concat(i)] = "".concat(filterVal);
         }
-        console.log(key);
+        var key = "".concat(name).concat(fragmentId);
         // Check if we've already compiled program.
         if (this._programs[key])
             return this._programs[key];
         // Otherwise, we need to compile a new program on the fly.
-        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _fragmentShader = _a._fragmentShader, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
+        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _fragmentShaders = _a._fragmentShaders, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
         var vertexShader = _composer._getVertexShaderWithName(name, this.name);
         if (vertexShader === undefined) {
             _errorCallback("Unable to init vertex shader \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
         }
-        var program = (0, utils_1.initGLProgram)(gl, vertexShader, _fragmentShader, this.name, _errorCallback);
+        var fragmentShader = this._getFragmentShader(fragmentId, fragmentDefines);
+        if (fragmentShader === undefined) {
+            _errorCallback("Unable to init fragment shader \"".concat(fragmentId, "\" for GPUProgram \"").concat(this.name, "\"."));
+            return;
+        }
+        var program = (0, utils_1.initGLProgram)(gl, vertexShader, fragmentShader, this.name, _errorCallback);
         if (program === undefined) {
             _errorCallback("Unable to init program \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
@@ -5659,7 +5679,7 @@ var GPUProgram = /** @class */ (function () {
      */
     GPUProgram.prototype.dispose = function () {
         var _this = this;
-        var _a = this, _composer = _a._composer, _fragmentShader = _a._fragmentShader, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
+        var _a = this, _composer = _a._composer, _fragmentShaders = _a._fragmentShaders, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Deallocating GPUProgram \"".concat(this.name, "\"."));
@@ -5675,10 +5695,12 @@ var GPUProgram = /** @class */ (function () {
         Object.keys(_programs).forEach(function (key) {
             delete _this._programs[key];
         });
-        // Delete fragment shader.
-        gl.deleteShader(_fragmentShader);
+        // Delete fragment shaders.
+        Object.values(_fragmentShaders).forEach(function (shader) {
+            gl.deleteShader(shader);
+        });
         // @ts-ignore
-        delete this._fragmentShader;
+        delete this._fragmentShaders;
         // Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
         // Delete all references.
         // @ts-ignore
@@ -6474,7 +6496,7 @@ function texturePolyfill(shaderSource) {
         var extraParams = wrapType ? ", halfPx" : '';
         return "\nvec4 GPUIO_TEXTURE_BILINEAR_INTERP".concat(wrapType ? "_WRAP_".concat(wrapType) : '', "(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = ").concat(lookupFunction, "(sampler, baseUV").concat(extraParams, ");\n\tvec4 maxmin = ").concat(lookupFunction, "(sampler, uv + vec2(halfPx.x, -halfPx.y)").concat(extraParams, ");\n\tvec4 minmax = ").concat(lookupFunction, "(sampler, uv + vec2(-halfPx.x, halfPx.y)").concat(extraParams, ");\n\tvec4 maxmax = ").concat(lookupFunction, "(sampler, uv + halfPx").concat(extraParams, ");\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n");
     }
-    shaderSource = "\n".concat(Object.keys(polyfillDefines).map(function (key) { return "#define ".concat(key, " ").concat(polyfillDefines[key]); }).join('\n'), "\n").concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nfloat GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n\treturn max(halfPx, min(1.0 - halfPx, coord));\n}\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
+    shaderSource = "\n".concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nfloat GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n\treturn max(halfPx, min(1.0 - halfPx, coord));\n}\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
         'REPEAT_REPEAT',
         'REPEAT_CLAMP',
         'CLAMP_REPEAT',
@@ -6933,7 +6955,8 @@ exports.makeShaderHeader = makeShaderHeader;
  * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
  * @private
  */
-function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, errorCallback, defines) {
+function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, errorCallback, defines, checkCompileStatus) {
+    if (checkCompileStatus === void 0) { checkCompileStatus = false; }
     // Create the shader object
     var shader = gl.createShader(shaderType);
     if (!shader) {
@@ -6946,14 +6969,16 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     gl.shaderSource(shader, fullShaderSource);
     // Compile the shader
     gl.compileShader(shader);
-    // TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
-    // Check if it compiled.
-    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    if (!success) {
-        // Something went wrong during compilation - print shader source (with line number) and the error.
-        console.log(fullShaderSource.split('\n').map(function (line, i) { return "".concat(i + 2, "\t").concat(line); }).join('\n'));
-        errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', " shader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
-        return null;
+    if (checkCompileStatus) {
+        // TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
+        // Check if it compiled.
+        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!success) {
+            // Something went wrong during compilation - print shader source (with line number) and the error.
+            console.log(fullShaderSource.split('\n').map(function (line, i) { return "".concat(i, "\t").concat(line); }).join('\n'));
+            errorCallback("Could not compile ".concat(shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex', " shader for program \"").concat(programName, "\": ").concat(gl.getShaderInfoLog(shader), "."));
+            return null;
+        }
     }
     return shader;
 }

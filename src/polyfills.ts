@@ -155,7 +155,6 @@ vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const
 	}
 
 	shaderSource = `
-TEXTURE_POLYFILL_DEFINE_PLACEHOLDER
 ${ Object.keys(polyfillUniforms).map((key) => `uniform ${polyfillUniforms[key]} ${key};`).join('\n') }
 
 float GPUIO_WRAP_REPEAT_UV_COORD(float coord) {

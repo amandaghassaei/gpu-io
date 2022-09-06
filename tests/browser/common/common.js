@@ -39,6 +39,7 @@ All tests are performed on non-power of 2 textures.<br/>
 In cases where INT types are not available, FLOAT types are used instead, but may be limited in the range of int values they can represent.<br/>
 Click on the test to see more info.<br/>
 "default" is NEAREST filtering with CLAMP_TO_EDGE wrapping.<br/>
+* indicates that fragment shader polyfill was used.<br/>
 Extrema (min, max, min magnitude, max magnitude) for each type are tested.`;
 
 function addModal() {
@@ -68,7 +69,8 @@ function showMoreInfo(e, result) {
 	const modal = document.getElementById('modal-1-container');
 	modal.className = `${result.status} modal__container`;
 	document.getElementById('modal-1-title').innerHTML = result.status;
-	document.getElementById('modal-1-error').innerHTML = `${result.log && result.log.length ? result.log.join('<br/><br/>') + '<br/><br/>' : ''} ${result.error.join('<br/><br/>')}`;
+	document.getElementById('modal-1-error').innerHTML =
+		`${(result.log ? result.log : [].concat(result.polyfill ? results.polyfill : []).concat(result.error)).join('<br/><br/>')}`;
 	document.getElementById('modal-1-config').innerHTML = Object.keys(result.config).map(key => `${key}: ${result.config[key]}`).join('<br/>');
 	MicroModal.show('modal-1');
 }
@@ -114,13 +116,13 @@ function makeColumn(results, extremaResults, title) {
 		const element = document.createElement('div');
 		element.className = `entry result ${result.status}`;
 		if (result.status === SUCCESS) {
-			element.innerHTML = `&#10003;${result.error.length ? '*' : ''}`;
+			element.innerHTML = `&#10003;${result.polyfill.length ? '*' : ''}`;
 		} else if (result.status === NA) {
-			element.innerHTML = 'NA'
+			element.innerHTML = 'NA';
 		} else if (result.status === WARNING) {
-			element.innerHTML = '!'
+			element.innerHTML = `!${result.polyfill.length ? '*' : ''}`;
 		} else if (result.status === ERROR) {
-			element.innerHTML = 'X'
+			element.innerHTML = 'X';
 		}
 		const link = document.createElement('a');
 		link.href = '#';

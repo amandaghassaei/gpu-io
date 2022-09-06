@@ -422,17 +422,18 @@ const testLayerWrites = (() => {
 
 			let status = SUCCESS;
 			const error = [];
+			const polyfill = [];
 			const log = [];
 			const typeMismatch =  TYPE !== layer._internalType;
 			if (typeMismatch) {
 				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${layer._internalType} internally.`);
 			}
 			if (WRAP !== layer._internalWrapS || WRAP !== layer._internalWrapT) {
-				error.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap ${layer._internalWrapS} internally and patching with fragment shader polyfill.`);
+				polyfill.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap ${layer._internalWrapS} internally and patching with fragment shader polyfill.`);
 			}
 			if (composer.gl[FILTER] !== layer._glFilter) {
 				const filter = layer._glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;
-				error.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally and patching with fragment shader polyfill.`);
+				polyfill.push(`Unsupported interpolation filter ${FILTER} for the current configuration, using filter ${filter} internally and patching with fragment shader polyfill.`);
 			}
 
 			if (TEST_EXTREMA) {
@@ -486,6 +487,7 @@ const testLayerWrites = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					extremaError,
 					extremaWarning,
 					config,
@@ -501,6 +503,7 @@ const testLayerWrites = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					config,
 				};
 			}
@@ -523,6 +526,7 @@ const testLayerWrites = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					config,
 				};
 			}
@@ -534,6 +538,7 @@ const testLayerWrites = (() => {
 					status,
 					log,
 					error,
+					polyfill,
 					config,
 				};
 			}
@@ -542,6 +547,7 @@ const testLayerWrites = (() => {
 				status,
 				log,
 				error,
+				polyfill,
 				config,
 			};
 		} catch (error) {

@@ -176,6 +176,7 @@ export function compileShader(
 	programName: string,
 	errorCallback: ErrorCallback,
 	defines?: CompileTimeVars,
+	checkCompileStatus = false,
 ) {
 	// Create the shader object
 	const shader = gl.createShader(shaderType);
@@ -197,14 +198,16 @@ export function compileShader(
 	// Compile the shader
 	gl.compileShader(shader);
 
-	// TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
-	// Check if it compiled.
-	const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-	if (!success) {
-		// Something went wrong during compilation - print shader source (with line number) and the error.
-		console.log(fullShaderSource.split('\n').map((line, i) => `${i}\t${line}`).join('\n'));
-		errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'} shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
-		return null;
+	if (checkCompileStatus) {
+		// TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
+		// Check if it compiled.
+		const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+		if (!success) {
+			// Something went wrong during compilation - print shader source (with line number) and the error.
+			console.log(fullShaderSource.split('\n').map((line, i) => `${i}\t${line}`).join('\n'));
+			errorCallback(`Could not compile ${shaderType === gl.FRAGMENT_SHADER ? 'fragment' : 'vertex'} shader for program "${programName}": ${gl.getShaderInfoLog(shader)}.`);
+			return null;
+		}
 	}
 	return shader;
 }
