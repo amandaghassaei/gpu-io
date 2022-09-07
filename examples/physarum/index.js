@@ -423,6 +423,7 @@ function main({ gui, glslVersion, contextID }) {
 		],
 	});
 	// Fragment shader program for touch interactions.
+	const TOUCH_DEPOSIT_SCALE_FACTOR = 2;
 	const touch = new GPUProgram(composer, {
 		name: 'touch',
 		fragmentShader: `
@@ -447,7 +448,7 @@ function main({ gui, glslVersion, contextID }) {
 			},
 			{
 				name: 'u_depositAmount',
-				value: 2 * PARAMS.depositAmount,
+				value: TOUCH_DEPOSIT_SCALE_FACTOR * PARAMS.depositAmount,
 				type: FLOAT,
 			},
 		],
@@ -512,7 +513,7 @@ function main({ gui, glslVersion, contextID }) {
 	const trailsGUI = gui.addFolder('Trails');
 	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
 		deposit.setUniform('u_depositAmount', value);
-		touch.setUniform('u_depositAmount', value);
+		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * value);
 	}).name('Deposit Amount');
 	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).onChange((value) => {
 		diffuseAndDecay.setUniform('u_decayFactor', value);
@@ -684,6 +685,7 @@ function main({ gui, glslVersion, contextID }) {
 		rotateParticles.setUniform('u_rotationAngle', PARAMS.rotationAngle * Math.PI / 180);
 		moveParticles.setUniform('u_stepSize', PARAMS.stepSize);
 		deposit.setUniform('u_depositAmount', PARAMS.depositAmount);
+		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * PARAMS.depositAmount);
 		diffuseAndDecay.setUniform('u_decayFactor', PARAMS.decayFactor);
 		render.setUniform('u_renderAmplitude', PARAMS.renderAmplitude);
 		trail.clear();

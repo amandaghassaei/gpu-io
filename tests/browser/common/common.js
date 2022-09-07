@@ -26,8 +26,8 @@ MicroModal.init();
 const browserReport = browserReportSync();
 
 document.getElementById('info').innerHTML =  `
-Browser: ${browserReport.browser.name} v${browserReport.browser.version}<br/>
-Operating System: ${browserReport.os.name} v${browserReport.os.version}<br/>
+Browser: ${browserReport.browser.name} ${browserReport.browser.version ? `v${browserReport.browser.version}` : 'unknown version'}<br/>
+Operating System: ${browserReport.os.name} ${browserReport.os.version ? `v${browserReport.os.version}` : 'unknown version'}<br/>
 <br/>
 WebGL2 Supported: ${isWebGL2Supported()}<br/>
 Vertex shader mediump precision handled as: ${getVertexShaderMediumpPrecision()}<br/>
@@ -35,9 +35,10 @@ Fragment shader mediump precision handled as: ${getFragmentShaderMediumpPrecisio
 Vertex shader supports highp precision: ${isHighpSupportedInVertexShader()}<br/>
 Fragment shader supports highp precision: ${isHighpSupportedInFragmentShader()}<br/>
 <br/>
+Click on the test to see more info.<br/>
+<br/>
 All tests are performed on non-power of 2 textures.<br/>
 In cases where INT types are not available, FLOAT types are used instead, but may be limited in the range of int values they can represent.<br/>
-Click on the test to see more info.<br/>
 "default" is NEAREST filtering with CLAMP_TO_EDGE wrapping.<br/>
 * indicates that fragment shader polyfill was used.<br/>
 Extrema (min, max, min magnitude, max magnitude) for each type are tested.`;
