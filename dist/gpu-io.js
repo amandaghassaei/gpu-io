@@ -4934,71 +4934,71 @@ function testFilterWrap(composer, internalType, filter, wrap) {
         },
         _a[(0, utils_1.isUnsignedIntType)(internalType) ? 'GPUIO_UINT' : ((0, utils_1.isIntType)(internalType) ? 'GPUIO_INT' : 'GPUIO_FLOAT')] = '1',
         _a), true);
-    var vertexShader = composer._getVertexShaderWithName(constants_1.DEFAULT_PROGRAM_NAME, programName);
-    if (!vertexShader || !fragmentShader) {
-        if (vertexShader)
-            gl.deleteShader(vertexShader);
-        if (fragmentShader)
-            gl.deleteShader(fragmentShader);
-        results.filterWrapSupport[key] = false;
-        return results.filterWrapSupport[key];
-    }
-    var program = (0, utils_1.initGLProgram)(gl, vertexShader, fragmentShader, programName, _errorCallback);
-    if (!program) {
-        results.filterWrapSupport[key] = false;
-        return results.filterWrapSupport[key];
-    }
-    // Draw setup.
-    output._prepareForWrite(false);
-    gl.viewport(0, 0, width, height);
-    gl.useProgram(program);
-    // Bind texture.
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    // Set uniforms.
-    gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
-    gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
-    gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
-    composer._setPositionAttribute(program, programName);
-    // Draw.
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.disable(gl.BLEND);
-    var filtered = output.getValues();
-    var supported = true;
-    var tol = (0, utils_1.isIntType)(internalType) ? 0 : (internalType === constants_1.HALF_FLOAT ? 1e-2 : 1e-4);
     function wrapValue(val, max) {
         if (wrap === constants_1.CLAMP_TO_EDGE)
             return Math.max(0, Math.min(max - 1, val));
         return (val + max) % max;
     }
-    for (var x = 0; x < width; x++) {
-        for (var y = 0; y < height; y++) {
-            var expected = void 0;
-            if (filter === constants_1.LINEAR) {
-                expected = (values[y * width + x] +
-                    values[y * width + wrapValue(x + 1, width)] +
-                    values[wrapValue(y + 1, height) * width + x] +
-                    values[wrapValue(y + 1, height) * width + wrapValue(x + 1, width)]) / 4;
+    var vertexShader = composer._getVertexShaderWithName(constants_1.DEFAULT_PROGRAM_NAME, programName);
+    if (vertexShader && fragmentShader) {
+        var program = (0, utils_1.initGLProgram)(gl, vertexShader, fragmentShader, programName, _errorCallback);
+        if (program) {
+            // Draw setup.
+            output._prepareForWrite(false);
+            gl.viewport(0, 0, width, height);
+            gl.useProgram(program);
+            // Bind texture.
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            // Set uniforms.
+            gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
+            gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
+            gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
+            composer._setPositionAttribute(program, programName);
+            // Draw.
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            gl.disable(gl.BLEND);
+            var filtered = output.getValues();
+            var supported = true;
+            var tol = (0, utils_1.isIntType)(internalType) ? 0 : (internalType === constants_1.HALF_FLOAT ? 1e-2 : 1e-4);
+            for (var x = 0; x < width; x++) {
+                for (var y = 0; y < height; y++) {
+                    var expected = void 0;
+                    if (filter === constants_1.LINEAR) {
+                        expected = (values[y * width + x] +
+                            values[y * width + wrapValue(x + 1, width)] +
+                            values[wrapValue(y + 1, height) * width + x] +
+                            values[wrapValue(y + 1, height) * width + wrapValue(x + 1, width)]) / 4;
+                    }
+                    else {
+                        var _x = wrapValue(x + offset, width);
+                        var _y = wrapValue(y + offset, height);
+                        expected = values[_y * width + _x];
+                    }
+                    var i = y * width + x;
+                    if (Math.abs((expected - filtered[i]) / expected) > tol) {
+                        supported = false;
+                        break;
+                    }
+                }
             }
-            else {
-                var _x = wrapValue(x + offset, width);
-                var _y = wrapValue(y + offset, height);
-                expected = values[_y * width + _x];
-            }
-            var i = y * width + x;
-            if (Math.abs((expected - filtered[i]) / expected) > tol) {
-                supported = false;
-                break;
-            }
+            results.filterWrapSupport[key] = supported;
+            // Clear out allocated memory.
+            gl.deleteProgram(program);
         }
+        else {
+            results.filterWrapSupport[key] = false;
+        }
+        // Clear out allocated memory.
+        // vertexShader belongs to composer, don't delete it.
+        gl.deleteShader(fragmentShader);
+    }
+    else {
+        results.filterWrapSupport[key] = false;
     }
     // Clear out allocated memory.
-    // vertexShader belongs to composer, don't delete it.
-    gl.deleteShader(fragmentShader);
-    gl.deleteProgram(program);
     output.dispose();
     gl.deleteTexture(texture);
-    results.filterWrapSupport[key] = supported;
     return results.filterWrapSupport[key];
 }
 exports.testFilterWrap = testFilterWrap;
@@ -5725,8 +5725,10 @@ var GPUProgram = /** @class */ (function () {
         delete this._uniforms;
         // @ts-ignore
         delete this._programs;
-        // @ts-ignore;
+        // @ts-ignore
         delete this._programsKeyLookup;
+        // @ts-ignore
+        delete this._samplerUniformsIndices;
     };
     return GPUProgram;
 }());

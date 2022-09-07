@@ -23,14 +23,6 @@ import {
 	UniformValue,
 	CompileTimeVars,
 	PROGRAM_NAME_INTERNAL,
-	DEFAULT_PROGRAM_NAME,
-	DEFAULT_W_UV_PROGRAM_NAME,
-	DEFAULT_W_NORMAL_PROGRAM_NAME,
-	DEFAULT_W_UV_NORMAL_PROGRAM_NAME,
-	SEGMENT_PROGRAM_NAME,
-	LAYER_POINTS_PROGRAM_NAME,
-	LAYER_VECTOR_FIELD_PROGRAM_NAME,
-	LAYER_LINES_PROGRAM_NAME,
 	UINT_1D_UNIFORM,
 	UINT_2D_UNIFORM,
 	UINT_3D_UNIFORM,
@@ -42,12 +34,8 @@ import {
 	BOOL_4D_UNIFORM,
 	GLSL3,
 	GPULayerState,
-	FLOAT,
-	validDataTypes,
 	REPEAT,
 	LINEAR,
-	NEAREST,
-	CLAMP_TO_EDGE,
 } from './constants';
 import {
 	compileShader,
@@ -610,7 +598,9 @@ export class GPUProgram {
 		delete this._uniforms;
 		// @ts-ignore
 		delete this._programs;
-		// @ts-ignore;
+		// @ts-ignore
 		delete this._programsKeyLookup;
+		// @ts-ignore
+		delete this._samplerUniformsIndices;
 	}
 }

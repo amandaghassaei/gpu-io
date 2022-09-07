@@ -54,6 +54,9 @@
 		preprocessVertexShader,
 		preprocessFragmentShader,
 		uniformInternalTypeForValue,
+		SAMPLER2D_FILTER,
+		SAMPLER2D_WRAP_X,
+		SAMPLER2D_WRAP_Y,
 	} = _testing;
 
 	describe('utils', () => {
@@ -334,11 +337,12 @@ precision lowp float;precision lowp sampler2D;
 					GLSL3,
 					PRECISION_HIGH_P,
 					PRECISION_HIGH_P,
-					preprocessFragmentShader(copyFragmentShader, GLSL3),
+					preprocessFragmentShader(copyFragmentShader, GLSL3).shaderSource,
 					webgl2.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ GPUIO_INT: '1' },
+					{ GPUIO_INT: '1', [`${SAMPLER2D_FILTER}0`]: '0', [`${SAMPLER2D_WRAP_X}0`]: '0', [`${SAMPLER2D_WRAP_Y}0`]: '0' },
+					true,
 				);
 				assert.typeOf(initGLProgram(
 					webgl2,
@@ -362,11 +366,12 @@ precision lowp float;precision lowp sampler2D;
 					GLSL1,
 					PRECISION_HIGH_P,
 					PRECISION_HIGH_P,
-					preprocessFragmentShader(copyFragmentShader, GLSL1),
+					preprocessFragmentShader(copyFragmentShader, GLSL1).shaderSource,
 					webgl2.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ GPUIO_INT: '1' },
+					{ GPUIO_INT: '1', [`${SAMPLER2D_FILTER}0`]: '0', [`${SAMPLER2D_WRAP_X}0`]: '0', [`${SAMPLER2D_WRAP_Y}0`]: '0' },
+					true,
 				);
 				assert.typeOf(initGLProgram(
 					webgl2,
@@ -393,11 +398,12 @@ precision lowp float;precision lowp sampler2D;
 					GLSL1,
 					PRECISION_HIGH_P,
 					PRECISION_HIGH_P,
-					preprocessFragmentShader(copyFragmentShader, GLSL1),
+					preprocessFragmentShader(copyFragmentShader, GLSL1).shaderSource,
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
-					{ GPUIO_INT: '1' },
+					{ GPUIO_INT: '1', [`${SAMPLER2D_FILTER}0`]: '0', [`${SAMPLER2D_WRAP_X}0`]: '0', [`${SAMPLER2D_WRAP_Y}0`]: '0' },
+					true,
 				);
 				assert.typeOf(initGLProgram(
 					webgl1,
@@ -564,33 +570,253 @@ void main() {
 			});
 		});
 		describe('preprocessFragmentShader', () => {
-			const copyFragmentShaderCopy = copyFragmentShader.slice();
+			const simpleFragmentShaderCopy = simpleFragmentShader.slice();
 			const simpleFragmentShaderGLSL1  = `varying vec2 v_UV;
 
 void main() {
 	gl_FragColor = vec4(vec4(v_UV.x, v_UV.y, 0, 1));
 }`;
 			it('should remove #version declarations', () => {
-				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
-				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL3, 'name'), simpleFragmentShader);
-				assert.equal(preprocessFragmentShader('#version 100\n' + simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
-				assert.equal(preprocessFragmentShader('#version 100\n' + simpleFragmentShader, GLSL3, 'name'), simpleFragmentShader);
+				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL1, 'name').shaderSource, simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL3, 'name').shaderSource, simpleFragmentShader);
+				assert.equal(preprocessFragmentShader('#version 100\n' + simpleFragmentShader, GLSL1, 'name').shaderSource, simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader('#version 100\n' + simpleFragmentShader, GLSL3, 'name').shaderSource, simpleFragmentShader);
 			});
 			it('should remove precision declarations', () => {
-				assert.equal(preprocessFragmentShader(`precision highp float; precision mediump int;${simpleFragmentShader}`, GLSL1, 'name'), simpleFragmentShaderGLSL1);
-				assert.equal(preprocessFragmentShader(`precision highp float; precision mediump int;${simpleFragmentShader}`, GLSL3, 'name'), simpleFragmentShader);
-				assert.equal(preprocessFragmentShader(`precision mediump float; precision lowp int;${simpleFragmentShader}`, GLSL1, 'name'), simpleFragmentShaderGLSL1);
-				assert.equal(preprocessFragmentShader(`precision mediump float; precision lowp int;${simpleFragmentShader}`, GLSL3, 'name'), simpleFragmentShader);
-				assert.equal(preprocessFragmentShader(`precision highp sampler2D; precision mediump usampler2D; precision lowp isampler2D;${simpleFragmentShader}`, GLSL1, 'name'), simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader(`precision highp float; precision mediump int;${simpleFragmentShader}`, GLSL1, 'name').shaderSource, simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader(`precision highp float; precision mediump int;${simpleFragmentShader}`, GLSL3, 'name').shaderSource, simpleFragmentShader);
+				assert.equal(preprocessFragmentShader(`precision mediump float; precision lowp int;${simpleFragmentShader}`, GLSL1, 'name').shaderSource, simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader(`precision mediump float; precision lowp int;${simpleFragmentShader}`, GLSL3, 'name').shaderSource, simpleFragmentShader);
+				assert.equal(preprocessFragmentShader(`precision highp sampler2D; precision mediump usampler2D; precision lowp isampler2D;${simpleFragmentShader}`, GLSL1, 'name').shaderSource, simpleFragmentShaderGLSL1);
 			});
 			it('should pass valid glsl3 shaders through', () => {
-				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL3), copyFragmentShader, 'name');
+				assert.equal(preprocessFragmentShader(simpleFragmentShader, GLSL3).shaderSource, simpleFragmentShader, 'name');
 				// No mutations.
-				assert.equal(copyFragmentShader, copyFragmentShaderCopy);
+				assert.equal(simpleFragmentShader, simpleFragmentShaderCopy);
 			});
 			it('should convert glsl3 shader to glsl1', () => {
-				assert.equal(preprocessFragmentShader(simpleFragmentShader, GLSL1, 'name'), simpleFragmentShaderGLSL1);
-				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL1, 'name'), `varying vec2 v_UV;
+				assert.equal(preprocessFragmentShader(simpleFragmentShader, GLSL1, 'name').shaderSource, simpleFragmentShaderGLSL1);
+				assert.equal(preprocessFragmentShader(copyFragmentShader, GLSL1, 'name').shaderSource, `
+uniform vec2 u_gpuio_half_px0;
+uniform vec2 u_gpuio_dimensions0;
+
+float GPUIO_WRAP_REPEAT_UV_COORD(float coord) {
+	return fract(coord + ceil(abs(coord)));
+}
+float GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {
+	return max(halfPx, min(1.0 - halfPx, coord));
+}
+
+
+vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture2D(sampler, vec2(u, v));
+}
+vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);
+	return texture2D(sampler, vec2(u, v));
+}
+vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture2D(sampler, vec2(u, v));
+}
+
+#if (__VERSION__ == 300)
+
+ivec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture2D(sampler, vec2(u, v));
+}
+ivec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);
+	return texture2D(sampler, vec2(u, v));
+}
+ivec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture2D(sampler, vec2(u, v));
+}
+
+
+ivec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture2D(sampler, vec2(u, v));
+}
+ivec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	float v = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);
+	return texture2D(sampler, vec2(u, v));
+}
+ivec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx) {
+	float u = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);
+	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture2D(sampler, vec2(u, v));
+}
+
+#endif
+
+
+vec4 GPUIO_TEXTURE_BILINEAR_INTERP(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
+	vec2 baseUV = uv - halfPx;
+	vec4 minmin = texture2D(sampler, baseUV);
+	vec4 maxmin = texture2D(sampler, uv + vec2(halfPx.x, -halfPx.y));
+	vec4 minmax = texture2D(sampler, uv + vec2(-halfPx.x, halfPx.y));
+	vec4 maxmax = texture2D(sampler, uv + halfPx);
+	vec2 t = fract(baseUV * dimensions);
+	vec4 yMin = mix(minmin, maxmin, t.x);
+	vec4 yMax = mix(minmax, maxmax, t.x);
+	return mix(yMin, yMax, t.y);
+}
+
+
+vec4 GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
+	vec2 baseUV = uv - halfPx;
+	vec4 minmin = GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, baseUV, halfPx);
+	vec4 maxmin = GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv + vec2(halfPx.x, -halfPx.y), halfPx);
+	vec4 minmax = GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv + vec2(-halfPx.x, halfPx.y), halfPx);
+	vec4 maxmax = GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv + halfPx, halfPx);
+	vec2 t = fract(baseUV * dimensions);
+	vec4 yMin = mix(minmin, maxmin, t.x);
+	vec4 yMax = mix(minmax, maxmax, t.x);
+	return mix(yMin, yMax, t.y);
+}
+
+
+vec4 GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
+	vec2 baseUV = uv - halfPx;
+	vec4 minmin = GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, baseUV, halfPx);
+	vec4 maxmin = GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv + vec2(halfPx.x, -halfPx.y), halfPx);
+	vec4 minmax = GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv + vec2(-halfPx.x, halfPx.y), halfPx);
+	vec4 maxmax = GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv + halfPx, halfPx);
+	vec2 t = fract(baseUV * dimensions);
+	vec4 yMin = mix(minmin, maxmin, t.x);
+	vec4 yMax = mix(minmax, maxmax, t.x);
+	return mix(yMin, yMax, t.y);
+}
+
+
+vec4 GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
+	vec2 baseUV = uv - halfPx;
+	vec4 minmin = GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, baseUV, halfPx);
+	vec4 maxmin = GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv + vec2(halfPx.x, -halfPx.y), halfPx);
+	vec4 minmax = GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv + vec2(-halfPx.x, halfPx.y), halfPx);
+	vec4 maxmax = GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv + halfPx, halfPx);
+	vec2 t = fract(baseUV * dimensions);
+	vec4 yMin = mix(minmin, maxmin, t.x);
+	vec4 yMax = mix(minmax, maxmax, t.x);
+	return mix(yMin, yMax, t.y);
+}
+
+
+
+vec4 GPUIO_TEXTURE_POLYFILL0(const sampler2D sampler, vec2 uv) {
+	#if (GPUIO_FILTER0 == 0)
+		#if (GPUIO_WRAP_X0 == 0)
+			#if (GPUIO_WRAP_Y0 == 0)
+				return texture2D(sampler, uv);
+			#else
+				return GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, u_gpuio_half_px0);
+			#endif
+		#else
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, u_gpuio_half_px0);
+			#else
+				return GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, u_gpuio_half_px0);
+			#endif
+		#endif
+	#else
+		#if (GPUIO_WRAP_X0 == 0)
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#endif
+		#else
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#endif
+		#endif
+	#endif
+}
+
+#if (__VERSION__ == 300)
+
+ivec4 GPUIO_TEXTURE_POLYFILL0(const sampler2D sampler, vec2 uv) {
+	#if (GPUIO_FILTER0 == 0)
+		#if (GPUIO_WRAP_X0 == 0)
+			#if (GPUIO_WRAP_Y0 == 0)
+				return texture2D(sampler, uv);
+			#else
+				return GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, u_gpuio_half_px0);
+			#endif
+		#else
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, u_gpuio_half_px0);
+			#else
+				return GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, u_gpuio_half_px0);
+			#endif
+		#endif
+	#else
+		#if (GPUIO_WRAP_X0 == 0)
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#endif
+		#else
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#endif
+		#endif
+	#endif
+}
+
+
+ivec4 GPUIO_TEXTURE_POLYFILL0(const sampler2D sampler, vec2 uv) {
+	#if (GPUIO_FILTER0 == 0)
+		#if (GPUIO_WRAP_X0 == 0)
+			#if (GPUIO_WRAP_Y0 == 0)
+				return texture2D(sampler, uv);
+			#else
+				return GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, u_gpuio_half_px0);
+			#endif
+		#else
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, u_gpuio_half_px0);
+			#else
+				return GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, u_gpuio_half_px0);
+			#endif
+		#endif
+	#else
+		#if (GPUIO_WRAP_X0 == 0)
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#endif
+		#else
+			#if (GPUIO_WRAP_Y0 == 0)
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#else
+				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, u_gpuio_half_px0, u_gpuio_dimensions0);
+			#endif
+		#endif
+	#endif
+}
+
+#endif
+
+varying vec2 v_UV;
 
 #ifdef GPUIO_FLOAT
 uniform sampler2D u_state;
@@ -613,10 +839,10 @@ uniform sampler2D u_state;
 #endif
 
 void main() {
-	gl_FragColor = vec4(texture2D(u_state, v_UV));
+	gl_FragColor = vec4(GPUIO_TEXTURE_POLYFILL0(u_state, v_UV));
 }`);
 				// No mutations.
-				assert.equal(copyFragmentShader, copyFragmentShaderCopy);
+				assert.equal(simpleFragmentShader, simpleFragmentShaderCopy);
 			});
 		});
 		describe('uniformInternalTypeForValue', () => {

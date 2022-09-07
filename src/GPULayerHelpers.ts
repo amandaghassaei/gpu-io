@@ -720,73 +720,70 @@ void main() {
 		true,
 	);
 
-	const vertexShader = composer._getVertexShaderWithName(DEFAULT_PROGRAM_NAME, programName);
-	if (!vertexShader || !fragmentShader) {
-		if (vertexShader) gl.deleteShader(vertexShader);
-		if (fragmentShader) gl.deleteShader(fragmentShader);
-		results.filterWrapSupport[key] = false;
-		return results.filterWrapSupport[key];
-	}
-
-	const program = initGLProgram(gl, vertexShader, fragmentShader, programName, _errorCallback);
-	if (!program) {
-		results.filterWrapSupport[key] = false;
-		return results.filterWrapSupport[key];
-	}
-
-	// Draw setup.
-	output._prepareForWrite(false);
-	gl.viewport(0, 0, width, height);
-	gl.useProgram(program);
-	// Bind texture.
-	gl.activeTexture(gl.TEXTURE0 );
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	// Set uniforms.
-	gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
-	gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
-	gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
-	composer._setPositionAttribute(program, programName);
-
-	// Draw.
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-	gl.disable(gl.BLEND);
-
-	const filtered = output.getValues();
-	let supported = true;
-	const tol = isIntType(internalType) ? 0 : (internalType === HALF_FLOAT ? 1e-2 : 1e-4);
 	function wrapValue(val: number, max: number) {
 		if (wrap === CLAMP_TO_EDGE) return Math.max(0, Math.min(max - 1, val));
 		return (val + max) % max;
 	}
-	for (let x = 0; x < width; x++) {
-		for (let y = 0; y < height; y++) {
-			let expected;
-			if (filter === LINEAR) {
-				expected = (values[y * width + x] +
-					values[y * width + wrapValue(x + 1, width)] +
-					values[wrapValue(y + 1, height) * width + x] +
-					values[wrapValue(y + 1, height) * width + wrapValue(x + 1, width)]) / 4;
-			} else {
-				const _x = wrapValue(x + offset, width);
-				const _y = wrapValue(y + offset, height);
-				expected = values[_y * width + _x];
-			}
-			const i = y * width + x;
-			if (Math.abs((expected - filtered[i]) / expected) > tol) {
-				supported = false;
-				break;
-			}
-		}
-	}
 
+	const vertexShader = composer._getVertexShaderWithName(DEFAULT_PROGRAM_NAME, programName);
+	if (vertexShader && fragmentShader) {
+		const program = initGLProgram(gl, vertexShader, fragmentShader, programName, _errorCallback);
+		if (program) {
+			// Draw setup.
+			output._prepareForWrite(false);
+			gl.viewport(0, 0, width, height);
+			gl.useProgram(program);
+			// Bind texture.
+			gl.activeTexture(gl.TEXTURE0 );
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			// Set uniforms.
+			gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
+			gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
+			gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
+			composer._setPositionAttribute(program, programName);
+
+			// Draw.
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			gl.disable(gl.BLEND);
+
+			const filtered = output.getValues();
+			let supported = true;
+			const tol = isIntType(internalType) ? 0 : (internalType === HALF_FLOAT ? 1e-2 : 1e-4);
+			for (let x = 0; x < width; x++) {
+				for (let y = 0; y < height; y++) {
+					let expected;
+					if (filter === LINEAR) {
+						expected = (values[y * width + x] +
+							values[y * width + wrapValue(x + 1, width)] +
+							values[wrapValue(y + 1, height) * width + x] +
+							values[wrapValue(y + 1, height) * width + wrapValue(x + 1, width)]) / 4;
+					} else {
+						const _x = wrapValue(x + offset, width);
+						const _y = wrapValue(y + offset, height);
+						expected = values[_y * width + _x];
+					}
+					const i = y * width + x;
+					if (Math.abs((expected - filtered[i]) / expected) > tol) {
+						supported = false;
+						break;
+					}
+				}
+			}
+			results.filterWrapSupport[key] = supported;
+			// Clear out allocated memory.
+			gl.deleteProgram(program);
+		} else {
+			results.filterWrapSupport[key] = false;
+		}
+		// Clear out allocated memory.
+		// vertexShader belongs to composer, don't delete it.
+		gl.deleteShader(fragmentShader);
+	} else {
+		results.filterWrapSupport[key] = false;
+	}
 	// Clear out allocated memory.
-	// vertexShader belongs to composer, don't delete it.
-	gl.deleteShader(fragmentShader);
-	gl.deleteProgram(program);
 	output.dispose();
 	gl.deleteTexture(texture);
-
-	results.filterWrapSupport[key] = supported;
 	return results.filterWrapSupport[key];
 }
 

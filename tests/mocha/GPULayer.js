@@ -180,23 +180,23 @@
 		describe('getStateAtIndex, get currentState, and get lastState', () => {
 			it('should return WebGLTextures', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 1});
-				assert.typeOf(layer1.currentState, 'WebGLTexture');
+				assert.typeOf(layer1.currentState.texture, 'WebGLTexture');
 				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 2});
-				assert.typeOf(layer2.currentState, 'WebGLTexture');
-				assert.typeOf(layer2.lastState, 'WebGLTexture');
-				assert.notEqual(layer2.currentState, layer2.lastState);
-				assert.equal(layer2.getStateAtIndex(-2), layer2.currentState); // This will throw warning - likely user error.
-				assert.equal(layer2.getStateAtIndex(-1), layer2.lastState);
-				assert.equal(layer2.getStateAtIndex(0), layer2.currentState);
-				assert.equal(layer2.getStateAtIndex(1), layer2.lastState);
-				assert.equal(layer2.getStateAtIndex(2), layer2.currentState); // This will throw warning - likely user error.
+				assert.typeOf(layer2.currentState.texture, 'WebGLTexture');
+				assert.typeOf(layer2.lastState.texture, 'WebGLTexture');
+				assert.notEqual(layer2.currentState.texture, layer2.lastState.texture);
+				assert.equal(layer2.getStateAtIndex(-2).texture, layer2.currentState.texture); // This will throw warning - likely user error.
+				assert.equal(layer2.getStateAtIndex(-1).texture, layer2.lastState.texture);
+				assert.equal(layer2.getStateAtIndex(0).texture, layer2.currentState.texture);
+				assert.equal(layer2.getStateAtIndex(1).texture, layer2.lastState.texture);
+				assert.equal(layer2.getStateAtIndex(2).texture, layer2.currentState.texture); // This will throw warning - likely user error.
 				// After incrementing index, this logic should be reversed.
 				layer2.incrementBufferIndex();
-				assert.equal(layer2.getStateAtIndex(-2), layer2.lastState); // This will throw warning - likely user error.
-				assert.equal(layer2.getStateAtIndex(-1), layer2.currentState);
-				assert.equal(layer2.getStateAtIndex(0), layer2.lastState);
-				assert.equal(layer2.getStateAtIndex(1), layer2.currentState);
-				assert.equal(layer2.getStateAtIndex(2), layer2.lastState); // This will throw warning - likely user error.
+				assert.equal(layer2.getStateAtIndex(-2).texture, layer2.lastState.texture); // This will throw warning - likely user error.
+				assert.equal(layer2.getStateAtIndex(-1).texture, layer2.currentState.texture);
+				assert.equal(layer2.getStateAtIndex(0).texture, layer2.lastState.texture);
+				assert.equal(layer2.getStateAtIndex(1).texture, layer2.currentState.texture);
+				assert.equal(layer2.getStateAtIndex(2).texture, layer2.lastState.texture); // This will throw warning - likely user error.
 				layer1.dispose();
 				layer2.dispose();
 			});

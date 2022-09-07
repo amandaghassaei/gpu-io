@@ -2,6 +2,7 @@
 	const {
 		GLSL1,
 		GLSL3,
+		WEBGL1,
 		WEBGL2,
 		HALF_FLOAT,
 		FLOAT,
@@ -30,14 +31,14 @@
 		assert.equal(result.status, expected);
 	}
 
-	// TODO: this only tests webgl2
 	describe('pipeline', () => {
 		[testLayerReads, testLayerWrites].forEach(test => {
 			describe(test.name, () => {
-				[WEBGL2].forEach(WEBGL_VERSION => {
+				[WEBGL2, WEBGL1].forEach(WEBGL_VERSION => {
 					[GLSL1, GLSL3].forEach(GLSL_VERSION => {
+						if (WEBGL_VERSION === WEBGL1 && GLSL_VERSION === GLSL3) return;
 						[HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(TYPE => {
-							it(`${TYPE} + ${WEBGL_VERSION} + ${GLSL_VERSION}`, () => {
+							it(`${TYPE} + ${WEBGL_VERSION === WEBGL1 ? 'webgl1' : 'webgl2'} + ${GLSL_VERSION}`, () => {
 								[1, 2, 3, 4].forEach(NUM_ELEMENTS => {
 									const extremaResult = test({
 										TYPE,

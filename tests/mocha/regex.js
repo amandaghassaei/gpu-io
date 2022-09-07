@@ -19,7 +19,7 @@
 		stripVersion,
 		stripPrecision,
 		stripComments,
-		getNumSampler2DInProgram,
+		getSampler2DsInProgram,
 	} = _testing;
 
 	describe('regex', () => {
@@ -205,11 +205,11 @@ void main() {
 				assert.equal(stripComments('/*\nmultiline\n comment\n*/\nint a = 40;/*another *comment*/\nfloat b = 5.0;// comment\n'), '\nint a = 40;\nfloat b = 5.0;');
 			});
 		});
-		describe('getNumSampler2DInProgram', () => {
+		describe('getSampler2DsInProgram', () => {
 			it('should return the number of sampler2Ds', () => {
-				assert.equal(getNumSampler2DInProgram(`uniform sampler2D u_test1;uniform usampler2D  u_test2;uniform  lowp isampler2D u_test3;`), 3);
+				assert.equal(getSampler2DsInProgram(`uniform sampler2D u_test1;uniform usampler2D  u_test2;uniform  lowp isampler2D u_test3;`).length, 3);
 				// Removes duplicate sampler declarations.
-				assert.equal(getNumSampler2DInProgram(copyFragmentShader), 1);
+				assert.equal(getSampler2DsInProgram(copyFragmentShader).length, 1);
 			});
 		});
 	});

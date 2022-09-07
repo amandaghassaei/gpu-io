@@ -15,6 +15,14 @@
 		INT,
 		BOOL,
 		isWebGL2,
+		DEFAULT_PROGRAM_NAME,
+		DEFAULT_W_UV_PROGRAM_NAME,
+		DEFAULT_W_NORMAL_PROGRAM_NAME,
+		DEFAULT_W_UV_NORMAL_PROGRAM_NAME,
+		SEGMENT_PROGRAM_NAME,
+		LAYER_POINTS_PROGRAM_NAME,
+		LAYER_VECTOR_FIELD_PROGRAM_NAME,
+		LAYER_LINES_PROGRAM_NAME,
 	} = GPUIO;
 
 	describe('GPUProgram', () => {
@@ -84,47 +92,18 @@
 				}, `Found "gl_FragColor" declaration in fragment shader for GPUProgram "test-program": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.`);
 			});
 		});
-		describe('get _defaultProgram', () => {
+		describe('_getProgramWithName', () => {
 			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._defaultProgram, 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_W_UV_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_W_NORMAL_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_W_UV_NORMAL_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(SEGMENT_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_POINTS_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_LINES_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_VECTOR_FIELD_PROGRAM_NAME, []), 'WebGLProgram');
 			});
 		});
-		describe('get _defaultProgramWithUV', () => {
-			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._defaultProgramWithUV, 'WebGLProgram');
-			});
-		});
-		describe('get _defaultProgramWithNormal', () => {
-			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._defaultProgramWithNormal, 'WebGLProgram');
-			});
-		});
-		describe('get _defaultProgramWithUVNormal', () => {
-			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._defaultProgramWithUVNormal, 'WebGLProgram');
-			});
-		});
-		describe('get _segmentProgram', () => {
-			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._segmentProgram, 'WebGLProgram');
-			});
-		});
-		describe('get _layerPointsProgram', () => {
-			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._layerPointsProgram, 'WebGLProgram');
-			});
-		});
-		describe('get _layerVectorFieldProgram', () => {
-			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._layerVectorFieldProgram, 'WebGLProgram');
-			});
-		});
-		describe('get _layerLinesProgram', () => {
-			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._layerLinesProgram, 'WebGLProgram');
-			});
-		});
-		
 		describe('setUniform', () => {
 			it('should set program uniform', () => {
 				const setValueProgram = new GPUProgram(composer, {
@@ -246,7 +225,8 @@
 				composer2.dispose();
 				composer3.dispose();
 			});
-			it('should throw error for missing uniform', () => {
+			it('should not throw error for missing uniform', () => {
+				// I've changed this to only throw a warning.
 				const setValueProgram = new GPUProgram(composer, {
 					name: 'uniform-test',
 					fragmentShader: setValueFragmentShader,
@@ -254,10 +234,10 @@
 				const value = [1, 2, 3, 4];
 				setValueProgram.setUniform('u_value_nonexist', value, FLOAT);
 				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
-				assert.throws(() => { composer.step({
+				assert.doesNotThrow(() => { composer.step({
 					program: setValueProgram,
 					output: layer,
-				}); }, /Could not init uniform "u_value_nonexist" for program "uniform-test". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type FLOAT_4D_UNIFORM. Error code: [0-9]+./);
+				}); }, Error);
 				setValueProgram.dispose();
 				layer.dispose();
 			});
@@ -282,11 +262,10 @@
 		});
 		describe('_setVertexUniform', () => {
 			it('should set program vertex uniform', () => {
-				// Throw an error for uniforms that don't exist.
-				assert.throws(() => { program._setVertexUniform(program._defaultProgram, 'u_testing', 3, FLOAT) },
-/Could not init uniform "u_testing" for program "common-program". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type FLOAT_1D_UNIFORM. Error code: [0-9]+./);
+				// Don't throw an error for uniforms that don't exist (only warns).
+				assert.doesNotThrow(() => { program._setVertexUniform(program._getProgramWithName(DEFAULT_PROGRAM_NAME, []), 'u_testing', 3, FLOAT); }, Error);
 				// Test a case that works, shouldn't throw an error.
-				program._setVertexUniform(program._defaultProgram, 'u_internal_scale', 3, FLOAT);
+				program._setVertexUniform(program._getProgramWithName(DEFAULT_PROGRAM_NAME, []), 'u_internal_scale', 3, FLOAT);
 				// This function calls GPUProgram.setUniform, do more extensive testing there.
 			});
 		});
@@ -294,7 +273,7 @@
 			it('should delete all keys', () => {
 				const testProgram = new GPUProgram(composer, {name: 'dispose-program', fragmentShader: simpleFragmentShader});
 				testProgram.dispose();
-				assert.equal(Object.keys(testProgram).length, 0);
+				assert.equal(Object.keys(testProgram).length, 0, Object.keys(testProgram));
 				// We don't really have a way to test if WebGL things were actually deleted.
 				// dispose() marks them for deletion, but they are garbage collected later.
 			});
