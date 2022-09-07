@@ -142,11 +142,11 @@ ${prefix}vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ${prefix}sampler2D sampler, 
 		const extraParams =  wrapType ? `, halfPx` : '';
 		return`
 vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
-	vec2 offset = halfPx;
 	vec2 imagePosCenterity = fract(uv * dimensions);
-	if (abs(imagePosCenterity.x - 0.5) < 0.001 || abs(imagePosCenterity.y - 0.5) < 0.001) {
-		offset -= vec2(0.00001, 0.00001);
-	}
+	vec2 offset = halfPx - vec2(0.00001, 0.00001) * max(
+			step(abs(imagePosCenterity.x - 0.5), 0.001),
+			step(abs(imagePosCenterity.y - 0.5), 0.001)
+		);
 	vec4 minmin = ${lookupFunction}(sampler, uv - offset${extraParams});
 	vec4 maxmin = ${lookupFunction}(sampler, uv + vec2(offset.x, -offset.y)${extraParams});
 	vec4 minmax = ${lookupFunction}(sampler, uv + vec2(-offset.x, offset.y)${extraParams});

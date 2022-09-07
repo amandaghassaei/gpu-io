@@ -446,7 +446,7 @@ function main({ gui, glslVersion, contextID }) {
 			},
 			{
 				name: 'u_depositAmount',
-				value: PARAMS.depositAmount,
+				value: 3 * PARAMS.depositAmount,
 				type: FLOAT,
 			},
 		],
