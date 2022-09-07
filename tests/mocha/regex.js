@@ -73,7 +73,7 @@ void main() {
 				assert.equal(glsl1VertexOut(''), '');
 				assert.equal(glsl1VertexIn('outVariable'), 'outVariable');
 				assert.equal(glsl1VertexIn('flatout'), 'flatout');
-				assert.equal(glsl1VertexOut('out vec2 v_UV;'), 'varying vec2 v_UV;');
+				assert.equal(glsl1VertexOut('out vec2 v_uv;'), 'varying vec2 v_uv;');
 				// Must also remove "flat".
 				assert.equal(glsl1VertexOut('flat out int v_index; // Index of point.'), 'varying float v_index; // Index of point.');
 				assert.equal(glsl1VertexOut('flat  out int v_index; // Index of point.'), 'varying float v_index; // Index of point.');

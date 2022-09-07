@@ -48,8 +48,14 @@ import {
 } from './extensions';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
-import { GPUProgram } from './GPUProgram';
-import { compileShader, convertFragmentShaderToGLSL1, initGLProgram, isIntType, isUnsignedIntType, isWebGL2, preprocessVertexShader } from './utils';
+import {
+	compileShader,
+	convertFragmentShaderToGLSL1,
+	initGLProgram,
+	isIntType,
+	isUnsignedIntType,
+	isWebGL2,
+} from './utils';
 
 // Memoize results.
 const results = {
@@ -684,7 +690,7 @@ export function testFilterWrap(
 	// Run program to perform linear filter.
 	const programName = 'testFilterWrap-program';
 	let fragmentShaderSource = `
-in vec2 v_UV;
+in vec2 v_uv;
 uniform vec2 u_offset;
 #ifdef GPUIO_INT
 	uniform isampler2D u_input;
@@ -699,7 +705,7 @@ uniform vec2 u_offset;
 	out float out_fragColor;
 #endif
 void main() {
-	out_fragColor = texture(u_input, v_UV + offset).x;
+	out_fragColor = texture(u_input, v_uv + offset).x;
 }`;
 	if (glslVersion !== GLSL3) {
 		fragmentShaderSource = convertFragmentShaderToGLSL1(fragmentShaderSource, programName);
@@ -737,8 +743,8 @@ void main() {
 			gl.activeTexture(gl.TEXTURE0 );
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 			// Set uniforms.
-			gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
-			gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
+			gl.uniform2fv(gl.getUniformLocation(program, 'u_gpuio_scale'), [1, 1]);
+			gl.uniform2fv(gl.getUniformLocation(program, 'u_gpuio_translation'), [0, 0]);
 			gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
 			composer._setPositionAttribute(program, programName);
 

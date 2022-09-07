@@ -1,13 +1,13 @@
-in vec2 a_internal_position;
+in vec2 a_gpuio_position;
 
-uniform float u_internal_halfThickness;
-uniform vec2 u_internal_scale;
-uniform float u_internal_length;
-uniform float u_internal_rotation;
-uniform vec2 u_internal_translation;
+uniform float u_gpuio_halfThickness;
+uniform vec2 u_gpuio_scale;
+uniform float u_gpuio_length;
+uniform float u_gpuio_rotation;
+uniform vec2 u_gpuio_translation;
 
-out vec2 v_UV_local;
-out vec2 v_UV;
+out vec2 v_uv_local;
+out vec2 v_uv;
 
 mat2 rotate2d(float _angle){
 	return mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));
@@ -15,28 +15,20 @@ mat2 rotate2d(float _angle){
 
 void main() {
 	// Calculate UV coordinates of current rendered object.
-	v_UV_local = 0.5 * (a_internal_position + 1.0);
+	v_uv_local = 0.5 * (a_gpuio_position + 1.0);
 
-	vec2 position = a_internal_position;
-
+	vec2 position = a_gpuio_position;
 	// Apply thickness / radius.
-	position *= u_internal_halfThickness;
-
+	position *= u_gpuio_halfThickness;
 	// Stretch center of shape to form a round-capped line segment.
-	//TODO: remove branching
-	if (position.x < 0.0) {
-		position.x -= u_internal_length / 2.0;
-		v_UV_local.x = 0.0; // Set entire cap UV.x to 0.
-	} else if (position.x > 0.0) {
-		position.x += u_internal_length / 2.0;
-		v_UV_local.x = 1.0; // Set entire cap UV.x to 1.
-	}
-
+	float signX = sign(position.x);
+	position.x += signX * u_gpuio_length / 2.0;
+	v_uv_local.x = (signX + 1.0) / 2.0;// Set entire cap uv.x to 1 or 0.
 	// Apply transformations.
-	position = u_internal_scale * (rotate2d(-u_internal_rotation) * position) + u_internal_translation;
+	position = u_gpuio_scale * (rotate2d(-u_gpuio_rotation) * position) + u_gpuio_translation;
 
 	// Calculate a global uv for the viewport.
-	v_UV = 0.5 * (position + 1.0);
+	v_uv = 0.5 * (position + 1.0);
 
 	// Calculate vertex position.
 	gl_Position = vec4(position, 0, 1);

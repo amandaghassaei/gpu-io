@@ -1,4 +1,4 @@
-in vec2 v_UV;
+in vec2 v_uv;
 
 #ifdef GPUIO_FLOAT
 uniform sampler2D u_state;
@@ -21,5 +21,5 @@ out uvec4 out_fragColor;
 #endif
 
 void main() {
-	out_fragColor = texture(u_state, v_UV);
+	out_fragColor = texture(u_state, v_uv);
 }

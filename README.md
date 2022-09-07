@@ -216,7 +216,7 @@ const composer = new GPUComposer({
 Of course, you can also always manually specify the precision of a particular variable in your shader code:
 
 ```glsl
-in vec2 v_UV;
+in vec2 v_uv;
 
 // u_state is a BYTE array, so we can set its precision to lowp.
 uniform lowp isampler2D u_state;
@@ -224,7 +224,7 @@ uniform lowp isampler2D u_state;
 out vec4 out_fragColor;
 
 void main() {
-	lowp int state = texture(u_state, v_UV).r;
+	lowp int state = texture(u_state, v_uv).r;
 	....
 }
 ```

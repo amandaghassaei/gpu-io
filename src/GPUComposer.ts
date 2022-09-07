@@ -48,6 +48,7 @@ import {
 	GPUIO_VS_POSITION_W_ACCUM,
 	GPUIO_VS_WRAP_X,
 	GPUIO_VS_WRAP_Y,
+	MAX_FLOAT_INT,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -844,22 +845,24 @@ export class GPUComposer {
 		if (location < 0) {
 			throw new Error(`Unable to find vertex attribute "${name}" in program "${programName}".`);
 		}
-		// TODO: only float is supported for vertex attributes.
+		// INT types not supported for attributes.
+		// Use FLOAT rather than SHORT bc FLOAT covers more INT range.
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
 		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
 	}
 
 	_setPositionAttribute(program: WebGLProgram, programName: string) {
-		this._setVertexAttribute(program, 'a_internal_position', 2, programName);
+		this._setVertexAttribute(program, 'a_gpuio_position', 2, programName);
 	}
 
 	private _setIndexAttribute(program: WebGLProgram, programName: string) {
-		this._setVertexAttribute(program, 'a_internal_index', 1, programName);
+		this._setVertexAttribute(program, 'a_gpuio_index', 1, programName);
 	}
 
 	private _setUVAttribute(program: WebGLProgram, programName: string) {
-		this._setVertexAttribute(program, 'a_internal_uv', 2, programName);
+		this._setVertexAttribute(program, 'a_gpuio_uv', 2, programName);
 	}
 
 	// Step for entire fullscreen quad.
@@ -878,8 +881,8 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, true, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1, 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
 		this._setPositionAttribute(glProgram, program.name);
 
@@ -910,8 +913,8 @@ export class GPUComposer {
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program._setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getBoundaryPositionsBuffer());
 		this._setPositionAttribute(glProgram, program.name);
 
@@ -959,8 +962,8 @@ export class GPUComposer {
 
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
-		program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', onePx, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer);
 		this._setPositionAttribute(glProgram, program.name);
 		
@@ -989,8 +992,8 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_scale', [diameter / _width, diameter / _height], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [diameter / _width, diameter / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], FLOAT);
 		const numSegments = params.numSegments ? params.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 3) {
 			throw new Error(`numSegments for GPUComposer.stepCircle must be greater than 2, got ${numSegments}.`);
@@ -1027,15 +1030,15 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, SEGMENT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_halfThickness', thickness / 2, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / width, 2 / height], FLOAT);
 		const diffX = position1[0] - position2[0];
 		const diffY = position1[1] - position2[1];
 		const angle = Math.atan2(diffY, diffX);
-		program._setVertexUniform(glProgram, 'u_internal_rotation', angle, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_rotation', angle, FLOAT);
 		const centerX = (position1[0] + position2[0]) / 2;
 		const centerY = (position1[1] + position2[1]) / 2;
-		program._setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this._width - 1, 2 * centerY / this._height - 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * centerX / this._width - 1, 2 * centerY / this._height - 1], FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
 		
 		const numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
@@ -1044,11 +1047,11 @@ export class GPUComposer {
 				throw new Error(`numSegments for GPUComposer.stepSegment must be divisible by 6, got ${numSegments}.`);
 			}
 			// Have to subtract a small offset from length.
-			program._setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
+			program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
 		} else {
 			// Have to subtract a small offset from length.
-			program._setVertexUniform(glProgram, 'u_internal_length', length - thickness, FLOAT);
+			program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness, FLOAT);
 			// Use a rectangle in case of no caps.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
 		}
@@ -1230,8 +1233,8 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / _width, 2 / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions)!);
 		this._setPositionAttribute(glProgram, program.name);
@@ -1243,7 +1246,7 @@ export class GPUComposer {
 		if (normals) {
 			// Init normals buffer.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals)!);
-			this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+			this._setVertexAttribute(glProgram, 'a_gpuio_normal', 2, program.name);
 		}
 
 		// Draw.
@@ -1276,8 +1279,8 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / _width, 2 / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [-1, -1], FLOAT);
 		// Init positions buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions)!);
 		this._setPositionAttribute(glProgram, program.name);
@@ -1289,7 +1292,7 @@ export class GPUComposer {
 		if (normals) {
 			// Init normals buffer.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals)!);
-			this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+			this._setVertexAttribute(glProgram, 'a_gpuio_normal', 2, program.name);
 		}
 
 		const count = params.count ? params.count : positions.length / 2;
@@ -1330,8 +1333,8 @@ export class GPUComposer {
 		const count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / _width, 2 / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [-1, -1], FLOAT);
 		if (indices) {
 			// Reorder positions array to match indices.
 			const positions = new Float32Array(2 * count);
@@ -1353,7 +1356,7 @@ export class GPUComposer {
 		if (normals) {
 			// Init normals buffer.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals)!);
-			this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+			this._setVertexAttribute(glProgram, 'a_gpuio_normal', 2, program.name);
 		}
 
 		// Draw.
@@ -1384,12 +1387,15 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _pointIndexArray, _width, _height } = this;
+		const { gl, _pointIndexArray, _width, _height, glslVersion } = this;
 		const { positions, output } = params;
 
 		// Check that numPoints is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
 			throw new Error(`GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer "${positions.name}" with ${positions.numComponents} components.`)
+		}
+		if (glslVersion === GLSL1 && positions.width * positions.height > MAX_FLOAT_INT) {
+			console.warn(`Points positions array length: ${positions.width * positions.height} is longer than what is supported by GLSL1 : ${MAX_FLOAT_INT}, expect index overflow.`);
 		}
 		const { length } = positions;
 		const count = params.count || length;
@@ -1418,13 +1424,13 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, LAYER_POINTS_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), INT);
-		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
-		program._setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
-		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
 		if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = initSequentialFloatArray(length);
@@ -1492,10 +1498,10 @@ export class GPUComposer {
 		const count = params.count ? params.count : indices.length;
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), INT);
-		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
-		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
 		if (this._indexedLinesIndexBuffer === undefined) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			let floatArray: Float32Array;
@@ -1570,13 +1576,13 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_vectors', this._indexOfLayerInArray(data, input), INT);
 		// Set default scale.
 		const vectorScale = params.vectorScale || 1;
-		program._setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / _width, vectorScale / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [vectorScale / _width, vectorScale / _height], FLOAT);
 		const vectorSpacing = params.vectorSpacing || 10;
 		const spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)] as [number, number];
-		program._setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_dimensions', spacedDimensions, FLOAT);
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
 		if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
@@ -1611,7 +1617,7 @@ export class GPUComposer {
 		program.setUniform('u_color', color, FLOAT);
 		const scale = params.scale || 1;
 		program.setUniform('u_scale', scale, FLOAT);
-		program.setUniform('u_internal_numDimensions', data.numComponents, INT);
+		program.setUniform('u_gpuio_numDimensions', data.numComponents, INT);
 
 		// Add data to end of input if needed.
 		const input = this._addLayerToInputs(data, params.input);
@@ -1619,9 +1625,9 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, true, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), INT);
-		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_data', this._indexOfLayerInArray(data, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1, 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
 		this._setPositionAttribute(glProgram, program.name);
 

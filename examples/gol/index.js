@@ -52,7 +52,7 @@ function main({ gui, contextID, glslVersion}) {
 	const golRules = new GPUProgram(composer, {
 		name: 'golRules',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform vec2 u_pxSize;
 			uniform lowp isampler2D u_state;
@@ -63,15 +63,15 @@ function main({ gui, contextID, glslVersion}) {
 			out lowp int out_fragColor;
 
 			void main() {
-				lowp int state = int(texture(u_state, v_UV).r);
-				lowp int n = int(texture(u_state, v_UV + vec2(0, u_pxSize[1])).r);
-				lowp int s = int(texture(u_state, v_UV + vec2(0, -u_pxSize[1])).r);
-				lowp int e = int(texture(u_state, v_UV + vec2(u_pxSize[0], 0)).r);
-				lowp int w = int(texture(u_state, v_UV + vec2(-u_pxSize[0], 0)).r);
-				lowp int ne = int(texture(u_state, v_UV + vec2(u_pxSize[0], u_pxSize[1])).r);
-				lowp int nw = int(texture(u_state, v_UV + vec2(-u_pxSize[0], u_pxSize[1])).r);
-				lowp int se = int(texture(u_state, v_UV + vec2(u_pxSize[0], -u_pxSize[1])).r);
-				lowp int sw = int(texture(u_state, v_UV + vec2(-u_pxSize[0], -u_pxSize[1])).r);
+				lowp int state = int(texture(u_state, v_uv).r);
+				lowp int n = int(texture(u_state, v_uv + vec2(0, u_pxSize[1])).r);
+				lowp int s = int(texture(u_state, v_uv + vec2(0, -u_pxSize[1])).r);
+				lowp int e = int(texture(u_state, v_uv + vec2(u_pxSize[0], 0)).r);
+				lowp int w = int(texture(u_state, v_uv + vec2(-u_pxSize[0], 0)).r);
+				lowp int ne = int(texture(u_state, v_uv + vec2(u_pxSize[0], u_pxSize[1])).r);
+				lowp int nw = int(texture(u_state, v_uv + vec2(-u_pxSize[0], u_pxSize[1])).r);
+				lowp int se = int(texture(u_state, v_uv + vec2(u_pxSize[0], -u_pxSize[1])).r);
+				lowp int sw = int(texture(u_state, v_uv + vec2(-u_pxSize[0], -u_pxSize[1])).r);
 				lowp int numLiving = n + s + e + w + ne + nw + se + sw;
 				
 				// Using some tricks here to remove conditionals (they cause significant slowdowns).
@@ -119,14 +119,14 @@ function main({ gui, contextID, glslVersion}) {
 	const golRender = new GPUProgram(composer, {
 		name: 'golRender',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform lowp isampler2D u_state;
 
 			out vec4 out_fragColor;
 
 			void main() {
-				lowp int state = texture(u_state, v_UV).r;
+				lowp int state = texture(u_state, v_uv).r;
 				out_fragColor = vec4(state, state, state, 1);
 			}`,
 		uniforms: [
@@ -151,14 +151,14 @@ function main({ gui, contextID, glslVersion}) {
 	const touch = new GPUProgram(composer, {
 		name: 'touch',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform lowp isampler2D u_noise;
 
 			out lowp int out_fragColor;
 
 			void main() {
-				out_fragColor = texture(u_noise, v_UV).r;
+				out_fragColor = texture(u_noise, v_uv).r;
 			}`,
 		uniforms: [
 			{

@@ -1,9 +1,3 @@
-import {
-	CLAMP_TO_EDGE,
-	GPULayerFilter,
-	GPULayerWrap,
-	NEAREST,
-} from './constants';
 import { getSampler2DsInProgram } from './regex';
 
 /**
@@ -190,3 +184,105 @@ ${shaderSource}`;
 	}
 }
 
+export const GLSL1_POLYFILLS = makeGLSL1Polyfills();
+/**
+ * Polyfill all common functions in GLSL3 for GLSL1.
+ */
+function makeGLSL1Polyfills() {
+	type T = 'float' | 'vec2' | 'vec3' | 'vec4';
+	type TI = 'int' | 'ivec2' | 'ivec3' | 'ivec4';
+	type TB = 'bool' | 'bvec2' | 'bvec3' | 'bvec4';
+
+	function floatTypeForIntType(type: TI): T {
+		switch(type) {
+			case 'int':
+				return 'float';
+			case 'ivec2':
+				return 'vec2';
+			case 'ivec3':
+				return 'vec3';
+			case 'ivec4':
+				return 'vec4';
+		}
+		throw new Error(`Unknown type ${type}.`);
+	}
+	function floatTypeForBoolType(type: TB): T {
+		switch(type) {
+			case 'bool':
+				return 'float';
+			case 'bvec2':
+				return 'vec2';
+			case 'bvec3':
+				return 'vec3';
+			case 'bvec4':
+				return 'vec4';
+		}
+		throw new Error(`Unknown type ${type}.`);
+	}
+
+	const abs = (type: TI) => `${type} abs(${type} a) { return ${type}(abs(${floatTypeForIntType(type)}(a))); }`;
+	const sign = (type: TI) => `${type} sign(${type} a) { return ${type}(sign(${floatTypeForIntType(type)}(a))); }`;
+	const round = (type: T) => `${type} round(${type} a) { return floor(a + 0.5); }`;
+	const trunc = (type: T) => `${type} trunc(${type} a) { return round(a - fract(a) * sign(a)); }`;
+	const roundEven = (type: T) => `${type} roundEven(${type} a) { return 2.0 * round(a / 2.0); }`;
+	const min = (type1: TI, type2: TI) => `${type1} min(${type1} a, ${type2} b) { return ${type1}(min(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
+	const max = (type1: TI, type2: TI) => `${type1} max(${type1} a, ${type2} b) { return ${type1}(max(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
+	const clamp = (type1: TI, type2: TI) => `${type1} clamp(${type1} a, ${type2} min, ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`;
+	const mix = (type1: T, type2: TB) => `${type1} mix(${type1} a, ${type1} b, ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`;
+
+	return `
+${abs('int')}
+${abs('ivec2')}
+${abs('ivec3')}
+${abs('ivec4')}
+
+${sign('int')}
+${sign('ivec2')}
+${sign('ivec3')}
+${sign('ivec4')}
+
+${round('float')}
+${round('vec2')}
+${round('vec3')}
+${round('vec4')}
+
+${trunc('float')}
+${trunc('vec2')}
+${trunc('vec3')}
+${trunc('vec4')}
+
+${roundEven('float')}
+${roundEven('vec2')}
+${roundEven('vec3')}
+${roundEven('vec4')}
+
+${min('int', 'int')}
+${min('ivec2', 'ivec2')}
+${min('ivec3', 'ivec3')}
+${min('ivec4', 'ivec4')}
+${min('ivec2', 'int')}
+${min('ivec3', 'int')}
+${min('ivec4', 'int')}
+
+${max('int', 'int')}
+${max('ivec2', 'ivec2')}
+${max('ivec3', 'ivec3')}
+${max('ivec4', 'ivec4')}
+${max('ivec2', 'int')}
+${max('ivec3', 'int')}
+${max('ivec4', 'int')}
+
+${clamp('int', 'int')}
+${clamp('ivec2', 'ivec2')}
+${clamp('ivec3', 'ivec3')}
+${clamp('ivec4', 'ivec4')}
+${clamp('ivec2', 'int')}
+${clamp('ivec3', 'int')}
+${clamp('ivec4', 'int')}
+
+${mix('float', 'bool')}
+${mix('vec2', 'bvec2')}
+${mix('vec3', 'bvec3')}
+${mix('vec4', 'bvec4')}
+`;
+}

@@ -39,7 +39,7 @@ function main({ gui, contextID, glslVersion}) {
 	const fractalCompute = new GPUProgram(composer, {
 		name: 'fractalCompute',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform vec2 u_boundsMin;
 			uniform vec2 u_boundsMax;
@@ -51,7 +51,7 @@ function main({ gui, contextID, glslVersion}) {
 
 			void main() {
 				// https://en.wikipedia.org/wiki/Julia_set#Pseudocode
-				vec2 z = v_UV * u_boundsMax + (1.0 - v_UV) * u_boundsMin;
+				vec2 z = v_uv * u_boundsMax + (1.0 - v_uv) * u_boundsMin;
 				int value = 0;
 				float radius = (max(u_boundsMax.x - u_boundsMin.x, u_boundsMax.y - u_boundsMin.y)) / 2.0;
 				for (int i = 0; i < u_maxIters; i++) {
@@ -94,11 +94,11 @@ function main({ gui, contextID, glslVersion}) {
 	const fractalRender = new GPUProgram(composer, {
 		name: 'fractalRender',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 			uniform sampler2D u_state;
 			out vec4 out_fragColor;
 			void main() {
-				float value = texture(u_state, v_UV).r;
+				float value = texture(u_state, v_uv).r;
 				out_fragColor = vec4(value, value, value, 1);
 			}`,
 		uniforms: [

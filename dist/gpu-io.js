@@ -2852,19 +2852,21 @@ var GPUComposer = /** @class */ (function () {
         if (location < 0) {
             throw new Error("Unable to find vertex attribute \"".concat(name, "\" in program \"").concat(programName, "\"."));
         }
-        // TODO: only float is supported for vertex attributes.
+        // INT types not supported for attributes.
+        // Use FLOAT rather than SHORT bc FLOAT covers more INT range.
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
         gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
         // Enable the attribute.
         gl.enableVertexAttribArray(location);
     };
     GPUComposer.prototype._setPositionAttribute = function (program, programName) {
-        this._setVertexAttribute(program, 'a_internal_position', 2, programName);
+        this._setVertexAttribute(program, 'a_gpuio_position', 2, programName);
     };
     GPUComposer.prototype._setIndexAttribute = function (program, programName) {
-        this._setVertexAttribute(program, 'a_internal_index', 1, programName);
+        this._setVertexAttribute(program, 'a_gpuio_index', 1, programName);
     };
     GPUComposer.prototype._setUVAttribute = function (program, programName) {
-        this._setVertexAttribute(program, 'a_internal_uv', 2, programName);
+        this._setVertexAttribute(program, 'a_gpuio_uv', 2, programName);
     };
     // Step for entire fullscreen quad.
     GPUComposer.prototype.step = function (params) {
@@ -2873,8 +2875,8 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, true, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [1, 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [0, 0], constants_1.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
         this._setPositionAttribute(glProgram, program.name);
         // Draw.
@@ -2893,8 +2895,8 @@ var GPUComposer = /** @class */ (function () {
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1 - onePx[0], 1 - onePx[1]], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', onePx, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - onePx[0], 1 - onePx[1]], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, constants_1.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this._getBoundaryPositionsBuffer());
         this._setPositionAttribute(glProgram, program.name);
         // Draw.
@@ -2932,8 +2934,8 @@ var GPUComposer = /** @class */ (function () {
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', onePx, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, constants_1.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer);
         this._setPositionAttribute(glProgram, program.name);
         // Draw.
@@ -2948,8 +2950,8 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [diameter / _width, diameter / _height], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [diameter / _width, diameter / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
         var numSegments = params.numSegments ? params.numSegments : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (numSegments < 3) {
             throw new Error("numSegments for GPUComposer.stepCircle must be greater than 2, got ".concat(numSegments, "."));
@@ -2970,15 +2972,15 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.SEGMENT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_halfThickness', thickness / 2, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / width, 2 / height], constants_1.FLOAT);
         var diffX = position1[0] - position2[0];
         var diffY = position1[1] - position2[1];
         var angle = Math.atan2(diffY, diffX);
-        program._setVertexUniform(glProgram, 'u_internal_rotation', angle, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_rotation', angle, constants_1.FLOAT);
         var centerX = (position1[0] + position2[0]) / 2;
         var centerY = (position1[1] + position2[1]) / 2;
-        program._setVertexUniform(glProgram, 'u_internal_translation', [2 * centerX / this._width - 1, 2 * centerY / this._height - 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * centerX / this._width - 1, 2 * centerY / this._height - 1], constants_1.FLOAT);
         var length = Math.sqrt(diffX * diffX + diffY * diffY);
         var numSegments = params.numCapSegments ? params.numCapSegments * 2 : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (params.endCaps) {
@@ -2986,12 +2988,12 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("numSegments for GPUComposer.stepSegment must be divisible by 6, got ".concat(numSegments, "."));
             }
             // Have to subtract a small offset from length.
-            program._setVertexUniform(glProgram, 'u_internal_length', length - thickness * Math.sin(Math.PI / numSegments), constants_1.FLOAT);
+            program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness * Math.sin(Math.PI / numSegments), constants_1.FLOAT);
             gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
         }
         else {
             // Have to subtract a small offset from length.
-            program._setVertexUniform(glProgram, 'u_internal_length', length - thickness, constants_1.FLOAT);
+            program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness, constants_1.FLOAT);
             // Use a rectangle in case of no caps.
             gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
         }
@@ -3151,8 +3153,8 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [-1, -1], constants_1.FLOAT);
         // Init positions buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions));
         this._setPositionAttribute(glProgram, program.name);
@@ -3164,7 +3166,7 @@ var GPUComposer = /** @class */ (function () {
         if (normals) {
             // Init normals buffer.
             gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals));
-            this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+            this._setVertexAttribute(glProgram, 'a_gpuio_normal', 2, program.name);
         }
         // Draw.
         this._setBlendMode(params.shouldBlendAlpha);
@@ -3182,8 +3184,8 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [-1, -1], constants_1.FLOAT);
         // Init positions buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(positions));
         this._setPositionAttribute(glProgram, program.name);
@@ -3195,7 +3197,7 @@ var GPUComposer = /** @class */ (function () {
         if (normals) {
             // Init normals buffer.
             gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals));
-            this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+            this._setVertexAttribute(glProgram, 'a_gpuio_normal', 2, program.name);
         }
         var count = params.count ? params.count : positions.length / 2;
         // Draw.
@@ -3219,8 +3221,8 @@ var GPUComposer = /** @class */ (function () {
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         var count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [-1, -1], constants_1.FLOAT);
         if (indices) {
             // Reorder positions array to match indices.
             var positions = new Float32Array(2 * count);
@@ -3243,7 +3245,7 @@ var GPUComposer = /** @class */ (function () {
         if (normals) {
             // Init normals buffer.
             gl.bindBuffer(gl.ARRAY_BUFFER, this._initVertexBuffer(normals));
-            this._setVertexAttribute(glProgram, 'a_internal_normal', 2, program.name);
+            this._setVertexAttribute(glProgram, 'a_gpuio_normal', 2, program.name);
         }
         // Draw.
         this._setBlendMode(params.shouldBlendAlpha);
@@ -3261,11 +3263,14 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
-        var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion;
         var positions = params.positions, output = params.output;
         // Check that numPoints is valid.
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
             throw new Error("GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
+        }
+        if (glslVersion === constants_1.GLSL1 && positions.width * positions.height > constants_1.MAX_FLOAT_INT) {
+            console.warn("Points positions array length: ".concat(positions.width * positions.height, " is longer than what is supported by GLSL1 : ").concat(constants_1.MAX_FLOAT_INT, ", expect index overflow."));
         }
         var length = positions.length;
         var count = params.count || length;
@@ -3292,13 +3297,13 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.LAYER_POINTS_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Set default pointSize.
         var pointSize = params.pointSize || 1;
-        program._setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_pointSize', pointSize, constants_1.FLOAT);
         var positionLayerDimensions = [positions.width, positions.height];
-        program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
         if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = (0, utils_1.initSequentialFloatArray)(length);
@@ -3347,10 +3352,10 @@ var GPUComposer = /** @class */ (function () {
         var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(params.count || positions.length);
         var count = params.count ? params.count : indices.length;
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         var positionLayerDimensions = [positions.width, positions.height];
-        program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
         if (this._indexedLinesIndexBuffer === undefined) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var floatArray = void 0;
@@ -3412,13 +3417,13 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_vectors', this._indexOfLayerInArray(data, input), constants_1.INT);
         // Set default scale.
         var vectorScale = params.vectorScale || 1;
-        program._setVertexUniform(glProgram, 'u_internal_scale', [vectorScale / _width, vectorScale / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [vectorScale / _width, vectorScale / _height], constants_1.FLOAT);
         var vectorSpacing = params.vectorSpacing || 10;
         var spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)];
-        program._setVertexUniform(glProgram, 'u_internal_dimensions', spacedDimensions, constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_dimensions', spacedDimensions, constants_1.FLOAT);
         var length = 2 * spacedDimensions[0] * spacedDimensions[1];
         if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
@@ -3441,15 +3446,15 @@ var GPUComposer = /** @class */ (function () {
         program.setUniform('u_color', color, constants_1.FLOAT);
         var scale = params.scale || 1;
         program.setUniform('u_scale', scale, constants_1.FLOAT);
-        program.setUniform('u_internal_numDimensions', data.numComponents, constants_1.INT);
+        program.setUniform('u_gpuio_numDimensions', data.numComponents, constants_1.INT);
         // Add data to end of input if needed.
         var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, true, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), constants_1.INT);
-        program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_data', this._indexOfLayerInArray(data, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [1, 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [0, 0], constants_1.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
         this._setPositionAttribute(glProgram, program.name);
         // Draw.
@@ -4931,7 +4936,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     var offset = filter === constants_1.LINEAR ? 0.5 : 1;
     // Run program to perform linear filter.
     var programName = 'testFilterWrap-program';
-    var fragmentShaderSource = "\nin vec2 v_UV;\nuniform vec2 u_offset;\n#ifdef GPUIO_INT\n\tuniform isampler2D u_input;\n\tout int out_fragColor;\n#endif\n#ifdef GPUIO_UINT\n\tuniform usampler2D u_input;\n\tout uint out_fragColor;\n#endif\n#ifdef GPUIO_FLOAT\n\tuniform sampler2D u_input;\n\tout float out_fragColor;\n#endif\nvoid main() {\n\tout_fragColor = texture(u_input, v_UV + offset).x;\n}";
+    var fragmentShaderSource = "\nin vec2 v_uv;\nuniform vec2 u_offset;\n#ifdef GPUIO_INT\n\tuniform isampler2D u_input;\n\tout int out_fragColor;\n#endif\n#ifdef GPUIO_UINT\n\tuniform usampler2D u_input;\n\tout uint out_fragColor;\n#endif\n#ifdef GPUIO_FLOAT\n\tuniform sampler2D u_input;\n\tout float out_fragColor;\n#endif\nvoid main() {\n\tout_fragColor = texture(u_input, v_uv + offset).x;\n}";
     if (glslVersion !== constants_1.GLSL3) {
         fragmentShaderSource = (0, utils_1.convertFragmentShaderToGLSL1)(fragmentShaderSource, programName);
     }
@@ -4957,8 +4962,8 @@ function testFilterWrap(composer, internalType, filter, wrap) {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture);
             // Set uniforms.
-            gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
-            gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
+            gl.uniform2fv(gl.getUniformLocation(program, 'u_gpuio_scale'), [1, 1]);
+            gl.uniform2fv(gl.getUniformLocation(program, 'u_gpuio_translation'), [0, 0]);
             gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
             composer._setPositionAttribute(program, programName);
             // Draw.
@@ -6446,7 +6451,7 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
+exports.GLSL1_POLYFILLS = exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
 var regex_1 = __webpack_require__(126);
 /**
  * Wrap type to use in polyfill.
@@ -6538,6 +6543,48 @@ function texturePolyfill(shaderSource) {
     };
 }
 exports.texturePolyfill = texturePolyfill;
+exports.GLSL1_POLYFILLS = makeGLSL1Polyfills();
+/**
+ * Polyfill all common functions in GLSL3 for GLSL1.
+ */
+function makeGLSL1Polyfills() {
+    function floatTypeForIntType(type) {
+        switch (type) {
+            case 'int':
+                return 'float';
+            case 'ivec2':
+                return 'vec2';
+            case 'ivec3':
+                return 'vec3';
+            case 'ivec4':
+                return 'vec4';
+        }
+        throw new Error("Unknown type ".concat(type, "."));
+    }
+    function floatTypeForBoolType(type) {
+        switch (type) {
+            case 'bool':
+                return 'float';
+            case 'bvec2':
+                return 'vec2';
+            case 'bvec3':
+                return 'vec3';
+            case 'bvec4':
+                return 'vec4';
+        }
+        throw new Error("Unknown type ".concat(type, "."));
+    }
+    var abs = function (type) { return "".concat(type, " abs(").concat(type, " a) { return ").concat(type, "(abs(").concat(floatTypeForIntType(type), "(a))); }"); };
+    var sign = function (type) { return "".concat(type, " sign(").concat(type, " a) { return ").concat(type, "(sign(").concat(floatTypeForIntType(type), "(a))); }"); };
+    var round = function (type) { return "".concat(type, " round(").concat(type, " a) { return floor(a + 0.5); }"); };
+    var trunc = function (type) { return "".concat(type, " trunc(").concat(type, " a) { return round(a - fract(a) * sign(a)); }"); };
+    var roundEven = function (type) { return "".concat(type, " roundEven(").concat(type, " a) { return 2.0 * round(a / 2.0); }"); };
+    var min = function (type1, type2) { return "".concat(type1, " min(").concat(type1, " a, ").concat(type2, " b) { return ").concat(type1, "(min(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); };
+    var max = function (type1, type2) { return "".concat(type1, " max(").concat(type1, " a, ").concat(type2, " b) { return ").concat(type1, "(max(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); };
+    var clamp = function (type1, type2) { return "".concat(type1, " clamp(").concat(type1, " a, ").concat(type2, " min, ").concat(type2, " max) { return ").concat(type1, "(clamp(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(min), ").concat(floatTypeForIntType(type2), "(max))); }"); };
+    var mix = function (type1, type2) { return "".concat(type1, " mix(").concat(type1, " a, ").concat(type1, " b, ").concat(type2, " c) { return mix(a, b, ").concat(floatTypeForBoolType(type2), "(c)); }"); };
+    return "\n".concat(abs('int'), "\n").concat(abs('ivec2'), "\n").concat(abs('ivec3'), "\n").concat(abs('ivec4'), "\n\n").concat(sign('int'), "\n").concat(sign('ivec2'), "\n").concat(sign('ivec3'), "\n").concat(sign('ivec4'), "\n\n").concat(round('float'), "\n").concat(round('vec2'), "\n").concat(round('vec3'), "\n").concat(round('vec4'), "\n\n").concat(trunc('float'), "\n").concat(trunc('vec2'), "\n").concat(trunc('vec3'), "\n").concat(trunc('vec4'), "\n\n").concat(roundEven('float'), "\n").concat(roundEven('vec2'), "\n").concat(roundEven('vec3'), "\n").concat(roundEven('vec4'), "\n\n").concat(min('int', 'int'), "\n").concat(min('ivec2', 'ivec2'), "\n").concat(min('ivec3', 'ivec3'), "\n").concat(min('ivec4', 'ivec4'), "\n").concat(min('ivec2', 'int'), "\n").concat(min('ivec3', 'int'), "\n").concat(min('ivec4', 'int'), "\n\n").concat(max('int', 'int'), "\n").concat(max('ivec2', 'ivec2'), "\n").concat(max('ivec3', 'ivec3'), "\n").concat(max('ivec4', 'ivec4'), "\n").concat(max('ivec2', 'int'), "\n").concat(max('ivec3', 'int'), "\n").concat(max('ivec4', 'int'), "\n\n").concat(clamp('int', 'int'), "\n").concat(clamp('ivec2', 'ivec2'), "\n").concat(clamp('ivec3', 'ivec3'), "\n").concat(clamp('ivec4', 'ivec4'), "\n").concat(clamp('ivec2', 'int'), "\n").concat(clamp('ivec3', 'int'), "\n").concat(clamp('ivec4', 'int'), "\n\n").concat(mix('float', 'bool'), "\n").concat(mix('vec2', 'bvec2'), "\n").concat(mix('vec3', 'bvec3'), "\n").concat(mix('vec4', 'bvec4'), "\n");
+}
 
 
 /***/ }),
@@ -7357,6 +7404,7 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
     var samplerUniforms;
     (_a = (0, polyfills_1.texturePolyfill)(shaderSource), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms);
     if (glslVersion !== constants_1.GLSL3) {
+        shaderSource = polyfills_1.GLSL1_POLYFILLS + shaderSource;
         shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
     }
     return { shaderSource: shaderSource, samplerUniforms: samplerUniforms };
@@ -7498,7 +7546,7 @@ module.exports = "#if (GPUIO_INT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_H
 /***/ 158:
 /***/ ((module) => {
 
-module.exports = "in vec2 v_UV;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_state;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_state;\n#endif\n#ifdef GPUIO_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef GPUIO_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef GPUIO_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=texture(u_state,v_UV);}"
+module.exports = "in vec2 v_uv;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_state;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_state;\n#endif\n#ifdef GPUIO_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef GPUIO_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef GPUIO_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=texture(u_state,v_uv);}"
 
 /***/ }),
 
@@ -7512,7 +7560,7 @@ module.exports = "#ifdef GPUIO_FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef GPUI
 /***/ 723:
 /***/ ((module) => {
 
-module.exports = "in vec2 v_UV;uniform vec3 u_color;uniform float u_scale;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_internal_data;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_internal_data;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_internal_data;\n#endif\nout vec4 out_fragColor;void main(){uvec4 value=texture(u_internal_data,v_UV);float mag=length(value);out_fragColor=vec4(mag*u_scale*u_color,1);}"
+module.exports = "in vec2 v_uv;uniform vec3 u_color;uniform float u_scale;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_gpuio_data;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_gpuio_data;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_gpuio_data;\n#endif\nout vec4 out_fragColor;void main(){uvec4 value=texture(u_gpuio_data,v_uv);float mag=length(value);out_fragColor=vec4(mag*u_scale*u_color,1);}"
 
 /***/ }),
 
@@ -7526,35 +7574,35 @@ module.exports = "in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragC
 /***/ 288:
 /***/ ((module) => {
 
-module.exports = "in vec2 a_internal_position;\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=0.5*(a_internal_position+1.);\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 position=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
+module.exports = "in vec2 a_gpuio_position;\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nin vec2 a_gpuio_uv;\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nin vec2 a_gpuio_normal;\n#endif\nuniform vec2 u_gpuio_scale;uniform vec2 u_gpuio_translation;out vec2 v_uv;out vec2 v_uv_local;\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nv_uv_local=a_gpuio_uv;\n#else\nv_uv_local=0.5*(a_gpuio_position+1.);\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nv_normal=a_gpuio_normal;\n#endif\nvec2 position=u_gpuio_scale*a_gpuio_position+u_gpuio_translation;v_uv=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 143:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_internal_positions,particleUV);v_UV=(positionData.rg+positionData.ba)*u_internal_scale;\n#else\nv_UV=texture(u_internal_positions,particleUV).rg*u_internal_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}in float a_gpuio_index;uniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out vec2 v_lineWrapping;out float v_index;void main(){vec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_uv.x<0.){v_uv.x+=1.;v_lineWrapping.x=1.;}else if(v_uv.x>1.){v_uv.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_uv.y<0.){v_uv.y+=1.;v_lineWrapping.y=1.;}else if(v_uv.y>1.){v_uv.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_uv*2.-1.;v_index=a_gpuio_index;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 767:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;out vec2 v_UV;flat out int v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_internal_positions,particleUV);v_UV=(positionData.rg+positionData.ba)*u_internal_scale;\n#else\nv_UV=texture(u_internal_positions,particleUV).rg*u_internal_scale;\n#endif\n#ifdef GPUIO_VS_WRAP_X\nv_UV.x=fract(v_UV.x+ceil(abs(v_UV.x)));\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nv_UV.y=fract(v_UV.y+ceil(abs(v_UV.y)));\n#endif\nvec2 position=v_UV*2.-1.;v_index=int(a_internal_index);gl_PointSize=u_internal_pointSize;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}in float a_gpuio_index;uniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;uniform float u_gpuio_pointSize;out vec2 v_uv;flat out int v_index;void main(){vec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\n#ifdef GPUIO_VS_WRAP_X\nv_uv.x=fract(v_uv.x+ceil(abs(v_uv.x)));\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nv_uv.y=fract(v_uv.y+ceil(abs(v_uv.y)));\n#endif\nvec2 position=v_uv*2.-1.;v_index=int(a_gpuio_index);gl_PointSize=u_gpuio_pointSize;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 760:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_vectors;uniform vec2 u_internal_dimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out float v_index;void main(){float index=floor((a_internal_index+0.5)/2.);v_UV=vec2(modI(index,u_internal_dimensions.x),floor(floor(index+0.5)/u_internal_dimensions.x))/u_internal_dimensions;if(modI(a_internal_index,2.)>0.){vec2 vectorData=texture(u_internal_vectors,v_UV).xy;v_UV+=vectorData*u_internal_scale;}vec2 position=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}in float a_gpuio_index;uniform sampler2D u_gpuio_vectors;uniform vec2 u_gpuio_dimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out float v_index;void main(){const float index=floor((a_gpuio_index+0.5)/2.);vec2 positionUV=uvFromIndex(index,u_gpuio_dimensions);v_uv+=step(0.,modI(a_gpuio_index,2.))*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;vec2 position=v_uv*2.-1.;v_index=a_gpuio_index;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 974:
 /***/ ((module) => {
 
-module.exports = "in vec2 a_internal_position;uniform float u_internal_halfThickness;uniform vec2 u_internal_scale;uniform float u_internal_length;uniform float u_internal_rotation;uniform vec2 u_internal_translation;out vec2 v_UV_local;out vec2 v_UV;mat2 rotate2d(float _angle){return mat2(cos(_angle),-sin(_angle),sin(_angle),cos(_angle));}void main(){v_UV_local=0.5*(a_internal_position+1.);vec2 position=a_internal_position;position*=u_internal_halfThickness;if(position.x<0.){position.x-=u_internal_length/2.;v_UV_local.x=0.;}else if(position.x>0.){position.x+=u_internal_length/2.;v_UV_local.x=1.;}position=u_internal_scale*(rotate2d(-u_internal_rotation)*position)+u_internal_translation;v_UV=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
+module.exports = "in vec2 a_gpuio_position;uniform float u_gpuio_halfThickness;uniform vec2 u_gpuio_scale;uniform float u_gpuio_length;uniform float u_gpuio_rotation;uniform vec2 u_gpuio_translation;out vec2 v_uv_local;out vec2 v_uv;mat2 rotate2d(float _angle){return mat2(cos(_angle),-sin(_angle),sin(_angle),cos(_angle));}void main(){v_uv_local=0.5*(a_gpuio_position+1.);vec2 position=a_gpuio_position;position*=u_gpuio_halfThickness;float signX=sign(position.x);position.x+=signX*u_gpuio_length/2.;v_uv_local.x=(signX+1.)/2.;position=u_gpuio_scale*(rotate2d(-u_gpuio_rotation)*position)+u_gpuio_translation;v_uv=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
 
 /***/ })
 

@@ -25,7 +25,7 @@ const testLayerWrites = (() => {
 			case HALF_FLOAT:
 			case FLOAT:
 				return `
-	in vec2 v_UV;
+	in vec2 v_uv;
 
 	uniform sampler2D u_state;
 	uniform vec2 u_offset;
@@ -33,13 +33,13 @@ const testLayerWrites = (() => {
 	out vec4 out_fragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_UV + u_offset);
+		out_fragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			case UNSIGNED_BYTE:
 			case UNSIGNED_SHORT:
 			case UNSIGNED_INT:
 				return `
-	in vec2 v_UV;
+	in vec2 v_uv;
 
 	uniform usampler2D u_state;
 	uniform vec2 u_offset;
@@ -47,13 +47,13 @@ const testLayerWrites = (() => {
 	out uvec4 out_fragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_UV + u_offset);
+		out_fragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			case BYTE:
 			case SHORT:
 			case INT:
 				return `
-	in vec2 v_UV;
+	in vec2 v_uv;
 
 	uniform isampler2D u_state;
 	uniform vec2 u_offset;
@@ -61,7 +61,7 @@ const testLayerWrites = (() => {
 	out ivec4 out_fragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_UV + u_offset);
+		out_fragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			default:
 				throw new Error(`Invalid type: ${type}.`);

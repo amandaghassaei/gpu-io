@@ -15,6 +15,7 @@ declare const _testing: {
     SAMPLER2D_FILTER: "GPUIO_FILTER";
     SAMPLER2D_HALF_PX_UNIFORM: "u_gpuio_half_px";
     SAMPLER2D_DIMENSIONS_UNIFORM: "u_gpuio_dimensions";
+    GLSL1_POLYFILLS: string;
     initArrayForType(type: import("./constants").GPULayerType, length: number, halfFloatsAsFloats?: boolean): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
     calcGPULayerSize(size: number | [number, number], name: string, verboseLogging: boolean): {
         width: number;
@@ -86,7 +87,7 @@ declare const _testing: {
     castVaryingToFloat(shaderSource: string): string;
     glsl1VertexOut(shaderSource: string): string;
     glsl1FragmentIn(shaderSource: string): string;
-    getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
+    getFragmentOutType(shaderSource: string, name: string): "int" | "ivec2" | "ivec3" | "ivec4" | "float" | "vec2" | "vec3" | "vec4" | "uvec2" | "uvec3" | "uvec4";
     glsl1FragmentOut(shaderSource: string, name: string): string;
     checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): boolean;
     glsl1Texture(shaderSource: string): string;

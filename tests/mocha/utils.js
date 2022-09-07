@@ -506,17 +506,17 @@ in vec2 a_internal_normal;
 uniform vec2 u_internal_scale;
 uniform vec2 u_internal_translation;
 
-out vec2 v_UV;
-out vec2 v_UV_local;
+out vec2 v_uv;
+out vec2 v_uv_local;
 #ifdef GPUIO_NORMAL_ATTRIBUTE
 out vec2 v_normal;
 #endif
 
 void main() {
 	#ifdef GPUIO_UV_ATTRIBUTE
-	v_UV_local = a_internal_uv;
+	v_uv_local = a_internal_uv;
 	#else
-	v_UV_local = a_internal_position;
+	v_uv_local = a_internal_position;
 	#endif
 	#ifdef GPUIO_NORMAL_ATTRIBUTE
 	v_normal = a_internal_normal;
@@ -524,7 +524,7 @@ void main() {
 
 	vec2 position = u_internal_scale * a_internal_position + u_internal_translation;
 
-	v_UV = 0.5 * (position + 1.0);
+	v_uv = 0.5 * (position + 1.0);
 
 	gl_Position = vec4(position, 0, 1);
 }`);
@@ -543,17 +543,17 @@ attribute vec2 a_internal_normal;
 uniform vec2 u_internal_scale;
 uniform vec2 u_internal_translation;
 
-varying vec2 v_UV;
-varying vec2 v_UV_local;
+varying vec2 v_uv;
+varying vec2 v_uv_local;
 #ifdef GPUIO_NORMAL_ATTRIBUTE
 varying vec2 v_normal;
 #endif
 
 void main() {
 	#ifdef GPUIO_UV_ATTRIBUTE
-	v_UV_local = a_internal_uv;
+	v_uv_local = a_internal_uv;
 	#else
-	v_UV_local = a_internal_position;
+	v_uv_local = a_internal_position;
 	#endif
 	#ifdef GPUIO_NORMAL_ATTRIBUTE
 	v_normal = a_internal_normal;
@@ -561,7 +561,7 @@ void main() {
 
 	vec2 position = u_internal_scale * a_internal_position + u_internal_translation;
 
-	v_UV = 0.5 * (position + 1.0);
+	v_uv = 0.5 * (position + 1.0);
 
 	gl_Position = vec4(position, 0, 1);
 }`);
@@ -571,10 +571,10 @@ void main() {
 		});
 		describe('preprocessFragmentShader', () => {
 			const simpleFragmentShaderCopy = simpleFragmentShader.slice();
-			const simpleFragmentShaderGLSL1  = `varying vec2 v_UV;
+			const simpleFragmentShaderGLSL1  = `varying vec2 v_uv;
 
 void main() {
-	gl_FragColor = vec4(vec4(v_UV.x, v_UV.y, 0, 1));
+	gl_FragColor = vec4(vec4(v_uv.x, v_uv.y, 0, 1));
 }`;
 			it('should remove #version declarations', () => {
 				assert.equal(preprocessFragmentShader('#version 300 es\n' + simpleFragmentShader, GLSL1, 'name').shaderSource, simpleFragmentShaderGLSL1);
@@ -816,7 +816,7 @@ ivec4 GPUIO_TEXTURE_POLYFILL0(const sampler2D sampler, vec2 uv) {
 
 #endif
 
-varying vec2 v_UV;
+varying vec2 v_uv;
 
 #ifdef GPUIO_FLOAT
 uniform sampler2D u_state;
@@ -839,7 +839,7 @@ uniform sampler2D u_state;
 #endif
 
 void main() {
-	gl_FragColor = vec4(GPUIO_TEXTURE_POLYFILL0(u_state, v_UV));
+	gl_FragColor = vec4(GPUIO_TEXTURE_POLYFILL0(u_state, v_uv));
 }`);
 				// No mutations.
 				assert.equal(simpleFragmentShader, simpleFragmentShaderCopy);

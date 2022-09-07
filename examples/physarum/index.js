@@ -155,7 +155,7 @@ function main({ gui, glslVersion, contextID }) {
 	const rotateParticles = new GPUProgram(composer, {
 		name: 'rotateParticles',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			#define TWO_PI 6.28318530718
 
@@ -176,12 +176,12 @@ function main({ gui, glslVersion, contextID }) {
 			}
 
 			void main() {
-				float heading = texture(u_particlesHeading, v_UV).r;
+				float heading = texture(u_particlesHeading, v_uv).r;
 
 				// Add absolute position plus displacement to get position.
-				vec4 positionInfo = texture(u_particlesPositions, v_UV);
+				vec4 positionInfo = texture(u_particlesPositions, v_uv);
 				vec2 position = positionInfo.xy + positionInfo.zw;
-				// Get location of particle in trail state (different that v_UV, which is UV coordinate in particles arrays).
+				// Get location of particle in trail state (different that v_uv, which is UV coordinate in particles arrays).
 				vec2 trailUV = position / u_dimensions;
 
 				// Sense and rotate.
@@ -261,7 +261,7 @@ function main({ gui, glslVersion, contextID }) {
 	const moveParticles = new GPUProgram(composer, {
 		name: 'moveParticles',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform sampler2D u_particlesPositions;
 			uniform sampler2D u_particlesHeading;
@@ -272,13 +272,13 @@ function main({ gui, glslVersion, contextID }) {
 
 			void main() {
 				// Add absolute position plus displacement to get position.
-				vec4 positionInfo = texture(u_particlesPositions, v_UV);
+				vec4 positionInfo = texture(u_particlesPositions, v_uv);
 				vec2 absolute = positionInfo.xy;
 				vec2 displacement = positionInfo.zw;
 				vec2 position = absolute + displacement;
 
 				// Move in direction of heading.
-				float heading = texture(u_particlesHeading, v_UV).r;
+				float heading = texture(u_particlesHeading, v_uv).r;
 				vec2 move = u_stepSize * vec2(cos(heading), sin(heading));
 				vec2 nextDisplacement = displacement + move;
 				
@@ -351,7 +351,7 @@ function main({ gui, glslVersion, contextID }) {
 	const deposit = new GPUProgram(composer, {
 		name: 'deposit',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform sampler2D u_trail;
 			uniform float u_depositAmount;
@@ -359,7 +359,7 @@ function main({ gui, glslVersion, contextID }) {
 			out float out_fragColor;
 
 			void main() {
-				float prevState = texture(u_trail, v_UV).x;
+				float prevState = texture(u_trail, v_uv).x;
 				// Add new state on top of previous.
 				out_fragColor = prevState + u_depositAmount;
 			}`,
@@ -380,7 +380,7 @@ function main({ gui, glslVersion, contextID }) {
 	const diffuseAndDecay = new GPUProgram(composer, {
 		name: 'diffuseAndDecay',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform sampler2D u_trail;
 			uniform float u_decayFactor;
@@ -397,10 +397,10 @@ function main({ gui, glslVersion, contextID }) {
 				// 1/16 1/8 1/16
 				// 1/8  1/4  1/8
 				// 1/16 1/8 1/16
-				float prevStateNE = texture(u_trail, v_UV + halfPx).x;
-				float prevStateNW = texture(u_trail, v_UV + vec2(-halfPx.x, halfPx.y)).x;
-				float prevStateSE = texture(u_trail, v_UV + vec2(halfPx.x, -halfPx.y)).x;
-				float prevStateSW = texture(u_trail, v_UV - halfPx).x;
+				float prevStateNE = texture(u_trail, v_uv + halfPx).x;
+				float prevStateNW = texture(u_trail, v_uv + vec2(-halfPx.x, halfPx.y)).x;
+				float prevStateSE = texture(u_trail, v_uv + vec2(halfPx.x, -halfPx.y)).x;
+				float prevStateSW = texture(u_trail, v_uv - halfPx).x;
 				float diffusedState = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
 				out_fragColor = u_decayFactor * diffusedState;
 			}`,
@@ -427,8 +427,8 @@ function main({ gui, glslVersion, contextID }) {
 	const touch = new GPUProgram(composer, {
 		name: 'touch',
 		fragmentShader: `
-			in vec2 v_UV;
-			in vec2 v_UV_local;
+			in vec2 v_uv;
+			in vec2 v_uv_local;
 
 			uniform sampler2D u_trail;
 			uniform float u_depositAmount;
@@ -436,9 +436,9 @@ function main({ gui, glslVersion, contextID }) {
 			out float out_fragColor;
 
 			void main() {
-				vec2 diffCenterNormalized = 2.0 * (v_UV_local - 0.5);
+				vec2 diffCenterNormalized = 2.0 * (v_uv_local - 0.5);
 				float distSq = 1.0 - dot(diffCenterNormalized, diffCenterNormalized);
-				out_fragColor = texture(u_trail, v_UV).x + distSq * u_depositAmount;
+				out_fragColor = texture(u_trail, v_uv).x + distSq * u_depositAmount;
 			}`,
 		uniforms: [
 			{
@@ -457,7 +457,7 @@ function main({ gui, glslVersion, contextID }) {
 	const render = new GPUProgram(composer, {
 		name: 'render',
 		fragmentShader: `
-			in vec2 v_UV;
+			in vec2 v_uv;
 
 			uniform sampler2D u_trail;
 			uniform float u_renderAmplitude;
@@ -465,7 +465,7 @@ function main({ gui, glslVersion, contextID }) {
 			out vec4 out_fragColor;
 
 			void main() {
-				float amp = u_renderAmplitude * texture(u_trail, v_UV).x;
+				float amp = u_renderAmplitude * texture(u_trail, v_uv).x;
 				out_fragColor = vec4(amp, amp, amp, 1);
 			}`,
 		uniforms: [

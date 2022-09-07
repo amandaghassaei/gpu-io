@@ -38,3 +38,4 @@ export declare function texturePolyfill(shaderSource: string): {
     shaderSource: string;
     samplerUniforms: string[];
 };
+export declare const GLSL1_POLYFILLS: string;

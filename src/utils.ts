@@ -49,7 +49,7 @@ import {
 	WEBGL1,
 	WEBGL2,
 } from './constants';
-import { texturePolyfill } from './polyfills';
+import { GLSL1_POLYFILLS, texturePolyfill } from './polyfills';
 import {
 	checkFragmentShaderForFragColor,
 	glsl1FragmentIn,
@@ -663,6 +663,7 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 	let samplerUniforms: string[];
 	({ shaderSource, samplerUniforms } = texturePolyfill(shaderSource));
 	if (glslVersion !== GLSL3) {
+		shaderSource = GLSL1_POLYFILLS + shaderSource;
 		shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
 	}
 	return { shaderSource, samplerUniforms };

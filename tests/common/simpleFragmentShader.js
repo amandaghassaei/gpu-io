@@ -1,5 +1,5 @@
-const simpleFragmentShader = `in vec2 v_UV;
+const simpleFragmentShader = `in vec2 v_uv;
 out vec4 out_fragColor;
 void main() {
-	out_fragColor = vec4(v_UV.x, v_UV.y, 0, 1);
+	out_fragColor = vec4(v_uv.x, v_uv.y, 0, 1);
 }`;
