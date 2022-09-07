@@ -237,7 +237,7 @@ export class GPUProgram {
 		if (this._programs[key]) return this._programs[key];
 
 		// Otherwise, we need to compile a new program on the fly.
-		const { _composer, _uniforms, _fragmentShaders, _programs, _programsKeyLookup } = this;
+		const { _composer, _uniforms, _programs, _programsKeyLookup } = this;
 		const { gl, _errorCallback } = _composer;
 
 		const vertexShader = _composer._getVertexShaderWithName(name, this.name);
@@ -259,6 +259,8 @@ export class GPUProgram {
 		}
 
 		// If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
+		// Set active program.
+		gl.useProgram(program);
 		const uniformNames = Object.keys(_uniforms);
 		for (let i = 0; i < uniformNames.length; i++) {
 			const uniformName = uniformNames[i];
@@ -285,8 +287,8 @@ export class GPUProgram {
 	) {
 		const { _composer, _uniforms } = this;
 		const { gl, _errorCallback, glslVersion } = _composer;
-		// Set active program.
-		gl.useProgram(program);
+
+		// We have already set gl.useProgram(program) outside this function.
 
 		const isGLSL3 = glslVersion === GLSL3;
 
@@ -413,7 +415,7 @@ export class GPUProgram {
 		type?: UniformType,
 	) {
 		const { _programs, _uniforms, _composer, _samplerUniformsIndices } = this;
-		const { verboseLogging } = _composer;
+		const { verboseLogging, gl } = _composer;
 
 		// Check that length of value is correct.
 		if (isArray(value)) {
@@ -469,7 +471,10 @@ export class GPUProgram {
 		const keys = Object.keys(_programs);
 		for (let i = 0; i < keys.length; i++) {
 			const programName = keys[i] as PROGRAM_NAME_INTERNAL;
-			this._setProgramUniform(_programs[programName]!, programName, name, value, currentType);
+			// Set active program.
+			const program = _programs[programName]!;
+			gl.useProgram(program);
+			this._setProgramUniform(program, programName, name, value, currentType);
 		}
 	};
 
@@ -481,6 +486,7 @@ export class GPUProgram {
 		program: WebGLProgram,
 		input: GPULayerState[],
 	) {
+		if (input.length === 0) return;
 		if (!program) {
 			throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
 		}

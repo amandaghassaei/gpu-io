@@ -204,7 +204,7 @@ function main({ gui, glslVersion, contextID }) {
 				float rightWeight = step(middleState, rightState);
 				float leftWeight = step(middleState, leftState);
 				heading += mix(
-					rightWeight * mix(u_rotationAngle, -u_rotationAngle, u_randomDir),
+					rightWeight * mix(u_rotationAngle, -u_rotationAngle, float(u_randomDir)),
 					mix(u_rotationAngle, -u_rotationAngle, rightWeight),
 					abs(leftWeight - rightWeight)
 				);

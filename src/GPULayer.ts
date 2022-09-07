@@ -428,7 +428,7 @@ export class GPULayer {
 	// 	this.buffers[this.bufferIndex].texture = texture;
 	// }
 
-	/**
+	/**	
 	 * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
 	 * @private
 	 */

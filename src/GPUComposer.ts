@@ -736,6 +736,7 @@ export class GPUComposer {
 		this._setOutputLayer(fullscreenRender, input, output);
 
 		// Set current program.
+		// Must do this before calling gpuProgram._setInternalFragmentUniforms(program, inputTextures);
 		gl.useProgram(program);
 
 		// Set input textures.

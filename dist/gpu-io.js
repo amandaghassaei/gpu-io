@@ -2763,6 +2763,7 @@ var GPUComposer = /** @class */ (function () {
         // This may modify WebGL internal state.
         this._setOutputLayer(fullscreenRender, input, output);
         // Set current program.
+        // Must do this before calling gpuProgram._setInternalFragmentUniforms(program, inputTextures);
         gl.useProgram(program);
         // Set input textures.
         for (var i = 0; i < inputTextures.length; i++) {
@@ -5395,7 +5396,7 @@ var GPUProgram = /** @class */ (function () {
         if (this._programs[key])
             return this._programs[key];
         // Otherwise, we need to compile a new program on the fly.
-        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _fragmentShaders = _a._fragmentShaders, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
+        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
         var vertexShader = _composer._getVertexShaderWithName(name, this.name);
         if (vertexShader === undefined) {
@@ -5413,6 +5414,8 @@ var GPUProgram = /** @class */ (function () {
             return;
         }
         // If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
+        // Set active program.
+        gl.useProgram(program);
         var uniformNames = Object.keys(_uniforms);
         for (var i = 0; i < uniformNames.length; i++) {
             var uniformName = uniformNames[i];
@@ -5432,8 +5435,7 @@ var GPUProgram = /** @class */ (function () {
         var _a;
         var _b = this, _composer = _b._composer, _uniforms = _b._uniforms;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback, glslVersion = _composer.glslVersion;
-        // Set active program.
-        gl.useProgram(program);
+        // We have already set gl.useProgram(program) outside this function.
         var isGLSL3 = glslVersion === constants_1.GLSL3;
         var location = (_a = _uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.location[programName];
         // Init a location for WebGLProgram if needed (only do this once).
@@ -5563,7 +5565,7 @@ var GPUProgram = /** @class */ (function () {
     GPUProgram.prototype.setUniform = function (name, value, type) {
         var _a;
         var _b = this, _programs = _b._programs, _uniforms = _b._uniforms, _composer = _b._composer, _samplerUniformsIndices = _b._samplerUniformsIndices;
-        var verboseLogging = _composer.verboseLogging;
+        var verboseLogging = _composer.verboseLogging, gl = _composer.gl;
         // Check that length of value is correct.
         if ((0, checks_1.isArray)(value)) {
             var length_2 = value.length;
@@ -5619,7 +5621,10 @@ var GPUProgram = /** @class */ (function () {
         var keys = Object.keys(_programs);
         for (var i = 0; i < keys.length; i++) {
             var programName = keys[i];
-            this._setProgramUniform(_programs[programName], programName, name, value, currentType);
+            // Set active program.
+            var program = _programs[programName];
+            gl.useProgram(program);
+            this._setProgramUniform(program, programName, name, value, currentType);
         }
     };
     ;
@@ -5628,6 +5633,8 @@ var GPUProgram = /** @class */ (function () {
      * @private
      */
     GPUProgram.prototype._setInternalFragmentUniforms = function (program, input) {
+        if (input.length === 0)
+            return;
         if (!program) {
             throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
         }
@@ -6506,7 +6513,7 @@ function texturePolyfill(shaderSource) {
     function make_GPUIO_BILINEAR_INTERP(wrapType) {
         var lookupFunction = wrapType ? "GPUIO_TEXTURE_WRAP_".concat(wrapType) : 'texture';
         var extraParams = wrapType ? ", halfPx" : '';
-        return "\nvec4 GPUIO_TEXTURE_BILINEAR_INTERP".concat(wrapType ? "_WRAP_".concat(wrapType) : '', "(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {\n\tvec2 baseUV = uv - halfPx;\n\tvec4 minmin = ").concat(lookupFunction, "(sampler, baseUV").concat(extraParams, ");\n\tvec4 maxmin = ").concat(lookupFunction, "(sampler, uv + vec2(halfPx.x, -halfPx.y)").concat(extraParams, ");\n\tvec4 minmax = ").concat(lookupFunction, "(sampler, uv + vec2(-halfPx.x, halfPx.y)").concat(extraParams, ");\n\tvec4 maxmax = ").concat(lookupFunction, "(sampler, uv + halfPx").concat(extraParams, ");\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n");
+        return "\nvec4 GPUIO_TEXTURE_BILINEAR_INTERP".concat(wrapType ? "_WRAP_".concat(wrapType) : '', "(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {\n\tvec2 offset = halfPx;\n\tvec2 imagePosCenterity = fract(uv * dimensions);\n\tif (abs(imagePosCenterity.x - 0.5) < 0.001 || abs(imagePosCenterity.y - 0.5) < 0.001) {\n\t\toffset -= vec2(0.00001, 0.00001);\n\t}\n\tvec4 minmin = ").concat(lookupFunction, "(sampler, uv - offset").concat(extraParams, ");\n\tvec4 maxmin = ").concat(lookupFunction, "(sampler, uv + vec2(offset.x, -offset.y)").concat(extraParams, ");\n\tvec4 minmax = ").concat(lookupFunction, "(sampler, uv + vec2(-offset.x, offset.y)").concat(extraParams, ");\n\tvec4 maxmax = ").concat(lookupFunction, "(sampler, uv + offset").concat(extraParams, ");\n\tvec2 t = fract((uv - offset) * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n");
     }
     shaderSource = "\n".concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nfloat GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n\treturn max(halfPx, min(1.0 - halfPx, coord));\n}\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
         'REPEAT_REPEAT',
