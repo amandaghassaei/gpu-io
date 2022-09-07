@@ -615,7 +615,7 @@ function convertVertexShaderToGLSL1(shaderSource: string) {
  * This is called once on initialization, so doesn't need to be extremely efficient.
  * @private
  */
-function convertFragmentShaderToGLSL1(shaderSource: string, name: string) {
+export function convertFragmentShaderToGLSL1(shaderSource: string, name: string) {
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to varying.
 	shaderSource = glsl1FragmentIn(shaderSource);

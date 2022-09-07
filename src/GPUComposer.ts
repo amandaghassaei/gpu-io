@@ -436,7 +436,7 @@ export class GPUComposer {
 		return _vectorMagnitudePrograms[key]!;
 	}
 
-	private _getQuadPositionsBuffer() {
+	_getQuadPositionsBuffer() {
 		if (this._quadPositionsBuffer === undefined) {
 			const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
 			this._quadPositionsBuffer = this._initVertexBuffer(fsQuadPositions)!;
@@ -855,7 +855,7 @@ export class GPUComposer {
 		gl.enableVertexAttribArray(location);
 	}
 
-	private _setPositionAttribute(program: WebGLProgram, programName: string) {
+	_setPositionAttribute(program: WebGLProgram, programName: string) {
 		this._setVertexAttribute(program, 'a_internal_position', 2, programName);
 	}
 

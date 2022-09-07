@@ -4349,7 +4349,6 @@ var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
 var GPULayer_1 = __webpack_require__(355);
-var GPUProgram_1 = __webpack_require__(664);
 var utils_1 = __webpack_require__(593);
 // Memoize results.
 var results = {
@@ -4865,7 +4864,7 @@ exports.testWriteSupport = testWriteSupport;
  */
 function testFilterWrap(composer, internalType, filter, wrap) {
     var _a;
-    var gl = composer.gl, glslVersion = composer.glslVersion;
+    var gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision, _errorCallback = composer._errorCallback;
     // Memoize results for a given set of inputs.
     var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(filter, ",").concat(wrap, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
     if (results.filterWrapSupport[key] !== undefined) {
@@ -4889,7 +4888,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
     var _b = getGLTextureParameters({
         composer: composer,
-        name: 'testFloatLinearFiltering',
+        name: 'testFilterWrap',
         numComponents: numComponents,
         internalType: internalType,
         writable: true,
@@ -4925,27 +4924,45 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     });
     var offset = filter === constants_1.LINEAR ? 0.5 : 1;
     // Run program to perform linear filter.
-    var program = new GPUProgram_1.GPUProgram(composer, {
-        name: 'testFloatLinearFiltering',
-        fragmentShader: "\n\t\t\tin vec2 v_UV;\n\t\t\tuniform vec2 u_offset;\n\t\t\t#ifdef GPUIO_INT\n\t\t\t\tuniform isampler2D u_input;\n\t\t\t\tout int out_fragColor;\n\t\t\t#endif\n\t\t\t#ifdef GPUIO_UINT\n\t\t\t\tuniform usampler2D u_input;\n\t\t\t\tout uint out_fragColor;\n\t\t\t#endif\n\t\t\t#ifdef GPUIO_FLOAT\n\t\t\t\tuniform sampler2D u_input;\n\t\t\t\tout float out_fragColor;\n\t\t\t#endif\n\t\t\tvoid main() {\n\t\t\t\tout_fragColor = texture(u_input, v_UV + u_offset).x;\n\t\t\t}",
-        uniforms: [
-            {
-                name: 'u_offset',
-                value: [offset / width, offset / height],
-                type: constants_1.FLOAT,
-            },
-        ],
-        defines: (_a = {},
-            _a[(0, utils_1.isUnsignedIntType)(internalType) ? 'GPUIO_UINT' : ((0, utils_1.isIntType)(internalType) ? 'GPUIO_INT' : 'GPUIO_FLOAT')] = '1',
-            _a)
-    });
-    composer.resize(width, height);
-    composer.step({
-        program: program,
-        // This may fail if things change significantly in GPUProgram._setInternalFragmentUniforms.
-        input: { texture: texture, layer: { width: width, height: height } },
-        output: output,
-    });
+    var programName = 'testFilterWrap-program';
+    var fragmentShaderSource = "\nin vec2 v_UV;\nuniform vec2 u_offset;\n#ifdef GPUIO_INT\n\tuniform isampler2D u_input;\n\tout int out_fragColor;\n#endif\n#ifdef GPUIO_UINT\n\tuniform usampler2D u_input;\n\tout uint out_fragColor;\n#endif\n#ifdef GPUIO_FLOAT\n\tuniform sampler2D u_input;\n\tout float out_fragColor;\n#endif\nvoid main() {\n\tout_fragColor = texture(u_input, v_UV + offset).x;\n}";
+    if (glslVersion !== constants_1.GLSL3) {
+        fragmentShaderSource = (0, utils_1.convertFragmentShaderToGLSL1)(fragmentShaderSource, programName);
+    }
+    var fragmentShader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, fragmentShaderSource, gl.FRAGMENT_SHADER, programName, _errorCallback, (_a = {
+            offset: "vec2(".concat(offset / width, ", ").concat(offset / height, ")")
+        },
+        _a[(0, utils_1.isUnsignedIntType)(internalType) ? 'GPUIO_UINT' : ((0, utils_1.isIntType)(internalType) ? 'GPUIO_INT' : 'GPUIO_FLOAT')] = '1',
+        _a), true);
+    var vertexShader = composer._getVertexShaderWithName(constants_1.DEFAULT_PROGRAM_NAME, programName);
+    if (!vertexShader || !fragmentShader) {
+        if (vertexShader)
+            gl.deleteShader(vertexShader);
+        if (fragmentShader)
+            gl.deleteShader(fragmentShader);
+        results.filterWrapSupport[key] = false;
+        return results.filterWrapSupport[key];
+    }
+    var program = (0, utils_1.initGLProgram)(gl, vertexShader, fragmentShader, programName, _errorCallback);
+    if (!program) {
+        results.filterWrapSupport[key] = false;
+        return results.filterWrapSupport[key];
+    }
+    // Draw setup.
+    output._prepareForWrite(false);
+    gl.viewport(0, 0, width, height);
+    gl.useProgram(program);
+    // Bind texture.
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    // Set uniforms.
+    gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
+    gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
+    gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
+    composer._setPositionAttribute(program, programName);
+    // Draw.
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.disable(gl.BLEND);
     var filtered = output.getValues();
     var supported = true;
     var tol = (0, utils_1.isIntType)(internalType) ? 0 : (internalType === constants_1.HALF_FLOAT ? 1e-2 : 1e-4);
@@ -4976,7 +4993,9 @@ function testFilterWrap(composer, internalType, filter, wrap) {
         }
     }
     // Clear out allocated memory.
-    program.dispose();
+    // vertexShader belongs to composer, don't delete it.
+    gl.deleteShader(fragmentShader);
+    gl.deleteProgram(program);
     output.dispose();
     gl.deleteTexture(texture);
     results.filterWrapSupport[key] = supported;
@@ -5341,7 +5360,6 @@ var GPUProgram = /** @class */ (function () {
             var key = keys[i];
             _defines[key] = internalDefines[key];
         }
-        console.log("recompiling ".concat(this.name, " ").concat(fragmentId));
         if (verboseLogging)
             console.log("Compiling fragment shader for GPUProgram \"".concat(name, "\" with defines: ").concat(JSON.stringify(_defines)));
         var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _defines, Object.keys(_fragmentShaders).length === 0);
@@ -5421,8 +5439,8 @@ var GPUProgram = /** @class */ (function () {
         // Init a location for WebGLProgram if needed (only do this once).
         if (location === undefined) {
             var _location = gl.getUniformLocation(program, uniformName);
-            if (!_location) {
-                _errorCallback("Could not init uniform \"".concat(uniformName, "\" for program \"").concat(this.name, "\". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type ").concat(type, ". Error code: ").concat(gl.getError(), "."));
+            if (_location === null) {
+                console.warn("Could not init uniform \"".concat(uniformName, "\" for program \"").concat(this.name, "\". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type ").concat(type, ". Error code: ").concat(gl.getError(), "."));
                 return;
             }
             location = _location;
@@ -5610,9 +5628,6 @@ var GPUProgram = /** @class */ (function () {
      * @private
      */
     GPUProgram.prototype._setInternalFragmentUniforms = function (program, input) {
-        // !!!!!!!!!!!!!!
-        // Be sure to update GPULayerHelpers.testFilterWrap if major changes are made to this routine.
-        // Currently only expecting to fetch width, and height from GPULayerState.layer.
         if (!program) {
             throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
         }
@@ -5634,28 +5649,23 @@ var GPUProgram = /** @class */ (function () {
             }
         }
         for (var i = 0, length_4 = input.length; i < length_4; i++) {
-            var _c = input[i].layer, width = _c.width, height = _c.height;
+            var layer = input[i].layer;
+            var width = layer.width, height = layer.height;
             var index = indexLookup[i];
             if (index < 0)
                 continue;
-            var dimensions = [width, height];
-            var dimensionsUniform = "".concat(polyfills_1.SAMPLER2D_DIMENSIONS_UNIFORM).concat(index);
-            // this._setProgramUniform(
-            // 	program,
-            // 	programName,
-            // 	dimensionsUniform,
-            // 	dimensions,
-            // 	FLOAT_2D_UNIFORM,
-            // );
-            var halfPxSize = [0.5 / width, 0.5 / height];
-            var halfPxUniform = "".concat(polyfills_1.SAMPLER2D_HALF_PX_UNIFORM).concat(index);
-            // this._setProgramUniform(
-            // 	program,
-            // 	programName,
-            // 	halfPxUniform,
-            // 	halfPxSize,
-            // 	FLOAT_2D_UNIFORM,
-            // );
+            var filter = layer.filter, wrapS = layer.wrapS, wrapT = layer.wrapT, _internalFilter = layer._internalFilter, _internalWrapS = layer._internalWrapS, _internalWrapT = layer._internalWrapT;
+            var filterMismatch = filter !== _internalFilter;
+            if (filterMismatch || wrapS !== _internalWrapS || wrapT !== _internalWrapT) {
+                var halfPxSize = [0.5 / width, 0.5 / height];
+                var halfPxUniform = "".concat(polyfills_1.SAMPLER2D_HALF_PX_UNIFORM).concat(index);
+                this._setProgramUniform(program, programName, halfPxUniform, halfPxSize, constants_1.FLOAT_2D_UNIFORM);
+                if (filterMismatch) {
+                    var dimensions = [width, height];
+                    var dimensionsUniform = "".concat(polyfills_1.SAMPLER2D_DIMENSIONS_UNIFORM).concat(index);
+                    this._setProgramUniform(program, programName, dimensionsUniform, dimensions, constants_1.FLOAT_2D_UNIFORM);
+                }
+            }
         }
     };
     /**
@@ -6854,7 +6864,7 @@ exports.getSampler2DsInProgram = getSampler2DsInProgram;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
+exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.convertFragmentShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var polyfills_1 = __webpack_require__(360);
@@ -7293,6 +7303,7 @@ function convertFragmentShaderToGLSL1(shaderSource, name) {
     shaderSource = (0, regex_1.glsl1FragmentOut)(shaderSource, name);
     return shaderSource;
 }
+exports.convertFragmentShaderToGLSL1 = convertFragmentShaderToGLSL1;
 /**
  * Preprocess vertex shader for glslVersion and browser capabilities.
  * This is called once on initialization, so doesn't need to be extremely efficient.

@@ -35,6 +35,7 @@ import {
 	MIN_INT,
 	MAX_INT,
 	LINEAR,
+	DEFAULT_PROGRAM_NAME,
 } from './constants';
 import {
 	EXT_COLOR_BUFFER_FLOAT,
@@ -48,7 +49,7 @@ import {
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
-import { isIntType, isUnsignedIntType, isWebGL2 } from './utils';
+import { compileShader, convertFragmentShaderToGLSL1, initGLProgram, isIntType, isUnsignedIntType, isWebGL2, preprocessVertexShader } from './utils';
 
 // Memoize results.
 const results = {
@@ -615,7 +616,7 @@ export function testFilterWrap(
 	filter: GPULayerFilter,
 	wrap: GPULayerWrap,
 ) {
-	const { gl, glslVersion } = composer;
+	const { gl, glslVersion, intPrecision, floatPrecision, _errorCallback } = composer;
 
 	// Memoize results for a given set of inputs.
 	const key = `${isWebGL2(gl)},${internalType},${filter},${wrap},${glslVersion === GLSL3 ? '3' : '1'}`;
@@ -643,7 +644,7 @@ export function testFilterWrap(
 
 	const { glInternalFormat, glFormat, glType, glNumChannels } = getGLTextureParameters({
 		composer,
-		name: 'testFloatLinearFiltering',
+		name: 'testFilterWrap',
 		numComponents,
 		internalType,
 		writable: true,
@@ -681,45 +682,74 @@ export function testFilterWrap(
 
 	const offset = filter === LINEAR ? 0.5 : 1;
 	// Run program to perform linear filter.
-	const program = new GPUProgram(composer, {
-		name: 'testFloatLinearFiltering',
-		fragmentShader: `
-			in vec2 v_UV;
-			uniform vec2 u_offset;
-			#ifdef GPUIO_INT
-				uniform isampler2D u_input;
-				out int out_fragColor;
-			#endif
-			#ifdef GPUIO_UINT
-				uniform usampler2D u_input;
-				out uint out_fragColor;
-			#endif
-			#ifdef GPUIO_FLOAT
-				uniform sampler2D u_input;
-				out float out_fragColor;
-			#endif
-			void main() {
-				out_fragColor = texture(u_input, v_UV + u_offset).x;
-			}`,
-		uniforms: [
-			{
-				name: 'u_offset',
-				value: [offset / width, offset / height],
-				type: FLOAT,
-			},
-		],
-		defines: {
+	const programName = 'testFilterWrap-program';
+	let fragmentShaderSource = `
+in vec2 v_UV;
+uniform vec2 u_offset;
+#ifdef GPUIO_INT
+	uniform isampler2D u_input;
+	out int out_fragColor;
+#endif
+#ifdef GPUIO_UINT
+	uniform usampler2D u_input;
+	out uint out_fragColor;
+#endif
+#ifdef GPUIO_FLOAT
+	uniform sampler2D u_input;
+	out float out_fragColor;
+#endif
+void main() {
+	out_fragColor = texture(u_input, v_UV + offset).x;
+}`;
+	if (glslVersion !== GLSL3) {
+		fragmentShaderSource = convertFragmentShaderToGLSL1(fragmentShaderSource, programName);
+	}
+	const fragmentShader = compileShader(
+		gl,
+		glslVersion,
+		intPrecision,
+		floatPrecision,
+		fragmentShaderSource,
+		gl.FRAGMENT_SHADER,
+		programName,
+		_errorCallback,
+		{
+			offset: `vec2(${offset / width}, ${offset / height})`,
 			[isUnsignedIntType(internalType) ? 'GPUIO_UINT' : (isIntType(internalType) ? 'GPUIO_INT': 'GPUIO_FLOAT')]: '1',
-		}
-	});
+		},
+		true,
+	);
 
-	composer.resize(width, height);
-	composer.step({
-		program,
-		// This may fail if things change significantly in GPUProgram._setInternalFragmentUniforms.
-		input: { texture, layer: { width, height } as GPULayer },
-		output,
-	});
+	const vertexShader = composer._getVertexShaderWithName(DEFAULT_PROGRAM_NAME, programName);
+	if (!vertexShader || !fragmentShader) {
+		if (vertexShader) gl.deleteShader(vertexShader);
+		if (fragmentShader) gl.deleteShader(fragmentShader);
+		results.filterWrapSupport[key] = false;
+		return results.filterWrapSupport[key];
+	}
+
+	const program = initGLProgram(gl, vertexShader, fragmentShader, programName, _errorCallback);
+	if (!program) {
+		results.filterWrapSupport[key] = false;
+		return results.filterWrapSupport[key];
+	}
+
+	// Draw setup.
+	output._prepareForWrite(false);
+	gl.viewport(0, 0, width, height);
+	gl.useProgram(program);
+	// Bind texture.
+	gl.activeTexture(gl.TEXTURE0 );
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	// Set uniforms.
+	gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_scale'), [1, 1]);
+	gl.uniform2fv(gl.getUniformLocation(program, 'u_internal_translation'), [0, 0]);
+	gl.bindBuffer(gl.ARRAY_BUFFER, composer._getQuadPositionsBuffer());
+	composer._setPositionAttribute(program, programName);
+
+	// Draw.
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	gl.disable(gl.BLEND);
 
 	const filtered = output.getValues();
 	let supported = true;
@@ -750,7 +780,9 @@ export function testFilterWrap(
 	}
 
 	// Clear out allocated memory.
-	program.dispose();
+	// vertexShader belongs to composer, don't delete it.
+	gl.deleteShader(fragmentShader);
+	gl.deleteProgram(program);
 	output.dispose();
 	gl.deleteTexture(texture);
 

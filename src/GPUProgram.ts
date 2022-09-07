@@ -46,6 +46,8 @@ import {
 	validDataTypes,
 	REPEAT,
 	LINEAR,
+	NEAREST,
+	CLAMP_TO_EDGE,
 } from './constants';
 import {
 	compileShader,
@@ -196,8 +198,6 @@ export class GPUProgram {
 			_defines[key] = internalDefines[key];
 		}
 
-		console.log(`recompiling ${this.name} ${fragmentId}`);
-
 		if (verboseLogging) console.log(`Compiling fragment shader for GPUProgram "${name}" with defines: ${JSON.stringify(_defines)}`);
 		const shader = compileShader(
 			gl,
@@ -306,8 +306,8 @@ export class GPUProgram {
 		// Init a location for WebGLProgram if needed (only do this once).
 		if (location === undefined) {
 			const _location = gl.getUniformLocation(program, uniformName);
-			if (!_location) {
-				_errorCallback(`Could not init uniform "${uniformName}" for program "${this.name}". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type ${type}. Error code: ${gl.getError()}.`);
+			if (_location === null) {
+				console.warn(`Could not init uniform "${uniformName}" for program "${this.name}". Check that uniform is present in shader code, unused uniforms may be removed by compiler. Also check that uniform type in shader code matches type ${type}. Error code: ${gl.getError()}.`);
 				return;
 			}
 			location = _location;
@@ -493,9 +493,6 @@ export class GPUProgram {
 		program: WebGLProgram,
 		input: GPULayerState[],
 	) {
-		// !!!!!!!!!!!!!!
-		// Be sure to update GPULayerHelpers.testFilterWrap if major changes are made to this routine.
-		// Currently only expecting to fetch width, and height from GPULayerState.layer.
 		if (!program) {
 			throw new Error('Must pass in valid WebGLProgram to GPUProgram._setInternalFragmentUniforms, got undefined.');
 		}
@@ -518,27 +515,34 @@ export class GPUProgram {
 		}
 
 		for (let i = 0, length = input.length; i < length; i++) {
-			const { width, height } = input[i].layer;
+			const { layer } = input[i];
+			const { width, height } = layer;
 			const index = indexLookup[i];
 			if (index < 0) continue;
-			const dimensions = [width, height];
-			const dimensionsUniform = `${SAMPLER2D_DIMENSIONS_UNIFORM}${index}`;
-			// this._setProgramUniform(
-			// 	program,
-			// 	programName,
-			// 	dimensionsUniform,
-			// 	dimensions,
-			// 	FLOAT_2D_UNIFORM,
-			// );
-			const halfPxSize = [0.5 / width, 0.5 / height];
-			const halfPxUniform = `${SAMPLER2D_HALF_PX_UNIFORM}${index}`;
-			// this._setProgramUniform(
-			// 	program,
-			// 	programName,
-			// 	halfPxUniform,
-			// 	halfPxSize,
-			// 	FLOAT_2D_UNIFORM,
-			// );
+			const { filter, wrapS, wrapT, _internalFilter, _internalWrapS, _internalWrapT } = layer;
+			const filterMismatch = filter !== _internalFilter;
+			if (filterMismatch || wrapS !== _internalWrapS || wrapT !== _internalWrapT) {
+				const halfPxSize = [0.5 / width, 0.5 / height];
+				const halfPxUniform = `${SAMPLER2D_HALF_PX_UNIFORM}${index}`;
+				this._setProgramUniform(
+					program,
+					programName,
+					halfPxUniform,
+					halfPxSize,
+					FLOAT_2D_UNIFORM,
+				);
+				if (filterMismatch) {
+					const dimensions = [width, height];
+					const dimensionsUniform = `${SAMPLER2D_DIMENSIONS_UNIFORM}${index}`;
+					this._setProgramUniform(
+						program,
+						programName,
+						dimensionsUniform,
+						dimensions,
+						FLOAT_2D_UNIFORM,
+					);
+				}
+			}
 		}
 	}
 

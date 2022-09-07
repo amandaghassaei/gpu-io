@@ -70,7 +70,7 @@ function showMoreInfo(e, result) {
 	modal.className = `${result.status} modal__container`;
 	document.getElementById('modal-1-title').innerHTML = result.status;
 	document.getElementById('modal-1-error').innerHTML =
-		`${(result.log ? result.log : [].concat(result.polyfill ? results.polyfill : []).concat(result.error)).join('<br/><br/>')}`;
+		`${(result.log ? result.log : []).concat((result.polyfill ? result.polyfill : []).concat(result.error)).join('<br/><br/>')}`;
 	document.getElementById('modal-1-config').innerHTML = Object.keys(result.config).map(key => `${key}: ${result.config[key]}`).join('<br/>');
 	MicroModal.show('modal-1');
 }

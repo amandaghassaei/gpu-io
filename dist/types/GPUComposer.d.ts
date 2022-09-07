@@ -81,7 +81,7 @@ export declare class GPUComposer {
     private _copyProgramForType;
     private _getWrappedLineColorProgram;
     private _vectorMagnitudeProgramForType;
-    private _getQuadPositionsBuffer;
+    _getQuadPositionsBuffer(): WebGLBuffer;
     private _getBoundaryPositionsBuffer;
     private _getCirclePositionsBuffer;
     private _initVertexBuffer;
@@ -113,7 +113,7 @@ export declare class GPUComposer {
     private _passThroughLayerDataFromInputToOutput;
     private _setOutputLayer;
     private _setVertexAttribute;
-    private _setPositionAttribute;
+    _setPositionAttribute(program: WebGLProgram, programName: string): void;
     private _setIndexAttribute;
     private _setUVAttribute;
     step(params: {

@@ -88,6 +88,12 @@ export declare function isPowerOf2(value: number): boolean;
  */
 export declare function initSequentialFloatArray(length: number): Float32Array;
 /**
+ * Convert fragment shader source to GLSL1.
+ * This is called once on initialization, so doesn't need to be extremely efficient.
+ * @private
+ */
+export declare function convertFragmentShaderToGLSL1(shaderSource: string, name: string): string;
+/**
  * Preprocess vertex shader for glslVersion and browser capabilities.
  * This is called once on initialization, so doesn't need to be extremely efficient.
  * @private
