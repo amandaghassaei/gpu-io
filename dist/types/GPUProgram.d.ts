@@ -38,7 +38,7 @@ export declare class GPUProgram {
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    _getProgramWithName(name: PROGRAM_NAME_INTERNAL, input: GPULayerState[]): WebGLProgram | undefined;
+    _getProgramWithName(name: PROGRAM_NAME_INTERNAL, vertexDefines: CompileTimeVars, input: GPULayerState[]): WebGLProgram | undefined;
     /**
      * Set uniform for GLProgram.
      * @private

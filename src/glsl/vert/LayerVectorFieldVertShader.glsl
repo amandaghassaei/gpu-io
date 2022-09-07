@@ -20,6 +20,7 @@ void main() {
 	) / u_internal_dimensions;
 
 	// Add vector displacement if needed.
+	//TODO: remove branching
 	if (modI(a_internal_index, 2.0) > 0.0) {
 		// Lookup vectorData at current UV.
 		vec2 vectorData = texture(u_internal_vectors, v_UV).xy;

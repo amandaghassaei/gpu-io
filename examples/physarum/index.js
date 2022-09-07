@@ -366,7 +366,7 @@ function main({ gui, glslVersion, contextID }) {
 		uniforms: [
 			{
 				name: 'u_trail',
-				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
@@ -391,7 +391,7 @@ function main({ gui, glslVersion, contextID }) {
 
 			void main() {
 				vec2 halfPx = u_pxSize / 2.0;
-				// Use built-in interpolation to reduce 9 samples to 4.
+				// Use built-in linear interpolation to reduce 9 samples to 4.
 				// This is not the same as the flat kernel described in Jones 2010.
 				// This kernel has weighting:
 				// 1/16 1/8 1/16
@@ -407,7 +407,7 @@ function main({ gui, glslVersion, contextID }) {
 		uniforms: [
 			{
 				name: 'u_trail',
-				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
@@ -435,18 +435,19 @@ function main({ gui, glslVersion, contextID }) {
 			out float out_fragColor;
 
 			void main() {
-				float distSq = 1.0 - dot(v_UV_local, v_UV_local); // Calc distsq from center of touch.
+				vec2 diffCenterNormalized = 2.0 * (v_UV_local - 0.5);
+				float distSq = 1.0 - dot(diffCenterNormalized, diffCenterNormalized);
 				out_fragColor = texture(u_trail, v_UV).x + distSq * u_depositAmount;
 			}`,
 		uniforms: [
 			{
 				name: 'u_trail',
-				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
 				name: 'u_depositAmount',
-				value: 3 * PARAMS.depositAmount,
+				value: 2 * PARAMS.depositAmount,
 				type: FLOAT,
 			},
 		],
@@ -469,7 +470,7 @@ function main({ gui, glslVersion, contextID }) {
 		uniforms: [
 			{
 				name: 'u_trail',
-				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
@@ -600,15 +601,21 @@ function main({ gui, glslVersion, contextID }) {
 
 	// Touch events.
 	const activeTouches = {};
+	const TOUCH_DIAMETER = 30;
 	function onPointerMove(e) {
-		if (activeTouches[e.pointerId]) {
-			composer.stepCircle({
+		const lastPosition = activeTouches[e.pointerId];
+		if (lastPosition) {
+			const currentPosition = [e.clientX, canvas.height - e.clientY];
+			composer.stepSegment({
 				program: touch,
 				input: trail,
 				output: trail,
-				position: [e.clientX, canvas.height - e.clientY],
-				radius: 15,
+				position1: currentPosition,
+				position2: lastPosition,
+				thickness: TOUCH_DIAMETER,
+				endCaps: true,
 			});
+			activeTouches[e.pointerId] = currentPosition;
 		}
 		
 	}
@@ -616,7 +623,16 @@ function main({ gui, glslVersion, contextID }) {
 		delete activeTouches[e.pointerId];
 	}
 	function onPointerStart(e) {
-		activeTouches[e.pointerId] = true;
+		const currentPosition = [e.clientX, canvas.height - e.clientY];
+		composer.stepCircle({
+			program: touch,
+			input: trail,
+			output: trail,
+			position: currentPosition,
+			diameter: TOUCH_DIAMETER,
+			endCaps: true,
+		});
+		activeTouches[e.pointerId] = currentPosition;
 	}
 	window.addEventListener('pointermove', onPointerMove);
 	window.addEventListener('pointerdown', onPointerStart);

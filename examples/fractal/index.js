@@ -104,7 +104,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniforms: [
 			{
 				name: 'u_state',
-				value: 0, // We don't even really need to declare this uniform, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
 				type: INT,
 			},
 		],

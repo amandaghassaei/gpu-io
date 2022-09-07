@@ -211,10 +211,10 @@ export class GPUProgram {
 	 * Get GLProgram associated with a specific vertex shader.
 	 * @private
 	 */
-	_getProgramWithName(name: PROGRAM_NAME_INTERNAL, input: GPULayerState[]) {
+	_getProgramWithName(name: PROGRAM_NAME_INTERNAL, vertexDefines: CompileTimeVars, input: GPULayerState[]) {
 		const { _samplerUniformsIndices } = this;
 
-		let fragmentId = '';
+		let fragmentID = '';
 		const fragmentDefines: CompileTimeVars = {};
 		for (let i = 0, length = _samplerUniformsIndices.length; i < length; i++) {
 			const { inputIndex } = _samplerUniformsIndices[i];
@@ -226,12 +226,13 @@ export class GPUProgram {
 			const wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === REPEAT ? 1 : 0);
 			const wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === REPEAT ? 1 : 0);
 			const filterVal = filter === _internalFilter ? 0 : (filter === LINEAR ? 1 : 0);
-			fragmentId += `_IN${i}_${wrapXVal}_${wrapYVal}_${filterVal}`;
+			fragmentID += `_IN${i}_${wrapXVal}_${wrapYVal}_${filterVal}`;
 			fragmentDefines[`${SAMPLER2D_WRAP_X}${i}`] = `${wrapXVal}`;
 			fragmentDefines[`${SAMPLER2D_WRAP_Y}${i}`] = `${wrapYVal}`;
 			fragmentDefines[`${SAMPLER2D_FILTER}${i}`] = `${filterVal}`;
 		}
-		const key = `${name}${fragmentId}`;
+		const vertexID = Object.keys(vertexDefines).map(key => `_${key}_${vertexDefines[key]}`).join();
+		const key = `${name}${vertexID}${fragmentID}`;
 
 		// Check if we've already compiled program.
 		if (this._programs[key]) return this._programs[key];
@@ -240,21 +241,22 @@ export class GPUProgram {
 		const { _composer, _uniforms, _programs, _programsKeyLookup } = this;
 		const { gl, _errorCallback } = _composer;
 
-		const vertexShader = _composer._getVertexShaderWithName(name, this.name);
+		const vertexShader = _composer._getVertexShader(name, vertexID, vertexDefines, this.name);
 		if (vertexShader === undefined) {
-			_errorCallback(`Unable to init vertex shader "${name}" for GPUProgram "${this.name}".`);
+			_errorCallback(`Unable to init vertex shader "${name}${vertexID}" for GPUProgram "${this.name}".`);
 			return;
 		}
 
-		const fragmentShader = this._getFragmentShader(fragmentId, fragmentDefines);
+		const fragmentShader = this._getFragmentShader(fragmentID, fragmentDefines);
 		if (fragmentShader === undefined) {
-			_errorCallback(`Unable to init fragment shader "${fragmentId}" for GPUProgram "${this.name}".`);
+			_errorCallback(`Unable to init fragment shader "${fragmentID}" for GPUProgram "${this.name}".`);
 			return;
 		}
 
 		const program = initGLProgram(gl, vertexShader, fragmentShader, this.name, _errorCallback);
 		if (program === undefined) {
-			_errorCallback(`Unable to init program "${name}" for GPUProgram "${this.name}".`);
+			gl.deleteShader(fragmentShader);
+			_errorCallback(`Unable to init program "${key}" for GPUProgram "${this.name}".`);
 			return;
 		}
 
@@ -266,7 +268,7 @@ export class GPUProgram {
 			const uniformName = uniformNames[i];
 			const uniform = _uniforms[uniformName];
 			const { value, type } = uniform;
-			this._setProgramUniform(program, name, uniformName, value, type);
+			this._setProgramUniform(program, key, uniformName, value, type);
 		}
 
 		_programs[key] = program;
@@ -470,7 +472,7 @@ export class GPUProgram {
 		// Update any active programs.
 		const keys = Object.keys(_programs);
 		for (let i = 0; i < keys.length; i++) {
-			const programName = keys[i] as PROGRAM_NAME_INTERNAL;
+			const programName = keys[i];
 			// Set active program.
 			const program = _programs[programName]!;
 			gl.useProgram(program);

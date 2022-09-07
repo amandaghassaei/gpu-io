@@ -23,6 +23,7 @@ void main() {
 	position *= u_internal_halfThickness;
 
 	// Stretch center of shape to form a round-capped line segment.
+	//TODO: remove branching
 	if (position.x < 0.0) {
 		position.x -= u_internal_length / 2.0;
 		v_UV_local.x = 0.0; // Set entire cap UV.x to 0.

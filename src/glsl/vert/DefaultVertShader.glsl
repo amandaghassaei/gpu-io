@@ -1,9 +1,9 @@
 in vec2 a_internal_position;
-#ifdef GPUIO_UV_ATTRIBUTE
-in vec2 a_internal_uv;
+#ifdef GPUIO_VS_UV_ATTRIBUTE
+	in vec2 a_internal_uv;
 #endif
-#ifdef GPUIO_NORMAL_ATTRIBUTE
-in vec2 a_internal_normal;
+#ifdef GPUIO_VS_NORMAL_ATTRIBUTE
+	in vec2 a_internal_normal;
 #endif
 
 uniform vec2 u_internal_scale;
@@ -11,19 +11,19 @@ uniform vec2 u_internal_translation;
 
 out vec2 v_UV;
 out vec2 v_UV_local;
-#ifdef GPUIO_NORMAL_ATTRIBUTE
-out vec2 v_normal;
+#ifdef GPUIO_VS_NORMAL_ATTRIBUTE
+	out vec2 v_normal;
 #endif
 
 void main() {
 	// Optional varyings.
-	#ifdef GPUIO_UV_ATTRIBUTE
-	v_UV_local = a_internal_uv;
+	#ifdef GPUIO_VS_UV_ATTRIBUTE
+		v_UV_local = a_internal_uv;
 	#else
-	v_UV_local = a_internal_position;
+		v_UV_local = 0.5 * (a_internal_position + 1.0);
 	#endif
-	#ifdef GPUIO_NORMAL_ATTRIBUTE
-	v_normal = a_internal_normal;
+	#ifdef GPUIO_VS_NORMAL_ATTRIBUTE
+		v_normal = a_internal_normal;
 	#endif
 
 	// Apply transformations.

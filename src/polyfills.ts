@@ -41,16 +41,6 @@ export const SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
  */
 export const SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
 
-// function wrapEnum(wrap: GPULayerWrap) {
-// 	if (wrap === CLAMP_TO_EDGE) return '0';
-// 	return '1'; // REPEAT.
-// }
-
-// function filterEnum(filter: GPULayerFilter) {
-// 	if (filter === NEAREST) return '0';
-// 	return '1'; // LINEAR.
-// }
-
 /**
  * Override texture function to perform polyfill filter/wrap.
  * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
@@ -120,19 +110,17 @@ ${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 
 	function make_GPUIO_TEXTURE_WRAP(prefix: string) {
 		return `
 ${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
-	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
-	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
-	return texture(sampler, vec2(u, v));
+	return texture(sampler, GPUIO_WRAP_REPEAT_UV(uv));
 }
 ${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
-	float u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
-	float v = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);
-	return texture(sampler, vec2(u, v));
+	uv.x = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);
+	// uv.y = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);
+	return texture(sampler, uv);
 }
 ${prefix}vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
-	float u = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);
-	float v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
-	return texture(sampler, vec2(u, v));
+	// uv.x = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);
+	uv.y = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);
+	return texture(sampler, uv);
 }\n`;
 	}
 
@@ -142,16 +130,18 @@ ${prefix}vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ${prefix}sampler2D sampler, 
 		const extraParams =  wrapType ? `, halfPx` : '';
 		return`
 vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
-	vec2 imagePosCenterity = fract(uv * dimensions);
+	vec2 pxFraction = fract(uv * dimensions);
 	vec2 offset = halfPx - vec2(0.00001, 0.00001) * max(
-			step(abs(imagePosCenterity.x - 0.5), 0.001),
-			step(abs(imagePosCenterity.y - 0.5), 0.001)
+			step(abs(pxFraction.x - 0.5), 0.001),
+			step(abs(pxFraction.y - 0.5), 0.001)
 		);
-	vec4 minmin = ${lookupFunction}(sampler, uv - offset${extraParams});
-	vec4 maxmin = ${lookupFunction}(sampler, uv + vec2(offset.x, -offset.y)${extraParams});
-	vec4 minmax = ${lookupFunction}(sampler, uv + vec2(-offset.x, offset.y)${extraParams});
+	vec2 baseUV = uv - offset;
+	vec2 diagOffset = vec2(offset.x, -offset.y);
+	vec4 minmin = ${lookupFunction}(sampler, baseUV${extraParams});
+	vec4 maxmin = ${lookupFunction}(sampler, uv + diagOffset${extraParams});
+	vec4 minmax = ${lookupFunction}(sampler, uv - diagOffset${extraParams});
 	vec4 maxmax = ${lookupFunction}(sampler, uv + offset${extraParams});
-	vec2 t = fract((uv - offset) * dimensions);
+	vec2 t = fract(baseUV * dimensions);
 	vec4 yMin = mix(minmin, maxmin, t.x);
 	vec4 yMax = mix(minmax, maxmax, t.x);
 	return mix(yMin, yMax, t.y);
@@ -164,9 +154,12 @@ ${ Object.keys(polyfillUniforms).map((key) => `uniform ${polyfillUniforms[key]} 
 float GPUIO_WRAP_REPEAT_UV_COORD(float coord) {
 	return fract(coord + ceil(abs(coord)));
 }
-float GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {
-	return max(halfPx, min(1.0 - halfPx, coord));
+vec2 GPUIO_WRAP_REPEAT_UV(vec2 uv) {
+	return fract(uv + ceil(abs(uv)));
 }
+// float GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {
+// 	return clamp(coord, halfPx, 1.0 - halfPx);
+// }
 
 ${ make_GPUIO_TEXTURE_WRAP('') }
 #if (__VERSION__ == 300)

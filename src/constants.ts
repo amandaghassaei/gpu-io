@@ -307,18 +307,6 @@ export const DEFAULT_PROGRAM_NAME = 'DEFAULT';
 /**
  * @private
  */
-export const DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
-/**
- * @private
- */
-export const DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
-/**
- * @private
- */
-export const DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
-/**
- * @private
- */
 export const SEGMENT_PROGRAM_NAME = 'SEGMENT';
 /**
  * @private
@@ -332,14 +320,31 @@ export const LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
  * @private
  */
 export const LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
+// Vertex shader compile time vars.
+// Be sure to change these in the vertex shader if updated!
+/**
+ * @private
+ */
+export const GPUIO_VS_UV_ATTRIBUTE = 'GPUIO_VS_UV_ATTRIBUTE';
+/**
+ * @private
+ */
+export const GPUIO_VS_WRAP_X = 'GPUIO_VS_WRAP_X';
+/**
+ * @private
+ */
+export const GPUIO_VS_WRAP_Y = 'GPUIO_VS_WRAP_Y';
+/**
+ * @private
+ */
+export const GPUIO_VS_NORMAL_ATTRIBUTE = 'GPUIO_VS_NORMAL_ATTRIBUTE';
+export const GPUIO_VS_POSITION_W_ACCUM = 'GPUIO_VS_POSITION_W_ACCUM';
+
 /**
  * @private
  */
 export type PROGRAM_NAME_INTERNAL =
 	typeof DEFAULT_PROGRAM_NAME |
-	typeof DEFAULT_W_UV_PROGRAM_NAME |
-	typeof DEFAULT_W_NORMAL_PROGRAM_NAME |
-	typeof DEFAULT_W_UV_NORMAL_PROGRAM_NAME |
 	typeof SEGMENT_PROGRAM_NAME |
 	typeof LAYER_POINTS_PROGRAM_NAME |
 	typeof LAYER_LINES_PROGRAM_NAME |

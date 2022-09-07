@@ -45,8 +45,9 @@ export declare class GPUComposer {
     readonly _vertexShaders: {
         [key in PROGRAM_NAME_INTERNAL]: {
             src: string;
-            shader?: WebGLProgram;
-            defines?: CompileTimeVars;
+            compiledShaders: {
+                [key: string]: WebGLShader;
+            };
         };
     };
     verboseLogging: boolean;
@@ -104,7 +105,7 @@ export declare class GPUComposer {
      *
      * @private
      */
-    _getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string): WebGLProgram | undefined;
+    _getVertexShader(name: PROGRAM_NAME_INTERNAL, vertexID: string, vertexDefines: CompileTimeVars, programName: string): WebGLShader | undefined;
     resize(width: number, height: number): void;
     private _drawSetup;
     private _setBlendMode;
@@ -138,7 +139,7 @@ export declare class GPUComposer {
     stepCircle(params: {
         program: GPUProgram;
         position: [number, number];
-        radius: number;
+        diameter: number;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         numSegments?: number;

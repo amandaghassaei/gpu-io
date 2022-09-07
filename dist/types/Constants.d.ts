@@ -267,18 +267,6 @@ export declare const DEFAULT_PROGRAM_NAME = "DEFAULT";
 /**
  * @private
  */
-export declare const DEFAULT_W_UV_PROGRAM_NAME = "DEFAULT_W_UV";
-/**
- * @private
- */
-export declare const DEFAULT_W_NORMAL_PROGRAM_NAME = "DEFAULT_W_NORMAL";
-/**
- * @private
- */
-export declare const DEFAULT_W_UV_NORMAL_PROGRAM_NAME = "DEFAULT_W_UV_NORMAL";
-/**
- * @private
- */
 export declare const SEGMENT_PROGRAM_NAME = "SEGMENT";
 /**
  * @private
@@ -295,7 +283,24 @@ export declare const LAYER_VECTOR_FIELD_PROGRAM_NAME = "LAYER_VECTOR_FIELD";
 /**
  * @private
  */
-export declare type PROGRAM_NAME_INTERNAL = typeof DEFAULT_PROGRAM_NAME | typeof DEFAULT_W_UV_PROGRAM_NAME | typeof DEFAULT_W_NORMAL_PROGRAM_NAME | typeof DEFAULT_W_UV_NORMAL_PROGRAM_NAME | typeof SEGMENT_PROGRAM_NAME | typeof LAYER_POINTS_PROGRAM_NAME | typeof LAYER_LINES_PROGRAM_NAME | typeof LAYER_VECTOR_FIELD_PROGRAM_NAME;
+export declare const GPUIO_VS_UV_ATTRIBUTE = "GPUIO_VS_UV_ATTRIBUTE";
+/**
+ * @private
+ */
+export declare const GPUIO_VS_WRAP_X = "GPUIO_VS_WRAP_X";
+/**
+ * @private
+ */
+export declare const GPUIO_VS_WRAP_Y = "GPUIO_VS_WRAP_Y";
+/**
+ * @private
+ */
+export declare const GPUIO_VS_NORMAL_ATTRIBUTE = "GPUIO_VS_NORMAL_ATTRIBUTE";
+export declare const GPUIO_VS_POSITION_W_ACCUM = "GPUIO_VS_POSITION_W_ACCUM";
+/**
+ * @private
+ */
+export declare type PROGRAM_NAME_INTERNAL = typeof DEFAULT_PROGRAM_NAME | typeof SEGMENT_PROGRAM_NAME | typeof LAYER_POINTS_PROGRAM_NAME | typeof LAYER_LINES_PROGRAM_NAME | typeof LAYER_VECTOR_FIELD_PROGRAM_NAME;
 /**
  * Object containing compile-time #define variables for GPUProgram fragment shader.
  */

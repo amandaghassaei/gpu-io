@@ -725,7 +725,7 @@ void main() {
 		return (val + max) % max;
 	}
 
-	const vertexShader = composer._getVertexShaderWithName(DEFAULT_PROGRAM_NAME, programName);
+	const vertexShader = composer._getVertexShader(DEFAULT_PROGRAM_NAME, '', {}, programName);
 	if (vertexShader && fragmentShader) {
 		const program = initGLProgram(gl, vertexShader, fragmentShader, programName, _errorCallback);
 		if (program) {

@@ -2290,37 +2290,23 @@ var GPUComposer = /** @class */ (function () {
         this._vertexShaders = (_a = {},
             _a[constants_1.DEFAULT_PROGRAM_NAME] = {
                 src: defaultVertexShaderSource,
-            },
-            _a[constants_1.DEFAULT_W_UV_PROGRAM_NAME] = {
-                src: defaultVertexShaderSource,
-                defines: {
-                    'GPUIO_UV_ATTRIBUTE': '1',
-                },
-            },
-            _a[constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME] = {
-                src: defaultVertexShaderSource,
-                defines: {
-                    'GPUIO_NORMAL_ATTRIBUTE': '1',
-                },
-            },
-            _a[constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME] = {
-                src: defaultVertexShaderSource,
-                defines: {
-                    'GPUIO_UV_ATTRIBUTE': '1',
-                    'GPUIO_NORMAL_ATTRIBUTE': '1',
-                },
+                compiledShaders: {},
             },
             _a[constants_1.SEGMENT_PROGRAM_NAME] = {
                 src: __webpack_require__(974),
+                compiledShaders: {},
             },
             _a[constants_1.LAYER_POINTS_PROGRAM_NAME] = {
                 src: __webpack_require__(767),
+                compiledShaders: {},
             },
             _a[constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME] = {
                 src: __webpack_require__(760),
+                compiledShaders: {},
             },
             _a[constants_1.LAYER_LINES_PROGRAM_NAME] = {
                 src: __webpack_require__(143),
+                compiledShaders: {},
             },
             _a);
         this.verboseLogging = false;
@@ -2708,24 +2694,26 @@ var GPUComposer = /** @class */ (function () {
      *
      * @private
      */
-    GPUComposer.prototype._getVertexShaderWithName = function (name, programName) {
+    GPUComposer.prototype._getVertexShader = function (name, vertexID, vertexDefines, programName) {
         var _a = this, _errorCallback = _a._errorCallback, _vertexShaders = _a._vertexShaders, gl = _a.gl, glslVersion = _a.glslVersion, intPrecision = _a.intPrecision, floatPrecision = _a.floatPrecision;
-        var vertexShader = _vertexShaders[name];
-        if (vertexShader.shader === undefined) {
-            // Init a vertex shader (this only happens once for each possible vertex shader across all GPUPrograms).
-            if (vertexShader.src === '') {
+        var _b = _vertexShaders[name], compiledShaders = _b.compiledShaders, src = _b.src;
+        if (vertexID === '')
+            vertexID = '_default';
+        if (compiledShaders[vertexID] === undefined) {
+            // Compile a vertex shader (this only happens once for each possible vertex shader across all GPUPrograms).
+            if (src === '') {
                 throw new Error("Error compiling GPUProgram \"".concat(programName, "\": no source for vertex shader with name \"").concat(name, "\"."));
             }
-            var preprocessedSrc = (0, utils_1.preprocessVertexShader)(vertexShader.src, glslVersion);
-            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexShader.defines, true);
+            var preprocessedSrc = (0, utils_1.preprocessVertexShader)(src, glslVersion);
+            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexDefines, true);
             if (!shader) {
-                _errorCallback("Unable to compile \"".concat(name, "\" vertex shader for GPUProgram \"").concat(programName, "\"."));
+                _errorCallback("Unable to compile \"".concat(name).concat(vertexID, "\" vertex shader for GPUProgram \"").concat(programName, "\"."));
                 return;
             }
             // Save the results so this does not have to be repeated.
-            vertexShader.shader = shader;
+            compiledShaders[vertexID] = shader;
         }
-        return vertexShader.shader;
+        return compiledShaders[vertexID];
     };
     GPUComposer.prototype.resize = function (width, height) {
         var canvas = this.canvas;
@@ -2738,7 +2726,7 @@ var GPUComposer = /** @class */ (function () {
         this._height = height;
     };
     ;
-    GPUComposer.prototype._drawSetup = function (gpuProgram, programName, fullscreenRender, input, output) {
+    GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexDefines, fullscreenRender, input, output) {
         var gl = this.gl;
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
@@ -2758,7 +2746,7 @@ var GPUComposer = /** @class */ (function () {
                 }
             }
         }
-        var program = gpuProgram._getProgramWithName(programName, inputTextures);
+        var program = gpuProgram._getProgramWithName(programName, vertexDefines, inputTextures);
         // Set output framebuffer.
         // This may modify WebGL internal state.
         this._setOutputLayer(fullscreenRender, input, output);
@@ -2883,7 +2871,7 @@ var GPUComposer = /** @class */ (function () {
         var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, true, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [0, 0], constants_1.FLOAT);
@@ -2901,7 +2889,7 @@ var GPUComposer = /** @class */ (function () {
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
         // Frame needs to be offset and scaled so that all four sides are in viewport.
         var onePx = [1 / width, 1 / height];
@@ -2941,7 +2929,7 @@ var GPUComposer = /** @class */ (function () {
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
         var onePx = [1 / width, 1 / height];
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], constants_1.FLOAT);
@@ -2953,14 +2941,14 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
-    // Step program only for a circular spot.
+    // Step program inside a circular spot.
     GPUComposer.prototype.stepCircle = function (params) {
         var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
-        var program = params.program, position = params.position, radius = params.radius, input = params.input, output = params.output;
+        var program = params.program, position = params.position, diameter = params.diameter, input = params.input, output = params.output;
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_internal_scale', [diameter / _width, diameter / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
         var numSegments = params.numSegments ? params.numSegments : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (numSegments < 3) {
@@ -2980,7 +2968,7 @@ var GPUComposer = /** @class */ (function () {
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.SEGMENT_PROGRAM_NAME, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.SEGMENT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / width, 2 / height], constants_1.FLOAT);
@@ -3155,11 +3143,13 @@ var GPUComposer = /** @class */ (function () {
                 normals[vertices.length * 8 + 3] = normals[3];
             }
         }
-        var programName = (uvs ?
-            (normals ? constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_W_UV_PROGRAM_NAME) :
-            (normals ? constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_PROGRAM_NAME));
+        var vertexShaderOptions = {};
+        if (uvs)
+            vertexShaderOptions[constants_1.GPUIO_VS_UV_ATTRIBUTE] = '1';
+        if (normals)
+            vertexShaderOptions[constants_1.GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, programName, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
@@ -3184,11 +3174,13 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.stepTriangleStrip = function (params) {
         var program = params.program, input = params.input, output = params.output, positions = params.positions, uvs = params.uvs, normals = params.normals;
         var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
-        var programName = (uvs ?
-            (normals ? constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_W_UV_PROGRAM_NAME) :
-            (normals ? constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_PROGRAM_NAME));
+        var vertexShaderOptions = {};
+        if (uvs)
+            vertexShaderOptions[constants_1.GPUIO_VS_UV_ATTRIBUTE] = '1';
+        if (normals)
+            vertexShaderOptions[constants_1.GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, programName, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_internal_translation', [-1, -1], constants_1.FLOAT);
@@ -3218,11 +3210,13 @@ var GPUComposer = /** @class */ (function () {
         if (params.closeLoop && indices) {
             throw new Error("GPUComposer.stepLines() can't be called with closeLoop == true and indices.");
         }
-        var programName = (uvs ?
-            (normals ? constants_1.DEFAULT_W_UV_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_W_UV_PROGRAM_NAME) :
-            (normals ? constants_1.DEFAULT_W_NORMAL_PROGRAM_NAME : constants_1.DEFAULT_PROGRAM_NAME));
+        var vertexShaderOptions = {};
+        if (uvs)
+            vertexShaderOptions[constants_1.GPUIO_VS_UV_ATTRIBUTE] = '1';
+        if (normals)
+            vertexShaderOptions[constants_1.GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, programName, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         var count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], constants_1.FLOAT);
@@ -3286,20 +3280,25 @@ var GPUComposer = /** @class */ (function () {
         }
         // Add positions to end of input if needed.
         var input = this._addLayerToInputs(positions, params.input);
+        var vertexShaderOptions = {};
+        // Tell whether we are using an absolute position (2 components),
+        // or position with accumulation buffer (4 components, better floating pt accuracy).
+        if (positions.numComponents === 4)
+            vertexShaderOptions[constants_1.GPUIO_VS_POSITION_W_ACCUM] = '1';
+        if (params.wrapX)
+            vertexShaderOptions[constants_1.GPUIO_VS_WRAP_X] = '1';
+        if (params.wrapY)
+            vertexShaderOptions[constants_1.GPUIO_VS_WRAP_Y] = '1';
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.LAYER_POINTS_PROGRAM_NAME, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.LAYER_POINTS_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
-        // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-        program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, constants_1.BOOL);
         // Set default pointSize.
         var pointSize = params.pointSize || 1;
         program._setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, constants_1.FLOAT);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, constants_1.BOOL);
-        program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, constants_1.BOOL);
         if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var indices = (0, utils_1.initSequentialFloatArray)(length);
@@ -3333,20 +3332,25 @@ var GPUComposer = /** @class */ (function () {
         }
         // Add positionLayer to end of input if needed.
         var input = this._addLayerToInputs(positions, params.input);
+        var vertexShaderOptions = {};
+        // Tell whether we are using an absolute position (2 components),
+        // or position with accumulation buffer (4 components, better floating pt accuracy).
+        if (positions.numComponents === 4)
+            vertexShaderOptions[constants_1.GPUIO_VS_POSITION_W_ACCUM] = '1';
+        if (params.wrapX)
+            vertexShaderOptions[constants_1.GPUIO_VS_WRAP_X] = '1';
+        if (params.wrapY)
+            vertexShaderOptions[constants_1.GPUIO_VS_WRAP_Y] = '1';
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.LAYER_LINES_PROGRAM_NAME, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.LAYER_LINES_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // TODO: cache indexArray if no indices passed in.
         var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(params.count || positions.length);
         var count = params.count ? params.count : indices.length;
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
-        // Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-        program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, constants_1.BOOL);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, constants_1.BOOL);
-        program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, constants_1.BOOL);
         if (this._indexedLinesIndexBuffer === undefined) {
             // Have to use float32 array bc int is not supported as a vertex attribute type.
             var floatArray = void 0;
@@ -3406,7 +3410,7 @@ var GPUComposer = /** @class */ (function () {
         // Add data to end of input if needed.
         var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME, false, input, output);
+        var glProgram = this._drawSetup(program, constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), constants_1.INT);
         // Set default scale.
@@ -3441,7 +3445,7 @@ var GPUComposer = /** @class */ (function () {
         // Add data to end of input if needed.
         var input = this._addLayerToInputs(data, params.input);
         // Do setup - this must come first.
-        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, true, input, output);
+        var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, true, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], constants_1.FLOAT);
@@ -3520,11 +3524,12 @@ var GPUComposer = /** @class */ (function () {
             console.log("Deallocating GPUComposer.");
         // TODO: delete buffers.
         // Delete vertex shaders.
-        Object.values(_vertexShaders).forEach(function (vertexShader) {
-            if (vertexShader.shader) {
-                gl.deleteShader(vertexShader.shader);
-                delete vertexShader.shader;
-            }
+        Object.values(_vertexShaders).forEach(function (_a) {
+            var compiledShaders = _a.compiledShaders;
+            Object.keys(compiledShaders).forEach(function (key) {
+                gl.deleteShader(compiledShaders);
+                delete compiledShaders[key];
+            });
         });
         // Delete fragment shaders.
         Object.values(_copyPrograms).forEach(function (program) {
@@ -4940,7 +4945,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
             return Math.max(0, Math.min(max - 1, val));
         return (val + max) % max;
     }
-    var vertexShader = composer._getVertexShaderWithName(constants_1.DEFAULT_PROGRAM_NAME, programName);
+    var vertexShader = composer._getVertexShader(constants_1.DEFAULT_PROGRAM_NAME, '', {}, programName);
     if (vertexShader && fragmentShader) {
         var program = (0, utils_1.initGLProgram)(gl, vertexShader, fragmentShader, programName, _errorCallback);
         if (program) {
@@ -5375,9 +5380,9 @@ var GPUProgram = /** @class */ (function () {
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    GPUProgram.prototype._getProgramWithName = function (name, input) {
+    GPUProgram.prototype._getProgramWithName = function (name, vertexDefines, input) {
         var _samplerUniformsIndices = this._samplerUniformsIndices;
-        var fragmentId = '';
+        var fragmentID = '';
         var fragmentDefines = {};
         for (var i = 0, length_1 = _samplerUniformsIndices.length; i < length_1; i++) {
             var inputIndex = _samplerUniformsIndices[i].inputIndex;
@@ -5386,31 +5391,33 @@ var GPUProgram = /** @class */ (function () {
             var wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === constants_1.REPEAT ? 1 : 0);
             var wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === constants_1.REPEAT ? 1 : 0);
             var filterVal = filter === _internalFilter ? 0 : (filter === constants_1.LINEAR ? 1 : 0);
-            fragmentId += "_IN".concat(i, "_").concat(wrapXVal, "_").concat(wrapYVal, "_").concat(filterVal);
+            fragmentID += "_IN".concat(i, "_").concat(wrapXVal, "_").concat(wrapYVal, "_").concat(filterVal);
             fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_X).concat(i)] = "".concat(wrapXVal);
             fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_Y).concat(i)] = "".concat(wrapYVal);
             fragmentDefines["".concat(polyfills_1.SAMPLER2D_FILTER).concat(i)] = "".concat(filterVal);
         }
-        var key = "".concat(name).concat(fragmentId);
+        var vertexID = Object.keys(vertexDefines).map(function (key) { return "_".concat(key, "_").concat(vertexDefines[key]); }).join();
+        var key = "".concat(name).concat(vertexID).concat(fragmentID);
         // Check if we've already compiled program.
         if (this._programs[key])
             return this._programs[key];
         // Otherwise, we need to compile a new program on the fly.
         var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
-        var vertexShader = _composer._getVertexShaderWithName(name, this.name);
+        var vertexShader = _composer._getVertexShader(name, vertexID, vertexDefines, this.name);
         if (vertexShader === undefined) {
-            _errorCallback("Unable to init vertex shader \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
+            _errorCallback("Unable to init vertex shader \"".concat(name).concat(vertexID, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
         }
-        var fragmentShader = this._getFragmentShader(fragmentId, fragmentDefines);
+        var fragmentShader = this._getFragmentShader(fragmentID, fragmentDefines);
         if (fragmentShader === undefined) {
-            _errorCallback("Unable to init fragment shader \"".concat(fragmentId, "\" for GPUProgram \"").concat(this.name, "\"."));
+            _errorCallback("Unable to init fragment shader \"".concat(fragmentID, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
         }
         var program = (0, utils_1.initGLProgram)(gl, vertexShader, fragmentShader, this.name, _errorCallback);
         if (program === undefined) {
-            _errorCallback("Unable to init program \"".concat(name, "\" for GPUProgram \"").concat(this.name, "\"."));
+            gl.deleteShader(fragmentShader);
+            _errorCallback("Unable to init program \"".concat(key, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
         }
         // If we have any uniforms set for this GPUProgram, add those to WebGLProgram we just inited.
@@ -5421,7 +5428,7 @@ var GPUProgram = /** @class */ (function () {
             var uniformName = uniformNames[i];
             var uniform = _uniforms[uniformName];
             var value = uniform.value, type = uniform.type;
-            this._setProgramUniform(program, name, uniformName, value, type);
+            this._setProgramUniform(program, key, uniformName, value, type);
         }
         _programs[key] = program;
         _programsKeyLookup.set(program, key);
@@ -5991,8 +5998,8 @@ exports.isBoolean = isBoolean;
 
 // Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_NORMAL_PROGRAM_NAME = exports.DEFAULT_W_UV_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = void 0;
+exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.GPUIO_VS_UV_ATTRIBUTE = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
 /**
  * Half float data type.
  */
@@ -6193,18 +6200,6 @@ exports.DEFAULT_PROGRAM_NAME = 'DEFAULT';
 /**
  * @private
  */
-exports.DEFAULT_W_UV_PROGRAM_NAME = 'DEFAULT_W_UV';
-/**
- * @private
- */
-exports.DEFAULT_W_NORMAL_PROGRAM_NAME = 'DEFAULT_W_NORMAL';
-/**
- * @private
- */
-exports.DEFAULT_W_UV_NORMAL_PROGRAM_NAME = 'DEFAULT_W_UV_NORMAL';
-/**
- * @private
- */
 exports.SEGMENT_PROGRAM_NAME = 'SEGMENT';
 /**
  * @private
@@ -6218,6 +6213,25 @@ exports.LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
  * @private
  */
 exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
+// Vertex shader compile time vars.
+// Be sure to change these in the vertex shader if updated!
+/**
+ * @private
+ */
+exports.GPUIO_VS_UV_ATTRIBUTE = 'GPUIO_VS_UV_ATTRIBUTE';
+/**
+ * @private
+ */
+exports.GPUIO_VS_WRAP_X = 'GPUIO_VS_WRAP_X';
+/**
+ * @private
+ */
+exports.GPUIO_VS_WRAP_Y = 'GPUIO_VS_WRAP_Y';
+/**
+ * @private
+ */
+exports.GPUIO_VS_NORMAL_ATTRIBUTE = 'GPUIO_VS_NORMAL_ATTRIBUTE';
+exports.GPUIO_VS_POSITION_W_ACCUM = 'GPUIO_VS_POSITION_W_ACCUM';
 /**
  * @private
  */
@@ -6465,14 +6479,6 @@ exports.SAMPLER2D_HALF_PX_UNIFORM = 'u_gpuio_half_px';
  * @private
  */
 exports.SAMPLER2D_DIMENSIONS_UNIFORM = 'u_gpuio_dimensions';
-// function wrapEnum(wrap: GPULayerWrap) {
-// 	if (wrap === CLAMP_TO_EDGE) return '0';
-// 	return '1'; // REPEAT.
-// }
-// function filterEnum(filter: GPULayerFilter) {
-// 	if (filter === NEAREST) return '0';
-// 	return '1'; // LINEAR.
-// }
 /**
  * Override texture function to perform polyfill filter/wrap.
  * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL
@@ -6508,14 +6514,14 @@ function texturePolyfill(shaderSource) {
         return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_POLYFILL").concat(i, "(const ").concat(prefix, "sampler2D sampler, vec2 uv) {\n\t#if (").concat(exports.SAMPLER2D_FILTER).concat(i, " == 0)\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn texture(sampler, uv);\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#else\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#endif\n}\n");
     }
     function make_GPUIO_TEXTURE_WRAP(prefix) {
-        return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);\n\tfloat v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);\n\treturn texture(sampler, vec2(u, v));\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);\n\tfloat v = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);\n\treturn texture(sampler, vec2(u, v));\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tfloat u = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);\n\tfloat v = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);\n\treturn texture(sampler, vec2(u, v));\n}\n");
+        return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\treturn texture(sampler, GPUIO_WRAP_REPEAT_UV(uv));\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tuv.x = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);\n\t// uv.y = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);\n\treturn texture(sampler, uv);\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\t// uv.x = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);\n\tuv.y = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);\n\treturn texture(sampler, uv);\n}\n");
     }
     function make_GPUIO_BILINEAR_INTERP(wrapType) {
         var lookupFunction = wrapType ? "GPUIO_TEXTURE_WRAP_".concat(wrapType) : 'texture';
         var extraParams = wrapType ? ", halfPx" : '';
-        return "\nvec4 GPUIO_TEXTURE_BILINEAR_INTERP".concat(wrapType ? "_WRAP_".concat(wrapType) : '', "(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {\n\t\n\tvec2 imagePosCenterity = fract(uv * dimensions);\n\tvec2 offset = halfPx - vec2(0.00001, 0.00001) * max(\n\t\t\tstep(abs(imagePosCenterity.x - 0.5), 0.001),\n\t\t\tstep(abs(imagePosCenterity.y - 0.5), 0.001)\n\t\t);\n\tvec4 minmin = ").concat(lookupFunction, "(sampler, uv - offset").concat(extraParams, ");\n\tvec4 maxmin = ").concat(lookupFunction, "(sampler, uv + vec2(offset.x, -offset.y)").concat(extraParams, ");\n\tvec4 minmax = ").concat(lookupFunction, "(sampler, uv + vec2(-offset.x, offset.y)").concat(extraParams, ");\n\tvec4 maxmax = ").concat(lookupFunction, "(sampler, uv + offset").concat(extraParams, ");\n\tvec2 t = fract((uv - offset) * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n");
+        return "\nvec4 GPUIO_TEXTURE_BILINEAR_INTERP".concat(wrapType ? "_WRAP_".concat(wrapType) : '', "(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {\n\tvec2 pxFraction = fract(uv * dimensions);\n\tvec2 offset = halfPx - vec2(0.00001, 0.00001) * max(\n\t\t\tstep(abs(pxFraction.x - 0.5), 0.001),\n\t\t\tstep(abs(pxFraction.y - 0.5), 0.001)\n\t\t);\n\tvec2 baseUV = uv - offset;\n\tvec2 diagOffset = vec2(offset.x, -offset.y);\n\tvec4 minmin = ").concat(lookupFunction, "(sampler, baseUV").concat(extraParams, ");\n\tvec4 maxmin = ").concat(lookupFunction, "(sampler, uv + diagOffset").concat(extraParams, ");\n\tvec4 minmax = ").concat(lookupFunction, "(sampler, uv - diagOffset").concat(extraParams, ");\n\tvec4 maxmax = ").concat(lookupFunction, "(sampler, uv + offset").concat(extraParams, ");\n\tvec2 t = fract(baseUV * dimensions);\n\tvec4 yMin = mix(minmin, maxmin, t.x);\n\tvec4 yMax = mix(minmax, maxmax, t.x);\n\treturn mix(yMin, yMax, t.y);\n}\n");
     }
-    shaderSource = "\n".concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nfloat GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n\treturn max(halfPx, min(1.0 - halfPx, coord));\n}\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
+    shaderSource = "\n".concat(Object.keys(polyfillUniforms).map(function (key) { return "uniform ".concat(polyfillUniforms[key], " ").concat(key, ";"); }).join('\n'), "\n\nfloat GPUIO_WRAP_REPEAT_UV_COORD(float coord) {\n\treturn fract(coord + ceil(abs(coord)));\n}\nvec2 GPUIO_WRAP_REPEAT_UV(vec2 uv) {\n\treturn fract(uv + ceil(abs(uv)));\n}\n// float GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {\n// \treturn clamp(coord, halfPx, 1.0 - halfPx);\n// }\n\n").concat(make_GPUIO_TEXTURE_WRAP(''), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) { return make_GPUIO_TEXTURE_WRAP(prefix); }).join('\n'), "\n#endif\n\n").concat([null,
         'REPEAT_REPEAT',
         'REPEAT_CLAMP',
         'CLAMP_REPEAT',
@@ -7520,21 +7526,21 @@ module.exports = "in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragC
 /***/ 288:
 /***/ ((module) => {
 
-module.exports = "in vec2 a_internal_position;\n#ifdef GPUIO_UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef GPUIO_NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef GPUIO_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef GPUIO_UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=a_internal_position;\n#endif\n#ifdef GPUIO_NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 position=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
+module.exports = "in vec2 a_internal_position;\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nin vec2 a_internal_uv;\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nin vec2 a_internal_normal;\n#endif\nuniform vec2 u_internal_scale;uniform vec2 u_internal_translation;out vec2 v_UV;out vec2 v_UV_local;\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nv_UV_local=a_internal_uv;\n#else\nv_UV_local=0.5*(a_internal_position+1.);\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nv_normal=a_internal_normal;\n#endif\nvec2 position=u_internal_scale*a_internal_position+u_internal_translation;v_UV=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 143:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 positionData=texture(u_internal_positions,particleUV);vec2 positionAbsolute=positionData.rg;if(u_internal_positionWithAccumulation)positionAbsolute+=positionData.ba;v_UV=positionAbsolute*u_internal_scale;v_lineWrapping=vec2(0.);if(u_internal_wrapX){if(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}}if(u_internal_wrapY){if(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}}vec2 position=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;out vec2 v_UV;out vec2 v_lineWrapping;out float v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_internal_positions,particleUV);v_UV=(positionData.rg+positionData.ba)*u_internal_scale;\n#else\nv_UV=texture(u_internal_positions,particleUV).rg*u_internal_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_UV.x<0.){v_UV.x+=1.;v_lineWrapping.x=1.;}else if(v_UV.x>1.){v_UV.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_UV.y<0.){v_UV.y+=1.;v_lineWrapping.y=1.;}else if(v_UV.y>1.){v_UV.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_UV*2.-1.;v_index=a_internal_index;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 767:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;uniform bool u_internal_positionWithAccumulation;uniform bool u_internal_wrapX;uniform bool u_internal_wrapY;out vec2 v_UV;flat out int v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;vec4 positionData=texture(u_internal_positions,particleUV);vec2 positionAbsolute=positionData.rg;if(u_internal_positionWithAccumulation)positionAbsolute+=positionData.ba;v_UV=positionAbsolute*u_internal_scale;if(u_internal_wrapX){if(v_UV.x<0.)v_UV.x+=1.;if(v_UV.x>1.)v_UV.x-=1.;}if(u_internal_wrapY){if(v_UV.y<0.)v_UV.y+=1.;if(v_UV.y>1.)v_UV.y-=1.;}vec2 position=v_UV*2.-1.;v_index=int(a_internal_index);gl_PointSize=u_internal_pointSize;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}in float a_internal_index;uniform sampler2D u_internal_positions;uniform vec2 u_internal_positionsDimensions;uniform vec2 u_internal_scale;uniform float u_internal_pointSize;out vec2 v_UV;flat out int v_index;void main(){vec2 particleUV=vec2(modI(a_internal_index,u_internal_positionsDimensions.x),floor(floor(a_internal_index+0.5)/u_internal_positionsDimensions.x))/u_internal_positionsDimensions;\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_internal_positions,particleUV);v_UV=(positionData.rg+positionData.ba)*u_internal_scale;\n#else\nv_UV=texture(u_internal_positions,particleUV).rg*u_internal_scale;\n#endif\n#ifdef GPUIO_VS_WRAP_X\nv_UV.x=fract(v_UV.x+ceil(abs(v_UV.x)));\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nv_UV.y=fract(v_UV.y+ceil(abs(v_UV.y)));\n#endif\nvec2 position=v_UV*2.-1.;v_index=int(a_internal_index);gl_PointSize=u_internal_pointSize;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 

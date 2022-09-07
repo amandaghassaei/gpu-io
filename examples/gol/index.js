@@ -96,7 +96,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniforms: [
 			{
 				name: 'u_state',
-				value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this, bc all uniforms default to zero.
 				type: INT,
 			},
 			{
@@ -132,7 +132,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniforms: [
 			{
 				name: 'u_state',
-				value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this, bc all uniforms default to zero.
 				type: INT,
 			},
 		],
@@ -163,7 +163,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniforms: [
 			{
 				name: 'u_noise',
-				value: 0, // We don't even really need to declare this, bc all uniforms default to zero.
+				value: 0, // We don't even really need to set this, bc all uniforms default to zero.
 				type: INT,
 			},
 		],

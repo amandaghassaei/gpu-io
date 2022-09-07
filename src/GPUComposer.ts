@@ -27,9 +27,6 @@ import {
 	PROGRAM_NAME_INTERNAL,
 	CompileTimeVars,
 	DEFAULT_PROGRAM_NAME,
-	DEFAULT_W_UV_PROGRAM_NAME,
-	DEFAULT_W_NORMAL_PROGRAM_NAME,
-	DEFAULT_W_UV_NORMAL_PROGRAM_NAME,
 	SEGMENT_PROGRAM_NAME,
 	LAYER_POINTS_PROGRAM_NAME,
 	LAYER_VECTOR_FIELD_PROGRAM_NAME,
@@ -46,6 +43,11 @@ import {
 	DEFAULT_ERROR_CALLBACK,
 	BOOL,
 	GPULayerState,
+	GPUIO_VS_UV_ATTRIBUTE,
+	GPUIO_VS_NORMAL_ATTRIBUTE,
+	GPUIO_VS_POSITION_W_ACCUM,
+	GPUIO_VS_WRAP_X,
+	GPUIO_VS_WRAP_Y,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -148,42 +150,27 @@ export class GPUComposer {
 	 */
 	readonly _vertexShaders: {[key in PROGRAM_NAME_INTERNAL]: {
 		src: string,
-		shader?: WebGLProgram,
-		defines?: CompileTimeVars,
+		compiledShaders: { [key: string] : WebGLShader },
 	}} = {
 		[DEFAULT_PROGRAM_NAME]: {
 			src: defaultVertexShaderSource,
-		},
-		[DEFAULT_W_UV_PROGRAM_NAME]: {
-			src: defaultVertexShaderSource,
-			defines: {
-				'GPUIO_UV_ATTRIBUTE': '1',
-			},
-		},
-		[DEFAULT_W_NORMAL_PROGRAM_NAME]: {
-			src: defaultVertexShaderSource,
-			defines: {
-				'GPUIO_NORMAL_ATTRIBUTE': '1',
-			},
-		},
-		[DEFAULT_W_UV_NORMAL_PROGRAM_NAME]: {
-			src: defaultVertexShaderSource,
-			defines: {
-				'GPUIO_UV_ATTRIBUTE': '1',
-				'GPUIO_NORMAL_ATTRIBUTE': '1',
-			},
+			compiledShaders: {},
 		},
 		[SEGMENT_PROGRAM_NAME]: {
 			src: require('./glsl/vert/SegmentVertShader.glsl'),
+			compiledShaders: {},
 		},
 		[LAYER_POINTS_PROGRAM_NAME]: {
 			src: require('./glsl/vert/LayerPointsVertShader.glsl'),
+			compiledShaders: {},
 		},
 		[LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
 			src: require('./glsl/vert/LayerVectorFieldVertShader.glsl'),
+			compiledShaders: {},
 		},
 		[LAYER_LINES_PROGRAM_NAME]: {
 			src: require('./glsl/vert/LayerLinesVertShader.glsl'),
+			compiledShaders: {},
 		},
 	};
 
@@ -653,7 +640,12 @@ export class GPUComposer {
 	 * 
 	 * @private
 	 */
-	_getVertexShaderWithName(name: PROGRAM_NAME_INTERNAL, programName: string) {
+	 _getVertexShader(
+		name: PROGRAM_NAME_INTERNAL,
+		vertexID: string,
+		vertexDefines: CompileTimeVars,
+		programName: string,
+	) {
 		const {
 			_errorCallback,
 			_vertexShaders,
@@ -662,13 +654,14 @@ export class GPUComposer {
 			intPrecision,
 			floatPrecision,
 		} = this;
-		const vertexShader = _vertexShaders[name];
-		if (vertexShader.shader === undefined) {
-			// Init a vertex shader (this only happens once for each possible vertex shader across all GPUPrograms).
-			if (vertexShader.src === '') {
+		const { compiledShaders, src } = _vertexShaders[name];
+		if (vertexID === '') vertexID = '_default';
+		if (compiledShaders[vertexID] === undefined) {
+			// Compile a vertex shader (this only happens once for each possible vertex shader across all GPUPrograms).
+			if (src === '') {
 				throw new Error(`Error compiling GPUProgram "${programName}": no source for vertex shader with name "${name}".`);
 			}
-			const preprocessedSrc = preprocessVertexShader(vertexShader.src, glslVersion);
+			const preprocessedSrc = preprocessVertexShader(src, glslVersion);
 			const shader = compileShader(
 				gl,
 				glslVersion,
@@ -678,17 +671,17 @@ export class GPUComposer {
 				gl.VERTEX_SHADER,
 				programName,
 				_errorCallback,
-				vertexShader.defines,
+				vertexDefines,
 				true,
 			);
 			if (!shader) {
-				_errorCallback(`Unable to compile "${name}" vertex shader for GPUProgram "${programName}".`);
+				_errorCallback(`Unable to compile "${name}${vertexID}" vertex shader for GPUProgram "${programName}".`);
 				return;
 			}
 			// Save the results so this does not have to be repeated.
-			vertexShader.shader = shader;
+			compiledShaders[vertexID] = shader;
 		}
-		return vertexShader.shader;
+		return compiledShaders[vertexID];
 	}
 
 	resize(width: number, height: number) {
@@ -705,6 +698,7 @@ export class GPUComposer {
 	private _drawSetup(
 		gpuProgram: GPUProgram,
 		programName: PROGRAM_NAME_INTERNAL,
+		vertexDefines: CompileTimeVars,
 		fullscreenRender: boolean,
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer,
@@ -729,7 +723,7 @@ export class GPUComposer {
 			}
 		}
 
-		const program = gpuProgram._getProgramWithName(programName, inputTextures)!;
+		const program = gpuProgram._getProgramWithName(programName, vertexDefines, inputTextures)!;
 
 		// Set output framebuffer.
 		// This may modify WebGL internal state.
@@ -881,7 +875,7 @@ export class GPUComposer {
 		const { program, input, output } = params;
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, true, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, true, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1, 1], FLOAT);
@@ -911,7 +905,7 @@ export class GPUComposer {
 		const height = output ? output.height : this._height;
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
@@ -961,7 +955,7 @@ export class GPUComposer {
 		const height = output ? output.height : this._height;
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
 		const onePx = [ 1 / width, 1 / height] as [number, number];
@@ -976,12 +970,12 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	// Step program only for a circular spot.
+	// Step program inside a circular spot.
 	stepCircle(
 		params: {
 			program: GPUProgram,
 			position: [number, number], // Position is in units of pixels.
-			radius: number, // Radius is in units of pixels.
+			diameter: number, // Diameter is in units of pixels.
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			numSegments?: number,
@@ -989,13 +983,13 @@ export class GPUComposer {
 		},
 	) {
 		const { gl, _width, _height } = this;
-		const { program, position, radius, input, output } = params;
+		const { program, position, diameter, input, output } = params;
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_internal_scale', [radius * 2 / _width, radius * 2 / _height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_internal_scale', [diameter / _width, diameter / _height], FLOAT);
 		program._setVertexUniform(glProgram, 'u_internal_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], FLOAT);
 		const numSegments = params.numSegments ? params.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 3) {
@@ -1030,7 +1024,7 @@ export class GPUComposer {
 		const height = output ? output.height : this._height;
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, SEGMENT_PROGRAM_NAME, false, input, output);
+		const glProgram = this._drawSetup(program, SEGMENT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_halfThickness', thickness / 2, FLOAT);
@@ -1228,13 +1222,12 @@ export class GPUComposer {
 			}
 		}
 
-		const programName = (uvs ?
-			(normals ? DEFAULT_W_UV_NORMAL_PROGRAM_NAME : DEFAULT_W_UV_PROGRAM_NAME) :
-			(normals ? DEFAULT_W_NORMAL_PROGRAM_NAME : DEFAULT_PROGRAM_NAME)
-		)!;
+		const vertexShaderOptions: CompileTimeVars = {};
+		if (uvs) vertexShaderOptions[GPUIO_VS_UV_ATTRIBUTE] = '1';
+		if (normals) vertexShaderOptions[GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, programName, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
@@ -1275,13 +1268,12 @@ export class GPUComposer {
 		const { program, input, output, positions, uvs, normals } = params;
 		const { gl, _width, _height } = this;
 
-		const programName = (uvs ?
-			(normals ? DEFAULT_W_UV_NORMAL_PROGRAM_NAME : DEFAULT_W_UV_PROGRAM_NAME) :
-			(normals ? DEFAULT_W_NORMAL_PROGRAM_NAME : DEFAULT_PROGRAM_NAME)
-		)!;
+		const vertexShaderOptions: CompileTimeVars = {};
+		if (uvs) vertexShaderOptions[GPUIO_VS_UV_ATTRIBUTE] = '1';
+		if (normals) vertexShaderOptions[GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, programName, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_scale', [2 / _width, 2 / _height], FLOAT);
@@ -1327,14 +1319,13 @@ export class GPUComposer {
 		if (params.closeLoop && indices) {
 			throw new Error(`GPUComposer.stepLines() can't be called with closeLoop == true and indices.`);
 		}
-		
-		const programName = (uvs ?
-			(normals ? DEFAULT_W_UV_NORMAL_PROGRAM_NAME : DEFAULT_W_UV_PROGRAM_NAME) :
-			(normals ? DEFAULT_W_NORMAL_PROGRAM_NAME : DEFAULT_PROGRAM_NAME)
-		)!;
+
+		const vertexShaderOptions: CompileTimeVars = {};
+		if (uvs) vertexShaderOptions[GPUIO_VS_UV_ATTRIBUTE] = '1';
+		if (normals) vertexShaderOptions[GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, programName, false, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		const count = params.count ? params.count : (indices ? indices.length : (params.positions.length / 2));
 
@@ -1416,21 +1407,24 @@ export class GPUComposer {
 		// Add positions to end of input if needed.
 		const input = this._addLayerToInputs(positions, params.input);
 
+		const vertexShaderOptions: CompileTimeVars = {};
+		// Tell whether we are using an absolute position (2 components),
+		// or position with accumulation buffer (4 components, better floating pt accuracy).
+		if (positions.numComponents === 4) vertexShaderOptions[GPUIO_VS_POSITION_W_ACCUM] = '1';
+		if (params.wrapX) vertexShaderOptions[GPUIO_VS_WRAP_X] = '1';
+		if (params.wrapY) vertexShaderOptions[GPUIO_VS_WRAP_Y] = '1';
+
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, LAYER_POINTS_PROGRAM_NAME, false, input, output);
+		const glProgram = this._drawSetup(program, LAYER_POINTS_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
-		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, BOOL);
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
 		program._setVertexUniform(glProgram, 'u_internal_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, BOOL);
-		program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, BOOL);
 		if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			const indices = initSequentialFloatArray(length);
@@ -1483,8 +1477,15 @@ export class GPUComposer {
 		// Add positionLayer to end of input if needed.
 		const input = this._addLayerToInputs(positions, params.input);
 
+		const vertexShaderOptions: CompileTimeVars = {};
+		// Tell whether we are using an absolute position (2 components),
+		// or position with accumulation buffer (4 components, better floating pt accuracy).
+		if (positions.numComponents === 4) vertexShaderOptions[GPUIO_VS_POSITION_W_ACCUM] = '1';
+		if (params.wrapX) vertexShaderOptions[GPUIO_VS_WRAP_X] = '1';
+		if (params.wrapY) vertexShaderOptions[GPUIO_VS_WRAP_Y] = '1';
+
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, LAYER_LINES_PROGRAM_NAME, false, input, output);
+		const glProgram = this._drawSetup(program, LAYER_LINES_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// TODO: cache indexArray if no indices passed in.
 		const indices = params.indices ? params.indices : initSequentialFloatArray(params.count || positions.length);
@@ -1493,12 +1494,8 @@ export class GPUComposer {
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_positions', this._indexOfLayerInArray(positions, input), INT);
 		program._setVertexUniform(glProgram, 'u_internal_scale', [1 / _width, 1 / _height], FLOAT);
-		// Tell whether we are using an absolute position (2 components), or position with accumulation buffer (4 components, better floating pt accuracy).
-		program._setVertexUniform(glProgram, 'u_internal_positionWithAccumulation', positions.numComponents === 4, BOOL);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_internal_positionsDimensions', positionLayerDimensions, FLOAT);
-		program._setVertexUniform(glProgram, 'u_internal_wrapX', !!params.wrapX, BOOL);
-		program._setVertexUniform(glProgram, 'u_internal_wrapY', !!params.wrapY, BOOL);
 		if (this._indexedLinesIndexBuffer === undefined) {
 			// Have to use float32 array bc int is not supported as a vertex attribute type.
 			let floatArray: Float32Array;
@@ -1570,7 +1567,7 @@ export class GPUComposer {
 		const input = this._addLayerToInputs(data, params.input);
 
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, LAYER_VECTOR_FIELD_PROGRAM_NAME, false, input, output);
+		const glProgram = this._drawSetup(program, LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_vectors', this._indexOfLayerInArray(data, input), INT);
@@ -1619,7 +1616,7 @@ export class GPUComposer {
 		// Add data to end of input if needed.
 		const input = this._addLayerToInputs(data, params.input);
 		// Do setup - this must come first.
-		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, true, input, output);
+		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, true, input, output);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_internal_data', this._indexOfLayerInArray(data, input), INT);
@@ -1711,11 +1708,11 @@ export class GPUComposer {
 		// TODO: delete buffers.
 
 		// Delete vertex shaders.
-		Object.values(_vertexShaders).forEach(vertexShader => {
-			if (vertexShader.shader) {
-				gl.deleteShader(vertexShader.shader);
-				delete vertexShader.shader;
-			}
+		Object.values(_vertexShaders).forEach(({ compiledShaders })=> {
+			Object.keys(compiledShaders).forEach(key => {
+				gl.deleteShader(compiledShaders);
+				delete compiledShaders[key];
+			});
 		});
 		
 		// Delete fragment shaders.
