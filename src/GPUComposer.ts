@@ -1710,7 +1710,7 @@ export class GPUComposer {
 		// Delete vertex shaders.
 		Object.values(_vertexShaders).forEach(({ compiledShaders })=> {
 			Object.keys(compiledShaders).forEach(key => {
-				gl.deleteShader(compiledShaders);
+				gl.deleteShader(compiledShaders[key]);
 				delete compiledShaders[key];
 			});
 		});

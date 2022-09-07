@@ -8,11 +8,24 @@
 		isWebGL2Supported,
 	} = GPUIO;
 
+	// Init a simple gui.
+	const gui = new dat.GUI();
+
 	// Init info dialog.
 	MicroModal.init();
 
-	// Init a simple gui.
-	const gui = new dat.GUI();
+	// Init an overlay to prevent click events from bubbling through
+	// modal to dat.gui or canvas.
+	// Show/hide overlay when modal is opened/closed.
+	const overlay = document.createElement('div');
+	overlay.id = 'touchOverlay';
+	overlay.style.width = '100%';
+	overlay.style.height = '100%'
+	overlay.style.opacity = 0;
+	overlay.style.position = 'absolute';
+	overlay.style['z-index'] = 1;
+	overlay.style.display = 'none';
+	document.body.append(overlay);
 
 	const webGLSettings = {
 		webGL2: isWebGL2Supported(),
@@ -49,7 +62,9 @@
 	
 	// Add info modal.
 	const modalOptions = { showModal: () => {
-		MicroModal.show('modal-1');
+		// Show/hide overlay, otherwise clicks are passing through due to fixed/abs positioning of modal.
+		MicroModal.show('modal-1', { onClose: () => { setTimeout(() => { overlay.style.display = 'none'; }, 500); } });
+		overlay.style.display = 'block';
 	}}
 	gui.add(modalOptions, 'showModal').name('About');
 

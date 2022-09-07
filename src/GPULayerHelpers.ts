@@ -190,14 +190,14 @@ export function getGPULayerInternalFilter(
 	if (internalType === HALF_FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
 			|| getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFilterWrap(composer, internalType, LINEAR, wrapS) || !testFilterWrap(composer, internalType, LINEAR, wrapT)) {
-			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
+		if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
+			console.warn(`This browser does not support ${filter} filtering for type ${internalType} and wrap [${wrapS}, ${wrapT}].  Falling back to NEAREST filter for GPULayer "${name}" with ${filter} polyfill in fragment shader.`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	} if (internalType === FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFilterWrap(composer, internalType, LINEAR, wrapS) || !testFilterWrap(composer, internalType, LINEAR, wrapT)) {
-			console.warn(`Falling back to NEAREST filter for GPULayer "${name}".`);
+		if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
+			console.warn(`This browser does not support ${filter} filtering for type ${internalType} and wrap [${wrapS}, ${wrapT}].  Falling back to NEAREST filter for GPULayer "${name}" with ${filter} polyfill in fragment shader.`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	}
@@ -826,7 +826,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			// The OES_texture_float extension implicitly enables WEBGL_color_buffer_float extension (for writing).
 			const extension = getExtension(composer, OES_TEXTURE_FLOAT, true);
 			if (!extension) {
-				console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for GPULayer "${name}".`);
+				console.warn(`FLOAT not supported in this browser, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 				internalType = HALF_FLOAT;
 			// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
 			// Rendering to a floating-point texture may not be supported, even if the OES_texture_float extension
@@ -835,7 +835,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			} else if (writable) {
 				const valid = testWriteSupport(composer, internalType);
 				if (!valid) {
-					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
+					console.warn(`FLOAT not supported for writing operations in this browser, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
 				}
 			}
@@ -857,13 +857,13 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		if (internalType === FLOAT) {
 			const extension = getExtension(composer, EXT_COLOR_BUFFER_FLOAT, true);
 			if (!extension) {
-				console.warn(`FLOAT not supported, falling back to HALF_FLOAT type for GPULayer "${name}".`);
+				console.warn(`FLOAT not supported in this browser, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 				internalType = HALF_FLOAT;
 			} else {
 				// Test attaching texture to framebuffer to be sure float writing is supported.
 				const valid = testWriteSupport(composer, internalType);
 				if (!valid) {
-					console.warn(`FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer "${name}".`);
+					console.warn(`FLOAT not supported for writing operations in this browser, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
 				}
 			}

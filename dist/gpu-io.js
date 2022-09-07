@@ -3527,7 +3527,7 @@ var GPUComposer = /** @class */ (function () {
         Object.values(_vertexShaders).forEach(function (_a) {
             var compiledShaders = _a.compiledShaders;
             Object.keys(compiledShaders).forEach(function (key) {
-                gl.deleteShader(compiledShaders);
+                gl.deleteShader(compiledShaders[key]);
                 delete compiledShaders[key];
             });
         });
@@ -4468,15 +4468,15 @@ function getGPULayerInternalFilter(params) {
     if (internalType === constants_1.HALF_FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
             || (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapS) || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapT)) {
-            console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
+        if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
+            console.warn("This browser does not support ".concat(filter, " filtering for type ").concat(internalType, " and wrap [").concat(wrapS, ", ").concat(wrapT, "].  Falling back to NEAREST filter for GPULayer \"").concat(name, "\" with ").concat(filter, " polyfill in fragment shader."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
     if (internalType === constants_1.FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapS) || !testFilterWrap(composer, internalType, constants_1.LINEAR, wrapT)) {
-            console.warn("Falling back to NEAREST filter for GPULayer \"".concat(name, "\"."));
+        if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
+            console.warn("This browser does not support ".concat(filter, " filtering for type ").concat(internalType, " and wrap [").concat(wrapS, ", ").concat(wrapT, "].  Falling back to NEAREST filter for GPULayer \"").concat(name, "\" with ").concat(filter, " polyfill in fragment shader."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
@@ -5039,7 +5039,7 @@ function getGPULayerInternalType(params) {
             // The OES_texture_float extension implicitly enables WEBGL_color_buffer_float extension (for writing).
             var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT, true);
             if (!extension) {
-                console.warn("FLOAT not supported, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
+                console.warn("FLOAT not supported in this browser, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
                 internalType = constants_1.HALF_FLOAT;
                 // https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
                 // Rendering to a floating-point texture may not be supported, even if the OES_texture_float extension
@@ -5049,7 +5049,7 @@ function getGPULayerInternalType(params) {
             else if (writable) {
                 var valid = testWriteSupport(composer, internalType);
                 if (!valid) {
-                    console.warn("FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
+                    console.warn("FLOAT not supported for writing operations in this browser, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
                     internalType = constants_1.HALF_FLOAT;
                 }
             }
@@ -5072,14 +5072,14 @@ function getGPULayerInternalType(params) {
         if (internalType === constants_1.FLOAT) {
             var extension = (0, extensions_1.getExtension)(composer, extensions_1.EXT_COLOR_BUFFER_FLOAT, true);
             if (!extension) {
-                console.warn("FLOAT not supported, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
+                console.warn("FLOAT not supported in this browser, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
                 internalType = constants_1.HALF_FLOAT;
             }
             else {
                 // Test attaching texture to framebuffer to be sure float writing is supported.
                 var valid = testWriteSupport(composer, internalType);
                 if (!valid) {
-                    console.warn("FLOAT not supported for writing operations, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
+                    console.warn("FLOAT not supported for writing operations in this browser, falling back to HALF_FLOAT type for GPULayer \"".concat(name, "\"."));
                     internalType = constants_1.HALF_FLOAT;
                 }
             }
@@ -7328,7 +7328,7 @@ function preprocessVertexShader(shaderSource, glslVersion) {
     shaderSource = preprocessShader(shaderSource);
     // Check if highp supported in vertex shaders.
     if (!isHighpSupportedInVertexShader()) {
-        console.warn('highp not supported in vertex shader, falling back to mediump.');
+        console.warn('highp not supported in vertex shader in this browser, falling back to mediump.');
         // Replace all highp with mediump.
         shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }
@@ -7349,7 +7349,7 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
     (0, regex_1.checkFragmentShaderForFragColor)(shaderSource, glslVersion, name);
     // Check if highp supported in fragment shaders.
     if (!isHighpSupportedInFragmentShader()) {
-        console.warn('highp not supported in fragment shader, falling back to mediump.');
+        console.warn('highp not supported in fragment shader in this browser, falling back to mediump.');
         // Replace all highp with mediump.
         shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }

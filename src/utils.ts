@@ -633,7 +633,7 @@ export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVe
 	shaderSource = preprocessShader(shaderSource);
 	// Check if highp supported in vertex shaders.
 	if (!isHighpSupportedInVertexShader()) {
-		console.warn('highp not supported in vertex shader, falling back to mediump.');
+		console.warn('highp not supported in vertex shader in this browser, falling back to mediump.');
 		// Replace all highp with mediump.
 		shaderSource = highpToMediump(shaderSource);
 	}
@@ -655,7 +655,7 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 	checkFragmentShaderForFragColor(shaderSource, glslVersion, name);
 	// Check if highp supported in fragment shaders.
 	if (!isHighpSupportedInFragmentShader()) {
-		console.warn('highp not supported in fragment shader, falling back to mediump.');
+		console.warn('highp not supported in fragment shader in this browser, falling back to mediump.');
 		// Replace all highp with mediump.
 		shaderSource = highpToMediump(shaderSource);
 	}

@@ -488,6 +488,7 @@ function main({ gui, glslVersion, contextID }) {
 		return `Particles (${particlesPositions.length.toLocaleString("en-US")})`;
 	}
 	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
+	const particlesOrigName = particlesGUI.name; // We need this in order to delete the folder, see dispose().
 	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
 		// Init new particles when particle density changes.
 		const { positions, heading, numParticles } = initParticlesArrays();
@@ -709,7 +710,13 @@ function main({ gui, glslVersion, contextID }) {
 		touch.dispose();
 		render.dispose();
 		composer.dispose();
+
+		// Set the name of the folder back to what it was when first inited.
+		// There is a bug in dat.gui that is preventing folder from being deleted
+		// Unless we do this.
+		particlesGUI.name = particlesOrigName;
 		gui.removeFolder(particlesGUI);
+
 		gui.removeFolder(trailsGUI);
 		gui.removeFolder(presetsGUI);
 		gui.removeFolder(renderGUI);
