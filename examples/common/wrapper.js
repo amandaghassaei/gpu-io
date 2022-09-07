@@ -55,7 +55,20 @@
 
 	// Load example app.
 	reloadExampleWithNewParams();
-	
+
+	// Disable gestures.
+	document.addEventListener('gesturestart', disableZoom);
+	document.addEventListener('gesturechange', disableZoom); 
+	document.addEventListener('gestureend', disableZoom);
+	function disableZoom(e) {
+		e.preventDefault();
+		const scale = 'scale(1)';
+		// @ts-ignore
+		document.body.style.webkitTransform =  scale;    // Chrome, Opera, Safari
+		// @ts-ignore
+		document.body.style.msTransform =   scale;       // IE 9
+		document.body.style.transform = scale;
+	}
 
 	function outerLoop() {
 		// Update fps counter.
