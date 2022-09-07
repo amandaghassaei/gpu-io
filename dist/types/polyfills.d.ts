@@ -38,4 +38,13 @@ export declare function texturePolyfill(shaderSource: string): {
     shaderSource: string;
     samplerUniforms: string[];
 };
-export declare const GLSL1_POLYFILLS: string;
+/**
+ * Polyfill all common functions/operators that GLSL1 lacks.
+ * @private
+ */
+export declare function GLSL1Polyfills(): string;
+/**
+ * Polyfills to be make available for both GLSL1 and GLSL3fragment shaders.
+ * @private
+ */
+export declare function fragmentShaderPolyfills(): string;

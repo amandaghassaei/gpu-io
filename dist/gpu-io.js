@@ -6451,7 +6451,7 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GLSL1_POLYFILLS = exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
+exports.fragmentShaderPolyfills = exports.GLSL1Polyfills = exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
 var regex_1 = __webpack_require__(126);
 /**
  * Wrap type to use in polyfill.
@@ -6543,11 +6543,14 @@ function texturePolyfill(shaderSource) {
     };
 }
 exports.texturePolyfill = texturePolyfill;
-exports.GLSL1_POLYFILLS = makeGLSL1Polyfills();
+var GLSL1_POLYFILLS;
 /**
- * Polyfill all common functions in GLSL3 for GLSL1.
+ * Polyfill all common functions/operators that GLSL1 lacks.
+ * @private
  */
-function makeGLSL1Polyfills() {
+function GLSL1Polyfills() {
+    if (GLSL1_POLYFILLS)
+        return GLSL1_POLYFILLS;
     function floatTypeForIntType(type) {
         switch (type) {
             case 'int':
@@ -6583,8 +6586,22 @@ function makeGLSL1Polyfills() {
     var max = function (type1, type2) { return "".concat(type1, " max(").concat(type1, " a, ").concat(type2, " b) { return ").concat(type1, "(max(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); };
     var clamp = function (type1, type2) { return "".concat(type1, " clamp(").concat(type1, " a, ").concat(type2, " min, ").concat(type2, " max) { return ").concat(type1, "(clamp(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(min), ").concat(floatTypeForIntType(type2), "(max))); }"); };
     var mix = function (type1, type2) { return "".concat(type1, " mix(").concat(type1, " a, ").concat(type1, " b, ").concat(type2, " c) { return mix(a, b, ").concat(floatTypeForBoolType(type2), "(c)); }"); };
-    return "\n".concat(abs('int'), "\n").concat(abs('ivec2'), "\n").concat(abs('ivec3'), "\n").concat(abs('ivec4'), "\n\n").concat(sign('int'), "\n").concat(sign('ivec2'), "\n").concat(sign('ivec3'), "\n").concat(sign('ivec4'), "\n\n").concat(round('float'), "\n").concat(round('vec2'), "\n").concat(round('vec3'), "\n").concat(round('vec4'), "\n\n").concat(trunc('float'), "\n").concat(trunc('vec2'), "\n").concat(trunc('vec3'), "\n").concat(trunc('vec4'), "\n\n").concat(roundEven('float'), "\n").concat(roundEven('vec2'), "\n").concat(roundEven('vec3'), "\n").concat(roundEven('vec4'), "\n\n").concat(min('int', 'int'), "\n").concat(min('ivec2', 'ivec2'), "\n").concat(min('ivec3', 'ivec3'), "\n").concat(min('ivec4', 'ivec4'), "\n").concat(min('ivec2', 'int'), "\n").concat(min('ivec3', 'int'), "\n").concat(min('ivec4', 'int'), "\n\n").concat(max('int', 'int'), "\n").concat(max('ivec2', 'ivec2'), "\n").concat(max('ivec3', 'ivec3'), "\n").concat(max('ivec4', 'ivec4'), "\n").concat(max('ivec2', 'int'), "\n").concat(max('ivec3', 'int'), "\n").concat(max('ivec4', 'int'), "\n\n").concat(clamp('int', 'int'), "\n").concat(clamp('ivec2', 'ivec2'), "\n").concat(clamp('ivec3', 'ivec3'), "\n").concat(clamp('ivec4', 'ivec4'), "\n").concat(clamp('ivec2', 'int'), "\n").concat(clamp('ivec3', 'int'), "\n").concat(clamp('ivec4', 'int'), "\n\n").concat(mix('float', 'bool'), "\n").concat(mix('vec2', 'bvec2'), "\n").concat(mix('vec3', 'bvec3'), "\n").concat(mix('vec4', 'bvec4'), "\n");
+    GLSL1_POLYFILLS = "\n".concat(abs('int'), "\n").concat(abs('ivec2'), "\n").concat(abs('ivec3'), "\n").concat(abs('ivec4'), "\n\n").concat(sign('int'), "\n").concat(sign('ivec2'), "\n").concat(sign('ivec3'), "\n").concat(sign('ivec4'), "\n\n").concat(round('float'), "\n").concat(round('vec2'), "\n").concat(round('vec3'), "\n").concat(round('vec4'), "\n\n").concat(trunc('float'), "\n").concat(trunc('vec2'), "\n").concat(trunc('vec3'), "\n").concat(trunc('vec4'), "\n\n").concat(roundEven('float'), "\n").concat(roundEven('vec2'), "\n").concat(roundEven('vec3'), "\n").concat(roundEven('vec4'), "\n\n").concat(min('int', 'int'), "\n").concat(min('ivec2', 'ivec2'), "\n").concat(min('ivec3', 'ivec3'), "\n").concat(min('ivec4', 'ivec4'), "\n").concat(min('ivec2', 'int'), "\n").concat(min('ivec3', 'int'), "\n").concat(min('ivec4', 'int'), "\n\n").concat(max('int', 'int'), "\n").concat(max('ivec2', 'ivec2'), "\n").concat(max('ivec3', 'ivec3'), "\n").concat(max('ivec4', 'ivec4'), "\n").concat(max('ivec2', 'int'), "\n").concat(max('ivec3', 'int'), "\n").concat(max('ivec4', 'int'), "\n\n").concat(clamp('int', 'int'), "\n").concat(clamp('ivec2', 'ivec2'), "\n").concat(clamp('ivec3', 'ivec3'), "\n").concat(clamp('ivec4', 'ivec4'), "\n").concat(clamp('ivec2', 'int'), "\n").concat(clamp('ivec3', 'int'), "\n").concat(clamp('ivec4', 'int'), "\n\n").concat(mix('float', 'bool'), "\n").concat(mix('vec2', 'bvec2'), "\n").concat(mix('vec3', 'bvec3'), "\n").concat(mix('vec4', 'bvec4'), "\n");
+    return GLSL1_POLYFILLS;
 }
+exports.GLSL1Polyfills = GLSL1Polyfills;
+var FRAGMENT_SHADER_POLYFILLS;
+/**
+ * Polyfills to be make available for both GLSL1 and GLSL3fragment shaders.
+ * @private
+ */
+function fragmentShaderPolyfills() {
+    if (FRAGMENT_SHADER_POLYFILLS)
+        return FRAGMENT_SHADER_POLYFILLS;
+    FRAGMENT_SHADER_POLYFILLS = "\n";
+    return FRAGMENT_SHADER_POLYFILLS;
+}
+exports.fragmentShaderPolyfills = fragmentShaderPolyfills;
 
 
 /***/ }),
@@ -7400,12 +7417,15 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
         // Replace all highp with mediump.
         shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }
+    // Add function/operator polyfills.
+    shaderSource = (0, polyfills_1.fragmentShaderPolyfills)() + shaderSource;
     // Add texture() polyfills if needed.
     var samplerUniforms;
     (_a = (0, polyfills_1.texturePolyfill)(shaderSource), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms);
     if (glslVersion !== constants_1.GLSL3) {
-        shaderSource = polyfills_1.GLSL1_POLYFILLS + shaderSource;
         shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
+        // add glsl1 specific polyfills.
+        shaderSource = (0, polyfills_1.GLSL1Polyfills)() + shaderSource;
     }
     return { shaderSource: shaderSource, samplerUniforms: samplerUniforms };
 }

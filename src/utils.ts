@@ -49,7 +49,7 @@ import {
 	WEBGL1,
 	WEBGL2,
 } from './constants';
-import { GLSL1_POLYFILLS, texturePolyfill } from './polyfills';
+import { fragmentShaderPolyfills, GLSL1Polyfills, texturePolyfill } from './polyfills';
 import {
 	checkFragmentShaderForFragColor,
 	glsl1FragmentIn,
@@ -659,12 +659,15 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 		// Replace all highp with mediump.
 		shaderSource = highpToMediump(shaderSource);
 	}
+	// Add function/operator polyfills.
+	shaderSource = fragmentShaderPolyfills() + shaderSource;
 	// Add texture() polyfills if needed.
 	let samplerUniforms: string[];
 	({ shaderSource, samplerUniforms } = texturePolyfill(shaderSource));
 	if (glslVersion !== GLSL3) {
-		shaderSource = GLSL1_POLYFILLS + shaderSource;
 		shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
+		// add glsl1 specific polyfills.
+		shaderSource = GLSL1Polyfills() + shaderSource;
 	}
 	return { shaderSource, samplerUniforms };
 }

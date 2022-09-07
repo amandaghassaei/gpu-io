@@ -59,7 +59,11 @@
 	// Add some settings to gui.
 	const settings = gui.addFolder(title);
 	if (isWebGL2Supported()) settings.add(webGLSettings, 'webGL2').name('Use WebGL 2').onChange(reloadExampleWithNewParams);
-	
+	else {
+		// If webGL2 is not supported, hide open folder icon.
+		settings.domElement.children[0].children[0].style.backgroundImage = "none";
+	}
+
 	// Add info modal.
 	const modalOptions = { showModal: () => {
 		// Show/hide overlay, otherwise clicks are passing through due to fixed/abs positioning of modal.

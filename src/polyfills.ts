@@ -184,11 +184,13 @@ ${shaderSource}`;
 	}
 }
 
-export const GLSL1_POLYFILLS = makeGLSL1Polyfills();
+let GLSL1_POLYFILLS: string;
 /**
- * Polyfill all common functions in GLSL3 for GLSL1.
+ * Polyfill all common functions/operators that GLSL1 lacks.
+ * @private
  */
-function makeGLSL1Polyfills() {
+export function GLSL1Polyfills() {
+	if (GLSL1_POLYFILLS) return GLSL1_POLYFILLS;
 	type T = 'float' | 'vec2' | 'vec3' | 'vec4';
 	type TI = 'int' | 'ivec2' | 'ivec3' | 'ivec4';
 	type TB = 'bool' | 'bvec2' | 'bvec3' | 'bvec4';
@@ -230,7 +232,7 @@ function makeGLSL1Polyfills() {
 	const clamp = (type1: TI, type2: TI) => `${type1} clamp(${type1} a, ${type2} min, ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`;
 	const mix = (type1: T, type2: TB) => `${type1} mix(${type1} a, ${type1} b, ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`;
 
-	return `
+	GLSL1_POLYFILLS = `
 ${abs('int')}
 ${abs('ivec2')}
 ${abs('ivec3')}
@@ -285,4 +287,17 @@ ${mix('vec2', 'bvec2')}
 ${mix('vec3', 'bvec3')}
 ${mix('vec4', 'bvec4')}
 `;
+	return GLSL1_POLYFILLS;
+}
+
+let FRAGMENT_SHADER_POLYFILLS: string;
+/**
+ * Polyfills to be make available for both GLSL1 and GLSL3fragment shaders.
+ * @private
+ */
+export function fragmentShaderPolyfills() {
+	if (FRAGMENT_SHADER_POLYFILLS) return FRAGMENT_SHADER_POLYFILLS;
+	FRAGMENT_SHADER_POLYFILLS = `
+`;
+	return FRAGMENT_SHADER_POLYFILLS;
 }
