@@ -13,6 +13,11 @@ export declare const SAMPLER2D_WRAP_X = "GPUIO_WRAP_X";
  */
 export declare const SAMPLER2D_WRAP_Y = "GPUIO_WRAP_Y";
 /**
+ * Flag to cast texture() result to int type (needed for GLSL1).
+ * @private
+ */
+export declare const SAMPLER2D_CAST_INT = "GPUIO_CAST_INT";
+/**
  * Filter type to use in polyfill.
  * (0) Default behavior (no polyfill).
  * (0) LINEAR polyfill.
@@ -39,7 +44,7 @@ export declare function texturePolyfill(shaderSource: string): {
     samplerUniforms: string[];
 };
 /**
- * Polyfill all common functions/operators that GLSL1 lacks.
+ * Polyfill common functions/operators that GLSL1 lacks.
  * @private
  */
 export declare function GLSL1Polyfills(): string;

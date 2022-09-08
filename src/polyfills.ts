@@ -1,4 +1,4 @@
-import { getSampler2DsInProgram } from './regex';
+import { getSampler2DsInProgram, stripComments } from './regex';
 
 /**
  * Wrap type to use in polyfill.
@@ -14,6 +14,11 @@ export const SAMPLER2D_WRAP_X = 'GPUIO_WRAP_X';
  * @private
  */
 export const SAMPLER2D_WRAP_Y = 'GPUIO_WRAP_Y';
+/**
+ * Flag to cast texture() result to int type (needed for GLSL1).
+ * @private
+ */
+ export const SAMPLER2D_CAST_INT = 'GPUIO_CAST_INT';
 
 /**
  * Filter type to use in polyfill.
@@ -55,46 +60,43 @@ export function texturePolyfill(shaderSource: string) {
 	}
 	
 	let polyfillUniforms: {[key: string] : string } = {};
-	let polyfillDefines: {[key: string] : string } = {};
 	for (let i = 0; i < samplerUniforms.length; i++) {
 		// Init uniforms with a type.
 		polyfillUniforms[`${SAMPLER2D_HALF_PX_UNIFORM}${i}`] = 'vec2';
 		polyfillUniforms[`${SAMPLER2D_DIMENSIONS_UNIFORM}${i}`] = 'vec2';
-		// Init defines with a starting value.
-		polyfillDefines[`${SAMPLER2D_WRAP_X}${i}`] = '0';
-		polyfillDefines[`${SAMPLER2D_WRAP_Y}${i}`] = '0';
-		polyfillDefines[`${SAMPLER2D_FILTER}${i}`] = '0';
 	}
 
-	function make_GPUIO_TEXTURE_POLYFILL(i: number, prefix: string) {
+	function make_GPUIO_TEXTURE_POLYFILL(i: number, prefix: string, castOpening = '') {
+		const castEnding = castOpening === '' ? '' : ')';
+		const returnPrefix = castOpening === '' ? prefix : 'i';
 		return `
-${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, const vec2 uv) {
+${returnPrefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, const vec2 uv) {
 	${ prefix === '' ? `#if (${SAMPLER2D_FILTER}${i} == 0)` : ''}
 		#if (${SAMPLER2D_WRAP_X}${i} == 0)
 			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
-				return texture(sampler, uv);
+				return ${castOpening}texture(sampler, uv)${castEnding};
 			#else
-				return GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
+				return ${castOpening}GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i})${castEnding};
 			#endif
 		#else
 			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
-				return GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
+				return ${castOpening}GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i})${castEnding};
 			#else
-				return GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
+				return ${castOpening}GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i})${castEnding};
 			#endif
 		#endif
 	${ prefix === '' ? `#else
 		#if (${SAMPLER2D_WRAP_X}${i} == 0)
 			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
-				return GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+				return ${castOpening}GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i})${castEnding};
 			#else
-				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+				return ${castOpening}GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i})${castEnding};
 			#endif
 		#else
 			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
-				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+				return ${castOpening}GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i})${castEnding};
 			#else
-				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
+				return ${castOpening}GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i})${castEnding};
 			#endif
 		#endif
 	#endif` : '' }
@@ -166,14 +168,20 @@ ${ [ null,
 ].map(wrap => make_GPUIO_BILINEAR_INTERP(wrap)).join('\n') }
 
 ${ samplerUniforms.map((uniform, index) => {
-	return make_GPUIO_TEXTURE_POLYFILL(index, '');
-}).join('\n') }
+return `#ifndef ${SAMPLER2D_CAST_INT}${index}
+	${ make_GPUIO_TEXTURE_POLYFILL(index, '') }
+#endif`}).join('\n') }
 #if (__VERSION__ == 300)
 ${ ['u', 'i'].map(prefix => {
 	return samplerUniforms.map((uniform, index) => {
 		return make_GPUIO_TEXTURE_POLYFILL(index, prefix);
 	}).join('\n');
 }).join('\n') }
+#else
+	${ samplerUniforms.map((uniform, index) => {
+return `#ifdef ${SAMPLER2D_CAST_INT}${index}
+	${make_GPUIO_TEXTURE_POLYFILL(index, '', 'ivec4(') }
+#endif`}).join('\n') }
 #endif
 
 ${shaderSource}`;
@@ -183,54 +191,63 @@ ${shaderSource}`;
 	}
 }
 
+type T = 'float' | 'vec2' | 'vec3' | 'vec4';
+type TI = 'int' | 'ivec2' | 'ivec3' | 'ivec4';
+type TU = 'uint' | 'uvec2' | 'uvec3' | 'uvec4';
+type TB = 'bool' | 'bvec2' | 'bvec3' | 'bvec4';
+
+function floatTypeForIntType(type: TI | TU): T {
+	switch(type) {
+		case 'int':
+		case 'uint':
+			return 'float';
+		case 'ivec2':
+		case 'uvec2':
+			return 'vec2';
+		case 'ivec3':
+		case 'uvec3':
+			return 'vec3';
+		case 'ivec4':
+		case 'uvec4':
+			return 'vec4';
+	}
+	throw new Error(`Unknown type ${type}.`);
+}
+
+function floatTypeForBoolType(type: TB): T {
+	switch(type) {
+		case 'bool':
+			return 'float';
+		case 'bvec2':
+			return 'vec2';
+		case 'bvec3':
+			return 'vec3';
+		case 'bvec4':
+			return 'vec4';
+	}
+	throw new Error(`Unknown type ${type}.`);
+}
+
 let GLSL1_POLYFILLS: string;
 /**
- * Polyfill all common functions/operators that GLSL1 lacks.
+ * Polyfill common functions/operators that GLSL1 lacks.
  * @private
  */
 export function GLSL1Polyfills() {
 	if (GLSL1_POLYFILLS) return GLSL1_POLYFILLS;
-	type T = 'float' | 'vec2' | 'vec3' | 'vec4';
-	type TI = 'int' | 'ivec2' | 'ivec3' | 'ivec4';
-	type TB = 'bool' | 'bvec2' | 'bvec3' | 'bvec4';
-
-	function floatTypeForIntType(type: TI): T {
-		switch(type) {
-			case 'int':
-				return 'float';
-			case 'ivec2':
-				return 'vec2';
-			case 'ivec3':
-				return 'vec3';
-			case 'ivec4':
-				return 'vec4';
-		}
-		throw new Error(`Unknown type ${type}.`);
-	}
-	function floatTypeForBoolType(type: TB): T {
-		switch(type) {
-			case 'bool':
-				return 'float';
-			case 'bvec2':
-				return 'vec2';
-			case 'bvec3':
-				return 'vec3';
-			case 'bvec4':
-				return 'vec4';
-		}
-		throw new Error(`Unknown type ${type}.`);
-	}
 
 	const abs = (type: TI) => `${type} abs(const ${type} a) { return ${type}(abs(${floatTypeForIntType(type)}(a))); }`;
 	const sign = (type: TI) => `${type} sign(const ${type} a) { return ${type}(sign(${floatTypeForIntType(type)}(a))); }`;
-	const round = (type: T) => `${type} round(const ${type} a) { return floor(a + 0.5); }`;
 	const trunc = (type: T) => `${type} trunc(const ${type} a) { return round(a - fract(a) * sign(a)); }`;
+	const round = (type: T) => `${type} round(const ${type} a) { return floor(a + 0.5); }`;
 	const roundEven = (type: T) => `${type} roundEven(const ${type} a) { return 2.0 * round(a / 2.0); }`;
 	const min = (type1: TI, type2: TI) => `${type1} min(const ${type1} a, const ${type2} b) { return ${type1}(min(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
 	const max = (type1: TI, type2: TI) => `${type1} max(const ${type1} a, const ${type2} b) { return ${type1}(max(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
 	const clamp = (type1: TI, type2: TI) => `${type1} clamp(const ${type1} a, const ${type2} min, const ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`;
 	const mix = (type1: T, type2: TB) => `${type1} mix(const ${type1} a, const ${type1} b, const ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`;
 
+	// We don't need to create unsigned int polyfills, bc unsigned int is not a supported type in GLSL1.
+	// All unsigned int variables will be cast as int and be caught by the signed int polyfills.
 	GLSL1_POLYFILLS = `
 ${abs('int')}
 ${abs('ivec2')}
@@ -285,6 +302,7 @@ ${mix('float', 'bool')}
 ${mix('vec2', 'bvec2')}
 ${mix('vec3', 'bvec3')}
 ${mix('vec4', 'bvec4')}
+
 `;
 	return GLSL1_POLYFILLS;
 }
@@ -296,7 +314,147 @@ let FRAGMENT_SHADER_POLYFILLS: string;
  */
 export function fragmentShaderPolyfills() {
 	if (FRAGMENT_SHADER_POLYFILLS) return FRAGMENT_SHADER_POLYFILLS;
+
+	const mod = (type1: TI | TU, type2: TI | TU) => `${type1} mod(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`;
+	// Operators.
+	const bitshiftLeft = (type1: TI | TU, type2: TI | TU) => `${type1} bitshiftLeft(const ${type1} a, const ${type2} b) { return a * ${type1}(pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b))); }`;
+	const bitshiftRight = (type1: TI | TU, type2: TI | TU) => `${type1} bitshiftRight(const ${type1} a, const ${type2} b) { return ${type1}(round(${floatTypeForIntType(type1)}(a) / pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b)))); }`;
+
 	FRAGMENT_SHADER_POLYFILLS = `
+${mod('int', 'int')}
+${mod('ivec2', 'ivec2')}
+${mod('ivec3', 'ivec3')}
+${mod('ivec4', 'ivec4')}
+${mod('ivec2', 'int')}
+${mod('ivec3', 'int')}
+${mod('ivec4', 'int')}
+#if (__VERSION__ == 300)
+${mod('uint', 'uint')}
+${mod('uvec2', 'uvec2')}
+${mod('uvec3', 'uvec3')}
+${mod('uvec4', 'uvec4')}
+${mod('uvec2', 'uint')}
+${mod('uvec3', 'uint')}
+${mod('uvec4', 'uint')}
+#endif
+
+${bitshiftLeft('int', 'int')}
+${bitshiftLeft('ivec2', 'ivec2')}
+${bitshiftLeft('ivec3', 'ivec3')}
+${bitshiftLeft('ivec4', 'ivec4')}
+${bitshiftLeft('ivec2', 'int')}
+${bitshiftLeft('ivec3', 'int')}
+${bitshiftLeft('ivec4', 'int')}
+#if (__VERSION__ == 300)
+${bitshiftLeft('uint', 'uint')}
+${bitshiftLeft('uvec2', 'uvec2')}
+${bitshiftLeft('uvec3', 'uvec3')}
+${bitshiftLeft('uvec4', 'uvec4')}
+${bitshiftLeft('uvec2', 'uint')}
+${bitshiftLeft('uvec3', 'uint')}
+${bitshiftLeft('uvec4', 'uint')}
+#endif
+
+${bitshiftRight('int', 'int')}
+${bitshiftRight('ivec2', 'ivec2')}
+${bitshiftRight('ivec3', 'ivec3')}
+${bitshiftRight('ivec4', 'ivec4')}
+${bitshiftRight('ivec2', 'int')}
+${bitshiftRight('ivec3', 'int')}
+${bitshiftRight('ivec4', 'int')}
+#if (__VERSION__ == 300)
+${bitshiftRight('uint', 'uint')}
+${bitshiftRight('uvec2', 'uvec2')}
+${bitshiftRight('uvec3', 'uvec3')}
+${bitshiftRight('uvec4', 'uvec4')}
+${bitshiftRight('uvec2', 'uint')}
+${bitshiftRight('uvec3', 'uint')}
+${bitshiftRight('uvec4', 'uint')}
+#endif
+` +
+// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+// Seems like these could be optimized.
+`
+#define GPUIO_BIT_COUNT 32
+int bitwiseOr(int a, int b) {
+  int result = 0;
+  int n = 1;
+  
+  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
+    if ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {
+      result += n;
+    }
+    a = a / 2;
+    b = b / 2;
+    n = n * 2;
+    if(!(a > 0 || b > 0)) {
+      break;
+    }
+  }
+  return result;
+}
+int bitwiseXOR(int a, int b) {
+  int result = 0;
+  int n = 1;
+  
+  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
+    if ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {
+      result += n;
+    }
+    a = a / 2;
+    b = b / 2;
+    n = n * 2;
+    if(!(a > 0 || b > 0)) {
+      break;
+    }
+  }
+  return result;
+}
+int bitwiseAnd(int a, int b) {
+  int result = 0;
+  int n = 1;
+  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
+    if ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {
+      result += n;
+    }
+    a = a / 2;
+    b = b / 2;
+    n = n * 2;
+    if(!(a > 0 && b > 0)) {
+      break;
+    }
+  }
+  return result;
+}
+int bitwiseNot(int a) {
+  int result = 0;
+  int n = 1;
+  
+  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
+    if (mod(a, 2) == 0) {
+      result += n;
+    }
+    a = a / 2;
+    n = n * 2;
+  }
+  return result;
+}
+
+#if (__VERSION__ == 300)
+uint bitwiseOr(uint a, uint b) {
+	return uint(bitwiseOr(int(a), int(b)));
+}
+uint bitwiseXOR(uint a, uint b) {
+	return uint(bitwiseXOR(int(a), int(b)));
+}
+uint bitwiseAnd(uint a, uint b) {
+	return uint(bitwiseAnd(int(a), int(b)));
+}
+uint bitwiseNot(uint a) {
+	return uint(bitwiseNot(int(a)));
+}
+#endif
+
 `;
 	return FRAGMENT_SHADER_POLYFILLS;
 }

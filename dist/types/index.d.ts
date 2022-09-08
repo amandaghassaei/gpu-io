@@ -14,6 +14,7 @@ declare const _testing: {
     fragmentShaderPolyfills(): string;
     SAMPLER2D_WRAP_X: "GPUIO_WRAP_X";
     SAMPLER2D_WRAP_Y: "GPUIO_WRAP_Y";
+    SAMPLER2D_CAST_INT: "GPUIO_CAST_INT";
     SAMPLER2D_FILTER: "GPUIO_FILTER";
     SAMPLER2D_HALF_PX_UNIFORM: "u_gpuio_half_px";
     SAMPLER2D_DIMENSIONS_UNIFORM: "u_gpuio_dimensions";

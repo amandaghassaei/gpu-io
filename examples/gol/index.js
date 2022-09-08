@@ -77,18 +77,18 @@ function main({ gui, contextID, glslVersion}) {
 				// Using some tricks here to remove conditionals (they cause significant slowdowns).
 				// Leaving the old code here for clarity, replaced by the lines below.
 				// if (state == 0){
-				// 	lowp uint mask = u_birthRules & uint(1 << (numLiving - 1));
+				// 	lowp uint mask = bitwiseAnd(u_birthRules, uint(1 << (numLiving - 1)));
 				// 	if (mask > uint(0)) {
 				// 		state = 1;
 				// 	}
 				// } else {
-				// 	lowp uint mask = u_survivalRules & uint(1 << (numLiving - 1));
+				// 	lowp uint mask = bitwiseAnd(u_survivalRules, uint(1 << (numLiving - 1)));
 				// 	if (mask == uint(0)) {
 				// 		state = 0;
 				// 	}
 				// }
 				// The following lines give the same result without conditionals.
-				lowp uint mask = (u_survivalRules * uint(state) + u_birthRules * uint(1 - state)) & uint(1 << (numLiving - 1));
+				lowp uint mask = bitwiseAnd((u_survivalRules * uint(state) + u_birthRules * uint(1 - state)), uint(bitshiftLeft(1, numLiving - 1)));
 				state = min(int(mask), 1);
 
 				out_fragColor = state;
@@ -262,7 +262,7 @@ function main({ gui, contextID, glslVersion}) {
 				input: noise,
 				output: state,
 				position: [e.clientX, canvas.height - e.clientY],
-				radius: 15,
+				diameter: 30,
 			});
 		}
 		

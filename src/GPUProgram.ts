@@ -36,14 +36,23 @@ import {
 	GPULayerState,
 	REPEAT,
 	LINEAR,
+	GLSL1,
 } from './constants';
 import {
 	compileShader,
 	preprocessFragmentShader,
 	initGLProgram,
 	uniformInternalTypeForValue,
+	isIntType,
 } from './utils';
-import { SAMPLER2D_DIMENSIONS_UNIFORM, SAMPLER2D_FILTER, SAMPLER2D_HALF_PX_UNIFORM, SAMPLER2D_WRAP_X, SAMPLER2D_WRAP_Y } from './polyfills';
+import {
+	SAMPLER2D_CAST_INT,
+	SAMPLER2D_DIMENSIONS_UNIFORM,
+	SAMPLER2D_FILTER,
+	SAMPLER2D_HALF_PX_UNIFORM,
+	SAMPLER2D_WRAP_X,
+	SAMPLER2D_WRAP_Y,
+} from './polyfills';
 
 export class GPUProgram {
 	// Keep a reference to GPUComposer.
@@ -212,7 +221,7 @@ export class GPUProgram {
 	 * @private
 	 */
 	_getProgramWithName(name: PROGRAM_NAME_INTERNAL, vertexDefines: CompileTimeVars, input: GPULayerState[]) {
-		const { _samplerUniformsIndices } = this;
+		const { _samplerUniformsIndices, _composer } = this;
 
 		let fragmentID = '';
 		const fragmentDefines: CompileTimeVars = {};
@@ -220,7 +229,7 @@ export class GPUProgram {
 			const { inputIndex } = _samplerUniformsIndices[i];
 			const { layer } = input[inputIndex];
 			const {
-				filter, wrapS, wrapT,
+				filter, wrapS, wrapT, type,
 				_internalFilter, _internalWrapS, _internalWrapT,
 			} = layer;
 			const wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === REPEAT ? 1 : 0);
@@ -230,6 +239,9 @@ export class GPUProgram {
 			fragmentDefines[`${SAMPLER2D_WRAP_X}${i}`] = `${wrapXVal}`;
 			fragmentDefines[`${SAMPLER2D_WRAP_Y}${i}`] = `${wrapYVal}`;
 			fragmentDefines[`${SAMPLER2D_FILTER}${i}`] = `${filterVal}`;
+			if (_composer.glslVersion === GLSL1 && isIntType(type)) {
+				fragmentDefines[`${SAMPLER2D_CAST_INT}${i}`] = '1';
+			}
 		}
 		const vertexID = Object.keys(vertexDefines).map(key => `_${key}_${vertexDefines[key]}`).join();
 		const key = `${name}${vertexID}${fragmentID}`;
@@ -238,7 +250,7 @@ export class GPUProgram {
 		if (this._programs[key]) return this._programs[key];
 
 		// Otherwise, we need to compile a new program on the fly.
-		const { _composer, _uniforms, _programs, _programsKeyLookup } = this;
+		const { _uniforms, _programs, _programsKeyLookup } = this;
 		const { gl, _errorCallback } = _composer;
 
 		const vertexShader = _composer._getVertexShader(name, vertexID, vertexDefines, this.name);

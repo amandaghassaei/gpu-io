@@ -5397,13 +5397,13 @@ var GPUProgram = /** @class */ (function () {
      * @private
      */
     GPUProgram.prototype._getProgramWithName = function (name, vertexDefines, input) {
-        var _samplerUniformsIndices = this._samplerUniformsIndices;
+        var _a = this, _samplerUniformsIndices = _a._samplerUniformsIndices, _composer = _a._composer;
         var fragmentID = '';
         var fragmentDefines = {};
         for (var i = 0, length_1 = _samplerUniformsIndices.length; i < length_1; i++) {
             var inputIndex = _samplerUniformsIndices[i].inputIndex;
             var layer = input[inputIndex].layer;
-            var filter = layer.filter, wrapS = layer.wrapS, wrapT = layer.wrapT, _internalFilter = layer._internalFilter, _internalWrapS = layer._internalWrapS, _internalWrapT = layer._internalWrapT;
+            var filter = layer.filter, wrapS = layer.wrapS, wrapT = layer.wrapT, type = layer.type, _internalFilter = layer._internalFilter, _internalWrapS = layer._internalWrapS, _internalWrapT = layer._internalWrapT;
             var wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === constants_1.REPEAT ? 1 : 0);
             var wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === constants_1.REPEAT ? 1 : 0);
             var filterVal = filter === _internalFilter ? 0 : (filter === constants_1.LINEAR ? 1 : 0);
@@ -5411,6 +5411,9 @@ var GPUProgram = /** @class */ (function () {
             fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_X).concat(i)] = "".concat(wrapXVal);
             fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_Y).concat(i)] = "".concat(wrapYVal);
             fragmentDefines["".concat(polyfills_1.SAMPLER2D_FILTER).concat(i)] = "".concat(filterVal);
+            if (_composer.glslVersion === constants_1.GLSL1 && (0, utils_1.isIntType)(type)) {
+                fragmentDefines["".concat(polyfills_1.SAMPLER2D_CAST_INT).concat(i)] = '1';
+            }
         }
         var vertexID = Object.keys(vertexDefines).map(function (key) { return "_".concat(key, "_").concat(vertexDefines[key]); }).join();
         var key = "".concat(name).concat(vertexID).concat(fragmentID);
@@ -5418,7 +5421,7 @@ var GPUProgram = /** @class */ (function () {
         if (this._programs[key])
             return this._programs[key];
         // Otherwise, we need to compile a new program on the fly.
-        var _a = this, _composer = _a._composer, _uniforms = _a._uniforms, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
+        var _b = this, _uniforms = _b._uniforms, _programs = _b._programs, _programsKeyLookup = _b._programsKeyLookup;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
         var vertexShader = _composer._getVertexShader(name, vertexID, vertexDefines, this.name);
         if (vertexShader === undefined) {
@@ -6466,7 +6469,7 @@ exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.fragmentShaderPolyfills = exports.GLSL1Polyfills = exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
+exports.fragmentShaderPolyfills = exports.GLSL1Polyfills = exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_CAST_INT = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
 var regex_1 = __webpack_require__(126);
 /**
  * Wrap type to use in polyfill.
@@ -6482,6 +6485,11 @@ exports.SAMPLER2D_WRAP_X = 'GPUIO_WRAP_X';
  * @private
  */
 exports.SAMPLER2D_WRAP_Y = 'GPUIO_WRAP_Y';
+/**
+ * Flag to cast texture() result to int type (needed for GLSL1).
+ * @private
+ */
+exports.SAMPLER2D_CAST_INT = 'GPUIO_CAST_INT';
 /**
  * Filter type to use in polyfill.
  * (0) Default behavior (no polyfill).
@@ -6520,18 +6528,16 @@ function texturePolyfill(shaderSource) {
         console.warn('Fragment shader polyfill has missed some calls to texture().', shaderSource);
     }
     var polyfillUniforms = {};
-    var polyfillDefines = {};
     for (var i = 0; i < samplerUniforms.length; i++) {
         // Init uniforms with a type.
         polyfillUniforms["".concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i)] = 'vec2';
         polyfillUniforms["".concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i)] = 'vec2';
-        // Init defines with a starting value.
-        polyfillDefines["".concat(exports.SAMPLER2D_WRAP_X).concat(i)] = '0';
-        polyfillDefines["".concat(exports.SAMPLER2D_WRAP_Y).concat(i)] = '0';
-        polyfillDefines["".concat(exports.SAMPLER2D_FILTER).concat(i)] = '0';
     }
-    function make_GPUIO_TEXTURE_POLYFILL(i, prefix) {
-        return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_POLYFILL").concat(i, "(const ").concat(prefix, "sampler2D sampler, const vec2 uv) {\n\t").concat(prefix === '' ? "#if (".concat(exports.SAMPLER2D_FILTER).concat(i, " == 0)") : '', "\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn texture(sampler, uv);\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t").concat(prefix === '' ? "#else\n\t\t#if (".concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#endif") : '', "\n}\n");
+    function make_GPUIO_TEXTURE_POLYFILL(i, prefix, castOpening) {
+        if (castOpening === void 0) { castOpening = ''; }
+        var castEnding = castOpening === '' ? '' : ')';
+        var returnPrefix = castOpening === '' ? prefix : 'i';
+        return "\n".concat(returnPrefix, "vec4 GPUIO_TEXTURE_POLYFILL").concat(i, "(const ").concat(prefix, "sampler2D sampler, const vec2 uv) {\n\t").concat(prefix === '' ? "#if (".concat(exports.SAMPLER2D_FILTER).concat(i, " == 0)") : '', "\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn ").concat(castOpening, "texture(sampler, uv)").concat(castEnding, ";\n\t\t\t#else\n\t\t\t\treturn ").concat(castOpening, "GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ")").concat(castEnding, ";\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn ").concat(castOpening, "GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ")").concat(castEnding, ";\n\t\t\t#else\n\t\t\t\treturn ").concat(castOpening, "GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ")").concat(castEnding, ";\n\t\t\t#endif\n\t\t#endif\n\t").concat(prefix === '' ? "#else\n\t\t#if (".concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn ").concat(castOpening, "GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ")").concat(castEnding, ";\n\t\t\t#else\n\t\t\t\treturn ").concat(castOpening, "GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ")").concat(castEnding, ";\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn ").concat(castOpening, "GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ")").concat(castEnding, ";\n\t\t\t#else\n\t\t\t\treturn ").concat(castOpening, "GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ")").concat(castEnding, ";\n\t\t\t#endif\n\t\t#endif\n\t#endif") : '', "\n}\n");
     }
     function make_GPUIO_TEXTURE_WRAP(prefix) {
         return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ").concat(prefix, "sampler2D sampler, const vec2 uv, const vec2 halfPx) {\n\treturn texture(sampler, GPUIO_WRAP_REPEAT_UV(uv));\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tuv.x = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);\n\t// uv.y = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);\n\treturn texture(sampler, uv);\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\t// uv.x = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);\n\tuv.y = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);\n\treturn texture(sampler, uv);\n}\n");
@@ -6546,11 +6552,13 @@ function texturePolyfill(shaderSource) {
         'REPEAT_CLAMP',
         'CLAMP_REPEAT',
     ].map(function (wrap) { return make_GPUIO_BILINEAR_INTERP(wrap); }).join('\n'), "\n\n").concat(samplerUniforms.map(function (uniform, index) {
-        return make_GPUIO_TEXTURE_POLYFILL(index, '');
+        return "#ifndef ".concat(exports.SAMPLER2D_CAST_INT).concat(index, "\n\t").concat(make_GPUIO_TEXTURE_POLYFILL(index, ''), "\n#endif");
     }).join('\n'), "\n#if (__VERSION__ == 300)\n").concat(['u', 'i'].map(function (prefix) {
         return samplerUniforms.map(function (uniform, index) {
             return make_GPUIO_TEXTURE_POLYFILL(index, prefix);
         }).join('\n');
+    }).join('\n'), "\n#else\n\t").concat(samplerUniforms.map(function (uniform, index) {
+        return "#ifdef ".concat(exports.SAMPLER2D_CAST_INT).concat(index, "\n\t").concat(make_GPUIO_TEXTURE_POLYFILL(index, '', 'ivec4('), "\n#endif");
     }).join('\n'), "\n#endif\n\n").concat(shaderSource);
     return {
         shaderSource: shaderSource,
@@ -6558,50 +6566,56 @@ function texturePolyfill(shaderSource) {
     };
 }
 exports.texturePolyfill = texturePolyfill;
+function floatTypeForIntType(type) {
+    switch (type) {
+        case 'int':
+        case 'uint':
+            return 'float';
+        case 'ivec2':
+        case 'uvec2':
+            return 'vec2';
+        case 'ivec3':
+        case 'uvec3':
+            return 'vec3';
+        case 'ivec4':
+        case 'uvec4':
+            return 'vec4';
+    }
+    throw new Error("Unknown type ".concat(type, "."));
+}
+function floatTypeForBoolType(type) {
+    switch (type) {
+        case 'bool':
+            return 'float';
+        case 'bvec2':
+            return 'vec2';
+        case 'bvec3':
+            return 'vec3';
+        case 'bvec4':
+            return 'vec4';
+    }
+    throw new Error("Unknown type ".concat(type, "."));
+}
 var GLSL1_POLYFILLS;
 /**
- * Polyfill all common functions/operators that GLSL1 lacks.
+ * Polyfill common functions/operators that GLSL1 lacks.
  * @private
  */
 function GLSL1Polyfills() {
     if (GLSL1_POLYFILLS)
         return GLSL1_POLYFILLS;
-    function floatTypeForIntType(type) {
-        switch (type) {
-            case 'int':
-                return 'float';
-            case 'ivec2':
-                return 'vec2';
-            case 'ivec3':
-                return 'vec3';
-            case 'ivec4':
-                return 'vec4';
-        }
-        throw new Error("Unknown type ".concat(type, "."));
-    }
-    function floatTypeForBoolType(type) {
-        switch (type) {
-            case 'bool':
-                return 'float';
-            case 'bvec2':
-                return 'vec2';
-            case 'bvec3':
-                return 'vec3';
-            case 'bvec4':
-                return 'vec4';
-        }
-        throw new Error("Unknown type ".concat(type, "."));
-    }
     var abs = function (type) { return "".concat(type, " abs(const ").concat(type, " a) { return ").concat(type, "(abs(").concat(floatTypeForIntType(type), "(a))); }"); };
     var sign = function (type) { return "".concat(type, " sign(const ").concat(type, " a) { return ").concat(type, "(sign(").concat(floatTypeForIntType(type), "(a))); }"); };
-    var round = function (type) { return "".concat(type, " round(const ").concat(type, " a) { return floor(a + 0.5); }"); };
     var trunc = function (type) { return "".concat(type, " trunc(const ").concat(type, " a) { return round(a - fract(a) * sign(a)); }"); };
+    var round = function (type) { return "".concat(type, " round(const ").concat(type, " a) { return floor(a + 0.5); }"); };
     var roundEven = function (type) { return "".concat(type, " roundEven(const ").concat(type, " a) { return 2.0 * round(a / 2.0); }"); };
     var min = function (type1, type2) { return "".concat(type1, " min(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(min(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); };
     var max = function (type1, type2) { return "".concat(type1, " max(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(max(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); };
     var clamp = function (type1, type2) { return "".concat(type1, " clamp(const ").concat(type1, " a, const ").concat(type2, " min, const ").concat(type2, " max) { return ").concat(type1, "(clamp(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(min), ").concat(floatTypeForIntType(type2), "(max))); }"); };
     var mix = function (type1, type2) { return "".concat(type1, " mix(const ").concat(type1, " a, const ").concat(type1, " b, const ").concat(type2, " c) { return mix(a, b, ").concat(floatTypeForBoolType(type2), "(c)); }"); };
-    GLSL1_POLYFILLS = "\n".concat(abs('int'), "\n").concat(abs('ivec2'), "\n").concat(abs('ivec3'), "\n").concat(abs('ivec4'), "\n\n").concat(sign('int'), "\n").concat(sign('ivec2'), "\n").concat(sign('ivec3'), "\n").concat(sign('ivec4'), "\n\n").concat(round('float'), "\n").concat(round('vec2'), "\n").concat(round('vec3'), "\n").concat(round('vec4'), "\n\n").concat(trunc('float'), "\n").concat(trunc('vec2'), "\n").concat(trunc('vec3'), "\n").concat(trunc('vec4'), "\n\n").concat(roundEven('float'), "\n").concat(roundEven('vec2'), "\n").concat(roundEven('vec3'), "\n").concat(roundEven('vec4'), "\n\n").concat(min('int', 'int'), "\n").concat(min('ivec2', 'ivec2'), "\n").concat(min('ivec3', 'ivec3'), "\n").concat(min('ivec4', 'ivec4'), "\n").concat(min('ivec2', 'int'), "\n").concat(min('ivec3', 'int'), "\n").concat(min('ivec4', 'int'), "\n\n").concat(max('int', 'int'), "\n").concat(max('ivec2', 'ivec2'), "\n").concat(max('ivec3', 'ivec3'), "\n").concat(max('ivec4', 'ivec4'), "\n").concat(max('ivec2', 'int'), "\n").concat(max('ivec3', 'int'), "\n").concat(max('ivec4', 'int'), "\n\n").concat(clamp('int', 'int'), "\n").concat(clamp('ivec2', 'ivec2'), "\n").concat(clamp('ivec3', 'ivec3'), "\n").concat(clamp('ivec4', 'ivec4'), "\n").concat(clamp('ivec2', 'int'), "\n").concat(clamp('ivec3', 'int'), "\n").concat(clamp('ivec4', 'int'), "\n\n").concat(mix('float', 'bool'), "\n").concat(mix('vec2', 'bvec2'), "\n").concat(mix('vec3', 'bvec3'), "\n").concat(mix('vec4', 'bvec4'), "\n");
+    // We don't need to create unsigned int polyfills, bc unsigned int is not a supported type in GLSL1.
+    // All unsigned int variables will be cast as int and be caught by the signed int polyfills.
+    GLSL1_POLYFILLS = "\n".concat(abs('int'), "\n").concat(abs('ivec2'), "\n").concat(abs('ivec3'), "\n").concat(abs('ivec4'), "\n\n").concat(sign('int'), "\n").concat(sign('ivec2'), "\n").concat(sign('ivec3'), "\n").concat(sign('ivec4'), "\n\n").concat(round('float'), "\n").concat(round('vec2'), "\n").concat(round('vec3'), "\n").concat(round('vec4'), "\n\n").concat(trunc('float'), "\n").concat(trunc('vec2'), "\n").concat(trunc('vec3'), "\n").concat(trunc('vec4'), "\n\n").concat(roundEven('float'), "\n").concat(roundEven('vec2'), "\n").concat(roundEven('vec3'), "\n").concat(roundEven('vec4'), "\n\n").concat(min('int', 'int'), "\n").concat(min('ivec2', 'ivec2'), "\n").concat(min('ivec3', 'ivec3'), "\n").concat(min('ivec4', 'ivec4'), "\n").concat(min('ivec2', 'int'), "\n").concat(min('ivec3', 'int'), "\n").concat(min('ivec4', 'int'), "\n\n").concat(max('int', 'int'), "\n").concat(max('ivec2', 'ivec2'), "\n").concat(max('ivec3', 'ivec3'), "\n").concat(max('ivec4', 'ivec4'), "\n").concat(max('ivec2', 'int'), "\n").concat(max('ivec3', 'int'), "\n").concat(max('ivec4', 'int'), "\n\n").concat(clamp('int', 'int'), "\n").concat(clamp('ivec2', 'ivec2'), "\n").concat(clamp('ivec3', 'ivec3'), "\n").concat(clamp('ivec4', 'ivec4'), "\n").concat(clamp('ivec2', 'int'), "\n").concat(clamp('ivec3', 'int'), "\n").concat(clamp('ivec4', 'int'), "\n\n").concat(mix('float', 'bool'), "\n").concat(mix('vec2', 'bvec2'), "\n").concat(mix('vec3', 'bvec3'), "\n").concat(mix('vec4', 'bvec4'), "\n\n");
     return GLSL1_POLYFILLS;
 }
 exports.GLSL1Polyfills = GLSL1Polyfills;
@@ -6613,7 +6627,14 @@ var FRAGMENT_SHADER_POLYFILLS;
 function fragmentShaderPolyfills() {
     if (FRAGMENT_SHADER_POLYFILLS)
         return FRAGMENT_SHADER_POLYFILLS;
-    FRAGMENT_SHADER_POLYFILLS = "\n";
+    var mod = function (type1, type2) { return "".concat(type1, " mod(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); };
+    // Operators.
+    var bitshiftLeft = function (type1, type2) { return "".concat(type1, " bitshiftLeft(const ").concat(type1, " a, const ").concat(type2, " b) { return a * ").concat(type1, "(pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b))); }"); };
+    var bitshiftRight = function (type1, type2) { return "".concat(type1, " bitshiftRight(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(round(").concat(floatTypeForIntType(type1), "(a) / pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b)))); }"); };
+    FRAGMENT_SHADER_POLYFILLS = "\n".concat(mod('int', 'int'), "\n").concat(mod('ivec2', 'ivec2'), "\n").concat(mod('ivec3', 'ivec3'), "\n").concat(mod('ivec4', 'ivec4'), "\n").concat(mod('ivec2', 'int'), "\n").concat(mod('ivec3', 'int'), "\n").concat(mod('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(mod('uint', 'uint'), "\n").concat(mod('uvec2', 'uvec2'), "\n").concat(mod('uvec3', 'uvec3'), "\n").concat(mod('uvec4', 'uvec4'), "\n").concat(mod('uvec2', 'uint'), "\n").concat(mod('uvec3', 'uint'), "\n").concat(mod('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n") +
+        // Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+        // Seems like these could be optimized.
+        "\n#define GPUIO_BIT_COUNT 32\nint bitwiseOr(int a, int b) {\n  int result = 0;\n  int n = 1;\n  \n  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {\n    if ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {\n      result += n;\n    }\n    a = a / 2;\n    b = b / 2;\n    n = n * 2;\n    if(!(a > 0 || b > 0)) {\n      break;\n    }\n  }\n  return result;\n}\nint bitwiseXOR(int a, int b) {\n  int result = 0;\n  int n = 1;\n  \n  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {\n    if ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {\n      result += n;\n    }\n    a = a / 2;\n    b = b / 2;\n    n = n * 2;\n    if(!(a > 0 || b > 0)) {\n      break;\n    }\n  }\n  return result;\n}\nint bitwiseAnd(int a, int b) {\n  int result = 0;\n  int n = 1;\n  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {\n    if ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {\n      result += n;\n    }\n    a = a / 2;\n    b = b / 2;\n    n = n * 2;\n    if(!(a > 0 && b > 0)) {\n      break;\n    }\n  }\n  return result;\n}\nint bitwiseNot(int a) {\n  int result = 0;\n  int n = 1;\n  \n  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {\n    if (mod(a, 2) == 0) {\n      result += n;\n    }\n    a = a / 2;\n    n = n * 2;\n  }\n  return result;\n}\n\n#if (__VERSION__ == 300)\nuint bitwiseOr(uint a, uint b) {\n\treturn uint(bitwiseOr(int(a), int(b)));\n}\nuint bitwiseXOR(uint a, uint b) {\n\treturn uint(bitwiseXOR(int(a), int(b)));\n}\nuint bitwiseAnd(uint a, uint b) {\n\treturn uint(bitwiseAnd(int(a), int(b)));\n}\nuint bitwiseNot(uint a) {\n\treturn uint(bitwiseNot(int(a)));\n}\n#endif\n\n";
     return FRAGMENT_SHADER_POLYFILLS;
 }
 exports.fragmentShaderPolyfills = fragmentShaderPolyfills;
@@ -6712,7 +6733,7 @@ function _castVaryingToFloat(shaderSource, regexString, type) {
 function castVaryingToFloat(shaderSource) {
     // Need to init all expressions with the same number of capturing groups
     // so that this will work in _castVaryingToFloat.
-    shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(u)?int', 'float'); // '\\bvarying\\s+u?int'
+    shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(u)?int', 'float');
     shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec2', 'vec2');
     shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec3', 'vec3');
     shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec4', 'vec4');
