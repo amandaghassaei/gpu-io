@@ -206,7 +206,7 @@ function main({ gui, contextID, glslVersion}) {
 	survival.add(PARAMS, 's8').onChange((val) => {
 		changeBit('survivalRules', val, 7);
 	});
-	survival.open();
+	// survival.open();
 	const birth = gui.addFolder('Birth Rules');
 	birth.add(PARAMS, 'b1').onChange((val) => {
 		changeBit('birthRules', val, 0);
@@ -232,7 +232,7 @@ function main({ gui, contextID, glslVersion}) {
 	birth.add(PARAMS, 'b8').onChange((val) => {
 		changeBit('birthRules', val, 7);
 	});
-	birth.open();
+	// birth.open();
 	const seedRatio = gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
 		onResize();
 	}).name('Seed Ratio');
@@ -262,7 +262,7 @@ function main({ gui, contextID, glslVersion}) {
 				input: noise,
 				output: state,
 				position: [e.clientX, canvas.height - e.clientY],
-				diameter: 30,
+				diameter: 35,
 			});
 		}
 		
