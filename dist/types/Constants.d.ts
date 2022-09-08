@@ -283,10 +283,6 @@ export declare const LAYER_VECTOR_FIELD_PROGRAM_NAME = "LAYER_VECTOR_FIELD";
 /**
  * @private
  */
-export declare const GPUIO_VS_UV_ATTRIBUTE = "GPUIO_VS_UV_ATTRIBUTE";
-/**
- * @private
- */
 export declare const GPUIO_VS_WRAP_X = "GPUIO_VS_WRAP_X";
 /**
  * @private
@@ -299,7 +295,14 @@ export declare const GPUIO_VS_INDEXED_POSITIONS = "GPUIO_VS_INDEXED_POSITIONS";
 /**
  * @private
  */
+export declare const GPUIO_VS_UV_ATTRIBUTE = "GPUIO_VS_UV_ATTRIBUTE";
+/**
+* @private
+*/
 export declare const GPUIO_VS_NORMAL_ATTRIBUTE = "GPUIO_VS_NORMAL_ATTRIBUTE";
+/**
+ * @private
+ */
 export declare const GPUIO_VS_POSITION_W_ACCUM = "GPUIO_VS_POSITION_W_ACCUM";
 /**
  * @private

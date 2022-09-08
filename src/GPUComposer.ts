@@ -1493,7 +1493,7 @@ export class GPUComposer {
 		if (positions.numComponents === 4) vertexShaderOptions[GPUIO_VS_POSITION_W_ACCUM] = '1';
 		if (params.wrapX) vertexShaderOptions[GPUIO_VS_WRAP_X] = '1';
 		if (params.wrapY) vertexShaderOptions[GPUIO_VS_WRAP_Y] = '1';
-		if (params.indices) vertexShaderOptions[GPUIO_VS_INDEXED_POSITIONS] = '1';
+		vertexShaderOptions[GPUIO_VS_INDEXED_POSITIONS] = params.indices ? '1': '0';
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, LAYER_LINES_PROGRAM_NAME, vertexShaderOptions, false, input, output);

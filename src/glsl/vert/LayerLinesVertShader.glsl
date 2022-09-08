@@ -12,16 +12,16 @@ uniform vec2 u_gpuio_scale;
 
 out vec2 v_uv;
 out vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.
-out int v_index;
+flat out int v_index;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
-	#if (__VERSION__ == 300 || GPUIO_VS_INDEXED_POSITIONS == 1)
-		vec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);
-		v_index = gl_VertexID;
-	#else
+	#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)
 		vec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);
 		v_index = int(a_gpuio_index);
+	#else
+		vec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);
+		v_index = gl_VertexID;
 	#endif
 
 	// Calculate a global uv for the viewport.

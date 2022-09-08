@@ -11,16 +11,16 @@ uniform vec2 u_gpuio_dimensions;
 uniform vec2 u_gpuio_scale;
 
 out vec2 v_uv;
-out int v_index;
+flat out int v_index;
 
 void main() {
 	#if (__VERSION__ == 300)
 		// Divide index by 2.
-		const int index = gl_VertexID / 2;
+		int index = gl_VertexID / 2;
 		v_index = gl_VertexID;
 	#else
 		// Divide index by 2.
-		const float index = floor((a_gpuio_index + 0.5) / 2.0);
+		float index = floor((a_gpuio_index + 0.5) / 2.0);
 		v_index = int(a_gpuio_index);
 	#endif
 

@@ -3349,8 +3349,7 @@ var GPUComposer = /** @class */ (function () {
             vertexShaderOptions[constants_1.GPUIO_VS_WRAP_X] = '1';
         if (params.wrapY)
             vertexShaderOptions[constants_1.GPUIO_VS_WRAP_Y] = '1';
-        if (params.indices)
-            vertexShaderOptions[constants_1.GPUIO_VS_INDEXED_POSITIONS] = '1';
+        vertexShaderOptions[constants_1.GPUIO_VS_INDEXED_POSITIONS] = params.indices ? '1' : '0';
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.LAYER_LINES_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         var count = params.count ? params.count : (params.indices ? params.indices.length : positions.length);
@@ -6018,7 +6017,7 @@ exports.isBoolean = isBoolean;
 // Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.GPUIO_VS_UV_ATTRIBUTE = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
+exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
 /**
  * Half float data type.
  */
@@ -6237,10 +6236,6 @@ exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
 /**
  * @private
  */
-exports.GPUIO_VS_UV_ATTRIBUTE = 'GPUIO_VS_UV_ATTRIBUTE';
-/**
- * @private
- */
 exports.GPUIO_VS_WRAP_X = 'GPUIO_VS_WRAP_X';
 /**
  * @private
@@ -6253,7 +6248,14 @@ exports.GPUIO_VS_INDEXED_POSITIONS = 'GPUIO_VS_INDEXED_POSITIONS';
 /**
  * @private
  */
+exports.GPUIO_VS_UV_ATTRIBUTE = 'GPUIO_VS_UV_ATTRIBUTE';
+/**
+* @private
+*/
 exports.GPUIO_VS_NORMAL_ATTRIBUTE = 'GPUIO_VS_NORMAL_ATTRIBUTE';
+/**
+ * @private
+ */
 exports.GPUIO_VS_POSITION_W_ACCUM = 'GPUIO_VS_POSITION_W_ACCUM';
 /**
  * @private
@@ -7655,7 +7657,7 @@ module.exports = "in vec2 a_gpuio_position;\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nin ve
 /***/ 143:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out vec2 v_lineWrapping;out int v_index;void main(){\n#if (__VERSION__ == 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nvec2 positionUV=uvFromIndex(gl_VertexID,u_gpuio_positionsDimensions);v_index=gl_VertexID;\n#else\nvec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);v_index=int(a_gpuio_index);\n#endif\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_uv.x<0.){v_uv.x+=1.;v_lineWrapping.x=1.;}else if(v_uv.x>1.){v_uv.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_uv.y<0.){v_uv.y+=1.;v_lineWrapping.y=1.;}else if(v_uv.y>1.){v_uv.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out vec2 v_lineWrapping;flat out int v_index;void main(){\n#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nvec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);v_index=int(a_gpuio_index);\n#else\nvec2 positionUV=uvFromIndex(gl_VertexID,u_gpuio_positionsDimensions);v_index=gl_VertexID;\n#endif\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_uv.x<0.){v_uv.x+=1.;v_lineWrapping.x=1.;}else if(v_uv.x>1.){v_uv.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_uv.y<0.){v_uv.y+=1.;v_lineWrapping.y=1.;}else if(v_uv.y>1.){v_uv.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
@@ -7669,7 +7671,7 @@ module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;retur
 /***/ 760:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_vectors;uniform vec2 u_gpuio_dimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out int v_index;void main(){\n#if (__VERSION__ == 300)\nconst int index=gl_VertexID/2;v_index=gl_VertexID;\n#else\nconst float index=floor((a_gpuio_index+0.5)/2.);v_index=int(a_gpuio_index);\n#endif\nv_uv=uvFromIndex(index,u_gpuio_dimensions);\n#if (__VERSION__ == 300)\nv_uv+=float(gl_VertexID-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#else\nv_uv+=(a_gpuio_index-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_vectors;uniform vec2 u_gpuio_dimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;flat out int v_index;void main(){\n#if (__VERSION__ == 300)\nint index=gl_VertexID/2;v_index=gl_VertexID;\n#else\nfloat index=floor((a_gpuio_index+0.5)/2.);v_index=int(a_gpuio_index);\n#endif\nv_uv=uvFromIndex(index,u_gpuio_dimensions);\n#if (__VERSION__ == 300)\nv_uv+=float(gl_VertexID-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#else\nv_uv+=(a_gpuio_index-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 

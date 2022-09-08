@@ -16,13 +16,14 @@
 		BOOL,
 		isWebGL2,
 		DEFAULT_PROGRAM_NAME,
-		DEFAULT_W_UV_PROGRAM_NAME,
-		DEFAULT_W_NORMAL_PROGRAM_NAME,
-		DEFAULT_W_UV_NORMAL_PROGRAM_NAME,
 		SEGMENT_PROGRAM_NAME,
 		LAYER_POINTS_PROGRAM_NAME,
 		LAYER_VECTOR_FIELD_PROGRAM_NAME,
 		LAYER_LINES_PROGRAM_NAME,
+		GPUIO_VS_UV_ATTRIBUTE,
+		GPUIO_VS_NORMAL_ATTRIBUTE,
+		GPUIO_VS_POSITION_W_ACCUM,
+		GPUIO_VS_INDEXED_POSITIONS,
 	} = GPUIO;
 
 	describe('GPUProgram', () => {
@@ -94,14 +95,16 @@
 		});
 		describe('_getProgramWithName', () => {
 			it('should return valid WebGLProgram', () => {
-				assert.typeOf(program._getProgramWithName(DEFAULT_PROGRAM_NAME, []), 'WebGLProgram');
-				assert.typeOf(program._getProgramWithName(DEFAULT_W_UV_PROGRAM_NAME, []), 'WebGLProgram');
-				assert.typeOf(program._getProgramWithName(DEFAULT_W_NORMAL_PROGRAM_NAME, []), 'WebGLProgram');
-				assert.typeOf(program._getProgramWithName(DEFAULT_W_UV_NORMAL_PROGRAM_NAME, []), 'WebGLProgram');
-				assert.typeOf(program._getProgramWithName(SEGMENT_PROGRAM_NAME, []), 'WebGLProgram');
-				assert.typeOf(program._getProgramWithName(LAYER_POINTS_PROGRAM_NAME, []), 'WebGLProgram');
-				assert.typeOf(program._getProgramWithName(LAYER_LINES_PROGRAM_NAME, []), 'WebGLProgram');
-				assert.typeOf(program._getProgramWithName(LAYER_VECTOR_FIELD_PROGRAM_NAME, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_PROGRAM_NAME, {}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_PROGRAM_NAME, {[GPUIO_VS_UV_ATTRIBUTE]: '1'}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_PROGRAM_NAME, {[GPUIO_VS_NORMAL_ATTRIBUTE]: '1'}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(DEFAULT_PROGRAM_NAME, {[GPUIO_VS_UV_ATTRIBUTE]: '1',[GPUIO_VS_NORMAL_ATTRIBUTE]: '1'}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(SEGMENT_PROGRAM_NAME, {}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_POINTS_PROGRAM_NAME, {}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_POINTS_PROGRAM_NAME, {[GPUIO_VS_POSITION_W_ACCUM]: '1'}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_LINES_PROGRAM_NAME, {[GPUIO_VS_INDEXED_POSITIONS]: '0'}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_LINES_PROGRAM_NAME, {[GPUIO_VS_POSITION_W_ACCUM]: '1', [GPUIO_VS_INDEXED_POSITIONS]: '1'}, []), 'WebGLProgram');
+				assert.typeOf(program._getProgramWithName(LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, []), 'WebGLProgram');
 			});
 		});
 		describe('setUniform', () => {
