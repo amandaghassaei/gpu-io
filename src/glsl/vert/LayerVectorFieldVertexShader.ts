@@ -1,4 +1,7 @@
-@include "../common/VertexShaderHelpers.glsl"
+import { VERTEX_SHADER_HELPERS_SOURCE } from './VertexShaderHelpers';
+
+export const LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = `
+${VERTEX_SHADER_HELPERS_SOURCE}
 
 #if (__VERSION__ != 300)
 	// Cannot use int vertex attributes.
@@ -39,4 +42,4 @@ void main() {
 	vec2 position = v_uv * 2.0 - 1.0;
 
 	gl_Position = vec4(position, 0, 1);
-}
+}`;

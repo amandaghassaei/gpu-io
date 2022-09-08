@@ -2260,7 +2260,11 @@ var GPUProgram_1 = __webpack_require__(664);
 var utils = __webpack_require__(404);
 var utils_1 = __webpack_require__(593);
 var checks_1 = __webpack_require__(707);
-var defaultVertexShaderSource = __webpack_require__(288);
+var DefaultVertexShader_1 = __webpack_require__(982);
+var LayerLinesVertexShader_1 = __webpack_require__(967);
+var SegmentVertexShader_1 = __webpack_require__(120);
+var LayerPointsVertexShader_1 = __webpack_require__(451);
+var LayerVectorFieldVertexShader_1 = __webpack_require__(506);
 var GPUComposer = /** @class */ (function () {
     function GPUComposer(params) {
         var _a;
@@ -2289,23 +2293,23 @@ var GPUComposer = /** @class */ (function () {
          */
         this._vertexShaders = (_a = {},
             _a[constants_1.DEFAULT_PROGRAM_NAME] = {
-                src: defaultVertexShaderSource,
+                src: DefaultVertexShader_1.DEFAULT_VERT_SHADER_SOURCE,
                 compiledShaders: {},
             },
             _a[constants_1.SEGMENT_PROGRAM_NAME] = {
-                src: __webpack_require__(974),
+                src: SegmentVertexShader_1.SEGMENT_VERTEX_SHADER_SOURCE,
                 compiledShaders: {},
             },
             _a[constants_1.LAYER_POINTS_PROGRAM_NAME] = {
-                src: __webpack_require__(767),
+                src: LayerPointsVertexShader_1.LAYER_POINTS_VERTEX_SHADER_SOURCE,
                 compiledShaders: {},
             },
             _a[constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME] = {
-                src: __webpack_require__(760),
+                src: LayerVectorFieldVertexShader_1.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE,
                 compiledShaders: {},
             },
             _a[constants_1.LAYER_LINES_PROGRAM_NAME] = {
-                src: __webpack_require__(143),
+                src: LayerLinesVertexShader_1.LAYER_LINES_VERTEX_SHADER_SOURCE,
                 compiledShaders: {},
             },
             _a);
@@ -6017,7 +6021,7 @@ exports.isBoolean = isBoolean;
 // Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
+exports.GPUIO_FLOAT_PRECISION = exports.GPUIO_INT_PRECISION = exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
 /**
  * Half float data type.
  */
@@ -6232,7 +6236,6 @@ exports.LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
  */
 exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
 // Vertex shader compile time vars.
-// Be sure to change these in the vertex shader if updated!
 /**
  * @private
  */
@@ -6333,6 +6336,42 @@ exports.MIN_FLOAT_INT = -16777216;
  * @private
  */
 exports.MAX_FLOAT_INT = 16777216;
+// Precision compile-time variables
+/**
+ * @private
+ */
+exports.GPUIO_INT_PRECISION = 'GPUIO_INT_PRECISION';
+/**
+ * @private
+ */
+exports.GPUIO_FLOAT_PRECISION = 'GPUIO_FLOAT_PRECISION';
+
+
+/***/ }),
+
+/***/ 900:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.intForPrecision = void 0;
+var constants_1 = __webpack_require__(601);
+/**
+ * Enum for precision values.
+ * See src/glsl/common/precision.ts for more info.
+ * @private
+ */
+function intForPrecision(precision) {
+    if (precision === constants_1.PRECISION_HIGH_P)
+        return 2;
+    if (precision === constants_1.PRECISION_MEDIUM_P)
+        return 1;
+    if (precision === constants_1.PRECISION_LOW_P)
+        return 0;
+    throw new Error("Unknown shader precision value: ".concat(JSON.stringify(precision), "."));
+}
+exports.intForPrecision = intForPrecision;
 
 
 /***/ }),
@@ -6402,6 +6441,102 @@ exports.getExtension = getExtension;
 
 /***/ }),
 
+/***/ 724:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PRECISION_SOURCE = void 0;
+var constants_1 = __webpack_require__(601);
+var enums_1 = __webpack_require__(900);
+// These precision definitions are applied to all vertex and fragment shaders.
+// Default to highp, but fallback to mediump if highp not available.
+// These defaults can be set in GPUComposer constructor as intPrecision and floatPrecision parameters.
+// https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
+exports.PRECISION_SOURCE = "\n#if (".concat(constants_1.GPUIO_INT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_LOW_P), ")\n\tprecision lowp int;\n\t#if (__VERSION__ == 300)\n\t\tprecision lowp isampler2D;\n\t\tprecision lowp usampler2D;\n\t#endif\n#elif (").concat(constants_1.GPUIO_INT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_MEDIUM_P), ")\n\tprecision mediump int;\n\t#if (__VERSION__ == 300)\n\t\tprecision mediump isampler2D;\n\t\tprecision mediump usampler2D;\n\t#endif\n#else \n\t#ifdef GL_FRAGMENT_PRECISION_HIGH\n\t\tprecision highp int;\n\t\t#if (__VERSION__ == 300)\n\t\t\tprecision highp isampler2D;\n\t\t\tprecision highp usampler2D;\n\t\t#endif\n\t#else\n\t\tprecision mediump int;\n\t\t#if (__VERSION__ == 300)\n\t\t\tprecision mediump isampler2D;\n\t\t\tprecision mediump usampler2D;\n\t\t#endif\n\t#endif\n#endif\n#if (").concat(constants_1.GPUIO_FLOAT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_LOW_P), ")\n\tprecision lowp float;\n\tprecision lowp sampler2D;\n#elif (").concat(constants_1.GPUIO_FLOAT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_MEDIUM_P), ")\n\tprecision mediump float;\n\tprecision mediump sampler2D;\n#else\n\t#ifdef GL_FRAGMENT_PRECISION_HIGH\n\t\tprecision highp float;\n\t\tprecision highp sampler2D;\n\t#else\n\t\tprecision mediump float;\n\t\tprecision mediump sampler2D;\n\t#endif\n#endif\n");
+
+
+/***/ }),
+
+/***/ 982:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DEFAULT_VERT_SHADER_SOURCE = void 0;
+var constants_1 = __webpack_require__(601);
+exports.DEFAULT_VERT_SHADER_SOURCE = "\nin vec2 a_gpuio_position;\n#ifdef ".concat(constants_1.GPUIO_VS_UV_ATTRIBUTE, "\n\tin vec2 a_gpuio_uv;\n#endif\n#ifdef ").concat(constants_1.GPUIO_VS_NORMAL_ATTRIBUTE, "\n\tin vec2 a_gpuio_normal;\n#endif\n\nuniform vec2 u_gpuio_scale;\nuniform vec2 u_gpuio_translation;\n\nout vec2 v_uv;\nout vec2 v_uv_local;\n#ifdef ").concat(constants_1.GPUIO_VS_NORMAL_ATTRIBUTE, "\n\tout vec2 v_normal;\n#endif\n\nvoid main() {\n\t// Optional varyings.\n\t#ifdef ").concat(constants_1.GPUIO_VS_UV_ATTRIBUTE, "\n\t\tv_uv_local = a_gpuio_uv;\n\t#else\n\t\tv_uv_local = 0.5 * (a_gpuio_position + 1.0);\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_NORMAL_ATTRIBUTE, "\n\t\tv_normal = a_gpuio_normal;\n\t#endif\n\n\t// Apply transformations.\n\tvec2 position = u_gpuio_scale * a_gpuio_position + u_gpuio_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_uv = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}");
+
+
+/***/ }),
+
+/***/ 967:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LAYER_LINES_VERTEX_SHADER_SOURCE = void 0;
+var constants_1 = __webpack_require__(601);
+var VertexShaderHelpers_1 = __webpack_require__(446);
+exports.LAYER_LINES_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nout vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t\tvec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#else\n\t\tvec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, positionUV);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;\n\t#else\n\t\tv_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\tv_lineWrapping = vec2(0.0);\n\t//TODO: remove branching\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tif (v_uv.x < 0.0) {\n\t\t\tv_uv.x += 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t} else if (v_uv.x > 1.0) {\n\t\t\tv_uv.x -= 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t}\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tif (v_uv.y < 0.0) {\n\t\t\tv_uv.y += 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t} else if (v_uv.y > 1.0) {\n\t\t\tv_uv.y -= 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t}\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
+
+
+/***/ }),
+
+/***/ 451:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = void 0;
+var constants_1 = __webpack_require__(601);
+var VertexShaderHelpers_1 = __webpack_require__(446);
+exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_pointSize;\n\nout vec2 v_uv;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tvec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tvec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, positionUV);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;\n\t#else\n\t\tv_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tv_uv.x = fract(v_uv.x + ceil(abs(v_uv.x)));\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tv_uv.y = fract(v_uv.y + ceil(abs(v_uv.y)));\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_PointSize = u_gpuio_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}");
+
+
+/***/ }),
+
+/***/ 506:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = void 0;
+var VertexShaderHelpers_1 = __webpack_require__(446);
+exports.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_vectors; // Texture lookup with vector data.\nuniform vec2 u_gpuio_dimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nflat out int v_index;\n\nvoid main() {\n\t#if (__VERSION__ == 300)\n\t\t// Divide index by 2.\n\t\tint index = gl_VertexID / 2;\n\t\tv_index = gl_VertexID;\n\t#else\n\t\t// Divide index by 2.\n\t\tfloat index = floor((a_gpuio_index + 0.5) / 2.0);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a uv based on the vertex index attribute.\n\tv_uv = uvFromIndex(index, u_gpuio_dimensions);\n\t#if (__VERSION__ == 300)\n\t\t// Add vector displacement if needed.\n\t\tv_uv += float(gl_VertexID - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#else\n\t\t// Add vector displacement if needed.\n\t\tv_uv += (a_gpuio_index - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#endif\n\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
+
+
+/***/ }),
+
+/***/ 120:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SEGMENT_VERTEX_SHADER_SOURCE = void 0;
+exports.SEGMENT_VERTEX_SHADER_SOURCE = "\nin vec2 a_gpuio_position;\n\nuniform float u_gpuio_halfThickness;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_length;\nuniform float u_gpuio_rotation;\nuniform vec2 u_gpuio_translation;\n\nout vec2 v_uv_local;\nout vec2 v_uv;\n\nmat2 rotate2d(float _angle){\n\treturn mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));\n}\n\nvoid main() {\n\t// Calculate UV coordinates of current rendered object.\n\tv_uv_local = 0.5 * (a_gpuio_position + 1.0);\n\n\tvec2 position = a_gpuio_position;\n\t// Apply thickness / radius.\n\tposition *= u_gpuio_halfThickness;\n\t// Stretch center of shape to form a round-capped line segment.\n\tfloat signX = sign(position.x);\n\tposition.x += signX * u_gpuio_length / 2.0;\n\tv_uv_local.x = (signX + 1.0) / 2.0;// Set entire cap uv.x to 1 or 0.\n\t// Apply transformations.\n\tposition = u_gpuio_scale * (rotate2d(-u_gpuio_rotation) * position) + u_gpuio_translation;\n\n\t// Calculate a global uv for the viewport.\n\tv_uv = 0.5 * (position + 1.0);\n\n\t// Calculate vertex position.\n\tgl_Position = vec4(position, 0, 1);\n}";
+
+
+/***/ }),
+
+/***/ 446:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.VERTEX_SHADER_HELPERS_SOURCE = void 0;
+exports.VERTEX_SHADER_HELPERS_SOURCE = "\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n/**\n * Create UV coordinates from a 1D index for data stored in a texture of size \"dimensions\".\n */\nvec2 uvFromIndex(const float index, const vec2 dimensions) {\n    return vec2(\n        modI(index, dimensions.x),\n\t\tfloor(floor(index + 0.5) / dimensions.x)\n\t) / dimensions;\n}\nvec2 uvFromIndex(const int index, const vec2 dimensions) {\n    int width = int(dimensions.x);\n    int y = index / width;\n    return vec2(\n        index - y * width,\n\t\ty\n\t) / dimensions;\n}";
+
+
+/***/ }),
+
 /***/ 607:
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
@@ -6446,11 +6581,12 @@ var GPULayerHelpers = __webpack_require__(191);
 var regex = __webpack_require__(126);
 var extensions = __webpack_require__(581);
 var polyfills = __webpack_require__(360);
+var enums = __webpack_require__(900);
 // These exports are only used for testing.
 /**
  * @private
  */
-var _testing = __assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, extensions), regex), checks), GPULayerHelpers), polyfills);
+var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, extensions), regex), checks), GPULayerHelpers), polyfills), enums);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
@@ -7002,9 +7138,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.convertFragmentShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
+var enums_1 = __webpack_require__(900);
+var precision_1 = __webpack_require__(724);
 var polyfills_1 = __webpack_require__(360);
 var regex_1 = __webpack_require__(126);
-var precisionSource = __webpack_require__(937);
 /**
  * Memoize results of more complex WebGL tests (that require allocations/deallocations).
  * @private
@@ -7049,20 +7186,6 @@ function isIntType(type) {
 }
 exports.isIntType = isIntType;
 /**
- * Enum for precision values.
- * See src/glsl/common/precision.glsl for more info.
- * @private
- */
-function intForPrecision(precision) {
-    if (precision === constants_1.PRECISION_HIGH_P)
-        return 2;
-    if (precision === constants_1.PRECISION_MEDIUM_P)
-        return 1;
-    if (precision === constants_1.PRECISION_LOW_P)
-        return 0;
-    throw new Error("Unknown shader precision value: ".concat(JSON.stringify(precision), "."));
-}
-/**
  * Create a string to pass defines into shader.
  * @private
  */
@@ -7085,13 +7208,14 @@ function convertDefinesToString(defines) {
  * @private
  */
 function makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines) {
+    var _a;
     var versionSource = glslVersion === constants_1.GLSL3 ? "#version ".concat(constants_1.GLSL3, "\n") : '';
     var definesSource = defines ? convertDefinesToString(defines) : '';
-    var precisionDefinesSource = convertDefinesToString({
-        GPUIO_INT_PRECISION: "".concat(intForPrecision(intPrecision)),
-        GPUIO_FLOAT_PRECISION: "".concat(intForPrecision(floatPrecision)),
-    });
-    return "".concat(versionSource).concat(definesSource).concat(precisionDefinesSource).concat(precisionSource);
+    var precisionDefinesSource = convertDefinesToString((_a = {},
+        _a[constants_1.GPUIO_INT_PRECISION] = "".concat((0, enums_1.intForPrecision)(intPrecision)),
+        _a[constants_1.GPUIO_FLOAT_PRECISION] = "".concat((0, enums_1.intForPrecision)(floatPrecision)),
+        _a));
+    return "".concat(versionSource).concat(definesSource).concat(precisionDefinesSource).concat(precision_1.PRECISION_SOURCE);
 }
 exports.makeShaderHeader = makeShaderHeader;
 /**
@@ -7612,13 +7736,6 @@ exports.uniformInternalTypeForValue = uniformInternalTypeForValue;
 
 /***/ }),
 
-/***/ 937:
-/***/ ((module) => {
-
-module.exports = "#if (GPUIO_INT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp int;\n#if (__VERSION__ == 300)\nprecision highp isampler2D;precision highp usampler2D;\n#endif\n#else\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#endif\n#if (GPUIO_INT_PRECISION == 1)\nprecision mediump int;\n#if (__VERSION__ == 300)\nprecision mediump isampler2D;precision mediump usampler2D;\n#endif\n#endif\n#if (GPUIO_INT_PRECISION == 0)\nprecision lowp int;\n#if (__VERSION__ == 300)\nprecision lowp isampler2D;precision lowp usampler2D;\n#endif\n#endif\n#if (GPUIO_FLOAT_PRECISION == 2)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;precision highp sampler2D;\n#else\nprecision mediump float;precision mediump sampler2D;\n#endif\n#endif\n#if (GPUIO_FLOAT_PRECISION == 1)\nprecision mediump float;precision mediump sampler2D;\n#endif\n#if (GPUIO_FLOAT_PRECISION == 0)\nprecision lowp float;precision lowp sampler2D;\n#endif\n"
-
-/***/ }),
-
 /***/ 158:
 /***/ ((module) => {
 
@@ -7644,41 +7761,6 @@ module.exports = "in vec2 v_uv;uniform vec3 u_color;uniform float u_scale;\n#ifd
 /***/ ((module) => {
 
 module.exports = "in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragColor;void main(){if((v_lineWrapping.x!=0.&&v_lineWrapping.x!=1.)||(v_lineWrapping.y!=0.&&v_lineWrapping.y!=1.)){discard;return;}out_fragColor=vec4(u_value);}"
-
-/***/ }),
-
-/***/ 288:
-/***/ ((module) => {
-
-module.exports = "in vec2 a_gpuio_position;\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nin vec2 a_gpuio_uv;\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nin vec2 a_gpuio_normal;\n#endif\nuniform vec2 u_gpuio_scale;uniform vec2 u_gpuio_translation;out vec2 v_uv;out vec2 v_uv_local;\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nout vec2 v_normal;\n#endif\nvoid main(){\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nv_uv_local=a_gpuio_uv;\n#else\nv_uv_local=0.5*(a_gpuio_position+1.);\n#endif\n#ifdef GPUIO_VS_NORMAL_ATTRIBUTE\nv_normal=a_gpuio_normal;\n#endif\nvec2 position=u_gpuio_scale*a_gpuio_position+u_gpuio_translation;v_uv=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
-
-/***/ }),
-
-/***/ 143:
-/***/ ((module) => {
-
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out vec2 v_lineWrapping;flat out int v_index;void main(){\n#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nvec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);v_index=int(a_gpuio_index);\n#else\nvec2 positionUV=uvFromIndex(gl_VertexID,u_gpuio_positionsDimensions);v_index=gl_VertexID;\n#endif\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_uv.x<0.){v_uv.x+=1.;v_lineWrapping.x=1.;}else if(v_uv.x>1.){v_uv.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_uv.y<0.){v_uv.y+=1.;v_lineWrapping.y=1.;}else if(v_uv.y>1.){v_uv.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
-
-/***/ }),
-
-/***/ 767:
-/***/ ((module) => {
-
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;uniform float u_gpuio_pointSize;out vec2 v_uv;flat out int v_index;void main(){\n#if (__VERSION__ == 300)\nvec2 positionUV=uvFromIndex(gl_VertexID,u_gpuio_positionsDimensions);v_index=gl_VertexID;\n#else\nvec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);v_index=int(a_gpuio_index);\n#endif\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\n#ifdef GPUIO_VS_WRAP_X\nv_uv.x=fract(v_uv.x+ceil(abs(v_uv.x)));\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nv_uv.y=fract(v_uv.y+ceil(abs(v_uv.y)));\n#endif\nvec2 position=v_uv*2.-1.;gl_PointSize=u_gpuio_pointSize;gl_Position=vec4(position,0,1);}"
-
-/***/ }),
-
-/***/ 760:
-/***/ ((module) => {
-
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_vectors;uniform vec2 u_gpuio_dimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;flat out int v_index;void main(){\n#if (__VERSION__ == 300)\nint index=gl_VertexID/2;v_index=gl_VertexID;\n#else\nfloat index=floor((a_gpuio_index+0.5)/2.);v_index=int(a_gpuio_index);\n#endif\nv_uv=uvFromIndex(index,u_gpuio_dimensions);\n#if (__VERSION__ == 300)\nv_uv+=float(gl_VertexID-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#else\nv_uv+=(a_gpuio_index-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
-
-/***/ }),
-
-/***/ 974:
-/***/ ((module) => {
-
-module.exports = "in vec2 a_gpuio_position;uniform float u_gpuio_halfThickness;uniform vec2 u_gpuio_scale;uniform float u_gpuio_length;uniform float u_gpuio_rotation;uniform vec2 u_gpuio_translation;out vec2 v_uv_local;out vec2 v_uv;mat2 rotate2d(float _angle){return mat2(cos(_angle),-sin(_angle),sin(_angle),cos(_angle));}void main(){v_uv_local=0.5*(a_gpuio_position+1.);vec2 position=a_gpuio_position;position*=u_gpuio_halfThickness;float signX=sign(position.x);position.x+=signX*u_gpuio_length/2.;v_uv_local.x=(signX+1.)/2.;position=u_gpuio_scale*(rotate2d(-u_gpuio_rotation)*position)+u_gpuio_translation;v_uv=0.5*(position+1.);gl_Position=vec4(position,0,1);}"
 
 /***/ })
 

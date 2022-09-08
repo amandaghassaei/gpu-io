@@ -74,7 +74,11 @@ import {
 	isValidTextureFormat,
 	isValidWrap,
 } from './checks';
-const defaultVertexShaderSource = require('./glsl/vert/DefaultVertShader.glsl');
+import { DEFAULT_VERT_SHADER_SOURCE } from './glsl/vert/DefaultVertexShader';
+import { LAYER_LINES_VERTEX_SHADER_SOURCE } from './glsl/vert/LayerLinesVertexShader';
+import { SEGMENT_VERTEX_SHADER_SOURCE } from './glsl/vert/SegmentVertexShader';
+import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vert/LayerPointsVertexShader';
+import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vert/LayerVectorFieldVertexShader';
 
 export class GPUComposer {
 	readonly canvas: HTMLCanvasElement;
@@ -155,23 +159,23 @@ export class GPUComposer {
 		compiledShaders: { [key: string] : WebGLShader },
 	}} = {
 		[DEFAULT_PROGRAM_NAME]: {
-			src: defaultVertexShaderSource,
+			src: DEFAULT_VERT_SHADER_SOURCE,
 			compiledShaders: {},
 		},
 		[SEGMENT_PROGRAM_NAME]: {
-			src: require('./glsl/vert/SegmentVertShader.glsl'),
+			src: SEGMENT_VERTEX_SHADER_SOURCE,
 			compiledShaders: {},
 		},
 		[LAYER_POINTS_PROGRAM_NAME]: {
-			src: require('./glsl/vert/LayerPointsVertShader.glsl'),
+			src: LAYER_POINTS_VERTEX_SHADER_SOURCE,
 			compiledShaders: {},
 		},
 		[LAYER_VECTOR_FIELD_PROGRAM_NAME]: {
-			src: require('./glsl/vert/LayerVectorFieldVertShader.glsl'),
+			src: LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE,
 			compiledShaders: {},
 		},
 		[LAYER_LINES_PROGRAM_NAME]: {
-			src: require('./glsl/vert/LayerLinesVertShader.glsl'),
+			src: LAYER_LINES_VERTEX_SHADER_SOURCE,
 			compiledShaders: {},
 		},
 	};

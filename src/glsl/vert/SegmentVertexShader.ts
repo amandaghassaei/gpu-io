@@ -1,3 +1,4 @@
+export const SEGMENT_VERTEX_SHADER_SOURCE = `
 in vec2 a_gpuio_position;
 
 uniform float u_gpuio_halfThickness;
@@ -32,4 +33,4 @@ void main() {
 
 	// Calculate vertex position.
 	gl_Position = vec4(position, 0, 1);
-}
+}`;

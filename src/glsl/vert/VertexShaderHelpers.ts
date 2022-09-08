@@ -1,3 +1,4 @@
+export const VERTEX_SHADER_HELPERS_SOURCE = `
 /**
  * Returns accurate MOD when arguments are approximate integers.
  */
@@ -22,4 +23,4 @@ vec2 uvFromIndex(const int index, const vec2 dimensions) {
         index - y * width,
 		y
 	) / dimensions;
-}
+}`

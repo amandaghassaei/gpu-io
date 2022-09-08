@@ -321,7 +321,6 @@ export const LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
  */
 export const LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
 // Vertex shader compile time vars.
-// Be sure to change these in the vertex shader if updated!
 /**
  * @private
  */
@@ -451,3 +450,13 @@ export const MIN_FLOAT_INT = -16777216;
  * @private
  */
 export const MAX_FLOAT_INT = 16777216;
+
+// Precision compile-time variables
+/**
+ * @private
+ */
+export const GPUIO_INT_PRECISION = 'GPUIO_INT_PRECISION';
+/**
+ * @private
+ */
+export const GPUIO_FLOAT_PRECISION = 'GPUIO_FLOAT_PRECISION';

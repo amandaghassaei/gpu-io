@@ -103,43 +103,48 @@
 #define test2 2
 #define GPUIO_INT_PRECISION 2
 #define GPUIO_FLOAT_PRECISION 1
-#if (GPUIO_INT_PRECISION == 2)
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp int;
-#if (__VERSION__ == 300)
-precision highp isampler2D;precision highp usampler2D;
-#endif
-#else
-precision mediump int;
-#if (__VERSION__ == 300)
-precision mediump isampler2D;precision mediump usampler2D;
-#endif
-#endif
-#endif
-#if (GPUIO_INT_PRECISION == 1)
-precision mediump int;
-#if (__VERSION__ == 300)
-precision mediump isampler2D;precision mediump usampler2D;
-#endif
-#endif
+
 #if (GPUIO_INT_PRECISION == 0)
-precision lowp int;
-#if (__VERSION__ == 300)
-precision lowp isampler2D;precision lowp usampler2D;
-#endif
-#endif
-#if (GPUIO_FLOAT_PRECISION == 2)
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;precision highp sampler2D;
-#else
-precision mediump float;precision mediump sampler2D;
-#endif
-#endif
-#if (GPUIO_FLOAT_PRECISION == 1)
-precision mediump float;precision mediump sampler2D;
+	precision lowp int;
+	#if (__VERSION__ == 300)
+		precision lowp isampler2D;
+		precision lowp usampler2D;
+	#endif
+#elif (GPUIO_INT_PRECISION == 1)
+	precision mediump int;
+	#if (__VERSION__ == 300)
+		precision mediump isampler2D;
+		precision mediump usampler2D;
+	#endif
+#else 
+	#ifdef GL_FRAGMENT_PRECISION_HIGH
+		precision highp int;
+		#if (__VERSION__ == 300)
+			precision highp isampler2D;
+			precision highp usampler2D;
+		#endif
+	#else
+		precision mediump int;
+		#if (__VERSION__ == 300)
+			precision mediump isampler2D;
+			precision mediump usampler2D;
+		#endif
+	#endif
 #endif
 #if (GPUIO_FLOAT_PRECISION == 0)
-precision lowp float;precision lowp sampler2D;
+	precision lowp float;
+	precision lowp sampler2D;
+#elif (GPUIO_FLOAT_PRECISION == 1)
+	precision mediump float;
+	precision mediump sampler2D;
+#else
+	#ifdef GL_FRAGMENT_PRECISION_HIGH
+		precision highp float;
+		precision highp sampler2D;
+	#else
+		precision mediump float;
+		precision mediump sampler2D;
+	#endif
 #endif
 `);
 				assert.equal(makeShaderHeader(
@@ -150,43 +155,48 @@ precision lowp float;precision lowp sampler2D;
 #define test2 2
 #define GPUIO_INT_PRECISION 2
 #define GPUIO_FLOAT_PRECISION 1
-#if (GPUIO_INT_PRECISION == 2)
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp int;
-#if (__VERSION__ == 300)
-precision highp isampler2D;precision highp usampler2D;
-#endif
-#else
-precision mediump int;
-#if (__VERSION__ == 300)
-precision mediump isampler2D;precision mediump usampler2D;
-#endif
-#endif
-#endif
-#if (GPUIO_INT_PRECISION == 1)
-precision mediump int;
-#if (__VERSION__ == 300)
-precision mediump isampler2D;precision mediump usampler2D;
-#endif
-#endif
+
 #if (GPUIO_INT_PRECISION == 0)
-precision lowp int;
-#if (__VERSION__ == 300)
-precision lowp isampler2D;precision lowp usampler2D;
-#endif
-#endif
-#if (GPUIO_FLOAT_PRECISION == 2)
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;precision highp sampler2D;
-#else
-precision mediump float;precision mediump sampler2D;
-#endif
-#endif
-#if (GPUIO_FLOAT_PRECISION == 1)
-precision mediump float;precision mediump sampler2D;
+	precision lowp int;
+	#if (__VERSION__ == 300)
+		precision lowp isampler2D;
+		precision lowp usampler2D;
+	#endif
+#elif (GPUIO_INT_PRECISION == 1)
+	precision mediump int;
+	#if (__VERSION__ == 300)
+		precision mediump isampler2D;
+		precision mediump usampler2D;
+	#endif
+#else 
+	#ifdef GL_FRAGMENT_PRECISION_HIGH
+		precision highp int;
+		#if (__VERSION__ == 300)
+			precision highp isampler2D;
+			precision highp usampler2D;
+		#endif
+	#else
+		precision mediump int;
+		#if (__VERSION__ == 300)
+			precision mediump isampler2D;
+			precision mediump usampler2D;
+		#endif
+	#endif
 #endif
 #if (GPUIO_FLOAT_PRECISION == 0)
-precision lowp float;precision lowp sampler2D;
+	precision lowp float;
+	precision lowp sampler2D;
+#elif (GPUIO_FLOAT_PRECISION == 1)
+	precision mediump float;
+	precision mediump sampler2D;
+#else
+	#ifdef GL_FRAGMENT_PRECISION_HIGH
+		precision highp float;
+		precision highp sampler2D;
+	#else
+		precision mediump float;
+		precision mediump sampler2D;
+	#endif
 #endif
 `);
 			});

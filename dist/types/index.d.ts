@@ -6,6 +6,7 @@ import { GPUProgram } from './GPUProgram';
  * @private
  */
 declare const _testing: {
+    intForPrecision(precision: import("./constants").GLSLPrecision): 2 | 1 | 0;
     texturePolyfill(shaderSource: string): {
         shaderSource: string;
         samplerUniforms: string[];

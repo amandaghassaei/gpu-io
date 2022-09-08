@@ -394,3 +394,11 @@ export declare const MIN_FLOAT_INT = -16777216;
  * @private
  */
 export declare const MAX_FLOAT_INT = 16777216;
+/**
+ * @private
+ */
+export declare const GPUIO_INT_PRECISION = "GPUIO_INT_PRECISION";
+/**
+ * @private
+ */
+export declare const GPUIO_FLOAT_PRECISION = "GPUIO_FLOAT_PRECISION";

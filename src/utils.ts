@@ -25,6 +25,8 @@ import {
 	GLSL3,
 	GLSLPrecision,
 	GLSLVersion,
+	GPUIO_FLOAT_PRECISION,
+	GPUIO_INT_PRECISION,
 	GPULayerType,
 	HALF_FLOAT,
 	INT,
@@ -33,7 +35,6 @@ import {
 	INT_3D_UNIFORM,
 	INT_4D_UNIFORM,
 	PRECISION_HIGH_P,
-	PRECISION_LOW_P,
 	PRECISION_MEDIUM_P,
 	SHORT,
 	UINT,
@@ -49,6 +50,8 @@ import {
 	WEBGL1,
 	WEBGL2,
 } from './constants';
+import { intForPrecision } from './enums';
+import { PRECISION_SOURCE } from './glsl/common/precision';
 import { fragmentShaderPolyfills, GLSL1Polyfills, texturePolyfill } from './polyfills';
 import {
 	checkFragmentShaderForFragColor,
@@ -64,7 +67,6 @@ import {
 	stripPrecision,
 	stripVersion,
 } from './regex';
-const precisionSource = require('./glsl/common/precision.glsl');
 
 /**
  * Memoize results of more complex WebGL tests (that require allocations/deallocations).
@@ -111,18 +113,6 @@ export function isFloatType(type: GPULayerType) {
 }
 
 /**
- * Enum for precision values.
- * See src/glsl/common/precision.glsl for more info.
- * @private
- */
-function intForPrecision(precision: GLSLPrecision) {
-	if (precision === PRECISION_HIGH_P) return 2;
-	if (precision === PRECISION_MEDIUM_P) return 1;
-	if (precision === PRECISION_LOW_P) return 0;
-	throw new Error(`Unknown shader precision value: ${JSON.stringify(precision)}.`);
-}
-
-/**
  * Create a string to pass defines into shader.
  * @private
  */
@@ -154,10 +144,10 @@ export function makeShaderHeader(
 	const versionSource = glslVersion === GLSL3 ? `#version ${GLSL3}\n` : '';
 	const definesSource = defines ? convertDefinesToString(defines) : '';
 	const precisionDefinesSource = convertDefinesToString({
-		GPUIO_INT_PRECISION: `${intForPrecision(intPrecision)}`,
-		GPUIO_FLOAT_PRECISION: `${intForPrecision(floatPrecision)}`,
+		[GPUIO_INT_PRECISION]: `${intForPrecision(intPrecision)}`,
+		[GPUIO_FLOAT_PRECISION]: `${intForPrecision(floatPrecision)}`,
 	});
-	return `${versionSource}${definesSource}${precisionDefinesSource}${precisionSource}`;
+	return `${versionSource}${definesSource}${precisionDefinesSource}${PRECISION_SOURCE}`;
 }
 
 /**

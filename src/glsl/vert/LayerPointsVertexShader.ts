@@ -1,4 +1,10 @@
-@include "../common/VertexShaderHelpers.glsl"
+import {
+	GPUIO_VS_POSITION_W_ACCUM, GPUIO_VS_WRAP_X, GPUIO_VS_WRAP_Y,
+} from '../../constants';
+import { VERTEX_SHADER_HELPERS_SOURCE } from './VertexShaderHelpers';
+
+export const LAYER_POINTS_VERTEX_SHADER_SOURCE = `
+${VERTEX_SHADER_HELPERS_SOURCE}
 
 #if (__VERSION__ != 300)
 	// Cannot use int vertex attributes.
@@ -26,7 +32,7 @@ void main() {
 
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
-	#ifdef GPUIO_VS_POSITION_W_ACCUM
+	#ifdef ${GPUIO_VS_POSITION_W_ACCUM}
 		// We have packed a 2D displacement with the position.
 		vec4 positionData = texture(u_gpuio_positions, positionUV);
 		// position = first two components plus last two components (optional accumulation buffer).
@@ -36,10 +42,10 @@ void main() {
 	#endif
 
 	// Wrap if needed.
-	#ifdef GPUIO_VS_WRAP_X
+	#ifdef ${GPUIO_VS_WRAP_X}
 		v_uv.x = fract(v_uv.x + ceil(abs(v_uv.x)));
 	#endif
-	#ifdef GPUIO_VS_WRAP_Y
+	#ifdef ${GPUIO_VS_WRAP_Y}
 		v_uv.y = fract(v_uv.y + ceil(abs(v_uv.y)));
 	#endif
 
@@ -48,4 +54,4 @@ void main() {
 
 	gl_PointSize = u_gpuio_pointSize;
 	gl_Position = vec4(position, 0, 1);
-}
+}`;

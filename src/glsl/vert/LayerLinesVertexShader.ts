@@ -1,6 +1,12 @@
-@include "../common/VertexShaderHelpers.glsl"
+import {
+	GPUIO_VS_INDEXED_POSITIONS, GPUIO_VS_POSITION_W_ACCUM, GPUIO_VS_WRAP_X, GPUIO_VS_WRAP_Y,
+} from '../../constants';
+import { VERTEX_SHADER_HELPERS_SOURCE } from './VertexShaderHelpers';
 
-#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)
+export const LAYER_LINES_VERTEX_SHADER_SOURCE = `
+${VERTEX_SHADER_HELPERS_SOURCE}
+
+#if (__VERSION__ != 300 || ${GPUIO_VS_INDEXED_POSITIONS} == 1)
 	// Cannot use int vertex attributes.
 	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
 	in float a_gpuio_index;
@@ -16,7 +22,7 @@ flat out int v_index;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
-	#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)
+	#if (__VERSION__ != 300 || ${GPUIO_VS_INDEXED_POSITIONS} == 1)
 		vec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);
 		v_index = int(a_gpuio_index);
 	#else
@@ -26,7 +32,7 @@ void main() {
 
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
-	#ifdef GPUIO_VS_POSITION_W_ACCUM
+	#ifdef ${GPUIO_VS_POSITION_W_ACCUM}
 		// We have packed a 2D displacement with the position.
 		vec4 positionData = texture(u_gpuio_positions, positionUV);
 		// position = first two components plus last two components (optional accumulation buffer).
@@ -38,7 +44,7 @@ void main() {
 	// Wrap if needed.
 	v_lineWrapping = vec2(0.0);
 	//TODO: remove branching
-	#ifdef GPUIO_VS_WRAP_X
+	#ifdef ${GPUIO_VS_WRAP_X}
 		if (v_uv.x < 0.0) {
 			v_uv.x += 1.0;
 			v_lineWrapping.x = 1.0;
@@ -47,7 +53,7 @@ void main() {
 			v_lineWrapping.x = 1.0;
 		}
 	#endif
-	#ifdef GPUIO_VS_WRAP_Y
+	#ifdef ${GPUIO_VS_WRAP_Y}
 		if (v_uv.y < 0.0) {
 			v_uv.y += 1.0;
 			v_lineWrapping.y = 1.0;
@@ -61,4 +67,4 @@ void main() {
 	vec2 position = v_uv * 2.0 - 1.0;
 
 	gl_Position = vec4(position, 0, 1);
-}
+}`;
