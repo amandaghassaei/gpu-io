@@ -245,6 +245,10 @@ export function GLSL1Polyfills() {
 	const max = (type1: TI, type2: TI) => `${type1} max(const ${type1} a, const ${type2} b) { return ${type1}(max(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
 	const clamp = (type1: TI, type2: TI) => `${type1} clamp(const ${type1} a, const ${type2} min, const ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`;
 	const mix = (type1: T, type2: TB) => `${type1} mix(const ${type1} a, const ${type1} b, const ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`;
+	const det2 = (n: number, m: number, size: number) => `a[${n}][${m}] * a[${(n + 1) % size}][${(m + 1) % size}] - a[${(n + 1) % size}][${m}] * a[${n}][${(m + 1) % size}]`;
+	// TODO: I don't think these are quite right yet.
+	const det3 = (n: number, m: number, size: number) => [0, 1, 2].map(offset => `a[${n}][${(m + offset) % size}] * (${det2((n + 1) % size, (m + 1 + offset) % size, size)})`).join(' + ');
+	const det4 = (n: number, m: number, size: number) => [0, 1, 2, 3].map(offset => `a[${n}][${(m + offset) % size}] * (${det3((n + 1) % size, (m + 1 + offset) % size, size)})`).join(' + ');
 
 	// We don't need to create unsigned int polyfills, bc unsigned int is not a supported type in GLSL1.
 	// All unsigned int variables will be cast as int and be caught by the signed int polyfills.
@@ -303,7 +307,99 @@ ${mix('vec2', 'bvec2')}
 ${mix('vec3', 'bvec3')}
 ${mix('vec4', 'bvec4')}
 
-`;
+mat2 outerProduct(const vec2 a, const vec2 b) {
+	return mat2(
+		a.x * b.x, a.x * b.y,
+		a.y * b.x, a.y * b.y
+	);
+}
+mat3 outerProduct(const vec3 a, const vec3 b) {
+	return mat3(
+		a.x * b.x, a.x * b.y, a.x * b.z,
+		a.y * b.x, a.y * b.y, a.y * b.z,
+		a.z * b.x, a.z * b.y, a.z * b.z
+	);
+}
+mat4 outerProduct(const vec4 a, const vec4 b) {
+	return mat4(
+		a.x * b.x, a.x * b.y, a.x * b.z, a.x * b.w,
+		a.y * b.x, a.y * b.y, a.y * b.z, a.y * b.w,
+		a.z * b.x, a.z * b.y, a.z * b.z, a.z * b.w,
+		a.w * b.x, a.w * b.y, a.w * b.z, a.w * b.w
+	);
+}
+mat2 transpose(mat2 a) {
+	float temp = a[0][1];
+	a[0][1] = a[1][0];
+	a[1][0] = temp;
+	return a;
+}
+mat3 transpose(mat3 a) {
+	float temp = a[0][2];
+	a[0][2] = a[2][0];
+	a[2][0] = temp;
+	temp = a[0][1];
+	a[0][1] = a[1][0];
+	a[1][0] = temp;
+	temp = a[1][2];
+	a[1][2] = a[2][1];
+	a[2][1] = temp;
+	return a;
+}
+mat4 transpose(mat4 a) {
+	float temp = a[0][3];
+	a[0][3] = a[3][0];
+	a[3][0] = temp;
+	temp = a[0][2];
+	a[0][2] = a[2][0];
+	a[2][0] = temp;
+	temp = a[2][3];
+	a[2][3] = a[3][2];
+	a[3][2] = temp;
+	temp = a[0][1];
+	a[0][1] = a[1][0];
+	a[1][0] = temp;
+	temp = a[1][2];
+	a[1][2] = a[2][1];
+	a[2][1] = temp;
+	temp = a[2][3];
+	a[2][3] = a[3][2];
+	a[3][2] = temp;
+	return a;
+}
+
+float determinant(const mat2 a) {
+	return ${ det2(0, 0, 2) };
+}
+float determinant(const mat3 a) {
+	return ${ det3(0, 0, 3) };
+}
+float determinant(const mat4 a) {
+	return ${ det4(0, 0, 4) };
+}
+` + 
+// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+`
+float cosh(const float x) {
+	return (pow(${Math.E}, x) + pow(${Math.E}, -x)) / 2.0; 
+}
+float sinh(const float x) {
+	return (pow(${Math.E}, x) - pow(${Math.E}, -x)) / 2.0;
+}
+float tanh(const float x) {
+	float e = exp(2.0 * x);
+	return (e - 1.0) / (e + 1.0);
+}
+float asinh(const float x) {
+	return log(x + sqrt(x * x + 1.0));
+}
+float acosh(const float x) {
+	return log(x + sqrt(x * x - 1.0));
+}
+float atanh(float x) {
+	x = (x + 1.0) / (x - 1.0);
+	return 0.5 * log(x * sign(x));
+}`;
 	return GLSL1_POLYFILLS;
 }
 
@@ -316,9 +412,78 @@ export function fragmentShaderPolyfills() {
 	if (FRAGMENT_SHADER_POLYFILLS) return FRAGMENT_SHADER_POLYFILLS;
 
 	const mod = (type1: TI | TU, type2: TI | TU) => `${type1} mod(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`;
-	// Operators.
 	const bitshiftLeft = (type1: TI | TU, type2: TI | TU) => `${type1} bitshiftLeft(const ${type1} a, const ${type2} b) { return a * ${type1}(pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b))); }`;
 	const bitshiftRight = (type1: TI | TU, type2: TI | TU) => `${type1} bitshiftRight(const ${type1} a, const ${type2} b) { return ${type1}(round(${floatTypeForIntType(type1)}(a) / pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b)))); }`;
+
+	// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+	// Seems like these could be optimized.
+	const bitwiseOr = (numBits: 8 | 16 | 32) => {
+return `int bitwiseOr${numBits === 32 ? '' : numBits}(int a, int b) {
+	int result = 0;
+	int n = 1;
+	
+	for (int i = 0; i < ${numBits}; i++) {
+		if ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {
+			result += n;
+		}
+		a = a / 2;
+		b = b / 2;
+		n = n * 2;
+		if(!(a > 0 || b > 0)) {
+			break;
+		}
+	}
+	return result;
+}`; };
+const bitwiseXOR = (numBits: 8 | 16 | 32) => {
+return `int bitwiseXOR${numBits === 32 ? '' : numBits}(int a, int b) {
+	int result = 0;
+	int n = 1;
+	
+	for (int i = 0; i < ${numBits}; i++) {
+		if ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {
+			result += n;
+		}
+		a = a / 2;
+		b = b / 2;
+		n = n * 2;
+		if(!(a > 0 || b > 0)) {
+			break;
+		}
+	}
+	return result;
+}`; }
+	const bitwiseAnd = (numBits: 8 | 16 | 32) => {
+return `int bitwiseAnd${numBits === 32 ? '' : numBits}(int a, int b) {
+	int result = 0;
+	int n = 1;
+	for (int i = 0; i < ${numBits}; i++) {
+		if ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {
+			result += n;
+		}
+		a = a / 2;
+		b = b / 2;
+		n = n * 2;
+		if(!(a > 0 && b > 0)) {
+			break;
+		}
+	}
+	return result;
+}`; };
+	const bitwiseNot = (numBits: 8 | 16 | 32) => {
+return `int bitwiseNot${numBits === 32 ? '' : numBits}(int a) {
+	int result = 0;
+	int n = 1;
+
+	for (int i = 0; i < ${numBits}; i++) {
+		if (mod(a, 2) == 0) {
+			result += n;
+		}
+		a = a / 2;
+		n = n * 2;
+	}
+	return result;
+}`; }
 
 	FRAGMENT_SHADER_POLYFILLS = `
 ${mod('int', 'int')}
@@ -371,90 +536,40 @@ ${bitshiftRight('uvec2', 'uint')}
 ${bitshiftRight('uvec3', 'uint')}
 ${bitshiftRight('uvec4', 'uint')}
 #endif
-` +
-// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
-// Seems like these could be optimized.
-`
-#define GPUIO_BIT_COUNT 32
-int bitwiseOr(int a, int b) {
-  int result = 0;
-  int n = 1;
-  
-  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
-    if ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {
-      result += n;
-    }
-    a = a / 2;
-    b = b / 2;
-    n = n * 2;
-    if(!(a > 0 || b > 0)) {
-      break;
-    }
-  }
-  return result;
-}
-int bitwiseXOR(int a, int b) {
-  int result = 0;
-  int n = 1;
-  
-  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
-    if ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {
-      result += n;
-    }
-    a = a / 2;
-    b = b / 2;
-    n = n * 2;
-    if(!(a > 0 || b > 0)) {
-      break;
-    }
-  }
-  return result;
-}
-int bitwiseAnd(int a, int b) {
-  int result = 0;
-  int n = 1;
-  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
-    if ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {
-      result += n;
-    }
-    a = a / 2;
-    b = b / 2;
-    n = n * 2;
-    if(!(a > 0 && b > 0)) {
-      break;
-    }
-  }
-  return result;
-}
-int bitwiseNot(int a) {
-  int result = 0;
-  int n = 1;
-  
-  for (int i = 0; i < GPUIO_BIT_COUNT; i++) {
-    if (mod(a, 2) == 0) {
-      result += n;
-    }
-    a = a / 2;
-    n = n * 2;
-  }
-  return result;
-}
+
+${bitwiseOr(8)}
+${bitwiseOr(16)}
+${bitwiseOr(32)}
+
+${bitwiseXOR(8)}
+${bitwiseXOR(16)}
+${bitwiseXOR(32)}
+
+${bitwiseAnd(8)}
+${bitwiseAnd(16)}
+${bitwiseAnd(32)}
+
+${bitwiseNot(8)}
+${bitwiseNot(16)}
+${bitwiseNot(32)}
 
 #if (__VERSION__ == 300)
-uint bitwiseOr(uint a, uint b) {
-	return uint(bitwiseOr(int(a), int(b)));
+${ [8, 16, ''].map(suffix => {
+return `
+uint bitwiseOr${suffix}(uint a, uint b) {
+	return uint(bitwiseOr${suffix}(int(a), int(b)));
 }
-uint bitwiseXOR(uint a, uint b) {
-	return uint(bitwiseXOR(int(a), int(b)));
+uint bitwiseXOR${suffix}(uint a, uint b) {
+	return uint(bitwiseXOR${suffix}(int(a), int(b)));
 }
-uint bitwiseAnd(uint a, uint b) {
-	return uint(bitwiseAnd(int(a), int(b)));
+uint bitwiseAnd${suffix}(uint a, uint b) {
+	return uint(bitwiseAnd${suffix}(int(a), int(b)));
 }
-uint bitwiseNot(uint a) {
-	return uint(bitwiseNot(int(a)));
-}
-#endif
+uint bitwiseNot${suffix}(uint a) {
+	return uint(bitwiseNot${suffix}(int(a)));
+}` }).join('\n')}
 
+#endif
 `;
 	return FRAGMENT_SHADER_POLYFILLS;
 }
