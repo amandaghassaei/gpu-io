@@ -83,7 +83,7 @@ function _castVaryingToFloat(shaderSource: string, regexString: string, type: st
 export function castVaryingToFloat(shaderSource: string) {
 	// Need to init all expressions with the same number of capturing groups
 	// so that this will work in _castVaryingToFloat.
-	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(u)?int', 'float'); // '\\bvarying\\s+u?int'
+	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(u)?int', 'float');
 	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec2', 'vec2');
 	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec3', 'vec3');
 	shaderSource = _castVaryingToFloat(shaderSource, '\\bvarying\\s+(i|u)vec4', 'vec4');

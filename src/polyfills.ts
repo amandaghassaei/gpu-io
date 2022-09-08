@@ -68,7 +68,7 @@ export function texturePolyfill(shaderSource: string) {
 
 	function make_GPUIO_TEXTURE_POLYFILL(i: number, prefix: string) {
 		return `
-${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 uv) {
+${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, const vec2 uv) {
 	${ prefix === '' ? `#if (${SAMPLER2D_FILTER}${i} == 0)` : ''}
 		#if (${SAMPLER2D_WRAP_X}${i} == 0)
 			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
@@ -103,7 +103,7 @@ ${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 
 
 	function make_GPUIO_TEXTURE_WRAP(prefix: string) {
 		return `
-${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
+${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ${prefix}sampler2D sampler, const vec2 uv, const vec2 halfPx) {
 	return texture(sampler, GPUIO_WRAP_REPEAT_UV(uv));
 }
 ${prefix}vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ${prefix}sampler2D sampler, vec2 uv, const vec2 halfPx) {
@@ -122,7 +122,7 @@ ${prefix}vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ${prefix}sampler2D sampler, 
 		const lookupFunction = wrapType ? `GPUIO_TEXTURE_WRAP_${wrapType}` : 'texture';
 		const extraParams =  wrapType ? `, halfPx` : '';
 		return`
-vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const sampler2D sampler, vec2 uv, const vec2 halfPx, const vec2 dimensions) {
+vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const sampler2D sampler, const vec2 uv, const vec2 halfPx, const vec2 dimensions) {
 	vec2 pxFraction = fract(uv * dimensions);
 	vec2 offset = halfPx - vec2(0.00001, 0.00001) * max(
 			step(abs(pxFraction.x - 0.5), 0.001),
@@ -144,13 +144,13 @@ vec4 GPUIO_TEXTURE_BILINEAR_INTERP${ wrapType ? `_WRAP_${wrapType}` : '' }(const
 	shaderSource = `
 ${ Object.keys(polyfillUniforms).map((key) => `uniform ${polyfillUniforms[key]} ${key};`).join('\n') }
 
-float GPUIO_WRAP_REPEAT_UV_COORD(float coord) {
+float GPUIO_WRAP_REPEAT_UV_COORD(const float coord) {
 	return fract(coord + ceil(abs(coord)));
 }
-vec2 GPUIO_WRAP_REPEAT_UV(vec2 uv) {
+vec2 GPUIO_WRAP_REPEAT_UV(const vec2 uv) {
 	return fract(uv + ceil(abs(uv)));
 }
-// float GPUIO_WRAP_CLAMP_UV_COORD(float coord, const float halfPx) {
+// float GPUIO_WRAP_CLAMP_UV_COORD(const float coord, const float halfPx) {
 // 	return clamp(coord, halfPx, 1.0 - halfPx);
 // }
 
@@ -221,15 +221,15 @@ export function GLSL1Polyfills() {
 		throw new Error(`Unknown type ${type}.`);
 	}
 
-	const abs = (type: TI) => `${type} abs(${type} a) { return ${type}(abs(${floatTypeForIntType(type)}(a))); }`;
-	const sign = (type: TI) => `${type} sign(${type} a) { return ${type}(sign(${floatTypeForIntType(type)}(a))); }`;
-	const round = (type: T) => `${type} round(${type} a) { return floor(a + 0.5); }`;
-	const trunc = (type: T) => `${type} trunc(${type} a) { return round(a - fract(a) * sign(a)); }`;
-	const roundEven = (type: T) => `${type} roundEven(${type} a) { return 2.0 * round(a / 2.0); }`;
-	const min = (type1: TI, type2: TI) => `${type1} min(${type1} a, ${type2} b) { return ${type1}(min(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
-	const max = (type1: TI, type2: TI) => `${type1} max(${type1} a, ${type2} b) { return ${type1}(max(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
-	const clamp = (type1: TI, type2: TI) => `${type1} clamp(${type1} a, ${type2} min, ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`;
-	const mix = (type1: T, type2: TB) => `${type1} mix(${type1} a, ${type1} b, ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`;
+	const abs = (type: TI) => `${type} abs(const ${type} a) { return ${type}(abs(${floatTypeForIntType(type)}(a))); }`;
+	const sign = (type: TI) => `${type} sign(const ${type} a) { return ${type}(sign(${floatTypeForIntType(type)}(a))); }`;
+	const round = (type: T) => `${type} round(const ${type} a) { return floor(a + 0.5); }`;
+	const trunc = (type: T) => `${type} trunc(const ${type} a) { return round(a - fract(a) * sign(a)); }`;
+	const roundEven = (type: T) => `${type} roundEven(const ${type} a) { return 2.0 * round(a / 2.0); }`;
+	const min = (type1: TI, type2: TI) => `${type1} min(const ${type1} a, const ${type2} b) { return ${type1}(min(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
+	const max = (type1: TI, type2: TI) => `${type1} max(const ${type1} a, const ${type2} b) { return ${type1}(max(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
+	const clamp = (type1: TI, type2: TI) => `${type1} clamp(const ${type1} a, const ${type2} min, const ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`;
+	const mix = (type1: T, type2: TB) => `${type1} mix(const ${type1} a, const ${type1} b, const ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`;
 
 	GLSL1_POLYFILLS = `
 ${abs('int')}
