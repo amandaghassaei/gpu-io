@@ -7,6 +7,9 @@ import { GPUProgram } from './GPUProgram';
  */
 declare const _testing: {
     intForPrecision(precision: import("./constants").GLSLPrecision): 2 | 1 | 0;
+    uniformTypeForType(type: import("./constants").GPULayerType, glslVersion: import("./constants").GLSLVersion): "FLOAT" | "INT" | "UINT";
+    glslTypeForType(type: import("./constants").GPULayerType, numComponents: import("./constants").GPULayerNumComponents): string;
+    glslPrefixForType(type: import("./constants").GPULayerType): "" | "u" | "i";
     texturePolyfill(shaderSource: string): {
         shaderSource: string;
         samplerUniforms: string[];

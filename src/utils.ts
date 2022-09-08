@@ -50,7 +50,7 @@ import {
 	WEBGL1,
 	WEBGL2,
 } from './constants';
-import { intForPrecision } from './enums';
+import { intForPrecision } from './conversions';
 import { PRECISION_SOURCE } from './glsl/common/precision';
 import { fragmentShaderPolyfills, GLSL1Polyfills, texturePolyfill } from './polyfills';
 import {

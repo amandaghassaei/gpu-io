@@ -6,12 +6,7 @@ import {
 	GPULayerType,
 	GPULayerWrap,
 	FLOAT,
-	HALF_FLOAT,
 	UNSIGNED_BYTE,
-	BYTE,
-	UNSIGNED_SHORT,
-	SHORT,
-	UNSIGNED_INT,
 	INT,
 	GLSLVersion,
 	GLSL1,
@@ -74,11 +69,13 @@ import {
 	isValidTextureFormat,
 	isValidWrap,
 } from './checks';
-import { DEFAULT_VERT_SHADER_SOURCE } from './glsl/vert/DefaultVertexShader';
-import { LAYER_LINES_VERTEX_SHADER_SOURCE } from './glsl/vert/LayerLinesVertexShader';
-import { SEGMENT_VERTEX_SHADER_SOURCE } from './glsl/vert/SegmentVertexShader';
-import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vert/LayerPointsVertexShader';
-import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vert/LayerVectorFieldVertexShader';
+import { DEFAULT_VERT_SHADER_SOURCE } from './glsl/vertex/DefaultVertexShader';
+import { LAYER_LINES_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerLinesVertexShader';
+import { SEGMENT_VERTEX_SHADER_SOURCE } from './glsl/vertex/SegmentVertexShader';
+import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerPointsVertexShader';
+import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVectorFieldVertexShader';
+import { uniformTypeForType } from './conversions';
+import { copyProgramForType, setValueProgramForTypeAndNumComponents, vectorMagnitudeProgramForType, wrappedLineColorProgram } from './Programs';
 
 export class GPUComposer {
 	readonly canvas: HTMLCanvasElement;
@@ -123,32 +120,23 @@ export class GPUComposer {
 
 	// Programs for copying data (these are needed for rendering partial screen geometries).
 	private readonly _copyPrograms: {
-		src: string,
 		[FLOAT]?: GPUProgram,
 		[INT]?: GPUProgram,
 		[UINT]?: GPUProgram,
-	} = {
-		src: require('./glsl/frag/CopyFragShader.glsl'),
-	};
+	} = {};
 
 	// Other util programs.
 	private readonly _setValuePrograms: {
-		src: string,
 		[FLOAT]?: GPUProgram,
 		[INT]?: GPUProgram,
 		[UINT]?: GPUProgram,
-	} = {
-		src: require('./glsl/frag/SetValueFragShader.glsl'),
-	};
+	} = {};
 	private _wrappedLineColorProgram?: GPUProgram; // We only need a FLOAT version of this.
 	private readonly _vectorMagnitudePrograms: {
-		src: string,
 		[FLOAT]?: GPUProgram,
 		[INT]?: GPUProgram,
 		[UINT]?: GPUProgram,
-	} = {
-		src: require('./glsl/frag/VectorMagnitudeFragShader.glsl'),
-	};
+	} = {};
 
 	/**
 	 * Vertex shaders are shared across all GPUProgram instances.
@@ -333,98 +321,40 @@ export class GPUComposer {
 		return isWebGL2(this.gl);
 	}
 
-	private _glslKeyForType(type: GPULayerType) {
-		switch (type) {
-			case HALF_FLOAT:
-			case FLOAT:
-				return FLOAT;
-			case UNSIGNED_BYTE:
-			case UNSIGNED_SHORT:
-			case UNSIGNED_INT:
-				if (this.glslVersion === GLSL1) return INT;
-				return UINT;
-			case BYTE:
-			case SHORT:
-			case INT:
-				return INT;
-			default:
-				throw new Error(`Invalid type: ${type} passed to GPUComposer.copyProgramForType.`);
-		}
-	}
-
 	/**
 	 * 
 	 * @private
 	 */
 	_setValueProgramForType(type: GPULayerType) {
 		const { _setValuePrograms } = this;
-		const key = this._glslKeyForType(type);
+		const key = uniformTypeForType(type, this.glslVersion);
 		if (_setValuePrograms[key] === undefined) {
-			const program = new GPUProgram(this, {
-				name: `setValue-${key}`,
-				fragmentShader: _setValuePrograms.src,
-				uniforms: [
-					{
-						name: 'u_value',
-						value: [0, 0, 0, 0],
-						type: key,
-					},
-				],
-				defines: {
-					[`GPUIO_${key}`]: '1',
-				},
-			});
-			_setValuePrograms[key] = program;
+			_setValuePrograms[key] = setValueProgramForTypeAndNumComponents(this, type, 4);
 		}
 		return _setValuePrograms[key]!;
 	}
 
 	private _copyProgramForType(type: GPULayerType) {
 		const { _copyPrograms } = this;
-		const key = this._glslKeyForType(type);
+		const key = uniformTypeForType(type, this.glslVersion);
 		if (_copyPrograms[key] === undefined) {
-			const program = new GPUProgram(this, {
-				name: `copy-${key}`,
-				fragmentShader: _copyPrograms.src,
-				uniforms: [
-					{
-						name: 'u_state',
-						value: 0,
-						type: INT,
-					},
-				],
-				defines: {
-					[`GPUIO_${key}`]: '1',
-				},
-			});
-			_copyPrograms[key] = program;
+			_copyPrograms[key] = copyProgramForType(this, type);
 		}
 		return _copyPrograms[key]!;
 	}
 
 	private _getWrappedLineColorProgram() {
 		if (this._wrappedLineColorProgram === undefined) {
-			const program = new GPUProgram(this, {
-				name: 'wrappedLineColor',
-				fragmentShader: require('./glsl/frag/WrappedLineColorFragShader.glsl'),
-			});
-			this._wrappedLineColorProgram = program;
+			this._wrappedLineColorProgram = wrappedLineColorProgram(this);
 		}
 		return this._wrappedLineColorProgram;
 	}
 
 	private _vectorMagnitudeProgramForType(type: GPULayerType) {
 		const { _vectorMagnitudePrograms } = this;
-		const key = this._glslKeyForType(type);
+		const key = uniformTypeForType(type, this.glslVersion);
 		if (_vectorMagnitudePrograms[key] === undefined) {
-			const program = new GPUProgram(this, {
-				name: `vectorMagnitude-${key}`,
-				fragmentShader: _vectorMagnitudePrograms.src,
-				defines: {
-					[`GPUIO_${key}`]: '1',
-				},
-			});
-			_vectorMagnitudePrograms[key] = program;
+			_vectorMagnitudePrograms[key] = vectorMagnitudeProgramForType(this, type);
 		}
 		return _vectorMagnitudePrograms[key]!;
 	}

@@ -73,7 +73,6 @@ export declare class GPUComposer {
         errorCallback?: ErrorCallback;
     }): GPUComposer;
     isWebGL2(): boolean;
-    private _glslKeyForType;
     /**
      *
      * @private

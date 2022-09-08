@@ -4,7 +4,7 @@ import {
 	PRECISION_LOW_P,
 	PRECISION_MEDIUM_P,
 } from '../../constants';
-import { intForPrecision } from '../../enums';
+import { intForPrecision } from '../../conversions';
 
 // These precision definitions are applied to all vertex and fragment shaders.
 // Default to highp, but fallback to mediump if highp not available.

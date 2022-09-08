@@ -7,7 +7,7 @@ import * as GPULayerHelpers from './GPULayerHelpers';
 import * as regex from './regex';
 import * as extensions from './extensions';
 import * as polyfills from './polyfills';
-import * as enums from './enums';
+import * as enums from './conversions';
 
 // These exports are only used for testing.
 /**

@@ -1,0 +1,19 @@
+import { GLSLPrecision, GLSLVersion, GPULayerNumComponents, GPULayerType } from './constants';
+/**
+ * Enum for precision values.
+ * See src/glsl/common/precision.ts for more info.
+ * @private
+ */
+export declare function intForPrecision(precision: GLSLPrecision): 2 | 1 | 0;
+/**
+ * @private
+ */
+export declare function uniformTypeForType(type: GPULayerType, glslVersion: GLSLVersion): "FLOAT" | "INT" | "UINT";
+/**
+ * @private
+ */
+export declare function glslTypeForType(type: GPULayerType, numComponents: GPULayerNumComponents): string;
+/**
+ * @private
+ */
+export declare function glslPrefixForType(type: GPULayerType): "" | "u" | "i";

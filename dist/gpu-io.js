@@ -2256,15 +2256,16 @@ exports.GPUComposer = void 0;
 var changedpi_1 = __webpack_require__(809);
 var GPULayer_1 = __webpack_require__(355);
 var constants_1 = __webpack_require__(601);
-var GPUProgram_1 = __webpack_require__(664);
 var utils = __webpack_require__(404);
 var utils_1 = __webpack_require__(593);
 var checks_1 = __webpack_require__(707);
-var DefaultVertexShader_1 = __webpack_require__(982);
-var LayerLinesVertexShader_1 = __webpack_require__(967);
-var SegmentVertexShader_1 = __webpack_require__(120);
-var LayerPointsVertexShader_1 = __webpack_require__(451);
-var LayerVectorFieldVertexShader_1 = __webpack_require__(506);
+var DefaultVertexShader_1 = __webpack_require__(651);
+var LayerLinesVertexShader_1 = __webpack_require__(567);
+var SegmentVertexShader_1 = __webpack_require__(946);
+var LayerPointsVertexShader_1 = __webpack_require__(929);
+var LayerVectorFieldVertexShader_1 = __webpack_require__(634);
+var conversions_1 = __webpack_require__(690);
+var Programs_1 = __webpack_require__(579);
 var GPUComposer = /** @class */ (function () {
     function GPUComposer(params) {
         var _a;
@@ -2277,16 +2278,10 @@ var GPUComposer = /** @class */ (function () {
          */
         this._extensions = {};
         // Programs for copying data (these are needed for rendering partial screen geometries).
-        this._copyPrograms = {
-            src: __webpack_require__(158),
-        };
+        this._copyPrograms = {};
         // Other util programs.
-        this._setValuePrograms = {
-            src: __webpack_require__(148),
-        };
-        this._vectorMagnitudePrograms = {
-            src: __webpack_require__(723),
-        };
+        this._setValuePrograms = {};
+        this._vectorMagnitudePrograms = {};
         /**
          * Vertex shaders are shared across all GPUProgram instances.
          * @private
@@ -2422,98 +2417,37 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.isWebGL2 = function () {
         return (0, utils_1.isWebGL2)(this.gl);
     };
-    GPUComposer.prototype._glslKeyForType = function (type) {
-        switch (type) {
-            case constants_1.HALF_FLOAT:
-            case constants_1.FLOAT:
-                return constants_1.FLOAT;
-            case constants_1.UNSIGNED_BYTE:
-            case constants_1.UNSIGNED_SHORT:
-            case constants_1.UNSIGNED_INT:
-                if (this.glslVersion === constants_1.GLSL1)
-                    return constants_1.INT;
-                return constants_1.UINT;
-            case constants_1.BYTE:
-            case constants_1.SHORT:
-            case constants_1.INT:
-                return constants_1.INT;
-            default:
-                throw new Error("Invalid type: ".concat(type, " passed to GPUComposer.copyProgramForType."));
-        }
-    };
     /**
      *
      * @private
      */
     GPUComposer.prototype._setValueProgramForType = function (type) {
-        var _a;
         var _setValuePrograms = this._setValuePrograms;
-        var key = this._glslKeyForType(type);
+        var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_setValuePrograms[key] === undefined) {
-            var program = new GPUProgram_1.GPUProgram(this, {
-                name: "setValue-".concat(key),
-                fragmentShader: _setValuePrograms.src,
-                uniforms: [
-                    {
-                        name: 'u_value',
-                        value: [0, 0, 0, 0],
-                        type: key,
-                    },
-                ],
-                defines: (_a = {},
-                    _a["GPUIO_".concat(key)] = '1',
-                    _a),
-            });
-            _setValuePrograms[key] = program;
+            _setValuePrograms[key] = (0, Programs_1.setValueProgramForTypeAndNumComponents)(this, type, 4);
         }
         return _setValuePrograms[key];
     };
     GPUComposer.prototype._copyProgramForType = function (type) {
-        var _a;
         var _copyPrograms = this._copyPrograms;
-        var key = this._glslKeyForType(type);
+        var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_copyPrograms[key] === undefined) {
-            var program = new GPUProgram_1.GPUProgram(this, {
-                name: "copy-".concat(key),
-                fragmentShader: _copyPrograms.src,
-                uniforms: [
-                    {
-                        name: 'u_state',
-                        value: 0,
-                        type: constants_1.INT,
-                    },
-                ],
-                defines: (_a = {},
-                    _a["GPUIO_".concat(key)] = '1',
-                    _a),
-            });
-            _copyPrograms[key] = program;
+            _copyPrograms[key] = (0, Programs_1.copyProgramForType)(this, type);
         }
         return _copyPrograms[key];
     };
     GPUComposer.prototype._getWrappedLineColorProgram = function () {
         if (this._wrappedLineColorProgram === undefined) {
-            var program = new GPUProgram_1.GPUProgram(this, {
-                name: 'wrappedLineColor',
-                fragmentShader: __webpack_require__(598),
-            });
-            this._wrappedLineColorProgram = program;
+            this._wrappedLineColorProgram = (0, Programs_1.wrappedLineColorProgram)(this);
         }
         return this._wrappedLineColorProgram;
     };
     GPUComposer.prototype._vectorMagnitudeProgramForType = function (type) {
-        var _a;
         var _vectorMagnitudePrograms = this._vectorMagnitudePrograms;
-        var key = this._glslKeyForType(type);
+        var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_vectorMagnitudePrograms[key] === undefined) {
-            var program = new GPUProgram_1.GPUProgram(this, {
-                name: "vectorMagnitude-".concat(key),
-                fragmentShader: _vectorMagnitudePrograms.src,
-                defines: (_a = {},
-                    _a["GPUIO_".concat(key)] = '1',
-                    _a),
-            });
-            _vectorMagnitudePrograms[key] = program;
+            _vectorMagnitudePrograms[key] = (0, Programs_1.vectorMagnitudeProgramForType)(this, type);
         }
         return _vectorMagnitudePrograms[key];
     };
@@ -5773,6 +5707,81 @@ exports.GPUProgram = GPUProgram;
 
 /***/ }),
 
+/***/ 579:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.vectorMagnitudeProgramForType = exports.wrappedLineColorProgram = exports.setValueProgramForTypeAndNumComponents = exports.copyProgramForType = void 0;
+var constants_1 = __webpack_require__(601);
+var conversions_1 = __webpack_require__(690);
+var GPUProgram_1 = __webpack_require__(664);
+/**
+ *
+ * @param composer
+ * @param type
+ * @returns
+ */
+function copyProgramForType(composer, type) {
+    var glslType = (0, conversions_1.glslTypeForType)(type, 4);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: "copy-".concat(glslType),
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = texture(u_state, v_uv);\n}"),
+        uniforms: [
+            {
+                name: 'u_state',
+                value: 0,
+                type: constants_1.INT,
+            },
+        ],
+    });
+}
+exports.copyProgramForType = copyProgramForType;
+/**
+ *
+ */
+function setValueProgramForTypeAndNumComponents(composer, type, numComponents) {
+    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: "setValue-".concat(glslType, ",").concat(numComponents),
+        fragmentShader: "\nuniform ".concat(glslType, " u_value;\nout ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value;\n}"),
+        uniforms: [
+            {
+                name: 'u_value',
+                value: (new Array(numComponents)).fill(0),
+                type: (0, conversions_1.uniformTypeForType)(type, composer.glslVersion),
+            },
+        ],
+    });
+}
+exports.setValueProgramForTypeAndNumComponents = setValueProgramForTypeAndNumComponents;
+/**
+ * @private
+ */
+function wrappedLineColorProgram(composer) {
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: "wrappedLineColor",
+        fragmentShader: "\nin vec2 v_lineWrapping;\nuniform vec4 u_value;\nout vec4 out_fragColor;\nvoid main() {\n\t// Check if this line has wrapped.\n\tif ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {\n\t\t// Render nothing.\n\t\tdiscard;\n\t\treturn;\n\t}\n\tout_fragColor = vec4(u_value);\n}",
+    });
+}
+exports.wrappedLineColorProgram = wrappedLineColorProgram;
+/**
+ * Fragment shader that draws the magnitude of a GPULayer as a color.
+ * @private
+ */
+function vectorMagnitudeProgramForType(composer, type) {
+    var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: "vectorMagnitude",
+        fragmentShader: "\nin vec2 v_uv;\nuniform vec3 u_color;\nuniform float u_scale;\nuniform ".concat(glslPrefix, "sampler2D u_gpuio_data;\nout vec4 out_fragColor;\nvoid main() {\n\tuvec4 value = texture(u_gpuio_data, v_uv);\n\tfloat mag = length(value);\n\tout_fragColor = vec4(mag * u_scale * u_color, 1);\n}"),
+    });
+}
+exports.vectorMagnitudeProgramForType = vectorMagnitudeProgramForType;
+
+
+/***/ }),
+
 /***/ 404:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -6349,13 +6358,13 @@ exports.GPUIO_FLOAT_PRECISION = 'GPUIO_FLOAT_PRECISION';
 
 /***/ }),
 
-/***/ 900:
+/***/ 690:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.intForPrecision = void 0;
+exports.glslPrefixForType = exports.glslTypeForType = exports.uniformTypeForType = exports.intForPrecision = void 0;
 var constants_1 = __webpack_require__(601);
 /**
  * Enum for precision values.
@@ -6372,6 +6381,77 @@ function intForPrecision(precision) {
     throw new Error("Unknown shader precision value: ".concat(JSON.stringify(precision), "."));
 }
 exports.intForPrecision = intForPrecision;
+/**
+ * @private
+ */
+function uniformTypeForType(type, glslVersion) {
+    switch (type) {
+        case constants_1.HALF_FLOAT:
+        case constants_1.FLOAT:
+            return constants_1.FLOAT;
+        case constants_1.UNSIGNED_BYTE:
+        case constants_1.UNSIGNED_SHORT:
+        case constants_1.UNSIGNED_INT:
+            if (glslVersion === constants_1.GLSL1)
+                return constants_1.INT;
+            return constants_1.UINT;
+        case constants_1.BYTE:
+        case constants_1.SHORT:
+        case constants_1.INT:
+            return constants_1.INT;
+        default:
+            throw new Error("Invalid type: ".concat(type, " passed to glslKeyForType."));
+    }
+}
+exports.uniformTypeForType = uniformTypeForType;
+/**
+ * @private
+ */
+function glslTypeForType(type, numComponents) {
+    switch (type) {
+        case constants_1.HALF_FLOAT:
+        case constants_1.FLOAT:
+            if (numComponents === 1)
+                return 'float';
+            return "vec".concat(numComponents);
+        case constants_1.UNSIGNED_BYTE:
+        case constants_1.UNSIGNED_SHORT:
+        case constants_1.UNSIGNED_INT:
+            if (numComponents === 1)
+                return 'uint';
+            return "uvec".concat(numComponents);
+        case constants_1.BYTE:
+        case constants_1.SHORT:
+        case constants_1.INT:
+            if (numComponents === 1)
+                return 'int';
+            return "ivec".concat(numComponents);
+        default:
+            throw new Error("Invalid type: ".concat(type, " passed to glslTypeForType."));
+    }
+}
+exports.glslTypeForType = glslTypeForType;
+/**
+ * @private
+ */
+function glslPrefixForType(type) {
+    switch (type) {
+        case constants_1.HALF_FLOAT:
+        case constants_1.FLOAT:
+            return '';
+        case constants_1.UNSIGNED_BYTE:
+        case constants_1.UNSIGNED_SHORT:
+        case constants_1.UNSIGNED_INT:
+            return 'u';
+        case constants_1.BYTE:
+        case constants_1.SHORT:
+        case constants_1.INT:
+            return 'i';
+        default:
+            throw new Error("Invalid type: ".concat(type, " passed to glslPrefixForType."));
+    }
+}
+exports.glslPrefixForType = glslPrefixForType;
 
 
 /***/ }),
@@ -6449,17 +6529,17 @@ exports.getExtension = getExtension;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PRECISION_SOURCE = void 0;
 var constants_1 = __webpack_require__(601);
-var enums_1 = __webpack_require__(900);
+var conversions_1 = __webpack_require__(690);
 // These precision definitions are applied to all vertex and fragment shaders.
 // Default to highp, but fallback to mediump if highp not available.
 // These defaults can be set in GPUComposer constructor as intPrecision and floatPrecision parameters.
 // https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
-exports.PRECISION_SOURCE = "\n#if (".concat(constants_1.GPUIO_INT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_LOW_P), ")\n\tprecision lowp int;\n\t#if (__VERSION__ == 300)\n\t\tprecision lowp isampler2D;\n\t\tprecision lowp usampler2D;\n\t#endif\n#elif (").concat(constants_1.GPUIO_INT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_MEDIUM_P), ")\n\tprecision mediump int;\n\t#if (__VERSION__ == 300)\n\t\tprecision mediump isampler2D;\n\t\tprecision mediump usampler2D;\n\t#endif\n#else \n\t#ifdef GL_FRAGMENT_PRECISION_HIGH\n\t\tprecision highp int;\n\t\t#if (__VERSION__ == 300)\n\t\t\tprecision highp isampler2D;\n\t\t\tprecision highp usampler2D;\n\t\t#endif\n\t#else\n\t\tprecision mediump int;\n\t\t#if (__VERSION__ == 300)\n\t\t\tprecision mediump isampler2D;\n\t\t\tprecision mediump usampler2D;\n\t\t#endif\n\t#endif\n#endif\n#if (").concat(constants_1.GPUIO_FLOAT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_LOW_P), ")\n\tprecision lowp float;\n\tprecision lowp sampler2D;\n#elif (").concat(constants_1.GPUIO_FLOAT_PRECISION, " == ").concat((0, enums_1.intForPrecision)(constants_1.PRECISION_MEDIUM_P), ")\n\tprecision mediump float;\n\tprecision mediump sampler2D;\n#else\n\t#ifdef GL_FRAGMENT_PRECISION_HIGH\n\t\tprecision highp float;\n\t\tprecision highp sampler2D;\n\t#else\n\t\tprecision mediump float;\n\t\tprecision mediump sampler2D;\n\t#endif\n#endif\n");
+exports.PRECISION_SOURCE = "\n#if (".concat(constants_1.GPUIO_INT_PRECISION, " == ").concat((0, conversions_1.intForPrecision)(constants_1.PRECISION_LOW_P), ")\n\tprecision lowp int;\n\t#if (__VERSION__ == 300)\n\t\tprecision lowp isampler2D;\n\t\tprecision lowp usampler2D;\n\t#endif\n#elif (").concat(constants_1.GPUIO_INT_PRECISION, " == ").concat((0, conversions_1.intForPrecision)(constants_1.PRECISION_MEDIUM_P), ")\n\tprecision mediump int;\n\t#if (__VERSION__ == 300)\n\t\tprecision mediump isampler2D;\n\t\tprecision mediump usampler2D;\n\t#endif\n#else \n\t#ifdef GL_FRAGMENT_PRECISION_HIGH\n\t\tprecision highp int;\n\t\t#if (__VERSION__ == 300)\n\t\t\tprecision highp isampler2D;\n\t\t\tprecision highp usampler2D;\n\t\t#endif\n\t#else\n\t\tprecision mediump int;\n\t\t#if (__VERSION__ == 300)\n\t\t\tprecision mediump isampler2D;\n\t\t\tprecision mediump usampler2D;\n\t\t#endif\n\t#endif\n#endif\n#if (").concat(constants_1.GPUIO_FLOAT_PRECISION, " == ").concat((0, conversions_1.intForPrecision)(constants_1.PRECISION_LOW_P), ")\n\tprecision lowp float;\n\tprecision lowp sampler2D;\n#elif (").concat(constants_1.GPUIO_FLOAT_PRECISION, " == ").concat((0, conversions_1.intForPrecision)(constants_1.PRECISION_MEDIUM_P), ")\n\tprecision mediump float;\n\tprecision mediump sampler2D;\n#else\n\t#ifdef GL_FRAGMENT_PRECISION_HIGH\n\t\tprecision highp float;\n\t\tprecision highp sampler2D;\n\t#else\n\t\tprecision mediump float;\n\t\tprecision mediump sampler2D;\n\t#endif\n#endif\n");
 
 
 /***/ }),
 
-/***/ 982:
+/***/ 651:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -6472,7 +6552,7 @@ exports.DEFAULT_VERT_SHADER_SOURCE = "\nin vec2 a_gpuio_position;\n#ifdef ".conc
 
 /***/ }),
 
-/***/ 967:
+/***/ 567:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -6480,13 +6560,13 @@ exports.DEFAULT_VERT_SHADER_SOURCE = "\nin vec2 a_gpuio_position;\n#ifdef ".conc
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_LINES_VERTEX_SHADER_SOURCE = void 0;
 var constants_1 = __webpack_require__(601);
-var VertexShaderHelpers_1 = __webpack_require__(446);
+var VertexShaderHelpers_1 = __webpack_require__(324);
 exports.LAYER_LINES_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nout vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t\tvec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#else\n\t\tvec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, positionUV);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;\n\t#else\n\t\tv_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\tv_lineWrapping = vec2(0.0);\n\t//TODO: remove branching\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tif (v_uv.x < 0.0) {\n\t\t\tv_uv.x += 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t} else if (v_uv.x > 1.0) {\n\t\t\tv_uv.x -= 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t}\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tif (v_uv.y < 0.0) {\n\t\t\tv_uv.y += 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t} else if (v_uv.y > 1.0) {\n\t\t\tv_uv.y -= 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t}\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),
 
-/***/ 451:
+/***/ 929:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -6494,26 +6574,26 @@ exports.LAYER_LINES_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VER
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = void 0;
 var constants_1 = __webpack_require__(601);
-var VertexShaderHelpers_1 = __webpack_require__(446);
+var VertexShaderHelpers_1 = __webpack_require__(324);
 exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_pointSize;\n\nout vec2 v_uv;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tvec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tvec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, positionUV);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;\n\t#else\n\t\tv_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tv_uv.x = fract(v_uv.x + ceil(abs(v_uv.x)));\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tv_uv.y = fract(v_uv.y + ceil(abs(v_uv.y)));\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_PointSize = u_gpuio_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),
 
-/***/ 506:
+/***/ 634:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = void 0;
-var VertexShaderHelpers_1 = __webpack_require__(446);
+var VertexShaderHelpers_1 = __webpack_require__(324);
 exports.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_vectors; // Texture lookup with vector data.\nuniform vec2 u_gpuio_dimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nflat out int v_index;\n\nvoid main() {\n\t#if (__VERSION__ == 300)\n\t\t// Divide index by 2.\n\t\tint index = gl_VertexID / 2;\n\t\tv_index = gl_VertexID;\n\t#else\n\t\t// Divide index by 2.\n\t\tfloat index = floor((a_gpuio_index + 0.5) / 2.0);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a uv based on the vertex index attribute.\n\tv_uv = uvFromIndex(index, u_gpuio_dimensions);\n\t#if (__VERSION__ == 300)\n\t\t// Add vector displacement if needed.\n\t\tv_uv += float(gl_VertexID - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#else\n\t\t// Add vector displacement if needed.\n\t\tv_uv += (a_gpuio_index - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#endif\n\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),
 
-/***/ 120:
+/***/ 946:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -6525,7 +6605,7 @@ exports.SEGMENT_VERTEX_SHADER_SOURCE = "\nin vec2 a_gpuio_position;\n\nuniform f
 
 /***/ }),
 
-/***/ 446:
+/***/ 324:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -6581,7 +6661,7 @@ var GPULayerHelpers = __webpack_require__(191);
 var regex = __webpack_require__(126);
 var extensions = __webpack_require__(581);
 var polyfills = __webpack_require__(360);
-var enums = __webpack_require__(900);
+var enums = __webpack_require__(690);
 // These exports are only used for testing.
 /**
  * @private
@@ -7138,7 +7218,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.convertFragmentShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
-var enums_1 = __webpack_require__(900);
+var conversions_1 = __webpack_require__(690);
 var precision_1 = __webpack_require__(724);
 var polyfills_1 = __webpack_require__(360);
 var regex_1 = __webpack_require__(126);
@@ -7212,8 +7292,8 @@ function makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines) {
     var versionSource = glslVersion === constants_1.GLSL3 ? "#version ".concat(constants_1.GLSL3, "\n") : '';
     var definesSource = defines ? convertDefinesToString(defines) : '';
     var precisionDefinesSource = convertDefinesToString((_a = {},
-        _a[constants_1.GPUIO_INT_PRECISION] = "".concat((0, enums_1.intForPrecision)(intPrecision)),
-        _a[constants_1.GPUIO_FLOAT_PRECISION] = "".concat((0, enums_1.intForPrecision)(floatPrecision)),
+        _a[constants_1.GPUIO_INT_PRECISION] = "".concat((0, conversions_1.intForPrecision)(intPrecision)),
+        _a[constants_1.GPUIO_FLOAT_PRECISION] = "".concat((0, conversions_1.intForPrecision)(floatPrecision)),
         _a));
     return "".concat(versionSource).concat(definesSource).concat(precisionDefinesSource).concat(precision_1.PRECISION_SOURCE);
 }
@@ -7733,34 +7813,6 @@ function uniformInternalTypeForValue(value, type, uniformName, programName) {
 }
 exports.uniformInternalTypeForValue = uniformInternalTypeForValue;
 
-
-/***/ }),
-
-/***/ 158:
-/***/ ((module) => {
-
-module.exports = "in vec2 v_uv;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_state;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_state;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_state;\n#endif\n#ifdef GPUIO_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef GPUIO_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef GPUIO_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=texture(u_state,v_uv);}"
-
-/***/ }),
-
-/***/ 148:
-/***/ ((module) => {
-
-module.exports = "#ifdef GPUIO_FLOAT\nuniform vec4 u_value;\n#endif\n#ifdef GPUIO_INT\nuniform ivec4 u_value;\n#endif\n#ifdef GPUIO_UINT\nuniform uvec4 u_value;\n#endif\n#ifdef GPUIO_FLOAT\nout vec4 out_fragColor;\n#endif\n#ifdef GPUIO_INT\nout ivec4 out_fragColor;\n#endif\n#ifdef GPUIO_UINT\nout uvec4 out_fragColor;\n#endif\nvoid main(){out_fragColor=u_value;}"
-
-/***/ }),
-
-/***/ 723:
-/***/ ((module) => {
-
-module.exports = "in vec2 v_uv;uniform vec3 u_color;uniform float u_scale;\n#ifdef GPUIO_FLOAT\nuniform sampler2D u_gpuio_data;\n#endif\n#ifdef GPUIO_INT\nuniform isampler2D u_gpuio_data;\n#endif\n#ifdef GPUIO_UINT\nuniform usampler2D u_gpuio_data;\n#endif\nout vec4 out_fragColor;void main(){uvec4 value=texture(u_gpuio_data,v_uv);float mag=length(value);out_fragColor=vec4(mag*u_scale*u_color,1);}"
-
-/***/ }),
-
-/***/ 598:
-/***/ ((module) => {
-
-module.exports = "in vec2 v_lineWrapping;uniform vec4 u_value;out vec4 out_fragColor;void main(){if((v_lineWrapping.x!=0.&&v_lineWrapping.x!=1.)||(v_lineWrapping.y!=0.&&v_lineWrapping.y!=1.)){discard;return;}out_fragColor=vec4(u_value);}"
 
 /***/ })
 
