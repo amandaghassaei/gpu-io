@@ -15,3 +15,11 @@ vec2 uvFromIndex(const float index, const vec2 dimensions) {
 		floor(floor(index + 0.5) / dimensions.x)
 	) / dimensions;
 }
+vec2 uvFromIndex(const int index, const vec2 dimensions) {
+    int width = int(dimensions.x);
+    int y = index / width;
+    return vec2(
+        index - y * width,
+		y
+	) / dimensions;
+}

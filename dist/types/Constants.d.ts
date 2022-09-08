@@ -295,6 +295,10 @@ export declare const GPUIO_VS_WRAP_Y = "GPUIO_VS_WRAP_Y";
 /**
  * @private
  */
+export declare const GPUIO_VS_INDEXED_POSITIONS = "GPUIO_VS_INDEXED_POSITIONS";
+/**
+ * @private
+ */
 export declare const GPUIO_VS_NORMAL_ATTRIBUTE = "GPUIO_VS_NORMAL_ATTRIBUTE";
 export declare const GPUIO_VS_POSITION_W_ACCUM = "GPUIO_VS_POSITION_W_ACCUM";
 /**

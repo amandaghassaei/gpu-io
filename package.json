@@ -22,7 +22,7 @@
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
     "build": "webpack",
-    "docs": "rimraf docs/* && typedoc --options ./typedoc.json"
+    "docs": "typedoc --options ./typedoc.json"
   },
   "author": "Amanda Ghassaei",
   "license": "MIT",
@@ -38,7 +38,6 @@
     "karma-mocha-reporter": "^2.2.5",
     "mocha": "^10.0.0",
     "npm": "^8.18.0",
-    "rimraf": "^3.0.2",
     "ts-loader": "^8.4.0",
     "typedoc": "^0.23.10",
     "typedoc-plugin-markdown": "^3.13.6",

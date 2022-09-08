@@ -49,6 +49,7 @@ import {
 	GPUIO_VS_WRAP_X,
 	GPUIO_VS_WRAP_Y,
 	MAX_FLOAT_INT,
+	GPUIO_VS_INDEXED_POSITIONS,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -1431,14 +1432,17 @@ export class GPUComposer {
 		program._setVertexUniform(glProgram, 'u_gpuio_pointSize', pointSize, FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
-		if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
-			// Have to use float32 array bc int is not supported as a vertex attribute type.
-			const indices = initSequentialFloatArray(length);
-			this._pointIndexArray = indices;
-			this._pointIndexBuffer = this._initVertexBuffer(indices);
+		// We get this for free in GLSL3 with gl_VertexID.
+		if (glslVersion === GLSL1) {
+			if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
+				// Have to use float32 array bc int is not supported as a vertex attribute type.
+				const indices = initSequentialFloatArray(length);
+				this._pointIndexArray = indices;
+				this._pointIndexBuffer = this._initVertexBuffer(indices);
+			}
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIndexBuffer!);
+			this._setIndexAttribute(glProgram, program.name);
 		}
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIndexBuffer!);
-		this._setIndexAttribute(glProgram, program.name);
 
 		// Draw.
 		this._setBlendMode(params.shouldBlendAlpha);
@@ -1461,7 +1465,7 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _width, _height } = this;
+		const { gl, _width, _height, glslVersion } = this;
 		const { positions, output } = params;
 
 		// Check that positions is valid.
@@ -1489,39 +1493,43 @@ export class GPUComposer {
 		if (positions.numComponents === 4) vertexShaderOptions[GPUIO_VS_POSITION_W_ACCUM] = '1';
 		if (params.wrapX) vertexShaderOptions[GPUIO_VS_WRAP_X] = '1';
 		if (params.wrapY) vertexShaderOptions[GPUIO_VS_WRAP_Y] = '1';
+		if (params.indices) vertexShaderOptions[GPUIO_VS_INDEXED_POSITIONS] = '1';
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, LAYER_LINES_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
-		// TODO: cache indexArray if no indices passed in.
-		const indices = params.indices ? params.indices : initSequentialFloatArray(params.count || positions.length);
-		const count = params.count ? params.count : indices.length;
+		const count = params.count ? params.count : (params.indices ? params.indices.length : positions.length);
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), INT);
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
-		if (this._indexedLinesIndexBuffer === undefined) {
-			// Have to use float32 array bc int is not supported as a vertex attribute type.
-			let floatArray: Float32Array;
-			if (indices.constructor !== Float32Array) {
+		// Only pass in indices if we are using indexed pts or GLSL1, otherwise we get this for free from gl_VertexID.
+		if (params.indices || glslVersion === GLSL1) {
+			// TODO: cache indexArray if no indices passed in.
+			const indices = params.indices ? params.indices : initSequentialFloatArray(count);
+			if (this._indexedLinesIndexBuffer === undefined) {
 				// Have to use float32 array bc int is not supported as a vertex attribute type.
-				floatArray = new Float32Array(indices.length);
-				for (let i = 0; i < count; i++) {
-					floatArray[i] = indices[i];
+				let floatArray: Float32Array;
+				if (indices.constructor !== Float32Array) {
+					// Have to use float32 array bc int is not supported as a vertex attribute type.
+					floatArray = new Float32Array(indices.length);
+					for (let i = 0; i < count; i++) {
+						floatArray[i] = indices[i];
+					}
+					console.warn(`Converting indices array of type ${indices.constructor} to Float32Array in GPUComposer.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required.`);
+				} else {
+					floatArray = indices as Float32Array;
 				}
-				console.warn(`Converting indices array of type ${indices.constructor} to Float32Array in GPUComposer.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required.`);
+				this._indexedLinesIndexBuffer = this._initVertexBuffer(floatArray);
 			} else {
-				floatArray = indices as Float32Array;
+				gl.bindBuffer(gl.ARRAY_BUFFER, this._indexedLinesIndexBuffer!);
+				// Copy buffer data.
+				gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 			}
-			this._indexedLinesIndexBuffer = this._initVertexBuffer(floatArray);
-		} else {
-			gl.bindBuffer(gl.ARRAY_BUFFER, this._indexedLinesIndexBuffer!);
-			// Copy buffer data.
-			gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+			this._setIndexAttribute(glProgram, program.name);
 		}
-		this._setIndexAttribute(glProgram, program.name);
 
 		// Draw.
 		this._setBlendMode(params.shouldBlendAlpha);
@@ -1549,7 +1557,7 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _vectorFieldIndexArray, _width, _height } = this;
+		const { gl, _vectorFieldIndexArray, _width, _height, glslVersion } = this;
 		const { data, output } = params;
 
 		// Check that field is valid.
@@ -1584,14 +1592,17 @@ export class GPUComposer {
 		const spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)] as [number, number];
 		program._setVertexUniform(glProgram, 'u_gpuio_dimensions', spacedDimensions, FLOAT);
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
-		if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
-			// Have to use float32 array bc int is not supported as a vertex attribute type.
-			const indices = initSequentialFloatArray(length);
-			this._vectorFieldIndexArray = indices;
-			this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
+		// We get this for free in GLSL3 with gl_VertexID.
+		if (glslVersion === GLSL1) {
+			if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
+				// Have to use float32 array bc int is not supported as a vertex attribute type.
+				const indices = initSequentialFloatArray(length);
+				this._vectorFieldIndexArray = indices;
+				this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
+			}
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer!);
+			this._setIndexAttribute(glProgram, program.name);
 		}
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer!);
-		this._setIndexAttribute(glProgram, program.name);
 
 		// Draw.
 		this._setBlendMode(params.shouldBlendAlpha);

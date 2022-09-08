@@ -46,10 +46,10 @@ export function texturePolyfill(shaderSource: string) {
 	const samplerUniforms = getSampler2DsInProgram(shaderSource);
 	if (samplerUniforms.length === 0) return { shaderSource, samplerUniforms };
 	samplerUniforms.forEach((name, i) => {
-		const regex = new RegExp(`\\btexture\\(\\s?${name}\\b`, 'gs');
+		const regex = new RegExp(`\\btexture(2D)?\\(\\s?${name}\\b`, 'gs');
 		shaderSource = shaderSource.replace(regex, `GPUIO_TEXTURE_POLYFILL${i}(${name}`);
 	});
-	const remainingTextureCalls = shaderSource.match(/\btexture\(/g);
+	const remainingTextureCalls = shaderSource.match(/\btexture(2D)?\(/g);
 	if (remainingTextureCalls?.length) {
 		console.warn('Fragment shader polyfill has missed some calls to texture().', shaderSource);
 	}
@@ -69,7 +69,7 @@ export function texturePolyfill(shaderSource: string) {
 	function make_GPUIO_TEXTURE_POLYFILL(i: number, prefix: string) {
 		return `
 ${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 uv) {
-	#if (${SAMPLER2D_FILTER}${i} == 0)
+	${ prefix === '' ? `#if (${SAMPLER2D_FILTER}${i} == 0)` : ''}
 		#if (${SAMPLER2D_WRAP_X}${i} == 0)
 			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
 				return texture(sampler, uv);
@@ -83,7 +83,7 @@ ${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 
 				return GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i});
 			#endif
 		#endif
-	#else
+	${ prefix === '' ? `#else
 		#if (${SAMPLER2D_WRAP_X}${i} == 0)
 			#if (${SAMPLER2D_WRAP_Y}${i} == 0)
 				return GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
@@ -97,7 +97,7 @@ ${prefix}vec4 GPUIO_TEXTURE_POLYFILL${i}(const ${prefix}sampler2D sampler, vec2 
 				return GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ${SAMPLER2D_HALF_PX_UNIFORM}${i}, ${SAMPLER2D_DIMENSIONS_UNIFORM}${i});
 			#endif
 		#endif
-	#endif
+	#endif` : '' }
 }\n`;
 	}
 
@@ -118,8 +118,7 @@ ${prefix}vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ${prefix}sampler2D sampler, 
 }\n`;
 	}
 
-	function make_GPUIO_BILINEAR_INTERP(
-		wrapType: string | null ) {
+	function make_GPUIO_BILINEAR_INTERP(wrapType: string | null) {
 		const lookupFunction = wrapType ? `GPUIO_TEXTURE_WRAP_${wrapType}` : 'texture';
 		const extraParams =  wrapType ? `, halfPx` : '';
 		return`

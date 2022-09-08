@@ -1,7 +1,10 @@
 @include "../common/VertexShaderHelpers.glsl"
 
-// Cannot use int vertex attributes: https://stackoverflow.com/questions/27874983/webgl-how-to-use-integer-attributes-in-glsl
-in float a_gpuio_index; // Index of point.
+#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)
+	// Cannot use int vertex attributes.
+	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
+	in float a_gpuio_index;
+#endif
 
 uniform sampler2D u_gpuio_positions; // Texture lookup with position data.
 uniform vec2 u_gpuio_positionsDimensions;
@@ -9,11 +12,17 @@ uniform vec2 u_gpuio_scale;
 
 out vec2 v_uv;
 out vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.
-out float v_index;
+out int v_index;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
-	vec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);
+	#if (__VERSION__ == 300 || GPUIO_VS_INDEXED_POSITIONS == 1)
+		vec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);
+		v_index = gl_VertexID;
+	#else
+		vec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);
+		v_index = int(a_gpuio_index);
+	#endif
 
 	// Calculate a global uv for the viewport.
 	// Lookup vertex position and scale to [0, 1] range.
@@ -51,6 +60,5 @@ void main() {
 	// Calculate position in [-1, 1] range.
 	vec2 position = v_uv * 2.0 - 1.0;
 
-	v_index = a_gpuio_index;
 	gl_Position = vec4(position, 0, 1);
 }

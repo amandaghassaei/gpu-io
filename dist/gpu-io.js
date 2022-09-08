@@ -3304,21 +3304,24 @@ var GPUComposer = /** @class */ (function () {
         program._setVertexUniform(glProgram, 'u_gpuio_pointSize', pointSize, constants_1.FLOAT);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
-        if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
-            // Have to use float32 array bc int is not supported as a vertex attribute type.
-            var indices = (0, utils_1.initSequentialFloatArray)(length);
-            this._pointIndexArray = indices;
-            this._pointIndexBuffer = this._initVertexBuffer(indices);
+        // We get this for free in GLSL3 with gl_VertexID.
+        if (glslVersion === constants_1.GLSL1) {
+            if (this._pointIndexBuffer === undefined || (_pointIndexArray && _pointIndexArray.length < count)) {
+                // Have to use float32 array bc int is not supported as a vertex attribute type.
+                var indices = (0, utils_1.initSequentialFloatArray)(length);
+                this._pointIndexArray = indices;
+                this._pointIndexBuffer = this._initVertexBuffer(indices);
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIndexBuffer);
+            this._setIndexAttribute(glProgram, program.name);
         }
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIndexBuffer);
-        this._setIndexAttribute(glProgram, program.name);
         // Draw.
         this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.POINTS, 0, count);
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsLines = function (params) {
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion;
         var positions = params.positions, output = params.output;
         // Check that positions is valid.
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
@@ -3346,38 +3349,43 @@ var GPUComposer = /** @class */ (function () {
             vertexShaderOptions[constants_1.GPUIO_VS_WRAP_X] = '1';
         if (params.wrapY)
             vertexShaderOptions[constants_1.GPUIO_VS_WRAP_Y] = '1';
+        if (params.indices)
+            vertexShaderOptions[constants_1.GPUIO_VS_INDEXED_POSITIONS] = '1';
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.LAYER_LINES_PROGRAM_NAME, vertexShaderOptions, false, input, output);
-        // TODO: cache indexArray if no indices passed in.
-        var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(params.count || positions.length);
-        var count = params.count ? params.count : indices.length;
+        var count = params.count ? params.count : (params.indices ? params.indices.length : positions.length);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
-        if (this._indexedLinesIndexBuffer === undefined) {
-            // Have to use float32 array bc int is not supported as a vertex attribute type.
-            var floatArray = void 0;
-            if (indices.constructor !== Float32Array) {
+        // Only pass in indices if we are using indexed pts or GLSL1, otherwise we get this for free from gl_VertexID.
+        if (params.indices || glslVersion === constants_1.GLSL1) {
+            // TODO: cache indexArray if no indices passed in.
+            var indices = params.indices ? params.indices : (0, utils_1.initSequentialFloatArray)(count);
+            if (this._indexedLinesIndexBuffer === undefined) {
                 // Have to use float32 array bc int is not supported as a vertex attribute type.
-                floatArray = new Float32Array(indices.length);
-                for (var i = 0; i < count; i++) {
-                    floatArray[i] = indices[i];
+                var floatArray = void 0;
+                if (indices.constructor !== Float32Array) {
+                    // Have to use float32 array bc int is not supported as a vertex attribute type.
+                    floatArray = new Float32Array(indices.length);
+                    for (var i = 0; i < count; i++) {
+                        floatArray[i] = indices[i];
+                    }
+                    console.warn("Converting indices array of type ".concat(indices.constructor, " to Float32Array in GPUComposer.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required."));
                 }
-                console.warn("Converting indices array of type ".concat(indices.constructor, " to Float32Array in GPUComposer.drawIndexedLines for WebGL compatibility, you may want to use a Float32Array to store this information so the conversion is not required."));
+                else {
+                    floatArray = indices;
+                }
+                this._indexedLinesIndexBuffer = this._initVertexBuffer(floatArray);
             }
             else {
-                floatArray = indices;
+                gl.bindBuffer(gl.ARRAY_BUFFER, this._indexedLinesIndexBuffer);
+                // Copy buffer data.
+                gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
             }
-            this._indexedLinesIndexBuffer = this._initVertexBuffer(floatArray);
+            this._setIndexAttribute(glProgram, program.name);
         }
-        else {
-            gl.bindBuffer(gl.ARRAY_BUFFER, this._indexedLinesIndexBuffer);
-            // Copy buffer data.
-            gl.bufferData(gl.ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-        }
-        this._setIndexAttribute(glProgram, program.name);
         // Draw.
         this._setBlendMode(params.shouldBlendAlpha);
         if (params.indices) {
@@ -3394,7 +3402,7 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsVectorField = function (params) {
-        var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion;
         var data = params.data, output = params.output;
         // Check that field is valid.
         if (data.numComponents !== 2) {
@@ -3425,14 +3433,17 @@ var GPUComposer = /** @class */ (function () {
         var spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)];
         program._setVertexUniform(glProgram, 'u_gpuio_dimensions', spacedDimensions, constants_1.FLOAT);
         var length = 2 * spacedDimensions[0] * spacedDimensions[1];
-        if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
-            // Have to use float32 array bc int is not supported as a vertex attribute type.
-            var indices = (0, utils_1.initSequentialFloatArray)(length);
-            this._vectorFieldIndexArray = indices;
-            this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
+        // We get this for free in GLSL3 with gl_VertexID.
+        if (glslVersion === constants_1.GLSL1) {
+            if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
+                // Have to use float32 array bc int is not supported as a vertex attribute type.
+                var indices = (0, utils_1.initSequentialFloatArray)(length);
+                this._vectorFieldIndexArray = indices;
+                this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer);
+            this._setIndexAttribute(glProgram, program.name);
         }
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer);
-        this._setIndexAttribute(glProgram, program.name);
         // Draw.
         this._setBlendMode(params.shouldBlendAlpha);
         gl.drawArrays(gl.LINES, 0, length);
@@ -6004,7 +6015,7 @@ exports.isBoolean = isBoolean;
 // Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.GPUIO_VS_UV_ATTRIBUTE = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
+exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.GPUIO_VS_UV_ATTRIBUTE = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
 /**
  * Half float data type.
  */
@@ -6232,6 +6243,10 @@ exports.GPUIO_VS_WRAP_X = 'GPUIO_VS_WRAP_X';
  * @private
  */
 exports.GPUIO_VS_WRAP_Y = 'GPUIO_VS_WRAP_Y';
+/**
+ * @private
+ */
+exports.GPUIO_VS_INDEXED_POSITIONS = 'GPUIO_VS_INDEXED_POSITIONS';
 /**
  * @private
  */
@@ -6497,10 +6512,10 @@ function texturePolyfill(shaderSource) {
     if (samplerUniforms.length === 0)
         return { shaderSource: shaderSource, samplerUniforms: samplerUniforms };
     samplerUniforms.forEach(function (name, i) {
-        var regex = new RegExp("\\btexture\\(\\s?".concat(name, "\\b"), 'gs');
+        var regex = new RegExp("\\btexture(2D)?\\(\\s?".concat(name, "\\b"), 'gs');
         shaderSource = shaderSource.replace(regex, "GPUIO_TEXTURE_POLYFILL".concat(i, "(").concat(name));
     });
-    var remainingTextureCalls = shaderSource.match(/\btexture\(/g);
+    var remainingTextureCalls = shaderSource.match(/\btexture(2D)?\(/g);
     if (remainingTextureCalls === null || remainingTextureCalls === void 0 ? void 0 : remainingTextureCalls.length) {
         console.warn('Fragment shader polyfill has missed some calls to texture().', shaderSource);
     }
@@ -6516,7 +6531,7 @@ function texturePolyfill(shaderSource) {
         polyfillDefines["".concat(exports.SAMPLER2D_FILTER).concat(i)] = '0';
     }
     function make_GPUIO_TEXTURE_POLYFILL(i, prefix) {
-        return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_POLYFILL").concat(i, "(const ").concat(prefix, "sampler2D sampler, vec2 uv) {\n\t#if (").concat(exports.SAMPLER2D_FILTER).concat(i, " == 0)\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn texture(sampler, uv);\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#else\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#endif\n}\n");
+        return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_POLYFILL").concat(i, "(const ").concat(prefix, "sampler2D sampler, vec2 uv) {\n\t").concat(prefix === '' ? "#if (".concat(exports.SAMPLER2D_FILTER).concat(i, " == 0)") : '', "\n\t\t#if (").concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn texture(sampler, uv);\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t").concat(prefix === '' ? "#else\n\t\t#if (".concat(exports.SAMPLER2D_WRAP_X).concat(i, " == 0)\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_CLAMP_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#else\n\t\t\t#if (").concat(exports.SAMPLER2D_WRAP_Y).concat(i, " == 0)\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_CLAMP(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#else\n\t\t\t\treturn GPUIO_TEXTURE_BILINEAR_INTERP_WRAP_REPEAT_REPEAT(sampler, uv, ").concat(exports.SAMPLER2D_HALF_PX_UNIFORM).concat(i, ", ").concat(exports.SAMPLER2D_DIMENSIONS_UNIFORM).concat(i, ");\n\t\t\t#endif\n\t\t#endif\n\t#endif") : '', "\n}\n");
     }
     function make_GPUIO_TEXTURE_WRAP(prefix) {
         return "\n".concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\treturn texture(sampler, GPUIO_WRAP_REPEAT_UV(uv));\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_REPEAT_CLAMP(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\tuv.x = GPUIO_WRAP_REPEAT_UV_COORD(uv.x);\n\t// uv.y = GPUIO_WRAP_CLAMP_UV_COORD(uv.y, halfPx.y);\n\treturn texture(sampler, uv);\n}\n").concat(prefix, "vec4 GPUIO_TEXTURE_WRAP_CLAMP_REPEAT(const ").concat(prefix, "sampler2D sampler, vec2 uv, const vec2 halfPx) {\n\t// uv.x = GPUIO_WRAP_CLAMP_UV_COORD(uv.x, halfPx.x);\n\tuv.y = GPUIO_WRAP_REPEAT_UV_COORD(uv.y);\n\treturn texture(sampler, uv);\n}\n");
@@ -7601,21 +7616,21 @@ module.exports = "in vec2 a_gpuio_position;\n#ifdef GPUIO_VS_UV_ATTRIBUTE\nin ve
 /***/ 143:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}in float a_gpuio_index;uniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out vec2 v_lineWrapping;out float v_index;void main(){vec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_uv.x<0.){v_uv.x+=1.;v_lineWrapping.x=1.;}else if(v_uv.x>1.){v_uv.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_uv.y<0.){v_uv.y+=1.;v_lineWrapping.y=1.;}else if(v_uv.y>1.){v_uv.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_uv*2.-1.;v_index=a_gpuio_index;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out vec2 v_lineWrapping;out int v_index;void main(){\n#if (__VERSION__ == 300 || GPUIO_VS_INDEXED_POSITIONS == 1)\nvec2 positionUV=uvFromIndex(gl_VertexID,u_gpuio_positionsDimensions);v_index=gl_VertexID;\n#else\nvec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);v_index=int(a_gpuio_index);\n#endif\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\nv_lineWrapping=vec2(0.);\n#ifdef GPUIO_VS_WRAP_X\nif(v_uv.x<0.){v_uv.x+=1.;v_lineWrapping.x=1.;}else if(v_uv.x>1.){v_uv.x-=1.;v_lineWrapping.x=1.;}\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nif(v_uv.y<0.){v_uv.y+=1.;v_lineWrapping.y=1.;}else if(v_uv.y>1.){v_uv.y-=1.;v_lineWrapping.y=1.;}\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 767:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}in float a_gpuio_index;uniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;uniform float u_gpuio_pointSize;out vec2 v_uv;flat out int v_index;void main(){vec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\n#ifdef GPUIO_VS_WRAP_X\nv_uv.x=fract(v_uv.x+ceil(abs(v_uv.x)));\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nv_uv.y=fract(v_uv.y+ceil(abs(v_uv.y)));\n#endif\nvec2 position=v_uv*2.-1.;v_index=int(a_gpuio_index);gl_PointSize=u_gpuio_pointSize;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_positions;uniform vec2 u_gpuio_positionsDimensions;uniform vec2 u_gpuio_scale;uniform float u_gpuio_pointSize;out vec2 v_uv;flat out int v_index;void main(){\n#if (__VERSION__ == 300)\nvec2 positionUV=uvFromIndex(gl_VertexID,u_gpuio_positionsDimensions);v_index=gl_VertexID;\n#else\nvec2 positionUV=uvFromIndex(a_gpuio_index,u_gpuio_positionsDimensions);v_index=int(a_gpuio_index);\n#endif\n#ifdef GPUIO_VS_POSITION_W_ACCUM\nvec4 positionData=texture(u_gpuio_positions,positionUV);v_uv=(positionData.rg+positionData.ba)*u_gpuio_scale;\n#else\nv_uv=texture(u_gpuio_positions,positionUV).rg*u_gpuio_scale;\n#endif\n#ifdef GPUIO_VS_WRAP_X\nv_uv.x=fract(v_uv.x+ceil(abs(v_uv.x)));\n#endif\n#ifdef GPUIO_VS_WRAP_Y\nv_uv.y=fract(v_uv.y+ceil(abs(v_uv.y)));\n#endif\nvec2 position=v_uv*2.-1.;gl_PointSize=u_gpuio_pointSize;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
 /***/ 760:
 /***/ ((module) => {
 
-module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}in float a_gpuio_index;uniform sampler2D u_gpuio_vectors;uniform vec2 u_gpuio_dimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out float v_index;void main(){const float index=floor((a_gpuio_index+0.5)/2.);vec2 positionUV=uvFromIndex(index,u_gpuio_dimensions);v_uv+=step(0.,modI(a_gpuio_index,2.))*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;vec2 position=v_uv*2.-1.;v_index=a_gpuio_index;gl_Position=vec4(position,0,1);}"
+module.exports = "float modI(float a,float b){float m=a-floor((a+0.5)/b)*b;return floor(m+0.5);}vec2 uvFromIndex(const float index,const vec2 dimensions){return vec2(modI(index,dimensions.x),floor(floor(index+0.5)/dimensions.x))/dimensions;}vec2 uvFromIndex(const int index,const vec2 dimensions){int width=int(dimensions.x);int y=index/width;return vec2(index-y*width,y)/dimensions;}\n#if (__VERSION__ != 300)\nin float a_gpuio_index;\n#endif\nuniform sampler2D u_gpuio_vectors;uniform vec2 u_gpuio_dimensions;uniform vec2 u_gpuio_scale;out vec2 v_uv;out int v_index;void main(){\n#if (__VERSION__ == 300)\nconst int index=gl_VertexID/2;v_index=gl_VertexID;\n#else\nconst float index=floor((a_gpuio_index+0.5)/2.);v_index=int(a_gpuio_index);\n#endif\nv_uv=uvFromIndex(index,u_gpuio_dimensions);\n#if (__VERSION__ == 300)\nv_uv+=float(gl_VertexID-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#else\nv_uv+=(a_gpuio_index-2*index)*texture(u_gpuio_vectors,v_uv).xy*u_gpuio_scale;\n#endif\nvec2 position=v_uv*2.-1.;gl_Position=vec4(position,0,1);}"
 
 /***/ }),
 
