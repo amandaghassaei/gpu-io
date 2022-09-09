@@ -21,10 +21,8 @@
 
 - [initWithThreeRenderer](GPUComposer.md#initwiththreerenderer)
 - [isWebGL2](GPUComposer.md#iswebgl2)
-- [\_getQuadPositionsBuffer](GPUComposer.md#_getquadpositionsbuffer)
 - [initTexture](GPUComposer.md#inittexture)
 - [resize](GPUComposer.md#resize)
-- [\_setPositionAttribute](GPUComposer.md#_setpositionattribute)
 - [step](GPUComposer.md#step)
 - [stepBoundary](GPUComposer.md#stepboundary)
 - [stepNonBoundary](GPUComposer.md#stepnonboundary)
@@ -48,11 +46,15 @@
 
 • `Readonly` **canvas**: `HTMLCanvasElement`
 
+The canvas element associated with this GPUcomposer.
+
 ___
 
 ### gl
 
 • `Readonly` **gl**: `WebGLRenderingContext` \| `WebGL2RenderingContext`
+
+The WebGL context associated with this GPUcomposer.
 
 ___
 
@@ -60,11 +62,15 @@ ___
 
 • `Readonly` **glslVersion**: [`GLSLVersion`](../README.md#glslversion)
 
+The GLSL version being used by the GPUComposer.
+
 ___
 
 ### intPrecision
 
 • `Readonly` **intPrecision**: [`GLSLPrecision`](../README.md#glslprecision)
+
+The global integer precision to apply to shader programs.
 
 ___
 
@@ -72,11 +78,15 @@ ___
 
 • `Readonly` **floatPrecision**: [`GLSLPrecision`](../README.md#glslprecision)
 
+The global float precision to apply to shader programs.
+
 ___
 
 ### verboseLogging
 
 • **verboseLogging**: `boolean` = `false`
+
+Flag to set GPUcomposer for verbose logging, defaults to false.
 
 ## Constructors
 
@@ -84,21 +94,23 @@ ___
 
 • **new GPUComposer**(`params`)
 
+Create a GPUComposer.
+
 #### Parameters
 
-| Name | Type |
-| :------ | :------ |
-| `params` | `Object` |
-| `params.canvas` | `HTMLCanvasElement` |
-| `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` |
-| `params.contextID?` | `string` |
-| `params.contextOptions?` | `Object` |
-| `params.contextOptions.antialias?` | `boolean` |
-| `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) |
-| `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) |
-| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) |
-| `params.verboseLogging?` | `boolean` |
-| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) |
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | GPUComposer parameters. |
+| `params.canvas` | `HTMLCanvasElement` | HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself). |
+| `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` | Pass in a WebGL context for the GPUcomposer to user. |
+| `params.contextID?` | `string` | Set the contextID to use when initing a new WebGL context. |
+| `params.contextOptions?` | `Object` | Options to pass to WebGL context on initialization. |
+| `params.contextOptions.antialias?` | `boolean` | - |
+| `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
+| `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
+| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | - |
+| `params.verboseLogging?` | `boolean` | Set the verbosity of GPUComposer logging (defaults to false). |
+| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) | Custom error handler, defaults to throwing an Error with message. |
 
 ## Methods
 
@@ -125,19 +137,11 @@ ___
 
 ▸ **isWebGL2**(): `boolean`
 
+Test whether this GPUComposer is using WebGL2 (may depend on browser support).
+
 #### Returns
 
 `boolean`
-
-___
-
-### \_getQuadPositionsBuffer
-
-▸ **_getQuadPositionsBuffer**(): `WebGLBuffer`
-
-#### Returns
-
-`WebGLBuffer`
 
 ___
 
@@ -169,29 +173,14 @@ ___
 
 ▸ **resize**(`width`, `height`): `void`
 
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `width` | `number` |
-| `height` | `number` |
-
-#### Returns
-
-`void`
-
-___
-
-### \_setPositionAttribute
-
-▸ **_setPositionAttribute**(`program`, `programName`): `void`
+Notify the GPUComposer that the canvas should change size.
 
 #### Parameters
 
-| Name | Type |
-| :------ | :------ |
-| `program` | `WebGLProgram` |
-| `programName` | `string` |
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `width` | `number` | The width of the canvas element. |
+| `height` | `number` | The height of the canvas element. |
 
 #### Returns
 
@@ -203,13 +192,15 @@ ___
 
 ▸ **step**(`params`): `void`
 
+Step GPUProgram entire fullscreen quad.
+
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
 | `params` | `Object` |
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.shouldBlendAlpha?` | `boolean` |
 
@@ -223,13 +214,15 @@ ___
 
 ▸ **stepBoundary**(`params`): `void`
 
+Step GPUProgram only for a 1px strip of pixels along the boundary.
+
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
 | `params` | `Object` |
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.singleEdge?` | ``"LEFT"`` \| ``"RIGHT"`` \| ``"TOP"`` \| ``"BOTTOM"`` |
 | `params.shouldBlendAlpha?` | `boolean` |
@@ -244,13 +237,15 @@ ___
 
 ▸ **stepNonBoundary**(`params`): `void`
 
+Step GPUProgram for all but a 1px strip of pixels along the boundary.
+
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
 | `params` | `Object` |
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.shouldBlendAlpha?` | `boolean` |
 
@@ -264,6 +259,9 @@ ___
 
 ▸ **stepCircle**(`params`): `void`
 
+Step GPUProgram inside a circular spot.
+This is useful for touch interactions.
+
 #### Parameters
 
 | Name | Type |
@@ -272,7 +270,7 @@ ___
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
 | `params.position` | [`number`, `number`] |
 | `params.diameter` | `number` |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.numSegments?` | `number` |
 | `params.shouldBlendAlpha?` | `boolean` |
@@ -287,6 +285,9 @@ ___
 
 ▸ **stepSegment**(`params`): `void`
 
+Step GPUProgram inside a line segment (rounded end caps available).
+This is useful for touch interactions during pointermove.
+
 #### Parameters
 
 | Name | Type |
@@ -296,7 +297,7 @@ ___
 | `params.position1` | [`number`, `number`] |
 | `params.position2` | [`number`, `number`] |
 | `params.thickness` | `number` |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.endCaps?` | `boolean` |
 | `params.numCapSegments?` | `number` |
@@ -320,7 +321,7 @@ ___
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
 | `params.positions` | [`number`, `number`][] |
 | `params.thickness` | `number` |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.closeLoop?` | `boolean` |
 | `params.includeUVs?` | `boolean` |
@@ -346,7 +347,7 @@ ___
 | `params.positions` | `Float32Array` |
 | `params.normals?` | `Float32Array` |
 | `params.uvs?` | `Float32Array` |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.count?` | `number` |
 | `params.shouldBlendAlpha?` | `boolean` |
@@ -371,7 +372,7 @@ ___
 | `params.indices?` | `Int16Array` \| `Uint16Array` \| `Int32Array` \| `Uint32Array` |
 | `params.normals?` | `Float32Array` |
 | `params.uvs?` | `Float32Array` |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.count?` | `number` |
 | `params.closeLoop?` | `boolean` |
@@ -394,7 +395,7 @@ ___
 | `params` | `Object` |
 | `params.positions` | [`GPULayer`](GPULayer.md) |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.pointSize?` | `number` |
 | `params.count?` | `number` |
@@ -421,7 +422,7 @@ ___
 | `params.positions` | [`GPULayer`](GPULayer.md) |
 | `params.indices?` | `Int16Array` \| `Uint16Array` \| `Int32Array` \| `Uint32Array` \| `Float32Array` |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.count?` | `number` |
 | `params.color?` | [`number`, `number`, `number`] |
@@ -447,7 +448,7 @@ ___
 | `params` | `Object` |
 | `params.data` | [`GPULayer`](GPULayer.md) |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.vectorSpacing?` | `number` |
 | `params.vectorScale?` | `number` |
@@ -470,7 +471,7 @@ ___
 | :------ | :------ |
 | `params` | `Object` |
 | `params.data` | [`GPULayer`](GPULayer.md) |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.scale?` | `number` |
 | `params.color?` | [`number`, `number`, `number`] |
@@ -485,6 +486,8 @@ ___
 ### resetThreeState
 
 ▸ **resetThreeState**(): `void`
+
+If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
 
 #### Returns
 
@@ -518,6 +521,9 @@ ___
 
 ▸ **tick**(): { `fps`: `number` = 0; `milliseconds`: `number` = 0; `numTicks`: `undefined`  } \| { `milliseconds`: `undefined` = 0; `fps`: `number` ; `numTicks`: `number`  }
 
+Call tick() from your render loop to measure the FPS of your application.
+Internally, this does some low pass filtering to give consistent results.
+
 #### Returns
 
 { `fps`: `number` = 0; `milliseconds`: `number` = 0; `numTicks`: `undefined`  } \| { `milliseconds`: `undefined` = 0; `fps`: `number` ; `numTicks`: `number`  }
@@ -527,6 +533,8 @@ ___
 ### dispose
 
 ▸ **dispose**(): `void`
+
+Deallocate GPUComposer instance and associated WebGL properties.
 
 #### Returns
 

@@ -183,25 +183,25 @@ ___
 
 ### currentState
 
-• `get` **currentState**(): `GPULayerState`
+• `get` **currentState**(): [`GPULayerState`](../README.md#gpulayerstate)
 
 Get the current state as a GPULayerState object.
 
 #### Returns
 
-`GPULayerState`
+[`GPULayerState`](../README.md#gpulayerstate)
 
 ___
 
 ### lastState
 
-• `get` **lastState**(): `GPULayerState`
+• `get` **lastState**(): [`GPULayerState`](../README.md#gpulayerstate)
 
 Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
 
 #### Returns
 
-`GPULayerState`
+[`GPULayerState`](../README.md#gpulayerstate)
 
 ___
 
@@ -259,7 +259,7 @@ ___
 
 ### getStateAtIndex
 
-▸ **getStateAtIndex**(`index`): `GPULayerState`
+▸ **getStateAtIndex**(`index`): [`GPULayerState`](../README.md#gpulayerstate)
 
 Get the state at a specified index as a GPULayerState object.
 
@@ -271,7 +271,7 @@ Get the state at a specified index as a GPULayerState object.
 
 #### Returns
 
-`GPULayerState`
+[`GPULayerState`](../README.md#gpulayerstate)
 
 ___
 

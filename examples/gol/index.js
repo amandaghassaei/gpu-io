@@ -120,6 +120,7 @@ function main({ gui, contextID, glslVersion}) {
 		],
 	});
 	const golRender = renderAmplitudeGrayscaleProgram({
+		name: 'render',
 		composer,
 		type: state.type,
 		numComponents: state.numComponents,
@@ -153,6 +154,7 @@ function main({ gui, contextID, glslVersion}) {
 	});
 	// During touch, copy data from noise over to state.
 	const touch = copyProgram({
+		name: 'touch',
 		composer,
 		type: noise.type,
 		precision: PRECISION_LOW_P,
@@ -177,11 +179,11 @@ function main({ gui, contextID, glslVersion}) {
 	function onPointerStart(e) {
 		activeTouches[e.pointerId] = true;
 	}
-	window.addEventListener('pointermove', onPointerMove);
-	window.addEventListener('pointerdown', onPointerStart);
-	window.addEventListener('pointerup', onPointerStop);
-	window.addEventListener('pointerout', onPointerStop);
-	window.addEventListener('pointercancel', onPointerStop);
+	canvas.addEventListener('pointermove', onPointerMove);
+	canvas.addEventListener('pointerdown', onPointerStart);
+	canvas.addEventListener('pointerup', onPointerStop);
+	canvas.addEventListener('pointerout', onPointerStop);
+	canvas.addEventListener('pointercancel', onPointerStop);
 
 
 	function changeBit(key, bit, index) {
@@ -291,11 +293,11 @@ function main({ gui, contextID, glslVersion}) {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
 		window.removeEventListener('resize', onResize);
-		window.removeEventListener('pointermove', onPointerMove);
-		window.removeEventListener('pointerdown', onPointerStart);
-		window.removeEventListener('pointerup', onPointerStop);
-		window.removeEventListener('pointerout', onPointerStop);
-		window.removeEventListener('pointercancel', onPointerStop);
+		canvas.removeEventListener('pointermove', onPointerMove);
+		canvas.removeEventListener('pointerdown', onPointerStart);
+		canvas.removeEventListener('pointerup', onPointerStop);
+		canvas.removeEventListener('pointerout', onPointerStop);
+		canvas.removeEventListener('pointercancel', onPointerStop);
 		golRules.dispose();
 		golRender.dispose();
 		touch.dispose();

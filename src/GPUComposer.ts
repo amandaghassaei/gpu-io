@@ -45,6 +45,7 @@ import {
 	GPUIO_VS_WRAP_Y,
 	MAX_FLOAT_INT,
 	GPUIO_VS_INDEXED_POSITIONS,
+	EXPERIMENTAL_WEBGL2,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -60,6 +61,7 @@ import {
 	initSequentialFloatArray,
 	preprocessVertexShader,
 	compileShader,
+	indexOfLayerInArray,
 } from './utils';
 import {
 	isArray,
@@ -78,20 +80,37 @@ import { uniformTypeForType } from './conversions';
 import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
 
 export class GPUComposer {
+	/**
+	 * The canvas element associated with this GPUcomposer.
+	 */
 	readonly canvas: HTMLCanvasElement;
+	/**
+	 * The WebGL context associated with this GPUcomposer.
+	 */
 	readonly gl!: WebGLRenderingContext | WebGL2RenderingContext;
+	/**
+	 * The GLSL version being used by the GPUComposer.
+	 */
 	readonly glslVersion!: GLSLVersion;
+	/**
+	 * The global integer precision to apply to shader programs.
+	 */
 	readonly intPrecision!: GLSLPrecision;
+	/**
+	 * The global float precision to apply to shader programs.
+	 */
 	readonly floatPrecision!: GLSLPrecision;
-	// These width and height are the current canvas at full res.
+	/**
+	 * Store the width and height of the current canvas at full res.
+	 */
 	private _width!: number;
 	private _height!: number;
 
-	private _errorThrown = false;
 	/**
 	 * @private
 	 */
 	readonly _errorCallback: ErrorCallback;
+	private _errorThrown = false;
 
 	// Save threejs renderer if passed in.
 	/**
@@ -100,17 +119,22 @@ export class GPUComposer {
 	readonly _renderer?: WebGLRenderer;
 	private readonly _maxNumTextures!: number;
 	
-	// Precomputed buffers (inited as needed).
+	/**
+	 * Precomputed vertex buffers (inited as needed).
+	 */
 	private _quadPositionsBuffer?: WebGLBuffer;
 	private _boundaryPositionsBuffer?: WebGLBuffer;
-	// Store multiple circle positions buffers for various num segments, use numSegments as key.
+	// Cache multiple circle positions buffers for various num segments, use numSegments as key.
 	private _circlePositionsBuffer: { [key: number]: WebGLBuffer } = {};
-
 	private _pointIndexArray?: Float32Array;
 	private _pointIndexBuffer?: WebGLBuffer;
 	private _vectorFieldIndexArray?: Float32Array;
 	private _vectorFieldIndexBuffer?: WebGLBuffer;
 	private _indexedLinesIndexBuffer?: WebGLBuffer;
+	/**
+	 * Cache vertex shader attribute locations.
+	 */
+	private _vertexAttributeLocations: {[key: string]: WeakMap<WebGLProgram, number>} = {};
 
 	// Keep track of all GL extensions that have been loaded.
 	/**
@@ -118,7 +142,10 @@ export class GPUComposer {
 	 */
 	readonly _extensions: { [key: string]: any } = {};
 
-	// Programs for copying data (these are needed for rendering partial screen geometries).
+	/**
+	 * Cache some generic programs for copying data.
+	 * These are needed for rendering partial screen geometries.
+	 */
 	private readonly _copyPrograms: {
 		[FLOAT]?: GPUProgram,
 		[INT]?: GPUProgram,
@@ -126,6 +153,10 @@ export class GPUComposer {
 	} = {};
 
 	// Other util programs.
+	/**
+	 * Cache some generic programs for setting value from uniform.
+	 * These are used by GPULayer.clear(), among other things
+	 */
 	private readonly _setValuePrograms: {
 		[FLOAT]?: GPUProgram,
 		[INT]?: GPUProgram,
@@ -168,17 +199,36 @@ export class GPUComposer {
 		},
 	};
 
+	/**
+	 * Flag to set GPUcomposer for verbose logging, defaults to false.
+	 */
 	verboseLogging = false;
 
+	/**
+	 * Variables for tracking fps of GPUComposer with tick().
+	 */
 	private _lastTickTime?: number;
 	private _lastTickFPS?: number
 	private _numTicks = 0;
 
+	/**
+     * Create a GPUComposer.
+     * @param params - GPUComposer parameters.
+	 * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
+	 * @param params.context - Pass in a WebGL context for the GPUcomposer to user.
+	 * @param params.contextID - Set the contextID to use when initing a new WebGL context.
+	 * @param params.contextOptions - Options to pass to WebGL context on initialization.
+	 * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
+	 * @param params.intPrecision - Set the global integer precision in shader programs.
+	 * @param params.intPrecision - Set the global float precision in shader programs.
+	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+     */
 	constructor(
 		params: {
 			canvas: HTMLCanvasElement,
 			context?: WebGLRenderingContext | WebGL2RenderingContext,
-			contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | string,
+			contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | typeof EXPERIMENTAL_WEBGL2 | string,
 			contextOptions?: {
 				antialias?: boolean,
 				[key: string]: any,
@@ -238,6 +288,7 @@ export class GPUComposer {
 			if (!gl) {
 				const _gl = canvas.getContext(WEBGL2, params.contextOptions)  as WebGL2RenderingContext | null
 					|| canvas.getContext(WEBGL1, params.contextOptions)  as WebGLRenderingContext | null
+					|| canvas.getContext(EXPERIMENTAL_WEBGL2, params.contextOptions)  as WebGLRenderingContext | null
 					|| canvas.getContext(EXPERIMENTAL_WEBGL, params.contextOptions)  as WebGLRenderingContext | null;
 				if (_gl) {
 					gl = _gl;
@@ -316,12 +367,17 @@ export class GPUComposer {
 		return composer;
 	}
 
+	/**
+	 * Test whether this GPUComposer is using WebGL2 (may depend on browser support).
+	 * @returns 
+	 */
 	isWebGL2() {
 		return isWebGL2(this.gl);
 	}
 
 	/**
-	 * 
+	 * Gets (and caches) generic set value programs for several input types.
+	 * Used for GPULayer.clear(), among other things.
 	 * @private
 	 */
 	_setValueProgramForType(type: GPULayerType) {
@@ -332,7 +388,11 @@ export class GPUComposer {
 		}
 		return _setValuePrograms[key]!;
 	}
-
+	/**
+	 * Gets (and caches) generic copy programs for several input types.
+	 * Used for partial rendering to output, among other things.
+	 * @private
+	 */
 	private _copyProgramForType(type: GPULayerType) {
 		const { _copyPrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
@@ -341,14 +401,20 @@ export class GPUComposer {
 		}
 		return _copyPrograms[key]!;
 	}
-
+	/**
+	 * Gets (and caches) a generic color program for wrapped line segment rendering.
+	 * @private
+	 */
 	private _getWrappedLineColorProgram() {
 		if (this._wrappedLineColorProgram === undefined) {
 			this._wrappedLineColorProgram = wrappedLineColorProgram({ composer: this });
 		}
 		return this._wrappedLineColorProgram;
 	}
-
+	/**
+	 * Gets (and caches) generic programs for rending vector magnitudes for several input types.
+	 * @private
+	 */
 	private _vectorMagnitudeProgramForType(type: GPULayerType) {
 		const { _vectorMagnitudePrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
@@ -358,39 +424,10 @@ export class GPUComposer {
 		return _vectorMagnitudePrograms[key]!;
 	}
 
-	_getQuadPositionsBuffer() {
-		if (this._quadPositionsBuffer === undefined) {
-			const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
-			this._quadPositionsBuffer = this._initVertexBuffer(fsQuadPositions)!;
-		}
-		return this._quadPositionsBuffer!;
-	}
-
-	private _getBoundaryPositionsBuffer() {
-		if (this._boundaryPositionsBuffer === undefined) {
-			const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
-			this._boundaryPositionsBuffer = this._initVertexBuffer(boundaryPositions)!;
-		}
-		return this._boundaryPositionsBuffer!;
-	}
-
-	private _getCirclePositionsBuffer(numSegments: number) {
-		const { _circlePositionsBuffer } = this;
-		if (_circlePositionsBuffer[numSegments] == undefined) {
-			const unitCirclePoints = [0, 0];
-			for (let i = 0; i <= numSegments; i++) { // TODO: should this be just less than?
-				unitCirclePoints.push(
-					Math.cos(2 * Math.PI * i / numSegments),
-					Math.sin(2 * Math.PI * i / numSegments),
-				);
-			}
-			const circlePositions = new Float32Array(unitCirclePoints);
-			const buffer = this._initVertexBuffer(circlePositions)!;
-			_circlePositionsBuffer[numSegments] = buffer;
-		}
-		return _circlePositionsBuffer[numSegments];
-	}
-
+	/**
+	 * Init a buffer for vertex shader attributes.
+	 * @private
+	 */
 	private _initVertexBuffer(
 		data: Float32Array,
 	) {
@@ -404,6 +441,48 @@ export class GPUComposer {
 		// Add buffer data.
 		gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 		return buffer;
+	}
+	/**
+	 * Get (and cache) positions buffer for rendering full screen quads.
+	 * @private
+	 */
+	_getQuadPositionsBuffer() {
+		if (this._quadPositionsBuffer === undefined) {
+			const fsQuadPositions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
+			this._quadPositionsBuffer = this._initVertexBuffer(fsQuadPositions)!;
+		}
+		return this._quadPositionsBuffer!;
+	}
+	/**
+	 * Get (and cache) positions buffer for rendering lines on boundary.
+	 * @private
+	 */
+	private _getBoundaryPositionsBuffer() {
+		if (this._boundaryPositionsBuffer === undefined) {
+			const boundaryPositions = new Float32Array([ -1, -1, 1, -1, 1, 1, -1, 1, -1, -1 ]);
+			this._boundaryPositionsBuffer = this._initVertexBuffer(boundaryPositions)!;
+		}
+		return this._boundaryPositionsBuffer!;
+	}
+	/**
+	 * Get (and cache) positions buffer for rendering circle with various numbers of segments.
+	 * @private
+	 */
+	private _getCirclePositionsBuffer(numSegments: number) {
+		const { _circlePositionsBuffer } = this;
+		if (_circlePositionsBuffer[numSegments] == undefined) {
+			const unitCirclePoints = [0, 0];
+			for (let i = 0; i <= numSegments; i++) { // TODO: should this be strictly less than?
+				unitCirclePoints.push(
+					Math.cos(2 * Math.PI * i / numSegments),
+					Math.sin(2 * Math.PI * i / numSegments),
+				);
+			}
+			const circlePositions = new Float32Array(unitCirclePoints);
+			const buffer = this._initVertexBuffer(circlePositions)!;
+			_circlePositionsBuffer[numSegments] = buffer;
+		}
+		return _circlePositionsBuffer[numSegments];
 	}
 
 	/**
@@ -454,10 +533,10 @@ export class GPUComposer {
 
 		// TODO: Increment clone's buffer index until it is identical to the original layer.
 
-
 		return clone;
 	}
 
+	// TODO: move this to GPULayer.
 	initTexture(
 		params: {
 			name: string,
@@ -572,7 +651,8 @@ export class GPUComposer {
 	}
 
 	/**
-	 * 
+	 * Gets (and caches) vertex shaders based on shader source code and compile time constants.
+	 * Tries to minimize the number of new vertex shaders that must be compiled.
 	 * @private
 	 */
 	 _getVertexShader(
@@ -619,6 +699,11 @@ export class GPUComposer {
 		return compiledShaders[vertexID];
 	}
 
+	/**
+	 * Notify the GPUComposer that the canvas should change size.
+	 * @param width - The width of the canvas element.
+	 * @param height - The height of the canvas element.
+	 */
 	resize(width: number, height: number) {
 		const { canvas } = this;
 		// Set correct canvas pixel size.
@@ -630,6 +715,10 @@ export class GPUComposer {
 		this._height = height;
 	};
 
+	/**
+	 * Set inputs and outputs in preparation for draw call.
+	 * @private
+	 */
 	private _drawSetup(
 		gpuProgram: GPUProgram,
 		programName: PROGRAM_NAME_INTERNAL,
@@ -676,7 +765,10 @@ export class GPUComposer {
 		gpuProgram._setInternalFragmentUniforms(program, inputTextures);
 		return program;
 	}
-
+	/**
+	 * Set blend mode for draw call.
+	 * @private
+	 */
 	private _setBlendMode(shouldBlendAlpha?: boolean) {
 		const { gl } = this;
 		if (shouldBlendAlpha) {
@@ -684,11 +776,10 @@ export class GPUComposer {
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
 	}
-
-	private _indexOfLayerInArray(layer: GPULayer, array: (GPULayer | GPULayerState)[]) {
-		return array.findIndex(item => item === layer || (item as GPULayerState).layer === layer);
-	}
-
+	/**
+	 * Add GPULayer to inputs if needed.
+	 * @private
+	 */
 	private _addLayerToInputs(
 		layer: GPULayer,
 		input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
@@ -700,7 +791,7 @@ export class GPUComposer {
 		}
 		if (isArray(input)) {
 			// Return input with layer added if needed.
-			if (this._indexOfLayerInArray(layer, (input as (GPULayer | GPULayerState)[])) >= 0) {
+			if (indexOfLayerInArray(layer, (input as (GPULayer | GPULayerState)[])) >= 0) {
 				return input  as (GPULayer | GPULayerState)[];
 			}
 			return [...(input as (GPULayer | GPULayerState)[]), layer];
@@ -710,7 +801,11 @@ export class GPUComposer {
 		}
 		return [(input as GPULayer | GPULayerState), layer];
 	}
-
+	/**
+	 * Copy data from input to output.
+	 * This is used when rendering to part of output state (not fullscreen quad).
+	 * @private
+	 */
 	private _passThroughLayerDataFromInputToOutput(state: GPULayer) {
 		// TODO: figure out the fastest way to copy a texture.
 		const copyProgram = this._copyProgramForType(state._internalType);
@@ -720,7 +815,10 @@ export class GPUComposer {
 			output: state,
 		});
 	}
-
+	/**
+	 * Set output for draw command.
+	 * @private
+	 */
 	private _setOutputLayer(
 		fullscreenRender: boolean,
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
@@ -739,7 +837,7 @@ export class GPUComposer {
 
 		// Check if output is same as one of input layers.
 		if (input && ((input === output || (input as GPULayerState).layer === output) ||
-			(isArray(input) && this._indexOfLayerInArray(output, input as (GPULayer | GPULayerState)[]) >= 0))) {
+			(isArray(input) && indexOfLayerInArray(output, input as (GPULayer | GPULayerState)[]) >= 0))) {
 			if (output.numBuffers === 1) {
 				throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
 			}
@@ -771,15 +869,30 @@ export class GPUComposer {
 		const { width, height } = output;
 		gl.viewport(0, 0, width, height);
 	};
-
+	/**
+	 * Set vertex shader attribute.
+	 * @private
+	 */
 	private _setVertexAttribute(program: WebGLProgram, name: string, size: number, programName: string) {
-		const { gl } = this;
+		const { gl, _vertexAttributeLocations } = this;
 		// Point attribute to the currently bound VBO.
-		// TODO: cache attribute location.
-		const location = gl.getAttribLocation(program, name);
-		if (location < 0) {
-			throw new Error(`Unable to find vertex attribute "${name}" in program "${programName}".`);
+		let locations = _vertexAttributeLocations[name];
+		let location;
+		if (!locations) {
+			locations = new WeakMap<WebGLProgram, number>();
+			_vertexAttributeLocations[name] = locations;
+		} else {
+			location = locations.get(program);
 		}
+		if (location === undefined) {
+			location = gl.getAttribLocation(program, name);
+			if (location < 0) {
+				throw new Error(`Unable to find vertex attribute "${name}" in program "${programName}".`);
+			}
+			// Cache attribute location.
+			locations.set(program, location);
+		}
+
 		// INT types not supported for attributes.
 		// Use FLOAT rather than SHORT bc FLOAT covers more INT range.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
@@ -787,20 +900,32 @@ export class GPUComposer {
 		// Enable the attribute.
 		gl.enableVertexAttribArray(location);
 	}
-
+	/**
+	 * Set vertex shader position attribute.
+	 * @private
+	 */
 	_setPositionAttribute(program: WebGLProgram, programName: string) {
 		this._setVertexAttribute(program, 'a_gpuio_position', 2, programName);
 	}
-
+	/**
+	 * Set vertex shader index attribute.
+	 * @private
+	 */
 	private _setIndexAttribute(program: WebGLProgram, programName: string) {
 		this._setVertexAttribute(program, 'a_gpuio_index', 1, programName);
 	}
-
+	/**
+	 * Set vertex shader uv attribute.
+	 * @private
+	 */
 	private _setUVAttribute(program: WebGLProgram, programName: string) {
 		this._setVertexAttribute(program, 'a_gpuio_uv', 2, programName);
 	}
 
-	// Step for entire fullscreen quad.
+	/**
+	 * Step GPUProgram entire fullscreen quad.
+	 * @param params 
+	 */
 	step(
 		params: {
 			program: GPUProgram,
@@ -827,7 +952,10 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	// Step program only for a strip of px along the boundary.
+	/**
+	 * Step GPUProgram only for a 1px strip of pixels along the boundary.
+	 * @param params 
+	 */
 	stepBoundary(
 		params: {
 			program: GPUProgram,
@@ -878,7 +1006,10 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	// Step program for all but a strip of px along the boundary.
+	/**
+	 * Step GPUProgram for all but a 1px strip of pixels along the boundary.
+	 * @param params 
+	 */
 	stepNonBoundary(
 		params: {
 			program: GPUProgram,
@@ -908,7 +1039,11 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	// Step program inside a circular spot.
+	/**
+	 * Step GPUProgram inside a circular spot.
+	 * This is useful for touch interactions.
+	 * @param params 
+	 */
 	stepCircle(
 		params: {
 			program: GPUProgram,
@@ -942,7 +1077,11 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
-	// Step program only for a thickened line segment (rounded end caps available).
+	/**
+	 * Step GPUProgram inside a line segment (rounded end caps available).
+	 * This is useful for touch interactions during pointermove.
+	 * @param params 
+	 */
 	stepSegment(
 		params: {
 			program: GPUProgram,
@@ -1359,7 +1498,7 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, LAYER_POINTS_PROGRAM_NAME, vertexShaderOptions, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_positions', indexOfLayerInArray(positions, input), INT);
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
@@ -1435,7 +1574,7 @@ export class GPUComposer {
 		const count = params.count ? params.count : (params.indices ? params.indices.length : positions.length);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_positions', indexOfLayerInArray(positions, input), INT);
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
 		const positionLayerDimensions = [positions.width, positions.height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
@@ -1518,7 +1657,7 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_gpuio_vectors', this._indexOfLayerInArray(data, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_vectors', indexOfLayerInArray(data, input), INT);
 		// Set default scale.
 		const vectorScale = params.vectorScale || 1;
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [vectorScale / _width, vectorScale / _height], FLOAT);
@@ -1570,7 +1709,7 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, true, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_gpuio_data', this._indexOfLayerInArray(data, input), INT);
+		program._setVertexUniform(glProgram, 'u_gpuio_data', indexOfLayerInArray(data, input), INT);
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1, 1], FLOAT);
 		program._setVertexUniform(glProgram, 'u_gpuio_translation', [0, 0], FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
@@ -1582,6 +1721,9 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
+	/**
+	 * If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
+	 */
 	resetThreeState() {
 		if (!this._renderer) {
 			throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
@@ -1614,11 +1756,11 @@ export class GPUComposer {
 		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
 		canvas.toBlob((blob) => {
 			if (!blob) {
-				console.warn(`Problem saving PNG from GPULayer "${name}", unable to init blob.`);
+				console.warn(`Problem saving PNG, unable to init blob from canvas.`);
 				return;
 			}
 			if (params.dpi) {
-				changeDpiBlob(blob, params.dpi).then((blob: Blob) =>{
+				changeDpiBlob(blob, params.dpi).then((blob: Blob) => {
 					callback(blob, `${filename}.png`);
 				});
 			} else {
@@ -1627,6 +1769,10 @@ export class GPUComposer {
 		}, 'image/png');
 	}
 
+	/**
+	 * Call tick() from your render loop to measure the FPS of your application.
+	 * Internally, this does some low pass filtering to give consistent results.
+	 */
 	tick() {
 		let { _lastTickTime, _lastTickFPS } = this;
 		const currentTime = performance.now();
@@ -1647,16 +1793,27 @@ export class GPUComposer {
 		}
 	}
 	
+	/**
+	 * Deallocate GPUComposer instance and associated WebGL properties.
+	 */
 	dispose() {
 		const {
 			gl, verboseLogging,
 			_vertexShaders,
 			_copyPrograms, _setValuePrograms, _vectorMagnitudePrograms,
+			_vertexAttributeLocations,
 		} = this;
 
 		if (verboseLogging) console.log(`Deallocating GPUComposer.`);
 
 		// TODO: delete buffers.
+
+		// Delete vertex attribute locations.
+		Object.keys(_vertexAttributeLocations).forEach((key) => {
+			delete _vertexAttributeLocations[key];
+		});
+		// @ts-ignore
+		delete this._vertexAttributeLocations;
 
 		// Delete vertex shaders.
 		Object.values(_vertexShaders).forEach(({ compiledShaders })=> {

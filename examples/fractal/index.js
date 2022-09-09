@@ -6,6 +6,7 @@ function main({ gui, contextID, glslVersion}) {
 		GPUProgram,
 		FLOAT,
 		INT,
+		renderAmplitudeGrayscaleProgram,
 	} = GPUIO;
 
 	let aspectRatio = window.innerWidth / window.innerHeight;
@@ -22,8 +23,8 @@ function main({ gui, contextID, glslVersion}) {
 		reset: onResize,
 		savePNG: savePNG,
 	};
+	const MAX_ITERS_MAX = 500;
 	let needsCompute = true;
-	let shouldSavePNG = false;
 
 	const canvas = document.createElement('canvas');
 	document.body.appendChild(canvas);
@@ -54,7 +55,10 @@ function main({ gui, contextID, glslVersion}) {
 				vec2 z = v_uv * u_boundsMax + (1.0 - v_uv) * u_boundsMin;
 				int value = 0;
 				float radius = (max(u_boundsMax.x - u_boundsMin.x, u_boundsMax.y - u_boundsMin.y)) / 2.0;
-				for (int i = 0; i < u_maxIters; i++) {
+				for (int i = 0; i < ${MAX_ITERS_MAX}; i++) {
+					// We can't use u_maxIters as loop length directly in GLSL1.
+					// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Polyfills.md
+					if (i == u_maxIters) break;
 					if (z.x * z.x + z.y * z.y > radius * radius) break;
 					float xTemp = z.x * z.x - z.y * z.y;
 					z.y = 2.0 * z.x * z.y + u_cImaginary;
@@ -91,40 +95,12 @@ function main({ gui, contextID, glslVersion}) {
 			},
 		],
 	});
-	const fractalRender = new GPUProgram(composer, {
-		name: 'fractalRender',
-		fragmentShader: `
-			in vec2 v_uv;
-			uniform sampler2D u_state;
-			out vec4 out_fragColor;
-			void main() {
-				float value = texture(u_state, v_uv).r;
-				out_fragColor = vec4(value, value, value, 1);
-			}`,
-		uniforms: [
-			{
-				name: 'u_state',
-				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
-				type: INT,
-			},
-		],
+	const fractalRender = renderAmplitudeGrayscaleProgram({
+		name: 'render',
+		composer,
+		type: state.type,
+		numComponents: state.numComponents,
 	});
-
-	// Init simple GUI.
-	gui.add(PARAMS, 'cReal', -2, 2, 0.01).onChange((val) => {
-		fractalCompute.setUniform('u_cReal', val);
-		needsCompute = true;
-	});
-	gui.add(PARAMS, 'cImaginary', -2, 2, 0.01).onChange((val) => {
-		fractalCompute.setUniform('u_cImaginary', val);
-		needsCompute = true;
-	});
-	gui.add(PARAMS, 'maxIters', 1, 1000, 1).onChange((val) => {
-		fractalCompute.setUniform('u_maxIters', val);
-		needsCompute = true;
-	});
-	gui.add(PARAMS, 'reset').name('Reset');
-	gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
 	// Render loop.
 	function loop() {
@@ -141,18 +117,27 @@ function main({ gui, contextID, glslVersion}) {
 				program: fractalRender,
 				input: state,
 			});
-
-			// Be sure to call this after we've rendered things.
-			if (shouldSavePNG) {
-				composer.savePNG({ filename: 'julia' });
-				shouldSavePNG = false;
-			}
 		}
 	}
 
+	// Init simple GUI.
+	gui.add(PARAMS, 'cReal', -2, 2, 0.01).onChange((val) => {
+		fractalCompute.setUniform('u_cReal', val);
+		needsCompute = true;
+	});
+	gui.add(PARAMS, 'cImaginary', -2, 2, 0.01).onChange((val) => {
+		fractalCompute.setUniform('u_cImaginary', val);
+		needsCompute = true;
+	});
+	gui.add(PARAMS, 'maxIters', 1, MAX_ITERS_MAX, 1).onChange((val) => {
+		fractalCompute.setUniform('u_maxIters', val);
+		needsCompute = true;
+	});
+	gui.add(PARAMS, 'reset').name('Reset');
+	gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
+
 	function savePNG() {
-		// Save png on next render loop.
-		shouldSavePNG = true;
+		composer.savePNG({ filename: `julia-set_${PARAMS.cReal}_${PARAMS.cImaginary}i` });
 	}
 	// Add 'p' hotkey to print screen.
 	window.addEventListener('keydown', onKeydown);
@@ -171,7 +156,7 @@ function main({ gui, contextID, glslVersion}) {
 		aspectRatio = width / height;
 		const lastWidth = composer.width;
 		const lastHeight = composer.height;
-		// TODO: resize at same scale.
+		// TODO: resize at same aspect ratio.
 
 		// Resize composer.
 		composer.resize(width, height);
@@ -182,7 +167,7 @@ function main({ gui, contextID, glslVersion}) {
 	onResize();
 
 	// Add mouse events.
-	window.addEventListener('pointermove', onMove);
+	canvas.addEventListener('pointermove', onMove);
 	function onMove() {
 
 	}
@@ -192,7 +177,7 @@ function main({ gui, contextID, glslVersion}) {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
 		window.removeEventListener('resize', onResize);
-		window.removeEventListener('pointermove', onMove);
+		canvas.removeEventListener('pointermove', onMove);
 		fractalCompute.dispose();
 		fractalRender.dispose();
 		state.dispose();
@@ -203,5 +188,6 @@ function main({ gui, contextID, glslVersion}) {
 		loop,
 		dispose,
 		composer,
+		canvas,
 	};
 }

@@ -351,6 +351,7 @@ function main({ gui, glslVersion, contextID }) {
 	});
 	// Fragment shader program for adding chemical attractant from particles to trail layer.
 	const deposit = addValueProgram({
+		name: 'deposit',
 		composer,
 		type: trail.type,
 		numComponents: trail.numComponents,
@@ -435,71 +436,12 @@ function main({ gui, glslVersion, contextID }) {
 	});
 	// Fragment shader program for rendering trail state to screen (with a scaling factor).
 	const render = renderAmplitudeGrayscaleProgram({
+		name: 'render',
 		composer,
 		type: trail.type,
 		numComponents: trail.numComponents,
 	});
 	render.setUniform('u_scale', PARAMS.renderAmplitude);
-
-	/**
-	 * Init a simple GUI.
-	 */
-	function getParticlesFolderTitle() {
-		return `Particles (${particlesPositions.length.toLocaleString("en-US")})`;
-	}
-	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
-	const particlesOrigName = particlesGUI.name; // We need this in order to delete the folder, see dispose().
-	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
-		// Init new particles when particle density changes.
-		const { positions, heading, numParticles } = initParticlesArrays();
-		particlesPositions.resize(numParticles, positions);
-		particlesHeading.resize(numParticles, heading);
-		particlesGUI.name = getParticlesFolderTitle();
-	}).name('Particle Density');
-	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).onChange((value) => {
-		rotateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
-	}).name('Sensor Angle');
-	particlesGUI.add(PARAMS, 'sensorDistance', 1, 30, 0.01).onChange((value) => {
-		rotateParticles.setUniform('u_sensorDistance', value);
-	}).name('Sensor Distance');
-	particlesGUI.add(PARAMS, 'rotationAngle', -90, 90, 0.01).onChange((value) => {
-		rotateParticles.setUniform('u_rotationAngle', value * Math.PI / 180);
-	}).name('Rotation Angle');
-	particlesGUI.add(PARAMS, 'stepSize', 0.01, 3, 0.01).onChange((value) => {
-		moveParticles.setUniform('u_stepSize', value);
-	}).name('Step Size');
-	particlesGUI.open();
-	const trailsGUI = gui.addFolder('Trails');
-	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
-		deposit.setUniform('u_value', value);
-		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * value);
-	}).name('Deposit Amount');
-	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).onChange((value) => {
-		diffuseAndDecay.setUniform('u_decayFactor', value);
-	}).name('Decay Factor');
-	const renderGUI = gui.addFolder('Render Settings');
-	renderGUI.add(PARAMS, 'renderAmplitude', 0, 1, 0.01).onChange((value) => {
-		render.setUniform('u_scale', value);
-	}).name('Amplitude');
-	// Interesting presets to try out.
-	const presetsGUI = gui.addFolder('Presets');
-	presetsGUI.add(PARAMS, 'setNet').name('Net');
-	presetsGUI.add(PARAMS, 'setDots').name('Dots');
-	presetsGUI.add(PARAMS, 'setHoneycomb').name('Honeycomb');
-	presetsGUI.add(PARAMS, 'setFingerprint').name('Fingerprint');	
-	presetsGUI.add(PARAMS, 'setFibers').name('Fibers');
-	presetsGUI.open();
-	function setPreset(settings) {
-		for (let key in settings) {
-			PARAMS[key] = settings[key];
-		}
-		for (var i in particlesGUI.__controllers) {
-			particlesGUI.__controllers[i].updateDisplay();
-		}
-		reset();
-	}
-	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
-	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
 	/**
 	 * This loop is where all the action happens.
@@ -508,7 +450,7 @@ function main({ gui, glslVersion, contextID }) {
 		// Update randomDir uniform by coin flip - the same value will be applied to all particles
 		// in the system, which is a bit of an oversimplification, but seems to work fine.
 		// Would be more realistic to pick randomDir within each fragment shader kernel,
-		// but this is easier.
+		// but this is easier + faster.
 		rotateParticles.setUniform('u_randomDir', Math.random() < 0.5);
 		// Update each particle's heading.
 		composer.step({
@@ -526,8 +468,7 @@ function main({ gui, glslVersion, contextID }) {
 
 		// Render particles' positions on top of trail layer to apply chemical
 		// attractant to trail.  Technically this is still not quite right bc overlapping
-		// particles will get merged together and only count once,
-		// but it seems to work fine anyway.
+		// particles will get merged together and only count once, but it seems to work fine anyway.
 		// Jones 2010 described a collision detection scheme that could avoid this overlap issue,
 		// but none of that is implemented in this code for simplicity.
 		composer.drawLayerAsPoints({
@@ -595,11 +536,11 @@ function main({ gui, glslVersion, contextID }) {
 		});
 		activeTouches[e.pointerId] = currentPosition;
 	}
-	window.addEventListener('pointermove', onPointerMove);
-	window.addEventListener('pointerdown', onPointerStart);
-	window.addEventListener('pointerup', onPointerStop);
-	window.addEventListener('pointerout', onPointerStop);
-	window.addEventListener('pointercancel', onPointerStop);
+	canvas.addEventListener('pointermove', onPointerMove);
+	canvas.addEventListener('pointerdown', onPointerStart);
+	canvas.addEventListener('pointerup', onPointerStop);
+	canvas.addEventListener('pointerout', onPointerStop);
+	canvas.addEventListener('pointercancel', onPointerStop);
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
@@ -612,6 +553,66 @@ function main({ gui, glslVersion, contextID }) {
 		}
 	}
 	window.addEventListener('keydown', onKeydown);
+
+	/**
+	 * Init a simple GUI.
+	 */
+	 function getParticlesFolderTitle() {
+		return `Particles (${particlesPositions.length.toLocaleString("en-US")})`;
+	}
+	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
+	const particlesOrigName = particlesGUI.name; // We need this in order to delete the folder, see dispose().
+	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
+		// Init new particles when particle density changes.
+		const { positions, heading, numParticles } = initParticlesArrays();
+		particlesPositions.resize(numParticles, positions);
+		particlesHeading.resize(numParticles, heading);
+		particlesGUI.name = getParticlesFolderTitle();
+	}).name('Particle Density');
+	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).onChange((value) => {
+		rotateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
+	}).name('Sensor Angle');
+	particlesGUI.add(PARAMS, 'sensorDistance', 1, 30, 0.01).onChange((value) => {
+		rotateParticles.setUniform('u_sensorDistance', value);
+	}).name('Sensor Distance');
+	particlesGUI.add(PARAMS, 'rotationAngle', -90, 90, 0.01).onChange((value) => {
+		rotateParticles.setUniform('u_rotationAngle', value * Math.PI / 180);
+	}).name('Rotation Angle');
+	particlesGUI.add(PARAMS, 'stepSize', 0.01, 3, 0.01).onChange((value) => {
+		moveParticles.setUniform('u_stepSize', value);
+	}).name('Step Size');
+	particlesGUI.open();
+	const trailsGUI = gui.addFolder('Trails');
+	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
+		deposit.setUniform('u_value', value);
+		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * value);
+	}).name('Deposit Amount');
+	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).onChange((value) => {
+		diffuseAndDecay.setUniform('u_decayFactor', value);
+	}).name('Decay Factor');
+	const renderGUI = gui.addFolder('Render Settings');
+	renderGUI.add(PARAMS, 'renderAmplitude', 0, 1, 0.01).onChange((value) => {
+		render.setUniform('u_scale', value);
+	}).name('Amplitude');
+	// Interesting presets to try out.
+	const presetsGUI = gui.addFolder('Presets');
+	presetsGUI.add(PARAMS, 'setNet').name('Net');
+	presetsGUI.add(PARAMS, 'setDots').name('Dots');
+	presetsGUI.add(PARAMS, 'setHoneycomb').name('Honeycomb');
+	presetsGUI.add(PARAMS, 'setFingerprint').name('Fingerprint');	
+	presetsGUI.add(PARAMS, 'setFibers').name('Fibers');
+	presetsGUI.open();
+	function setPreset(settings) {
+		for (let key in settings) {
+			PARAMS[key] = settings[key];
+		}
+		for (var i in particlesGUI.__controllers) {
+			particlesGUI.__controllers[i].updateDisplay();
+		}
+		reset();
+	}
+	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
+	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
 	// Resize if needed.
 	window.addEventListener('resize', onResize);
@@ -656,11 +657,11 @@ function main({ gui, glslVersion, contextID }) {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
 		window.removeEventListener('resize', onResize);
-		window.removeEventListener('pointermove', onPointerMove);
-		window.removeEventListener('pointerdown', onPointerStart);
-		window.removeEventListener('pointerup', onPointerStop);
-		window.removeEventListener('pointerout', onPointerStop);
-		window.removeEventListener('pointercancel', onPointerStop);
+		canvas.removeEventListener('pointermove', onPointerMove);
+		canvas.removeEventListener('pointerdown', onPointerStart);
+		canvas.removeEventListener('pointerup', onPointerStop);
+		canvas.removeEventListener('pointerout', onPointerStop);
+		canvas.removeEventListener('pointercancel', onPointerStop);
 		particlesPositions.dispose();
 		particlesHeading.dispose();
 		rotateParticles.dispose();

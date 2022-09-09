@@ -27,6 +27,7 @@ import {
 	GLSLVersion,
 	GPUIO_FLOAT_PRECISION,
 	GPUIO_INT_PRECISION,
+	GPULayerState,
 	GPULayerType,
 	HALF_FLOAT,
 	INT,
@@ -52,6 +53,7 @@ import {
 } from './constants';
 import { intForPrecision } from './conversions';
 import { PRECISION_SOURCE } from './glsl/common/precision';
+import { GPULayer } from './GPULayer';
 import { fragmentShaderPolyfills, GLSL1Polyfills, texturePolyfill } from './polyfills';
 import {
 	checkFragmentShaderForFragColor,
@@ -778,4 +780,13 @@ export function uniformInternalTypeForValue(
 	} else {
 		throw new Error(`Invalid type "${type}" for uniform "${uniformName}" in program "${programName}", expected ${FLOAT} or ${INT} or ${BOOL}.`);
 	}
+}
+
+/**
+ * Get index of GPULayer in array of inputs.
+ * Used by GPUComposer.
+ * @private
+ */
+export function indexOfLayerInArray(layer: GPULayer, array: (GPULayer | GPULayerState)[]) {
+	return array.findIndex(item => item === layer || (item as GPULayerState).layer === layer);
 }

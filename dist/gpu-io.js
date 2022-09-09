@@ -2270,16 +2270,27 @@ var GPUComposer = /** @class */ (function () {
     function GPUComposer(params) {
         var _a;
         this._errorThrown = false;
-        // Store multiple circle positions buffers for various num segments, use numSegments as key.
+        // Cache multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
+        /**
+         * Cache vertex shader attribute locations.
+         */
+        this._vertexAttributeLocations = {};
         // Keep track of all GL extensions that have been loaded.
         /**
          * @private
          */
         this._extensions = {};
-        // Programs for copying data (these are needed for rendering partial screen geometries).
+        /**
+         * Cache some generic programs for copying data.
+         * These are needed for rendering partial screen geometries.
+         */
         this._copyPrograms = {};
         // Other util programs.
+        /**
+         * Cache some generic programs for setting value from uniform.
+         * These are used by GPULayer.clear(), among other things
+         */
         this._setValuePrograms = {};
         this._vectorMagnitudePrograms = {};
         /**
@@ -2308,6 +2319,9 @@ var GPUComposer = /** @class */ (function () {
                 compiledShaders: {},
             },
             _a);
+        /**
+         * Flag to set GPUcomposer for verbose logging, defaults to false.
+         */
         this.verboseLogging = false;
         this._numTicks = 0;
         // Check params.
@@ -2413,11 +2427,16 @@ var GPUComposer = /** @class */ (function () {
         composer.renderer = renderer;
         return composer;
     };
+    /**
+     * Test whether this GPUComposer is using WebGL2 (may depend on browser support).
+     * @returns
+     */
     GPUComposer.prototype.isWebGL2 = function () {
         return (0, utils_1.isWebGL2)(this.gl);
     };
     /**
-     *
+     * Gets (and caches) generic set value programs for several input types.
+     * Used for GPULayer.clear(), among other things.
      * @private
      */
     GPUComposer.prototype._setValueProgramForType = function (type) {
@@ -2428,6 +2447,11 @@ var GPUComposer = /** @class */ (function () {
         }
         return _setValuePrograms[key];
     };
+    /**
+     * Gets (and caches) generic copy programs for several input types.
+     * Used for partial rendering to output, among other things.
+     * @private
+     */
     GPUComposer.prototype._copyProgramForType = function (type) {
         var _copyPrograms = this._copyPrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
@@ -2436,12 +2460,20 @@ var GPUComposer = /** @class */ (function () {
         }
         return _copyPrograms[key];
     };
+    /**
+     * Gets (and caches) a generic color program for wrapped line segment rendering.
+     * @private
+     */
     GPUComposer.prototype._getWrappedLineColorProgram = function () {
         if (this._wrappedLineColorProgram === undefined) {
             this._wrappedLineColorProgram = (0, Programs_1.wrappedLineColorProgram)({ composer: this });
         }
         return this._wrappedLineColorProgram;
     };
+    /**
+     * Gets (and caches) generic programs for rending vector magnitudes for several input types.
+     * @private
+     */
     GPUComposer.prototype._vectorMagnitudeProgramForType = function (type) {
         var _vectorMagnitudePrograms = this._vectorMagnitudePrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
@@ -2450,33 +2482,10 @@ var GPUComposer = /** @class */ (function () {
         }
         return _vectorMagnitudePrograms[key];
     };
-    GPUComposer.prototype._getQuadPositionsBuffer = function () {
-        if (this._quadPositionsBuffer === undefined) {
-            var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-            this._quadPositionsBuffer = this._initVertexBuffer(fsQuadPositions);
-        }
-        return this._quadPositionsBuffer;
-    };
-    GPUComposer.prototype._getBoundaryPositionsBuffer = function () {
-        if (this._boundaryPositionsBuffer === undefined) {
-            var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1, -1, -1]);
-            this._boundaryPositionsBuffer = this._initVertexBuffer(boundaryPositions);
-        }
-        return this._boundaryPositionsBuffer;
-    };
-    GPUComposer.prototype._getCirclePositionsBuffer = function (numSegments) {
-        var _circlePositionsBuffer = this._circlePositionsBuffer;
-        if (_circlePositionsBuffer[numSegments] == undefined) {
-            var unitCirclePoints = [0, 0];
-            for (var i = 0; i <= numSegments; i++) { // TODO: should this be just less than?
-                unitCirclePoints.push(Math.cos(2 * Math.PI * i / numSegments), Math.sin(2 * Math.PI * i / numSegments));
-            }
-            var circlePositions = new Float32Array(unitCirclePoints);
-            var buffer = this._initVertexBuffer(circlePositions);
-            _circlePositionsBuffer[numSegments] = buffer;
-        }
-        return _circlePositionsBuffer[numSegments];
-    };
+    /**
+     * Init a buffer for vertex shader attributes.
+     * @private
+     */
     GPUComposer.prototype._initVertexBuffer = function (data) {
         var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl;
         var buffer = gl.createBuffer();
@@ -2488,6 +2497,45 @@ var GPUComposer = /** @class */ (function () {
         // Add buffer data.
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         return buffer;
+    };
+    /**
+     * Get (and cache) positions buffer for rendering full screen quads.
+     * @private
+     */
+    GPUComposer.prototype._getQuadPositionsBuffer = function () {
+        if (this._quadPositionsBuffer === undefined) {
+            var fsQuadPositions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+            this._quadPositionsBuffer = this._initVertexBuffer(fsQuadPositions);
+        }
+        return this._quadPositionsBuffer;
+    };
+    /**
+     * Get (and cache) positions buffer for rendering lines on boundary.
+     * @private
+     */
+    GPUComposer.prototype._getBoundaryPositionsBuffer = function () {
+        if (this._boundaryPositionsBuffer === undefined) {
+            var boundaryPositions = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1, -1, -1]);
+            this._boundaryPositionsBuffer = this._initVertexBuffer(boundaryPositions);
+        }
+        return this._boundaryPositionsBuffer;
+    };
+    /**
+     * Get (and cache) positions buffer for rendering circle with various numbers of segments.
+     * @private
+     */
+    GPUComposer.prototype._getCirclePositionsBuffer = function (numSegments) {
+        var _circlePositionsBuffer = this._circlePositionsBuffer;
+        if (_circlePositionsBuffer[numSegments] == undefined) {
+            var unitCirclePoints = [0, 0];
+            for (var i = 0; i <= numSegments; i++) { // TODO: should this be strictly less than?
+                unitCirclePoints.push(Math.cos(2 * Math.PI * i / numSegments), Math.sin(2 * Math.PI * i / numSegments));
+            }
+            var circlePositions = new Float32Array(unitCirclePoints);
+            var buffer = this._initVertexBuffer(circlePositions);
+            _circlePositionsBuffer[numSegments] = buffer;
+        }
+        return _circlePositionsBuffer[numSegments];
     };
     /**
      * Used internally, see GPULayer.clone() for public API.
@@ -2535,6 +2583,7 @@ var GPUComposer = /** @class */ (function () {
         // TODO: Increment clone's buffer index until it is identical to the original layer.
         return clone;
     };
+    // TODO: move this to GPULayer.
     GPUComposer.prototype.initTexture = function (params) {
         // Check params.
         var validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
@@ -2628,7 +2677,8 @@ var GPUComposer = /** @class */ (function () {
         return texture;
     };
     /**
-     *
+     * Gets (and caches) vertex shaders based on shader source code and compile time constants.
+     * Tries to minimize the number of new vertex shaders that must be compiled.
      * @private
      */
     GPUComposer.prototype._getVertexShader = function (name, vertexID, vertexCompileConstants, programName) {
@@ -2652,6 +2702,11 @@ var GPUComposer = /** @class */ (function () {
         }
         return compiledShaders[vertexID];
     };
+    /**
+     * Notify the GPUComposer that the canvas should change size.
+     * @param width - The width of the canvas element.
+     * @param height - The height of the canvas element.
+     */
     GPUComposer.prototype.resize = function (width, height) {
         var canvas = this.canvas;
         // Set correct canvas pixel size.
@@ -2663,6 +2718,10 @@ var GPUComposer = /** @class */ (function () {
         this._height = height;
     };
     ;
+    /**
+     * Set inputs and outputs in preparation for draw call.
+     * @private
+     */
     GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexCompileConstants, fullscreenRender, input, output) {
         var gl = this.gl;
         // CAUTION: the order of these next few lines is important.
@@ -2698,6 +2757,10 @@ var GPUComposer = /** @class */ (function () {
         gpuProgram._setInternalFragmentUniforms(program, inputTextures);
         return program;
     };
+    /**
+     * Set blend mode for draw call.
+     * @private
+     */
     GPUComposer.prototype._setBlendMode = function (shouldBlendAlpha) {
         var gl = this.gl;
         if (shouldBlendAlpha) {
@@ -2705,9 +2768,10 @@ var GPUComposer = /** @class */ (function () {
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
     };
-    GPUComposer.prototype._indexOfLayerInArray = function (layer, array) {
-        return array.findIndex(function (item) { return item === layer || item.layer === layer; });
-    };
+    /**
+     * Add GPULayer to inputs if needed.
+     * @private
+     */
     GPUComposer.prototype._addLayerToInputs = function (layer, input) {
         // Add layer to end of input if needed.
         // Do this with no mutations.
@@ -2716,7 +2780,7 @@ var GPUComposer = /** @class */ (function () {
         }
         if ((0, checks_1.isArray)(input)) {
             // Return input with layer added if needed.
-            if (this._indexOfLayerInArray(layer, input) >= 0) {
+            if ((0, utils_1.indexOfLayerInArray)(layer, input) >= 0) {
                 return input;
             }
             return __spreadArray(__spreadArray([], input, true), [layer], false);
@@ -2726,6 +2790,11 @@ var GPUComposer = /** @class */ (function () {
         }
         return [input, layer];
     };
+    /**
+     * Copy data from input to output.
+     * This is used when rendering to part of output state (not fullscreen quad).
+     * @private
+     */
     GPUComposer.prototype._passThroughLayerDataFromInputToOutput = function (state) {
         // TODO: figure out the fastest way to copy a texture.
         var copyProgram = this._copyProgramForType(state._internalType);
@@ -2735,6 +2804,10 @@ var GPUComposer = /** @class */ (function () {
             output: state,
         });
     };
+    /**
+     * Set output for draw command.
+     * @private
+     */
     GPUComposer.prototype._setOutputLayer = function (fullscreenRender, input, output) {
         var gl = this.gl;
         // Render to screen.
@@ -2747,7 +2820,7 @@ var GPUComposer = /** @class */ (function () {
         }
         // Check if output is same as one of input layers.
         if (input && ((input === output || input.layer === output) ||
-            ((0, checks_1.isArray)(input) && this._indexOfLayerInArray(output, input) >= 0))) {
+            ((0, checks_1.isArray)(input) && (0, utils_1.indexOfLayerInArray)(output, input) >= 0))) {
             if (output.numBuffers === 1) {
                 throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
             }
@@ -2782,13 +2855,29 @@ var GPUComposer = /** @class */ (function () {
         gl.viewport(0, 0, width, height);
     };
     ;
+    /**
+     * Set vertex shader attribute.
+     * @private
+     */
     GPUComposer.prototype._setVertexAttribute = function (program, name, size, programName) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, _vertexAttributeLocations = _a._vertexAttributeLocations;
         // Point attribute to the currently bound VBO.
-        // TODO: cache attribute location.
-        var location = gl.getAttribLocation(program, name);
-        if (location < 0) {
-            throw new Error("Unable to find vertex attribute \"".concat(name, "\" in program \"").concat(programName, "\"."));
+        var locations = _vertexAttributeLocations[name];
+        var location;
+        if (!locations) {
+            locations = new WeakMap();
+            _vertexAttributeLocations[name] = locations;
+        }
+        else {
+            location = locations.get(program);
+        }
+        if (location === undefined) {
+            location = gl.getAttribLocation(program, name);
+            if (location < 0) {
+                throw new Error("Unable to find vertex attribute \"".concat(name, "\" in program \"").concat(programName, "\"."));
+            }
+            // Cache attribute location.
+            locations.set(program, location);
         }
         // INT types not supported for attributes.
         // Use FLOAT rather than SHORT bc FLOAT covers more INT range.
@@ -2797,16 +2886,31 @@ var GPUComposer = /** @class */ (function () {
         // Enable the attribute.
         gl.enableVertexAttribArray(location);
     };
+    /**
+     * Set vertex shader position attribute.
+     * @private
+     */
     GPUComposer.prototype._setPositionAttribute = function (program, programName) {
         this._setVertexAttribute(program, 'a_gpuio_position', 2, programName);
     };
+    /**
+     * Set vertex shader index attribute.
+     * @private
+     */
     GPUComposer.prototype._setIndexAttribute = function (program, programName) {
         this._setVertexAttribute(program, 'a_gpuio_index', 1, programName);
     };
+    /**
+     * Set vertex shader uv attribute.
+     * @private
+     */
     GPUComposer.prototype._setUVAttribute = function (program, programName) {
         this._setVertexAttribute(program, 'a_gpuio_uv', 2, programName);
     };
-    // Step for entire fullscreen quad.
+    /**
+     * Step GPUProgram entire fullscreen quad.
+     * @param params
+     */
     GPUComposer.prototype.step = function (params) {
         var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
@@ -2822,7 +2926,10 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
-    // Step program only for a strip of px along the boundary.
+    /**
+     * Step GPUProgram only for a 1px strip of pixels along the boundary.
+     * @param params
+     */
     GPUComposer.prototype.stepBoundary = function (params) {
         var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
@@ -2862,7 +2969,10 @@ var GPUComposer = /** @class */ (function () {
         }
         gl.disable(gl.BLEND);
     };
-    // Step program for all but a strip of px along the boundary.
+    /**
+     * Step GPUProgram for all but a 1px strip of pixels along the boundary.
+     * @param params
+     */
     GPUComposer.prototype.stepNonBoundary = function (params) {
         var gl = this.gl;
         var program = params.program, input = params.input, output = params.output;
@@ -2881,7 +2991,11 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
-    // Step program inside a circular spot.
+    /**
+     * Step GPUProgram inside a circular spot.
+     * This is useful for touch interactions.
+     * @param params
+     */
     GPUComposer.prototype.stepCircle = function (params) {
         var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         var program = params.program, position = params.position, diameter = params.diameter, input = params.input, output = params.output;
@@ -2901,7 +3015,11 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
         gl.disable(gl.BLEND);
     };
-    // Step program only for a thickened line segment (rounded end caps available).
+    /**
+     * Step GPUProgram inside a line segment (rounded end caps available).
+     * This is useful for touch interactions during pointermove.
+     * @param params
+     */
     GPUComposer.prototype.stepSegment = function (params) {
         var gl = this.gl;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
@@ -3235,7 +3353,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.LAYER_POINTS_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_positions', (0, utils_1.indexOfLayerInArray)(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Set default pointSize.
         var pointSize = params.pointSize || 1;
@@ -3292,7 +3410,7 @@ var GPUComposer = /** @class */ (function () {
         var glProgram = this._drawSetup(program, constants_1.LAYER_LINES_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         var count = params.count ? params.count : (params.indices ? params.indices.length : positions.length);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_gpuio_positions', this._indexOfLayerInArray(positions, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_positions', (0, utils_1.indexOfLayerInArray)(positions, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         var positionLayerDimensions = [positions.width, positions.height];
         program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
@@ -3362,7 +3480,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_gpuio_vectors', this._indexOfLayerInArray(data, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_vectors', (0, utils_1.indexOfLayerInArray)(data, input), constants_1.INT);
         // Set default scale.
         var vectorScale = params.vectorScale || 1;
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [vectorScale / _width, vectorScale / _height], constants_1.FLOAT);
@@ -3400,7 +3518,7 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, true, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_gpuio_data', this._indexOfLayerInArray(data, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_data', (0, utils_1.indexOfLayerInArray)(data, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [1, 1], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_gpuio_translation', [0, 0], constants_1.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
@@ -3410,6 +3528,9 @@ var GPUComposer = /** @class */ (function () {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.disable(gl.BLEND);
     };
+    /**
+     * If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
+     */
     GPUComposer.prototype.resetThreeState = function () {
         if (!this._renderer) {
             throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
@@ -3437,7 +3558,7 @@ var GPUComposer = /** @class */ (function () {
         var callback = params.callback || saveAs; // Default to saving the image with FileSaver.
         canvas.toBlob(function (blob) {
             if (!blob) {
-                console.warn("Problem saving PNG from GPULayer \"".concat(name, "\", unable to init blob."));
+                console.warn("Problem saving PNG, unable to init blob from canvas.");
                 return;
             }
             if (params.dpi) {
@@ -3450,6 +3571,10 @@ var GPUComposer = /** @class */ (function () {
             }
         }, 'image/png');
     };
+    /**
+     * Call tick() from your render loop to measure the FPS of your application.
+     * Internally, this does some low pass filtering to give consistent results.
+     */
     GPUComposer.prototype.tick = function () {
         var _a = this, _lastTickTime = _a._lastTickTime, _lastTickFPS = _a._lastTickFPS;
         var currentTime = performance.now();
@@ -3470,12 +3595,21 @@ var GPUComposer = /** @class */ (function () {
             numTicks: this._numTicks,
         };
     };
+    /**
+     * Deallocate GPUComposer instance and associated WebGL properties.
+     */
     GPUComposer.prototype.dispose = function () {
         var _a;
-        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, _copyPrograms = _b._copyPrograms, _setValuePrograms = _b._setValuePrograms, _vectorMagnitudePrograms = _b._vectorMagnitudePrograms;
+        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, _copyPrograms = _b._copyPrograms, _setValuePrograms = _b._setValuePrograms, _vectorMagnitudePrograms = _b._vectorMagnitudePrograms, _vertexAttributeLocations = _b._vertexAttributeLocations;
         if (verboseLogging)
             console.log("Deallocating GPUComposer.");
         // TODO: delete buffers.
+        // Delete vertex attribute locations.
+        Object.keys(_vertexAttributeLocations).forEach(function (key) {
+            delete _vertexAttributeLocations[key];
+        });
+        // @ts-ignore
+        delete this._vertexAttributeLocations;
         // Delete vertex shaders.
         Object.values(_vertexShaders).forEach(function (_a) {
             var compiledShaders = _a.compiledShaders;
@@ -5717,8 +5851,10 @@ var conversions_1 = __webpack_require__(690);
 var GPUProgram_1 = __webpack_require__(664);
 /**
  * Copy contents of one GPULayer to another GPULayer.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output.
  * @returns
  */
@@ -5726,8 +5862,9 @@ function copyProgram(params) {
     var composer = params.composer, type = params.type;
     var precision = params.precision || '';
     var glslType = (0, conversions_1.glslTypeForType)(type, 4);
+    var name = params.name || "copy_".concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_layer");
     return new GPUProgram_1.GPUProgram(composer, {
-        name: "copy_".concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_layer"),
+        name: name,
         fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = texture(u_state, v_uv);\n}"),
         uniforms: [
             {
@@ -5741,9 +5878,11 @@ function copyProgram(params) {
 exports.copyProgram = copyProgram;
 /**
  * Add several GPULayers together.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the inputs/output.
  * @param params.numComponents - The number of components of the inputs/output.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.numInputs - The number of inputs to add together, defaults to 2.
  * @param params.precision - Optionally specify the precision of the inputs/output.
  * @returns
@@ -5755,8 +5894,9 @@ function addLayersProgram(params) {
     var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
     var arrayOfLengthNumInputs = new Array(numInputs);
     var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
+    var name = params.name || "".concat(numInputs, "-way_add_").concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_w_").concat(numComponents, "_components");
     return new GPUProgram_1.GPUProgram(composer, {
-        name: "".concat(numInputs, "-way_add_").concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_w_").concat(numComponents, "_components"),
+        name: name,
         fragmentShader: "\nin vec2 v_uv;\n".concat(arrayOfLengthNumInputs.map(function (el, i) { return "uniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state").concat(i, ";"); }).join('\n'), "\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(arrayOfLengthNumInputs.map(function (el, i) { return "texture(u_state".concat(i, ", v_uv)").concat(componentSelection); }).join(' + '), ";\n}"),
         uniforms: arrayOfLengthNumInputs.map(function (el, i) {
             return {
@@ -5770,9 +5910,11 @@ function addLayersProgram(params) {
 exports.addLayersProgram = addLayersProgram;
 /**
  * Add uniform "u_value" to a GPULayer.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.numComponents - The number of components of the input/output and "u_value".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
@@ -5781,8 +5923,9 @@ function addValueProgram(params) {
     var precision = params.precision || '';
     var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
     var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
+    var name = params.name || "addValue_".concat(glslType, "_w_").concat(numComponents, "_components");
     return new GPUProgram_1.GPUProgram(composer, {
-        name: "addValue_".concat(glslType, "_w_").concat(numComponents, "_components"),
+        name: name,
         fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(glslType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value + texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
         uniforms: [
             {
@@ -5801,9 +5944,11 @@ function addValueProgram(params) {
 exports.addValueProgram = addValueProgram;
 /**
  * Set all elements in a GPULayer to uniform "u_value".
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output (we assume "u_value" has same type).
  * @param params.numComponents - The number of components in the output/"u_value".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
@@ -5811,8 +5956,9 @@ function setValueProgram(params) {
     var composer = params.composer, type = params.type, numComponents = params.numComponents;
     var precision = params.precision || '';
     var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var name = params.name || "setValue_".concat(glslType, "_w_").concat(numComponents, "_components");
     return new GPUProgram_1.GPUProgram(composer, {
-        name: "setValue_".concat(glslType, "_w_").concat(numComponents, "_components"),
+        name: name,
         fragmentShader: "\nuniform ".concat(precision, " ").concat(glslType, " u_value;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value;\n}"),
         uniforms: [
             {
@@ -5826,9 +5972,11 @@ function setValueProgram(params) {
 exports.setValueProgram = setValueProgram;
 /**
  * Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
  * @param params.numComponents - The number of components in the input.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
@@ -5840,8 +5988,9 @@ function renderAmplitudeGrayscaleProgram(params) {
     var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
     var shouldCast = glslFloatType === glslType;
     var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
+    var name = params.name || "renderAmplitude_".concat(glslType, "_w_").concat(numComponents, "_components");
     return new GPUProgram_1.GPUProgram(composer, {
-        name: "renderAmplitude_".concat(glslType, "_w_").concat(numComponents, "_components"),
+        name: name,
         fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_fragColor;\nvoid main() {\n\t").concat(glslFloatType, " amplitude = u_scale * ").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(componentSelection, ");\n\tout_fragColor = vec4(amplitude, amplitude, amplitude, u_opacity);\n}"),
         uniforms: [
             {
@@ -6790,7 +6939,7 @@ var Programs = __webpack_require__(579);
 /**
  * @private
  */
-var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, extensions), regex), checks), GPULayerHelpers), polyfills), conversions);
+var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue, indexOfLayerInArray: utils.indexOfLayerInArray }, extensions), regex), checks), GPULayerHelpers), polyfills), conversions);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
@@ -7345,7 +7494,7 @@ exports.getSampler2DsInProgram = getSampler2DsInProgram;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.convertFragmentShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
+exports.indexOfLayerInArray = exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.convertFragmentShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
@@ -7941,6 +8090,15 @@ function uniformInternalTypeForValue(value, type, uniformName, programName) {
     }
 }
 exports.uniformInternalTypeForValue = uniformInternalTypeForValue;
+/**
+ * Get index of GPULayer in array of inputs.
+ * Used by GPUComposer.
+ * @private
+ */
+function indexOfLayerInArray(layer, array) {
+    return array.findIndex(function (item) { return item === layer || item.layer === layer; });
+}
+exports.indexOfLayerInArray = indexOfLayerInArray;
 
 
 /***/ })

@@ -3,23 +3,44 @@ import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
+    /**
+     * The canvas element associated with this GPUcomposer.
+     */
     readonly canvas: HTMLCanvasElement;
+    /**
+     * The WebGL context associated with this GPUcomposer.
+     */
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
+    /**
+     * The GLSL version being used by the GPUComposer.
+     */
     readonly glslVersion: GLSLVersion;
+    /**
+     * The global integer precision to apply to shader programs.
+     */
     readonly intPrecision: GLSLPrecision;
+    /**
+     * The global float precision to apply to shader programs.
+     */
     readonly floatPrecision: GLSLPrecision;
+    /**
+     * Store the width and height of the current canvas at full res.
+     */
     private _width;
     private _height;
-    private _errorThrown;
     /**
      * @private
      */
     readonly _errorCallback: ErrorCallback;
+    private _errorThrown;
     /**
      * @private
      */
     readonly _renderer?: WebGLRenderer;
     private readonly _maxNumTextures;
+    /**
+     * Precomputed vertex buffers (inited as needed).
+     */
     private _quadPositionsBuffer?;
     private _boundaryPositionsBuffer?;
     private _circlePositionsBuffer;
@@ -29,12 +50,24 @@ export declare class GPUComposer {
     private _vectorFieldIndexBuffer?;
     private _indexedLinesIndexBuffer?;
     /**
+     * Cache vertex shader attribute locations.
+     */
+    private _vertexAttributeLocations;
+    /**
      * @private
      */
     readonly _extensions: {
         [key: string]: any;
     };
+    /**
+     * Cache some generic programs for copying data.
+     * These are needed for rendering partial screen geometries.
+     */
     private readonly _copyPrograms;
+    /**
+     * Cache some generic programs for setting value from uniform.
+     * These are used by GPULayer.clear(), among other things
+     */
     private readonly _setValuePrograms;
     private _wrappedLineColorProgram?;
     private readonly _vectorMagnitudePrograms;
@@ -50,7 +83,13 @@ export declare class GPUComposer {
             };
         };
     };
+    /**
+     * Flag to set GPUcomposer for verbose logging, defaults to false.
+     */
     verboseLogging: boolean;
+    /**
+     * Variables for tracking fps of GPUComposer with tick().
+     */
     private _lastTickTime?;
     private _lastTickFPS?;
     private _numTicks;
@@ -72,19 +111,53 @@ export declare class GPUComposer {
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     }): GPUComposer;
+    /**
+     * Test whether this GPUComposer is using WebGL2 (may depend on browser support).
+     * @returns
+     */
     isWebGL2(): boolean;
     /**
-     *
+     * Gets (and caches) generic set value programs for several input types.
+     * Used for GPULayer.clear(), among other things.
      * @private
      */
     _setValueProgramForType(type: GPULayerType): GPUProgram;
+    /**
+     * Gets (and caches) generic copy programs for several input types.
+     * Used for partial rendering to output, among other things.
+     * @private
+     */
     private _copyProgramForType;
+    /**
+     * Gets (and caches) a generic color program for wrapped line segment rendering.
+     * @private
+     */
     private _getWrappedLineColorProgram;
+    /**
+     * Gets (and caches) generic programs for rending vector magnitudes for several input types.
+     * @private
+     */
     private _vectorMagnitudeProgramForType;
-    _getQuadPositionsBuffer(): WebGLBuffer;
-    private _getBoundaryPositionsBuffer;
-    private _getCirclePositionsBuffer;
+    /**
+     * Init a buffer for vertex shader attributes.
+     * @private
+     */
     private _initVertexBuffer;
+    /**
+     * Get (and cache) positions buffer for rendering full screen quads.
+     * @private
+     */
+    _getQuadPositionsBuffer(): WebGLBuffer;
+    /**
+     * Get (and cache) positions buffer for rendering lines on boundary.
+     * @private
+     */
+    private _getBoundaryPositionsBuffer;
+    /**
+     * Get (and cache) positions buffer for rendering circle with various numbers of segments.
+     * @private
+     */
+    private _getCirclePositionsBuffer;
     /**
      * Used internally, see GPULayer.clone() for public API.
      * @private
@@ -101,27 +174,77 @@ export declare class GPUComposer {
         onLoad?: (texture: WebGLTexture) => void;
     }): WebGLTexture;
     /**
-     *
+     * Gets (and caches) vertex shaders based on shader source code and compile time constants.
+     * Tries to minimize the number of new vertex shaders that must be compiled.
      * @private
      */
     _getVertexShader(name: PROGRAM_NAME_INTERNAL, vertexID: string, vertexCompileConstants: CompileTimeConstants, programName: string): WebGLShader | undefined;
+    /**
+     * Notify the GPUComposer that the canvas should change size.
+     * @param width - The width of the canvas element.
+     * @param height - The height of the canvas element.
+     */
     resize(width: number, height: number): void;
+    /**
+     * Set inputs and outputs in preparation for draw call.
+     * @private
+     */
     private _drawSetup;
+    /**
+     * Set blend mode for draw call.
+     * @private
+     */
     private _setBlendMode;
-    private _indexOfLayerInArray;
+    /**
+     * Add GPULayer to inputs if needed.
+     * @private
+     */
     private _addLayerToInputs;
+    /**
+     * Copy data from input to output.
+     * This is used when rendering to part of output state (not fullscreen quad).
+     * @private
+     */
     private _passThroughLayerDataFromInputToOutput;
+    /**
+     * Set output for draw command.
+     * @private
+     */
     private _setOutputLayer;
+    /**
+     * Set vertex shader attribute.
+     * @private
+     */
     private _setVertexAttribute;
+    /**
+     * Set vertex shader position attribute.
+     * @private
+     */
     _setPositionAttribute(program: WebGLProgram, programName: string): void;
+    /**
+     * Set vertex shader index attribute.
+     * @private
+     */
     private _setIndexAttribute;
+    /**
+     * Set vertex shader uv attribute.
+     * @private
+     */
     private _setUVAttribute;
+    /**
+     * Step GPUProgram entire fullscreen quad.
+     * @param params
+     */
     step(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         shouldBlendAlpha?: boolean;
     }): void;
+    /**
+     * Step GPUProgram only for a 1px strip of pixels along the boundary.
+     * @param params
+     */
     stepBoundary(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
@@ -129,12 +252,21 @@ export declare class GPUComposer {
         singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
         shouldBlendAlpha?: boolean;
     }): void;
+    /**
+     * Step GPUProgram for all but a 1px strip of pixels along the boundary.
+     * @param params
+     */
     stepNonBoundary(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         shouldBlendAlpha?: boolean;
     }): void;
+    /**
+     * Step GPUProgram inside a circular spot.
+     * This is useful for touch interactions.
+     * @param params
+     */
     stepCircle(params: {
         program: GPUProgram;
         position: [number, number];
@@ -144,6 +276,11 @@ export declare class GPUComposer {
         numSegments?: number;
         shouldBlendAlpha?: boolean;
     }): void;
+    /**
+     * Step GPUProgram inside a line segment (rounded end caps available).
+     * This is useful for touch interactions during pointermove.
+     * @param params
+     */
     stepSegment(params: {
         program: GPUProgram;
         position1: [number, number];
@@ -231,6 +368,9 @@ export declare class GPUComposer {
         color?: [number, number, number];
         shouldBlendAlpha?: boolean;
     }): void;
+    /**
+     * If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
+     */
     resetThreeState(): void;
     /**
      * Save the current state of the canvas to png.
@@ -245,6 +385,10 @@ export declare class GPUComposer {
         multiplier?: number;
         callback?: (blob: Blob, filename: string) => void;
     }): void;
+    /**
+     * Call tick() from your render loop to measure the FPS of your application.
+     * Internally, this does some low pass filtering to give consistent results.
+     */
     tick(): {
         fps: number;
         milliseconds: number;
@@ -254,5 +398,8 @@ export declare class GPUComposer {
         numTicks: number;
         milliseconds?: undefined;
     };
+    /**
+     * Deallocate GPUComposer instance and associated WebGL properties.
+     */
     dispose(): void;
 }

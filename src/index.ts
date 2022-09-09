@@ -28,6 +28,7 @@ const _testing = {
 	isPowerOf2: utils.isPowerOf2,
 	initSequentialFloatArray: utils.initSequentialFloatArray,
 	uniformInternalTypeForValue: utils.uniformInternalTypeForValue,
+	indexOfLayerInArray: utils.indexOfLayerInArray,
 	...extensions,
 	...regex,
 	...checks,

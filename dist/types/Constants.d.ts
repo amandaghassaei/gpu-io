@@ -95,8 +95,8 @@ export declare type GPULayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;
  */
 export declare const validWraps: string[];
 /**
- * GPULayer state.
- * @private
+ * The WebGLTexture corresponding to a GPULayer buffer (e.g. currentState or lastState).
+ * This data structure also includes a reference back to the GPULayer that it originated from.
  */
 export declare type GPULayerState = {
     texture: WebGLTexture;

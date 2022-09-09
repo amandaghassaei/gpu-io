@@ -105,14 +105,13 @@ export type GPULayerWrap = typeof REPEAT | typeof CLAMP_TO_EDGE;// | typeof MIRR
  */
 export const validWraps = [CLAMP_TO_EDGE, REPEAT]; // MIRRORED_REPEAT
 /**
- * GPULayer state.
- * @private
+ * The WebGLTexture corresponding to a GPULayer buffer (e.g. currentState or lastState).
+ * This data structure also includes a reference back to the GPULayer that it originated from.
  */
 export type GPULayerState = {
 	texture: WebGLTexture,
 	layer: GPULayer,
 }
-
 
 // TODO: change this?
 // For image urls that are passed in and inited as textures.
@@ -168,6 +167,10 @@ export const WEBGL1 = 'webgl';
  * Experimental WebGL context ID.
  */
 export const EXPERIMENTAL_WEBGL = 'experimental-webgl';
+/**
+ * Experimental WebGL context ID.
+ */
+ export const EXPERIMENTAL_WEBGL2 = 'experimental-webgl2';
 
 // Precision declarations.
 /**

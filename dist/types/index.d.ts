@@ -127,6 +127,7 @@ declare const _testing: {
     isPowerOf2: typeof utils.isPowerOf2;
     initSequentialFloatArray: typeof utils.initSequentialFloatArray;
     uniformInternalTypeForValue: typeof utils.uniformInternalTypeForValue;
+    indexOfLayerInArray: typeof utils.indexOfLayerInArray;
 };
 export * from './constants';
 declare const isWebGL2: typeof utils.isWebGL2, isWebGL2Supported: typeof utils.isWebGL2Supported, isHighpSupportedInVertexShader: typeof utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader: typeof utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision: typeof utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision: typeof utils.getFragmentShaderMediumpPrecision;

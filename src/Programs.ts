@@ -5,21 +5,25 @@ import { GPUProgram } from './GPUProgram';
 
 /**
  * Copy contents of one GPULayer to another GPULayer.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output.
  * @returns
  */
 export function copyProgram(params: {
 	composer: GPUComposer,
 	type: GPULayerType,
+	name?: string,
 	precision?: GLSLPrecision,
 }) {
 	const { composer, type } = params;
 	const precision = params.precision || '';
 	const glslType = glslTypeForType(type, 4);
+	const name = params.name ||`copy_${uniformTypeForType(type, composer.glslVersion)}_layer`;
 	return new GPUProgram(composer, {
-		name: `copy_${uniformTypeForType(type, composer.glslVersion)}_layer`,
+		name,
 		fragmentShader: `
 in vec2 v_uv;
 uniform ${precision} ${glslPrefixForType(type)}sampler2D u_state;
@@ -39,9 +43,11 @@ void main() {
 
 /**
  * Add several GPULayers together.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the inputs/output.
  * @param params.numComponents - The number of components of the inputs/output.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.numInputs - The number of inputs to add together, defaults to 2.
  * @param params.precision - Optionally specify the precision of the inputs/output.
  * @returns
@@ -50,6 +56,7 @@ void main() {
 	composer: GPUComposer,
 	type: GPULayerType,
 	numComponents: GPULayerNumComponents,
+	name: string,
 	numInputs?: number,
 	precision?: GLSLPrecision,
 }) {
@@ -59,8 +66,9 @@ void main() {
 	const glslType = glslTypeForType(type, numComponents);
 	const arrayOfLengthNumInputs = new Array(numInputs);
 	const componentSelection = glslComponentSelectionForNumComponents(numComponents);
+	const name = params.name || `${numInputs}-way_add_${uniformTypeForType(type, composer.glslVersion)}_w_${numComponents}_components`;
 	return new GPUProgram(composer, {
-		name: `${numInputs}-way_add_${uniformTypeForType(type, composer.glslVersion)}_w_${numComponents}_components`,
+		name,
 		fragmentShader: `
 in vec2 v_uv;
 ${ arrayOfLengthNumInputs.map((el, i) => `uniform ${precision} ${glslPrefixForType(type)}sampler2D u_state${i};`).join('\n') }
@@ -80,9 +88,11 @@ void main() {
 
 /**
  * Add uniform "u_value" to a GPULayer.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.numComponents - The number of components of the input/output and "u_value".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
@@ -90,14 +100,16 @@ void main() {
 	composer: GPUComposer,
 	type: GPULayerType,
 	numComponents: GPULayerNumComponents,
+	name?: string,
 	precision?: GLSLPrecision,
 }) {
 	const { composer, type, numComponents } = params;
 	const precision = params.precision || '';
 	const glslType = glslTypeForType(type, numComponents);
 	const componentSelection = glslComponentSelectionForNumComponents(numComponents);
+	const name = params.name || `addValue_${glslType}_w_${numComponents}_components`;
 	return new GPUProgram(composer, {
-		name: `addValue_${glslType}_w_${numComponents}_components`,
+		name,
 		fragmentShader: `
 in vec2 v_uv;
 uniform ${precision} ${glslType} u_value;
@@ -123,9 +135,11 @@ void main() {
 
 /**
  * Set all elements in a GPULayer to uniform "u_value".
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output (we assume "u_value" has same type).
  * @param params.numComponents - The number of components in the output/"u_value".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
@@ -133,13 +147,15 @@ export function setValueProgram(params: {
 	composer: GPUComposer,
 	type: GPULayerType,
 	numComponents: GPULayerNumComponents,
+	name?: string,
 	precision?: GLSLPrecision,
 }) {
 	const { composer, type, numComponents } = params;
 	const precision = params.precision || '';
 	const glslType = glslTypeForType(type, numComponents);
+	const name = params.name || `setValue_${glslType}_w_${numComponents}_components`;
 	return new GPUProgram(composer, {
-		name: `setValue_${glslType}_w_${numComponents}_components`,
+		name,
 		fragmentShader: `
 uniform ${precision} ${glslType} u_value;
 out ${precision} ${glslType} out_fragColor;
@@ -158,9 +174,11 @@ void main() {
 
 /**
  * Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
+ * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
  * @param params.numComponents - The number of components in the input.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
@@ -168,6 +186,7 @@ void main() {
 	composer: GPUComposer,
 	type: GPULayerType,
 	numComponents: GPULayerNumComponents,
+	name?: string,
 	precision?: GLSLPrecision,
 }) {
 	const { composer, type, numComponents } = params;
@@ -177,8 +196,9 @@ void main() {
 	const glslPrefix = glslPrefixForType(type);
 	const shouldCast = glslFloatType === glslType;
 	const componentSelection = glslComponentSelectionForNumComponents(numComponents);
+	const name = params.name || `renderAmplitude_${glslType}_w_${numComponents}_components`;
 	return new GPUProgram(composer, {
-		name: `renderAmplitude_${glslType}_w_${numComponents}_components`,
+		name,
 		fragmentShader: `
 in vec2 v_uv;
 uniform float u_opacity;

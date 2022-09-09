@@ -54,6 +54,7 @@
 		preprocessVertexShader,
 		preprocessFragmentShader,
 		uniformInternalTypeForValue,
+		indexOfLayerInArray,
 		SAMPLER2D_FILTER,
 		SAMPLER2D_WRAP_X,
 		SAMPLER2D_WRAP_Y,
@@ -673,6 +674,11 @@ void main() {
 				assert.equal(uniformInternalTypeForValue([true, false], BOOL, 'uniformName', 'test-program'), BOOL_2D_UNIFORM);
 				assert.equal(uniformInternalTypeForValue([true, false, false], BOOL, 'uniformName', 'test-program'), BOOL_3D_UNIFORM);
 				assert.equal(uniformInternalTypeForValue([true, false, true, false], BOOL, 'uniformName', 'test-program'), BOOL_4D_UNIFORM);
+			});
+		});
+		describe('indexOfLayerInArray', () => {
+			it('should return index of layer in array', () => {
+				// TODO: finish this.
 			});
 		});
 	});

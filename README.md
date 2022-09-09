@@ -73,6 +73,7 @@ Source code for all examples can be found in [examples/](https://github.com/aman
 
 - [Conway's Game of Life](http://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
 - [Physarum Transport Network](http://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
+- [Julia Set Fractal](http://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple  )
 
 
 ## Compatibility with Threejs

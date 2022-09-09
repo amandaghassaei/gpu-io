@@ -1,4 +1,5 @@
-import { CompileTimeConstants, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerType, UniformType, UniformValue } from './constants';
+import { CompileTimeConstants, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerState, GPULayerType, UniformType, UniformValue } from './constants';
+import { GPULayer } from './GPULayer';
 /**
  * Test whether a GPULayer type is a float type.
  * @private
@@ -113,3 +114,9 @@ export declare function preprocessFragmentShader(shaderSource: string, glslVersi
  * @private
  */
 export declare function uniformInternalTypeForValue(value: UniformValue, type: UniformType, uniformName: string, programName: string): "FLOAT_1D_UNIFORM" | "FLOAT_2D_UNIFORM" | "FLOAT_3D_UNIFORM" | "FLOAT_4D_UNIFORM" | "INT_1D_UNIFORM" | "INT_2D_UNIFORM" | "INT_3D_UNIFORM" | "INT_4D_UNIFORM" | "UINT_1D_UNIFORM" | "UINT_2D_UNIFORM" | "UINT_3D_UNIFORM" | "UINT_4D_UNIFORM" | "BOOL_1D_UNIFORM" | "BOOL_2D_UNIFORM" | "BOOL_3D_UNIFORM" | "BOOL_4D_UNIFORM";
+/**
+ * Get index of GPULayer in array of inputs.
+ * Used by GPUComposer.
+ * @private
+ */
+export declare function indexOfLayerInArray(layer: GPULayer, array: (GPULayer | GPULayerState)[]): number;

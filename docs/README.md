@@ -31,6 +31,7 @@ gpu-io
 - [WEBGL2](README.md#webgl2)
 - [WEBGL1](README.md#webgl1)
 - [EXPERIMENTAL\_WEBGL](README.md#experimental_webgl)
+- [EXPERIMENTAL\_WEBGL2](README.md#experimental_webgl2)
 - [PRECISION\_LOW\_P](README.md#precision_low_p)
 - [PRECISION\_MEDIUM\_P](README.md#precision_medium_p)
 - [PRECISION\_HIGH\_P](README.md#precision_high_p)
@@ -42,6 +43,7 @@ gpu-io
 - [GPULayerNumComponents](README.md#gpulayernumcomponents)
 - [GPULayerFilter](README.md#gpulayerfilter)
 - [GPULayerWrap](README.md#gpulayerwrap)
+- [GPULayerState](README.md#gpulayerstate)
 - [GLSLVersion](README.md#glslversion)
 - [GLSLPrecision](README.md#glslprecision)
 - [UniformType](README.md#uniformtype)
@@ -218,6 +220,14 @@ Experimental WebGL context ID.
 
 ___
 
+### EXPERIMENTAL\_WEBGL2
+
+• `Const` **EXPERIMENTAL\_WEBGL2**: ``"experimental-webgl2"``
+
+Experimental WebGL context ID.
+
+___
+
 ### PRECISION\_LOW\_P
 
 • `Const` **PRECISION\_LOW\_P**: ``"lowp"``
@@ -279,6 +289,22 @@ ___
 Ƭ **GPULayerWrap**: typeof [`REPEAT`](README.md#repeat) \| typeof [`CLAMP_TO_EDGE`](README.md#clamp_to_edge)
 
 GPULayer wrap types.
+
+___
+
+### GPULayerState
+
+Ƭ **GPULayerState**: `Object`
+
+The WebGLTexture corresponding to a GPULayer buffer (e.g. currentState or lastState).
+This data structure also includes a reference back to the GPULayer that it originated from.
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `texture` | `WebGLTexture` |
+| `layer` | [`GPULayer`](classes/GPULayer.md) |
 
 ___
 
@@ -465,9 +491,10 @@ Copy contents of one GPULayer to another GPULayer.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `params` | `Object` | - |
+| `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output. |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input/output. |
 
 #### Returns
@@ -486,10 +513,11 @@ Add several GPULayers together.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `params` | `Object` | - |
+| `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the inputs/output. |
 | `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components of the inputs/output. |
+| `params.name` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.numInputs?` | `number` | The number of inputs to add together, defaults to 2. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the inputs/output. |
 
@@ -509,10 +537,11 @@ Add uniform "u_value" to a GPULayer.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `params` | `Object` | - |
+| `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output (we assume "u_value" has the same type). |
 | `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components of the input/output and "u_value". |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input/output/"u_value". |
 
 #### Returns
@@ -531,10 +560,11 @@ Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `params` | `Object` | - |
+| `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
 | `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components in the input. |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns
@@ -553,10 +583,11 @@ Set all elements in a GPULayer to uniform "u_value".
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `params` | `Object` | - |
+| `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the output (we assume "u_value" has same type). |
 | `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components in the output/"u_value". |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the output/"u_value". |
 
 #### Returns
