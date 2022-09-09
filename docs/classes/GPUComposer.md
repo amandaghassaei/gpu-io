@@ -108,7 +108,7 @@ Create a GPUComposer.
 | `params.contextOptions.antialias?` | `boolean` | - |
 | `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
 | `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
-| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | - |
+| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global float precision in shader programs. |
 | `params.verboseLogging?` | `boolean` | Set the verbosity of GPUComposer logging (defaults to false). |
 | `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) | Custom error handler, defaults to throwing an Error with message. |
 
@@ -118,14 +118,18 @@ Create a GPUComposer.
 
 ▸ `Static` **initWithThreeRenderer**(`renderer`, `params?`): [`GPUComposer`](GPUComposer.md)
 
+Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
+
 #### Parameters
 
-| Name | Type |
-| :------ | :------ |
-| `renderer` | `WebGLRenderer` |
-| `params?` | `Object` |
-| `params.verboseLogging?` | `boolean` |
-| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) |
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `renderer` | `WebGLRenderer` | Threejs WebGLRenderer. |
+| `params?` | `Object` | GPUComposer parameters. |
+| `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
+| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global float precision in shader programs. |
+| `params.verboseLogging?` | `boolean` | Set the verbosity of GPUComposer logging (defaults to false). |
+| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) | Custom error handler, defaults to throwing an Error with message. |
 
 #### Returns
 
@@ -487,7 +491,7 @@ ___
 
 ▸ **resetThreeState**(): `void`
 
-If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
+If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
 
 #### Returns
 

@@ -2267,6 +2267,19 @@ var LayerVectorFieldVertexShader_1 = __webpack_require__(634);
 var conversions_1 = __webpack_require__(690);
 var Programs_1 = __webpack_require__(579);
 var GPUComposer = /** @class */ (function () {
+    /**
+     * Create a GPUComposer.
+     * @param params - GPUComposer parameters.
+     * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
+     * @param params.context - Pass in a WebGL context for the GPUcomposer to user.
+     * @param params.contextID - Set the contextID to use when initing a new WebGL context.
+     * @param params.contextOptions - Options to pass to WebGL context on initialization.
+     * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
+     * @param params.intPrecision - Set the global integer precision in shader programs.
+     * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+     * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+     */
     function GPUComposer(params) {
         var _a;
         this._errorThrown = false;
@@ -2368,6 +2381,7 @@ var GPUComposer = /** @class */ (function () {
             if (!gl) {
                 var _gl = canvas.getContext(constants_1.WEBGL2, params.contextOptions)
                     || canvas.getContext(constants_1.WEBGL1, params.contextOptions)
+                    || canvas.getContext(constants_1.EXPERIMENTAL_WEBGL2, params.contextOptions)
                     || canvas.getContext(constants_1.EXPERIMENTAL_WEBGL, params.contextOptions);
                 if (_gl) {
                     gl = _gl;
@@ -2420,8 +2434,18 @@ var GPUComposer = /** @class */ (function () {
         if (this.verboseLogging)
             console.log("".concat(this._maxNumTextures, " textures max."));
     }
+    /**
+     * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
+     * @param renderer - Threejs WebGLRenderer.
+     * @param params - GPUComposer parameters.
+     * @param params.intPrecision - Set the global integer precision in shader programs.
+     * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+     * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+     * @returns
+     */
     GPUComposer.initWithThreeRenderer = function (renderer, params) {
-        var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision || constants_1.PRECISION_HIGH_P, intPrecision: renderer.capabilities.precision || constants_1.PRECISION_HIGH_P }, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? constants_1.GLSL3 : constants_1.GLSL1 }));
+        var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision, intPrecision: renderer.capabilities.precision }, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? constants_1.GLSL3 : constants_1.GLSL1 }));
         // Attach renderer.
         // @ts-ignore
         composer.renderer = renderer;
@@ -6287,8 +6311,8 @@ exports.isBoolean = isBoolean;
 
 // Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LAYER_LINES_PROGRAM_NAME = exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.GPUIO_FLOAT_PRECISION = exports.GPUIO_INT_PRECISION = exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = void 0;
+exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL2 = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.GPUIO_FLOAT_PRECISION = exports.GPUIO_INT_PRECISION = exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = void 0;
 /**
  * Half float data type.
  */
@@ -6403,6 +6427,10 @@ exports.WEBGL1 = 'webgl';
  * Experimental WebGL context ID.
  */
 exports.EXPERIMENTAL_WEBGL = 'experimental-webgl';
+/**
+ * Experimental WebGL context ID.
+ */
+exports.EXPERIMENTAL_WEBGL2 = 'experimental-webgl2';
 // Precision declarations.
 /**
  * GLSL lowp precision declaration.

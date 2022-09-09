@@ -151,6 +151,10 @@ export declare const WEBGL1 = "webgl";
  */
 export declare const EXPERIMENTAL_WEBGL = "experimental-webgl";
 /**
+ * Experimental WebGL context ID.
+ */
+export declare const EXPERIMENTAL_WEBGL2 = "experimental-webgl2";
+/**
  * GLSL lowp precision declaration.
  */
 export declare const PRECISION_LOW_P = "lowp";

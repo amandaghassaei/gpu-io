@@ -1,5 +1,5 @@
 import { GPULayer } from './GPULayer';
-import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState } from './constants';
+import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2 } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
@@ -93,10 +93,23 @@ export declare class GPUComposer {
     private _lastTickTime?;
     private _lastTickFPS?;
     private _numTicks;
+    /**
+     * Create a GPUComposer.
+     * @param params - GPUComposer parameters.
+     * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
+     * @param params.context - Pass in a WebGL context for the GPUcomposer to user.
+     * @param params.contextID - Set the contextID to use when initing a new WebGL context.
+     * @param params.contextOptions - Options to pass to WebGL context on initialization.
+     * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
+     * @param params.intPrecision - Set the global integer precision in shader programs.
+     * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+     * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+     */
     constructor(params: {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext;
-        contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | string;
+        contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | typeof EXPERIMENTAL_WEBGL2 | string;
         contextOptions?: {
             antialias?: boolean;
             [key: string]: any;
@@ -107,7 +120,19 @@ export declare class GPUComposer {
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     });
+    /**
+     * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
+     * @param renderer - Threejs WebGLRenderer.
+     * @param params - GPUComposer parameters.
+     * @param params.intPrecision - Set the global integer precision in shader programs.
+     * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+     * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+     * @returns
+     */
     static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
+        intPrecision?: GLSLPrecision;
+        floatPrecision?: GLSLPrecision;
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     }): GPUComposer;

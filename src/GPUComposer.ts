@@ -220,7 +220,7 @@ export class GPUComposer {
 	 * @param params.contextOptions - Options to pass to WebGL context on initialization.
 	 * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
 	 * @param params.intPrecision - Set the global integer precision in shader programs.
-	 * @param params.intPrecision - Set the global float precision in shader programs.
+	 * @param params.floatPrecision - Set the global float precision in shader programs.
 	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
 	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
      */
@@ -344,17 +344,29 @@ export class GPUComposer {
 		if (this.verboseLogging) console.log(`${this._maxNumTextures} textures max.`);
 	}
 
+	/**
+	 * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
+	 * @param renderer - Threejs WebGLRenderer.
+	 * @param params - GPUComposer parameters.
+	 * @param params.intPrecision - Set the global integer precision in shader programs.
+	 * @param params.floatPrecision - Set the global float precision in shader programs.
+	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+	 * @returns 
+	 */
 	static initWithThreeRenderer(
 		renderer: WebGLRenderer,
 		params?: {
+			intPrecision?: GLSLPrecision,
+			floatPrecision?: GLSLPrecision,
 			verboseLogging?: boolean,
 			errorCallback?: ErrorCallback,
 		},
 	) {
 		const composer = new GPUComposer(
 			{
-				floatPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
-				intPrecision: renderer.capabilities.precision as GLSLPrecision || PRECISION_HIGH_P,
+				floatPrecision: renderer.capabilities.precision as GLSLPrecision,
+				intPrecision: renderer.capabilities.precision as GLSLPrecision,
 				...params,
 				canvas: renderer.domElement,
 				context: renderer.getContext(),
@@ -1722,7 +1734,7 @@ export class GPUComposer {
 	}
 
 	/**
-	 * If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
+	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
 	 */
 	resetThreeState() {
 		if (!this._renderer) {
