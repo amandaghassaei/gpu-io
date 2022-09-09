@@ -137,6 +137,10 @@ function main({ gui, contextID, glslVersion}) {
 	gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
 
 	function savePNG() {
+		composer.step({
+			program: fractalRender,
+			input: state,
+		});
 		composer.savePNG({ filename: `julia-set_${PARAMS.cReal}_${PARAMS.cImaginary}i` });
 	}
 	// Add 'p' hotkey to print screen.

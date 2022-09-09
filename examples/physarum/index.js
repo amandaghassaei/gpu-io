@@ -92,7 +92,6 @@ function main({ gui, glslVersion, contextID }) {
 		reset,
 		savePNG: savePNG,
 	};
-	let shouldSavePNG = false;
 
 	const canvas = document.createElement('canvas');
 	document.body.appendChild(canvas);
@@ -493,12 +492,6 @@ function main({ gui, glslVersion, contextID }) {
 			program: render,
 			input: trail,
 		});
-
-		// Be sure to call this after we've rendered things.
-		if (shouldSavePNG) {
-			composer.savePNG({ filename: 'physarum' });
-			shouldSavePNG = false;
-		}
 	}
 
 	// Touch events.
@@ -544,8 +537,11 @@ function main({ gui, glslVersion, contextID }) {
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
-		// Save png on next render loop.
-		shouldSavePNG = true;
+		composer.step({
+			program: render,
+			input: trail,
+		});
+		composer.savePNG({ filename: 'physarum' });
 	}
 	function onKeydown(e) {
 		if (e.key === 'p') {

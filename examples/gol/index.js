@@ -258,7 +258,11 @@ function main({ gui, contextID, glslVersion}) {
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
-		state.savePNG({ filename: 'gol', multiplier: 255 });
+		composer.step({
+			program: golRender,
+			input: state,
+		});
+		composer.savePNG({ filename: 'gol' });
 	}
 	window.addEventListener('keydown', onKeydown);
 	function onKeydown(e) {
