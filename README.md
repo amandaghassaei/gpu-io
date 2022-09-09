@@ -48,11 +48,11 @@ import { GPUComposer, GPULayer, GPUProgram } from 'gpu-io';
 
 ```html
 <html>
-  <head>
-    <script src="gpu-io.js"></script>
-  </head>
-  <body>
-  </body>
+    <head>
+        <script src="gpu-io.js"></script>
+    </head>
+    <body>
+    </body>
 </html>
 ```
 
@@ -98,35 +98,35 @@ To use the output from a gpu-io GPULayer to a Threejs Texture:
 
 ```js
 const layer1 = new GPUIO.GPULayer({
-	name: 'layer1',
-	dimensions: [100, 100],
-	type: GPUIO.UNSIGNED_BYTE,
-	numComponents: 1,
-	wrapS: GPUIO.CLAMP_TO_EDGE,
-	wrapT: GPUIO.CLAMP_TO_EDGE,
-	filter: GPUIO.NEAREST,
-	writable: true,
-	numBuffers: 1,
+    name: 'layer1',
+    dimensions: [100, 100],
+    type: GPUIO.UNSIGNED_BYTE,
+    numComponents: 1,
+    wrapS: GPUIO.CLAMP_TO_EDGE,
+    wrapT: GPUIO.CLAMP_TO_EDGE,
+    filter: GPUIO.NEAREST,
+    writable: true,
+    numBuffers: 1,
 });
 
 const texture = new THREE.Texture(
-	renderer.domElement,
-	undefined,
-	THREE.ClampToEdgeWrapping,
-	THREE.ClampToEdgeWrapping,
-	THREE.NearestFilter,
-	THREE.NearestFilter,
-	THREE.RGBFormat,
-	THREE.UnsignedByteType,
+    renderer.domElement,
+    undefined,
+    THREE.ClampToEdgeWrapping,
+    THREE.ClampToEdgeWrapping,
+    THREE.NearestFilter,
+    THREE.NearestFilter,
+    THREE.RGBFormat,
+    THREE.UnsignedByteType,
 );
 // Link webgl texture to threejs object.
 layer1.attachToThreeTexture(texture);
 
 const mesh = new THREE.Mesh(
-	new PlaneBufferGeometry(1, 1),
-	new MeshBasicMaterial({
-		map: offsetTextureThree,
-	}),
+    new PlaneBufferGeometry(1, 1),
+    new MeshBasicMaterial({
+        map: offsetTextureThree,
+    }),
 );
 
 // Updates to layer1 will propagate to mesh map without any
@@ -150,21 +150,21 @@ This library defaults to using WebGL2 (if available) with GLSL version 300 (GLSL
 
 ```js
 import {
-	GPUComposer,
-	GLSL1,
-	WEBGL1,
+    GPUComposer,
+    GLSL1,
+    WEBGL1,
 } from 'gpu-io';
 
 // Init with WebGL2 (if available) with GLSL1.
 const composer1 = new GPUComposer({
-	canvas: document.createElement('canvas'),
-	glslVersion: GLSL1,
+    canvas: document.createElement('canvas'),
+    glslVersion: GLSL1,
 });
 
 // Init with WebGL1 with GLSL1 (GLSL3 is not supported in WebGL1).
 const composer2 = new GPUComposer({
-	canvas: document.createElement('canvas'),
-	contextID: WEBGL1,
+    canvas: document.createElement('canvas'),
+    contextID: WEBGL1,
 });
 ```
 
@@ -199,16 +199,16 @@ By default all shaders in this library are inited with highp precision floats an
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
 ```js
 import {
-	GPUComposer,
-	PRECISION_LOW_P,
-	PRECISION_MEDIUM_P,
-	PRECISION_HIGH_P,
+    GPUComposer,
+    PRECISION_LOW_P,
+    PRECISION_MEDIUM_P,
+    PRECISION_HIGH_P,
 } from 'gpu-io';
 
 const composer = new GPUComposer({
-	canvas: document.getElementById('webgl-canvas'),
-	intPrecision: PRECISION_MEDIUM_P,
-	floatPrecision: PRECISION_MEDIUM_P,
+    canvas: document.getElementById('webgl-canvas'),
+    intPrecision: PRECISION_MEDIUM_P,
+    floatPrecision: PRECISION_MEDIUM_P,
 });
 ```
 
@@ -234,10 +234,10 @@ I've also included the following helper functions to test the precision of mediu
 
 ```js
 import {
-	isHighpSupportedInVertexShader,
-	isHighpSupportedInFragmentShader,
-	getVertexShaderMediumpPrecision,
-	getFragmentShaderMediumpPrecision,
+    isHighpSupportedInVertexShader,
+    isHighpSupportedInFragmentShader,
+    getVertexShaderMediumpPrecision,
+    getFragmentShaderMediumpPrecision,
 } from 'gpu-io';
 
 // Prints 'highp' or 'mediump' depending on returned precision of
