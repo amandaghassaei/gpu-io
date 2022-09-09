@@ -33,7 +33,7 @@
 	};
 
 	// Global variables to get from example app.
-	let loop, dispose, composer;
+	let loop, dispose, composer, canvas;
 	// Other global ui variables.
 	let title;
 	let useGLSL3Toggle;
@@ -42,13 +42,21 @@
 		if (useGLSL3Toggle) {
 			settings.remove(useGLSL3Toggle);
 			useGLSL3Toggle = undefined;
+			if (canvas) {
+				canvas.addEventListener('gesturestart', disableZoom);
+				canvas.addEventListener('gesturechange', disableZoom); 
+				canvas.addEventListener('gestureend', disableZoom);
+			}
 		}
 		if (dispose) dispose();
-		({ loop, composer, dispose } = main({
+		({ loop, composer, dispose, canvas } = main({
 			gui,
 			contextID: webGLSettings.webGL2 ? WEBGL2 : WEBGL1,
 			glslVersion: webGLSettings.useGLSL3 ? GLSL3 : GLSL1,
 		}));
+		canvas.addEventListener('gesturestart', disableZoom);
+		canvas.addEventListener('gesturechange', disableZoom); 
+		canvas.addEventListener('gestureend', disableZoom);
 		if (webGLSettings.webGL2) {
 			useGLSL3Toggle = settings.add(webGLSettings, 'useGLSL3').name('Use GLSL 300').onChange(reloadExampleWithNewParams);
 		}
@@ -76,9 +84,6 @@
 	reloadExampleWithNewParams();
 
 	// Disable gestures.
-	document.addEventListener('gesturestart', disableZoom);
-	document.addEventListener('gesturechange', disableZoom); 
-	document.addEventListener('gestureend', disableZoom);
 	function disableZoom(e) {
 		e.preventDefault();
 		const scale = 'scale(1)';

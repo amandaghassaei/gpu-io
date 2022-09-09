@@ -312,5 +312,6 @@ function main({ gui, contextID, glslVersion}) {
 		loop,
 		dispose,
 		composer,
+		canvas,
 	};
 }

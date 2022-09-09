@@ -688,5 +688,6 @@ function main({ gui, glslVersion, contextID }) {
 		loop,
 		dispose,
 		composer,
+		canvas,
 	};
 }
