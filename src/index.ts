@@ -51,7 +51,8 @@ const {
 	copyProgram,
 	addLayersProgram,
 	addValueProgram,
-	renderAmplitudeGrayscaleProgram,
+	renderAmplitudeProgram,
+	renderSignedAmplitudeProgram,
 	setValueProgram,
 } = Programs;
 export {
@@ -67,7 +68,8 @@ export {
 	copyProgram,
 	addLayersProgram,
 	addValueProgram,
-	renderAmplitudeGrayscaleProgram,
+	renderAmplitudeProgram,
+	renderSignedAmplitudeProgram,
 	setValueProgram,
 	_testing,
 }

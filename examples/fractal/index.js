@@ -6,7 +6,7 @@ function main({ gui, contextID, glslVersion}) {
 		GPUProgram,
 		FLOAT,
 		INT,
-		renderAmplitudeGrayscaleProgram,
+		renderAmplitudeProgram,
 	} = GPUIO;
 
 	let aspectRatio = window.innerWidth / window.innerHeight;
@@ -95,11 +95,11 @@ function main({ gui, contextID, glslVersion}) {
 			},
 		],
 	});
-	const fractalRender = renderAmplitudeGrayscaleProgram({
+	const fractalRender = renderAmplitudeProgram({
 		name: 'render',
 		composer,
 		type: state.type,
-		numComponents: state.numComponents,
+		components: 'x',
 	});
 
 	// Render loop.

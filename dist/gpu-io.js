@@ -3553,7 +3553,7 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     /**
-     * If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
      */
     GPUComposer.prototype.resetThreeState = function () {
         if (!this._renderer) {
@@ -5869,7 +5869,7 @@ exports.GPUProgram = GPUProgram;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderAmplitudeGrayscaleProgram = exports.setValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
+exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.setValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
 var GPUProgram_1 = __webpack_require__(664);
@@ -5939,6 +5939,7 @@ exports.addLayersProgram = addLayersProgram;
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.numComponents - The number of components of the input/output and "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.value - Initial value to add, defaults to 0 vector of length numComponents.  Change this later using uniform "u_value".
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
@@ -5959,7 +5960,7 @@ function addValueProgram(params) {
             },
             {
                 name: 'u_value',
-                value: (new Array(numComponents)).fill(0),
+                value: params.value !== undefined ? params.value : (new Array(numComponents)).fill(0),
                 type: (0, conversions_1.uniformTypeForType)(type, composer.glslVersion),
             },
         ],
@@ -5973,6 +5974,7 @@ exports.addValueProgram = addValueProgram;
  * @param params.type - The type of the output (we assume "u_value" has same type).
  * @param params.numComponents - The number of components in the output/"u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.value - Initial value to set, defaults to 0 vector of length numComponents.  Change this later using uniform "u_value".
  * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
@@ -5987,7 +5989,7 @@ function setValueProgram(params) {
         uniforms: [
             {
                 name: 'u_value',
-                value: (new Array(numComponents)).fill(0),
+                value: params.value !== undefined ? params.value : (new Array(numComponents)).fill(0),
                 type: (0, conversions_1.uniformTypeForType)(type, composer.glslVersion),
             },
         ],
@@ -5995,27 +5997,31 @@ function setValueProgram(params) {
 }
 exports.setValueProgram = setValueProgram;
 /**
- * Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
+ * Render RGBA amplitude of an input GPULayer's components, defaults to greyscale rendering and works for scalar and vector fields.
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
- * @param params.numComponents - The number of components in the input.
+ * @param params.components - Component(s) of input GPULayer to render.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.color - RGB color for non-zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_color".
+ * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to black.  Change this later using uniform "u_colorZero".
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
-function renderAmplitudeGrayscaleProgram(params) {
-    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+function renderAmplitudeProgram(params) {
+    var composer = params.composer, type = params.type, components = params.components;
     var precision = params.precision || '';
+    var numComponents = components.length;
     var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
     var glslFloatType = (0, conversions_1.glslTypeForType)(constants_1.FLOAT, numComponents);
     var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
     var shouldCast = glslFloatType === glslType;
-    var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
     var name = params.name || "renderAmplitude_".concat(glslType, "_w_").concat(numComponents, "_components");
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_fragColor;\nvoid main() {\n\t").concat(glslFloatType, " amplitude = u_scale * ").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(componentSelection, ");\n\tout_fragColor = vec4(amplitude, amplitude, amplitude, u_opacity);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_color;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_fragColor;\nvoid main() {\n\tfloat amplitude = u_scale * ").concat(numComponents === 1 ? 'abs' : 'length', "(").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(components === 'xyzw' || components === 'rgba' || components === 'stpq' ? '' : ".".concat(components), "));\n\tvec3 color = mix(u_colorZero, u_color, amplitude);\n\tout_fragColor = vec4(color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -6024,18 +6030,89 @@ function renderAmplitudeGrayscaleProgram(params) {
             },
             {
                 name: 'u_scale',
-                value: 1,
+                value: params.scale !== undefined ? params.scale : 1,
                 type: constants_1.FLOAT,
             },
             {
                 name: 'u_opacity',
-                value: 1,
+                value: params.opacity !== undefined ? params.opacity : 1,
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_color',
+                value: params.color || [1, 1, 1],
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_colorZero',
+                value: params.colorZero || [0, 0, 0],
                 type: constants_1.FLOAT,
             },
         ],
     });
 }
-exports.renderAmplitudeGrayscaleProgram = renderAmplitudeGrayscaleProgram;
+exports.renderAmplitudeProgram = renderAmplitudeProgram;
+/**
+ * Render signed amplitude of an input GPULayer to linearly interpolated colors.
+ * @param params - Program parameters.
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the input.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.colorNegative - RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative".
+ * @param params.colorPositive - RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive".
+ * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_colorZero".
+ * @param params.component - Component of input GPULayer to render, defaults to "x".
+ * @param params.precision - Optionally specify the precision of the input.
+ * @returns
+ */
+function renderSignedAmplitudeProgram(params) {
+    var composer = params.composer, type = params.type;
+    var precision = params.precision || '';
+    var glslType = (0, conversions_1.glslTypeForType)(type, 1);
+    var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
+    var castFloat = glslType === 'float';
+    var component = 'x';
+    var name = params.name || "renderAmplitude_".concat(glslType, "_").concat(component);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: name,
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_colorNegative;\nuniform vec3 u_colorPositive;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_fragColor;\nvoid main() {\n\tfloat signedAmplitude = u_scale * ").concat(castFloat ? '' : 'float', "(texture(u_state, v_uv).").concat(component, ");\n\tfloat amplitudeSign = sign(signedAmplitude);\n\tvec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);\n\tvec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);\n\tout_fragColor = vec4(color, u_opacity);\n}"),
+        uniforms: [
+            {
+                name: 'u_state',
+                value: 0,
+                type: constants_1.INT,
+            },
+            {
+                name: 'u_scale',
+                value: params.scale !== undefined ? params.scale : 1,
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_opacity',
+                value: params.opacity !== undefined ? params.opacity : 1,
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_colorNegative',
+                value: params.colorNegative || [0, 0, 1],
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_colorPositive',
+                value: params.colorPositive || [1, 0, 0],
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_colorZero',
+                value: params.colorZero || [1, 1, 1],
+                type: constants_1.FLOAT,
+            },
+        ],
+    });
+}
+exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 /**
  * @private
  */
@@ -6948,7 +7025,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.setValueProgram = exports.renderAmplitudeGrayscaleProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils = __webpack_require__(593);
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
@@ -6978,11 +7055,12 @@ exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
 exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
 exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
 exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
-var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, renderAmplitudeGrayscaleProgram = Programs.renderAmplitudeGrayscaleProgram, setValueProgram = Programs.setValueProgram;
+var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, renderAmplitudeProgram = Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram = Programs.renderSignedAmplitudeProgram, setValueProgram = Programs.setValueProgram;
 exports.copyProgram = copyProgram;
 exports.addLayersProgram = addLayersProgram;
 exports.addValueProgram = addValueProgram;
-exports.renderAmplitudeGrayscaleProgram = renderAmplitudeGrayscaleProgram;
+exports.renderAmplitudeProgram = renderAmplitudeProgram;
+exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 exports.setValueProgram = setValueProgram;
 
 

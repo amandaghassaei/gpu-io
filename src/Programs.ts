@@ -93,6 +93,7 @@ void main() {
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.numComponents - The number of components of the input/output and "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.value - Initial value to add, defaults to 0 vector of length numComponents.  Change this later using uniform "u_value".
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
@@ -101,6 +102,7 @@ void main() {
 	type: GPULayerType,
 	numComponents: GPULayerNumComponents,
 	name?: string,
+	value?: number | number[],
 	precision?: GLSLPrecision,
 }) {
 	const { composer, type, numComponents } = params;
@@ -126,7 +128,7 @@ void main() {
 			},
 			{
 				name: 'u_value',
-				value: (new Array(numComponents)).fill(0),
+				value: params.value !== undefined ? params.value : (new Array(numComponents)).fill(0),
 				type: uniformTypeForType(type, composer.glslVersion),
 			},
 		],
@@ -140,6 +142,7 @@ void main() {
  * @param params.type - The type of the output (we assume "u_value" has same type).
  * @param params.numComponents - The number of components in the output/"u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.value - Initial value to set, defaults to 0 vector of length numComponents.  Change this later using uniform "u_value".
  * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
@@ -148,6 +151,7 @@ export function setValueProgram(params: {
 	type: GPULayerType,
 	numComponents: GPULayerNumComponents,
 	name?: string,
+	value?: number | number[],
 	precision?: GLSLPrecision,
 }) {
 	const { composer, type, numComponents } = params;
@@ -165,7 +169,7 @@ void main() {
 		uniforms: [
 			{
 				name: 'u_value',
-				value: (new Array(numComponents)).fill(0),
+				value: params.value !== undefined ? params.value : (new Array(numComponents)).fill(0),
 				type: uniformTypeForType(type, composer.glslVersion),
 			},
 		],
@@ -173,29 +177,37 @@ void main() {
 }
 
 /**
- * Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
+ * Render RGBA amplitude of an input GPULayer's components, defaults to greyscale rendering and works for scalar and vector fields.
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
- * @param params.numComponents - The number of components in the input.
+ * @param params.components - Component(s) of input GPULayer to render.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.color - RGB color for non-zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_color".
+ * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to black.  Change this later using uniform "u_colorZero".
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
- export function renderAmplitudeGrayscaleProgram(params: {
+ export function renderAmplitudeProgram(params: {
 	composer: GPUComposer,
 	type: GPULayerType,
-	numComponents: GPULayerNumComponents,
+	components: string,
 	name?: string,
+	scale?: number,
+	opacity?: number,
+	color?: number[],
+	colorZero: number[],
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type, numComponents } = params;
+	const { composer, type, components } = params;
 	const precision = params.precision || '';
+	const numComponents = components.length as GPULayerNumComponents;
 	const glslType = glslTypeForType(type, numComponents);
 	const glslFloatType = glslTypeForType(FLOAT, numComponents);
 	const glslPrefix = glslPrefixForType(type);
 	const shouldCast = glslFloatType === glslType;
-	const componentSelection = glslComponentSelectionForNumComponents(numComponents);
 	const name = params.name || `renderAmplitude_${glslType}_w_${numComponents}_components`;
 	return new GPUProgram(composer, {
 		name,
@@ -203,11 +215,14 @@ void main() {
 in vec2 v_uv;
 uniform float u_opacity;
 uniform float u_scale;
+uniform vec3 u_color;
+uniform vec3 u_colorZero;
 uniform ${precision} ${glslPrefix}sampler2D u_state;
 out vec4 out_fragColor;
 void main() {
-	${glslFloatType} amplitude = u_scale * ${shouldCast ? '' : glslFloatType}(texture(u_state, v_uv)${componentSelection});
-	out_fragColor = vec4(amplitude, amplitude, amplitude, u_opacity);
+	float amplitude = u_scale * ${ numComponents === 1 ? 'abs' : 'length'}(${shouldCast ? '' : glslFloatType}(texture(u_state, v_uv)${components === 'xyzw' || components === 'rgba' || components === 'stpq' ? '' : `.${components}`}));
+	vec3 color = mix(u_colorZero, u_color, amplitude);
+	out_fragColor = vec4(color, u_opacity);
 }`,
 		uniforms: [
 			{
@@ -217,12 +232,109 @@ void main() {
 			},
 			{
 				name: 'u_scale',
-				value: 1,
+				value: params.scale !== undefined ? params.scale : 1,
 				type: FLOAT,
 			},
 			{
 				name: 'u_opacity',
-				value: 1,
+				value: params.opacity !== undefined ? params.opacity : 1,
+				type: FLOAT,
+			},
+			{
+				name: 'u_color',
+				value: params.color || [1, 1, 1],
+				type: FLOAT,
+			},
+			{
+				name: 'u_colorZero',
+				value: params.colorZero || [0, 0, 0],
+				type: FLOAT,
+			},
+		],
+	});
+}
+
+/**
+ * Render signed amplitude of an input GPULayer to linearly interpolated colors.
+ * @param params - Program parameters.
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the input.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.colorNegative - RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative".
+ * @param params.colorPositive - RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive".
+ * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_colorZero".
+ * @param params.component - Component of input GPULayer to render, defaults to "x".
+ * @param params.precision - Optionally specify the precision of the input.
+ * @returns
+ */
+ export function renderSignedAmplitudeProgram(params: {
+	composer: GPUComposer,
+	type: GPULayerType,
+	name?: string,
+	scale?: number,
+	opacity?: number,
+	colorNegative?: number[],
+	colorPositive?: number[],
+	colorZero?: number[],
+	component?: 'x' | 'y' | 'z' | 'w',
+	precision?: GLSLPrecision,
+}) {
+	const { composer, type } = params;
+	const precision = params.precision || '';
+	const glslType = glslTypeForType(type, 1);
+	const glslPrefix = glslPrefixForType(type);
+	const castFloat = glslType === 'float';
+	const component = 'x';
+	const name = params.name || `renderAmplitude_${glslType}_${component}`;
+	return new GPUProgram(composer, {
+		name,
+		fragmentShader: `
+in vec2 v_uv;
+uniform float u_opacity;
+uniform float u_scale;
+uniform vec3 u_colorNegative;
+uniform vec3 u_colorPositive;
+uniform vec3 u_colorZero;
+uniform ${precision} ${glslPrefix}sampler2D u_state;
+out vec4 out_fragColor;
+void main() {
+	float signedAmplitude = u_scale * ${castFloat ? '' : 'float'}(texture(u_state, v_uv).${component});
+	float amplitudeSign = sign(signedAmplitude);
+	vec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);
+	vec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);
+	out_fragColor = vec4(color, u_opacity);
+}`,
+		uniforms: [
+			{
+				name: 'u_state',
+				value: 0,
+				type: INT,
+			},
+			{
+				name: 'u_scale',
+				value: params.scale !== undefined ? params.scale : 1,
+				type: FLOAT,
+			},
+			{
+				name: 'u_opacity',
+				value: params.opacity !== undefined ? params.opacity : 1,
+				type: FLOAT,
+			},
+			{
+				name: 'u_colorNegative',
+				value: params.colorNegative || [0, 0, 1],
+				type: FLOAT,
+			},
+			{
+				name: 'u_colorPositive',
+				value: params.colorPositive || [1, 0, 0],
+				type: FLOAT,
+			},
+			{
+				name: 'u_colorZero',
+				value: params.colorZero || [1, 1, 1],
 				type: FLOAT,
 			},
 		],

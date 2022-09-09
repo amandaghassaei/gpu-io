@@ -9,7 +9,7 @@ function main({ gui, contextID, glslVersion}) {
 		UINT,
 		FLOAT,
 		REPEAT,
-		renderAmplitudeGrayscaleProgram,
+		renderAmplitudeProgram,
 		copyProgram,
 		PRECISION_LOW_P,
 	} = GPUIO;
@@ -119,11 +119,11 @@ function main({ gui, contextID, glslVersion}) {
 			},
 		],
 	});
-	const golRender = renderAmplitudeGrayscaleProgram({
+	const golRender = renderAmplitudeProgram({
 		name: 'render',
 		composer,
 		type: state.type,
-		numComponents: state.numComponents,
+		components: 'x',
 		precision: PRECISION_LOW_P,
 	});
 

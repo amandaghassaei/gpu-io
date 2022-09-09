@@ -8,7 +8,7 @@ function main({ gui, glslVersion, contextID }) {
 		FLOAT,
 		REPEAT,
 		LINEAR,
-		renderAmplitudeGrayscaleProgram,
+		renderAmplitudeProgram,
 		addValueProgram,
 	} = GPUIO;
 
@@ -434,11 +434,11 @@ function main({ gui, glslVersion, contextID }) {
 		],
 	});
 	// Fragment shader program for rendering trail state to screen (with a scaling factor).
-	const render = renderAmplitudeGrayscaleProgram({
+	const render = renderAmplitudeProgram({
 		name: 'render',
 		composer,
 		type: trail.type,
-		numComponents: trail.numComponents,
+		components: 'x',
 	});
 	render.setUniform('u_scale', PARAMS.renderAmplitude);
 

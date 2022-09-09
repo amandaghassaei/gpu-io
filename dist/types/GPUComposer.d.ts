@@ -394,7 +394,7 @@ export declare class GPUComposer {
         shouldBlendAlpha?: boolean;
     }): void;
     /**
-     * If this GPUComposer has been inited with a THREE.WebGLRender, call resetThreeState() in render loop after performing any step or draw functions.
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
      */
     resetThreeState(): void;
     /**
