@@ -208,5 +208,71 @@ The following functions are not polyfilled by this library, but they may still b
 
 
 ## Other GLSL1 Gotchas
- TODO:
-- Uniforms can be used as for loop 
+
+- GLSL1 uniforms cannot be used to set the length of a for loop
+
+The following code will run in GLSL3, but not in GLSL1:
+
+```js
+// JavaScript
+const program = new GPUProgram({
+	composer, fragmentShader, uniforms: [{ name: 'u_numIters', type: INT, value: 7 }],
+});
+....
+
+program.setUniform('u_numIters', 3);
+```
+
+```glsl
+// fragmentShader
+uniform int u_numIters;
+....
+
+void main() {
+	for (int i = 0; i < u_numIters; i++) {
+		// Do something in loop.
+	}
+	....
+}
+```
+
+Instead, use uniform as a breaking condition:
+
+```glsl
+// fragmentShader
+uniform int u_numIters;
+....
+
+void main() {
+	for (int i = 0; i < 10; i++) {
+		if (i == u_numIters) break;
+		// Do something in loop.
+	}
+	....
+}
+```
+
+OR use compile-time constants:
+
+```js
+// JavaScript
+const program = new GPUProgram({
+	composer, fragmentShader, compileTimeConstants: { NUM_ITERS: '7' },
+});
+....
+
+program.recompile({ NUM_ITERS: '3' });
+```
+
+```glsl
+// fragmentShader
+....
+
+void main() {
+	for (int i = 0; i < NUM_ITERS; i++) {
+		// Do something in loop.
+	}
+	....
+}
+```
+
