@@ -902,7 +902,6 @@ export function minMaxValuesForType(type: GPULayerType) {
 	let min = -Infinity;
 	let max = Infinity;
 	switch(type) {
-		// TODO: handle float types?
 		case UNSIGNED_BYTE:
 			min = MIN_UNSIGNED_BYTE;
 			max = MAX_UNSIGNED_BYTE;

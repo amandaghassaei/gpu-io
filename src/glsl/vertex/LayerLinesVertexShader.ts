@@ -43,24 +43,13 @@ void main() {
 
 	// Wrap if needed.
 	v_lineWrapping = vec2(0.0);
-	//TODO: remove branching
 	#ifdef ${GPUIO_VS_WRAP_X}
-		if (v_uv.x < 0.0) {
-			v_uv.x += 1.0;
-			v_lineWrapping.x = 1.0;
-		} else if (v_uv.x > 1.0) {
-			v_uv.x -= 1.0;
-			v_lineWrapping.x = 1.0;
-		}
+		v_lineWrapping.x = max(step(1.0, v_uv.x), step(v_uv.x, 0.0));
+		v_ux.x = fract(v_uv.x + 1.0);
 	#endif
 	#ifdef ${GPUIO_VS_WRAP_Y}
-		if (v_uv.y < 0.0) {
-			v_uv.y += 1.0;
-			v_lineWrapping.y = 1.0;
-		} else if (v_uv.y > 1.0) {
-			v_uv.y -= 1.0;
-			v_lineWrapping.y = 1.0;
-		}
+		v_lineWrapping.y = max(step(1.0, v_uv.y), step(v_uv.y, 0.0));
+		v_ux.y = fract(v_uv.y + 1.0);
 	#endif
 
 	// Calculate position in [-1, 1] range.

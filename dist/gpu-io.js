@@ -2379,7 +2379,6 @@ var GPUComposer = /** @class */ (function () {
             console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
             glslVersion = constants_1.GLSL1; // Fall back to GLSL1 in these cases.
         }
-        // TODO: check that this is valid.
         this.glslVersion = glslVersion;
         // Set default int/float precision.
         this.intPrecision = params.intPrecision || constants_1.PRECISION_HIGH_P;
@@ -2786,6 +2785,7 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype._setVertexAttribute = function (program, name, size, programName) {
         var gl = this.gl;
         // Point attribute to the currently bound VBO.
+        // TODO: cache attribute location.
         var location = gl.getAttribLocation(program, name);
         if (location < 0) {
             throw new Error("Unable to find vertex attribute \"".concat(name, "\" in program \"").concat(programName, "\"."));
@@ -5065,7 +5065,6 @@ function minMaxValuesForType(type) {
     var min = -Infinity;
     var max = Infinity;
     switch (type) {
-        // TODO: handle float types?
         case constants_1.UNSIGNED_BYTE:
             min = constants_1.MIN_UNSIGNED_BYTE;
             max = constants_1.MAX_UNSIGNED_BYTE;
@@ -5606,7 +5605,6 @@ var GPUProgram = /** @class */ (function () {
         if (!programName) {
             throw new Error("Could not find valid programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
-        // TODO: memoize this.
         var indexLookup = new Array(_samplerUniformsIndices.length).fill(-1);
         for (var i = 0, length_3 = _samplerUniformsIndices.length; i < length_3; i++) {
             var _b = _samplerUniformsIndices[i], inputIndex = _b.inputIndex, shaderIndex = _b.shaderIndex;
@@ -5720,8 +5718,8 @@ var GPUProgram_1 = __webpack_require__(664);
 /**
  * Copy contents of one GPULayer to another GPULayer.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer to be copied.
- * @param params.precision - Optionally specify the precision of the input and output (must be the same).
+ * @param params.type - The type of the input/output.
+ * @param params.precision - Optionally specify the precision of the input/output.
  * @returns
  */
 function copyProgram(params) {
@@ -5744,10 +5742,10 @@ exports.copyProgram = copyProgram;
 /**
  * Add several GPULayers together.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayers to be added (must all be the same).
- * @param params.numComponents - The number of components of the GPULayers to be added (must all be the same).
- * @param params.numInputs - The number of input GPULayers to add together, defaults to 2.
- * @param params.precision - Optionally specify the precision of the inputs and output (must all be the same).
+ * @param params.type - The type of the inputs/output.
+ * @param params.numComponents - The number of components of the inputs/output.
+ * @param params.numInputs - The number of inputs to add together, defaults to 2.
+ * @param params.precision - Optionally specify the precision of the inputs/output.
  * @returns
  */
 function addLayersProgram(params) {
@@ -5771,11 +5769,11 @@ function addLayersProgram(params) {
 }
 exports.addLayersProgram = addLayersProgram;
 /**
- * Add uniform value to a GPULayer.
+ * Add uniform "u_value" to a GPULayer.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer.
- * @param params.numComponents - The number of components of the GPULayer.
- * @param params.precision - Optionally specify the precision of the input and output.
+ * @param params.type - The type of the input/output (we assume "u_value" has the same type).
+ * @param params.numComponents - The number of components of the input/output and "u_value".
+ * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
 function addValueProgram(params) {
@@ -5802,11 +5800,11 @@ function addValueProgram(params) {
 }
 exports.addValueProgram = addValueProgram;
 /**
- * Set value of all elements in a GPULayer via a uniform "u_value".
+ * Set all elements in a GPULayer to uniform "u_value".
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer to be set.
- * @param params.numComponents - The number of components in the uniform.
- * @param params.precision - Optionally specify the precision of the uniform and output (must be the same).
+ * @param params.type - The type of the output (we assume "u_value" has same type).
+ * @param params.numComponents - The number of components in the output/"u_value".
+ * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
 function setValueProgram(params) {
@@ -5827,11 +5825,11 @@ function setValueProgram(params) {
 }
 exports.setValueProgram = setValueProgram;
 /**
- * Set value of all elements in a GPULayer via a uniform "u_value".
+ * Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer to be set.
- * @param params.numComponents - The number of components in the uniform.
- * @param params.precision - Optionally specify the precision of the uniform and output (must be the same).
+ * @param params.type - The type of the input.
+ * @param params.numComponents - The number of components in the input.
+ * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
 function renderAmplitudeGrayscaleProgram(params) {
@@ -6598,7 +6596,6 @@ exports.OES_TEXTURE_FLOAT = 'OES_texture_float';
 // Half float is provided by default for Webgl2 contexts.
 // This extension implicitly enables the EXT_color_buffer_half_float extension (if supported), which allows rendering to 16-bit floating point formats.
 exports.OES_TEXTURE_HALF_FLOAT = 'OES_texture_half_float';
-// TODO: Seems like linear filtering of floats may be supported in some browsers without these extensions?
 // https://www.khronos.org/registry/OpenGL/extensions/OES/OES_texture_float_linear.txt
 exports.OES_TEXTURE_FLOAT_LINEAR = 'OES_texture_float_linear';
 exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = 'OES_texture_half_float_linear';
@@ -6687,7 +6684,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_LINES_VERTEX_SHADER_SOURCE = void 0;
 var constants_1 = __webpack_require__(601);
 var VertexShaderHelpers_1 = __webpack_require__(324);
-exports.LAYER_LINES_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nout vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t\tvec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#else\n\t\tvec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, positionUV);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;\n\t#else\n\t\tv_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\tv_lineWrapping = vec2(0.0);\n\t//TODO: remove branching\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tif (v_uv.x < 0.0) {\n\t\t\tv_uv.x += 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t} else if (v_uv.x > 1.0) {\n\t\t\tv_uv.x -= 1.0;\n\t\t\tv_lineWrapping.x = 1.0;\n\t\t}\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tif (v_uv.y < 0.0) {\n\t\t\tv_uv.y += 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t} else if (v_uv.y > 1.0) {\n\t\t\tv_uv.y -= 1.0;\n\t\t\tv_lineWrapping.y = 1.0;\n\t\t}\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
+exports.LAYER_LINES_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nout vec2 v_lineWrapping; // Use this to test if line is only half wrapped and should not be rendered.\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ != 300 || ").concat(constants_1.GPUIO_VS_INDEXED_POSITIONS, " == 1)\n\t\tvec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#else\n\t\tvec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, positionUV);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;\n\t#else\n\t\tv_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\tv_lineWrapping = vec2(0.0);\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tv_lineWrapping.x = max(step(1.0, v_uv.x), step(v_uv.x, 0.0));\n\t\tv_ux.x = fract(v_uv.x + 1.0);\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tv_lineWrapping.y = max(step(1.0, v_uv.y), step(v_uv.y, 0.0));\n\t\tv_ux.y = fract(v_uv.y + 1.0);\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),
@@ -7740,7 +7737,6 @@ function preprocessShader(shaderSource) {
  * @private
  */
 function convertShaderToGLSL1(shaderSource) {
-    // TODO: there are probably more to add here.
     // No isampler2D or usampler2D.
     shaderSource = (0, regex_1.glsl1Sampler2D)(shaderSource);
     // Unsigned int types are not supported, use int types instead.

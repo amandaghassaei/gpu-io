@@ -9,9 +9,9 @@
 
 GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of 2D spatially-distributed state (such as 2D physics simulations or cellular automata).  It also includes an interface for performing operations on large 1D arrays of data (via a fragment shader implementation).
 
-This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers.
+This library supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  This library is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers!
 
-One of the main purposes of this library is to allow people to write GPGPU programs without worrying too much about available WebGL versions or spec inconsistencies across different browsers/hardware.  [As of Feb 2022, WebGL 2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge), but widespread adoption will take some time.  Even among WebGL2 implementations, there are differences in behavior across browsers, and many WebGL1 implementations do not support rendering to float32 or non-uint8 integer textures, or are inconsistent in how they implement the spec (see [The miserable state of affairs of floating point support](https://www.khronos.org/webgl/public-mailing-list/public_webgl/1703/msg00043.php)).  This library rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  This library will also attempt to automatically convert your GLSL3 shader code into GLSL1 so that it can run on WebGL 1 if needed - this way, you don't have to manage two sets of shader programs depending on the browser's WebGL support.
+One of the main purposes of this library is to allow people to write GPGPU programs without worrying too much about low level WebGL details, available WebGL versions, or spec inconsistencies across different browsers/hardware.  [As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge), but even among WebGL2 implementations there are differences in behavior across browsers and inconsistent in how they implement the spec.  Many devices are still running older browsers with no WebGL2 support, and some WebGL1 implementations do not support rendering to float32 or non-uint8 integer textures (see [The miserable state of affairs of floating point support](https://www.khronos.org/webgl/public-mailing-list/public_webgl/1703/msg00043.php)).  This library rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  This library will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Polyfills.md) so that it can run on WebGL1 in a pinch.
 
 - [Installation](#installation)
 - [API](#api)
@@ -144,7 +144,7 @@ More info about using gpu-io to update mesh positions data is coming soon.
 - This library does not currently allow you to pass in your own vertex shaders.  Currently all computation is happening in user-specified fragment shaders and vertex shaders are managed internally.
 
 
-### GLSL version
+### GLSL Version
 
 This library defaults to using WebGL2 (if available) with GLSL version 300 (GLSL3) but you can set it to use WebGL1 or GLSL version 100 (GLSL1) by passing `contextID` or `glslVersion` parameters to `GPUComposer`:
 
@@ -168,10 +168,9 @@ const composer2 = new GPUComposer({
 });
 ```
 
-In either case, this library will fall back to using GLSL1 if GLSL3 is not supported by the current device.
-
-
 See [docs>GPUComposer>constructor](https://github.com/amandaghassaei/gpu-io/blob/main/docs/classes/GPUComposer.md#constructor) for more information.
+
+This library will automatically convert any GLSL3 shaders to GLSL1 when targeting WebGL1.  If supporting WebGL1 is important to you, see the [GLSL1 Polyfills](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Polyfills.md) doc for more info about what functions/types/operators are available in gpu-io's flavor of GLSL1.
 
 More info about the difference between GLSL and WebGL versions:
 
@@ -184,18 +183,18 @@ More info about the difference between GLSL and WebGL versions:
 
 ### Transform Feedback
 
-You might notice that this library does not use any transform feedback to e.g. handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is *not* computed at the pixel level.  It is totally possible to perform these types of simulations using this library, but currently they are all computed in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
+You might notice that this library does not use any transform feedback to e.g. handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](#examples)), but currently all the computation happens in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
 
-- The main use case for this library is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays, but that is a secondary functionality.
-- Transform feedback is only supported in WebGL 2.  At the time I first started writing this, WebGL 2 was not supported by mobile Safari.  Though that has changed recently, it will take some time for many people to update (for example, luddites like me who never update their apps), so for now I'd like to support all functionality in this library in WebGL 1.
-- I played around with the idea of using transform feedback if WebGL 2 is available, then falling back to a fragment shader implementation if only WebGL 1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
+- The main use case for this library is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays and 2D/3D vertex manipulations, but that is a secondary functionality.
+- Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, it will take some time for many people to update (for example, luddites like me who never update their apps), so for now I'd like to support all functionality in this library in WebGL1.
+- I played around with the idea of using transform feedback if WebGL2 is available, then falling back to a fragment shader implementation if only WebGL1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
 
-My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API, so I'd like to get away from it in the long term if possible.
+My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API by forcing GPGPU to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term if possible.
 
 
 ### Precision
 
-By default all shaders in this library are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.glsl](https://github.com/amandaghassaei/gpu-io/blob/main/src/glsl/common/precision.glsl).
+By default all shaders in this library are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.ts](https://github.com/amandaghassaei/gpu-io/blob/main/src/glsl/common/precision.ts).
 
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
 ```js

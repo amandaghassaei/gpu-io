@@ -6,8 +6,8 @@ import { GPUProgram } from './GPUProgram';
 /**
  * Copy contents of one GPULayer to another GPULayer.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer to be copied.
- * @param params.precision - Optionally specify the precision of the input and output (must be the same).
+ * @param params.type - The type of the input/output.
+ * @param params.precision - Optionally specify the precision of the input/output.
  * @returns
  */
 export function copyProgram(params: {
@@ -40,10 +40,10 @@ void main() {
 /**
  * Add several GPULayers together.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayers to be added (must all be the same).
- * @param params.numComponents - The number of components of the GPULayers to be added (must all be the same).
- * @param params.numInputs - The number of input GPULayers to add together, defaults to 2.
- * @param params.precision - Optionally specify the precision of the inputs and output (must all be the same).
+ * @param params.type - The type of the inputs/output.
+ * @param params.numComponents - The number of components of the inputs/output.
+ * @param params.numInputs - The number of inputs to add together, defaults to 2.
+ * @param params.precision - Optionally specify the precision of the inputs/output.
  * @returns
  */
  export function addLayersProgram(params: {
@@ -79,11 +79,11 @@ void main() {
 }
 
 /**
- * Add uniform value to a GPULayer.
+ * Add uniform "u_value" to a GPULayer.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer.
- * @param params.numComponents - The number of components of the GPULayer.
- * @param params.precision - Optionally specify the precision of the input and output.
+ * @param params.type - The type of the input/output (we assume "u_value" has the same type).
+ * @param params.numComponents - The number of components of the input/output and "u_value".
+ * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
  export function addValueProgram(params: {
@@ -122,11 +122,11 @@ void main() {
 }
 
 /**
- * Set value of all elements in a GPULayer via a uniform "u_value".
+ * Set all elements in a GPULayer to uniform "u_value".
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer to be set.
- * @param params.numComponents - The number of components in the uniform.
- * @param params.precision - Optionally specify the precision of the uniform and output (must be the same).
+ * @param params.type - The type of the output (we assume "u_value" has same type).
+ * @param params.numComponents - The number of components in the output/"u_value".
+ * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
 export function setValueProgram(params: {
@@ -157,11 +157,11 @@ void main() {
 }
 
 /**
- * Set value of all elements in a GPULayer via a uniform "u_value".
+ * Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
  * @param params.composer - The current GPUComposer.
- * @param params.type - The type of the GPULayer to be set.
- * @param params.numComponents - The number of components in the uniform.
- * @param params.precision - Optionally specify the precision of the uniform and output (must be the same).
+ * @param params.type - The type of the input.
+ * @param params.numComponents - The number of components in the input.
+ * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
  export function renderAmplitudeGrayscaleProgram(params: {

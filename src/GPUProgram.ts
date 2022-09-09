@@ -510,7 +510,6 @@ export class GPUProgram {
 			throw new Error(`Could not find valid programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
 
-		// TODO: memoize this.
 		const indexLookup = new Array(_samplerUniformsIndices.length).fill(-1);
 		for (let i = 0, length = _samplerUniformsIndices.length; i < length; i++) {
 			const { inputIndex, shaderIndex } = _samplerUniformsIndices[i];

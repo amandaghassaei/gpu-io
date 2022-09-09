@@ -1,12 +1,39 @@
 # GLSL1 Polyfills
 
-## Overview
+OpenGL Shading Language (GLSL) is the language used for writing vertex and fragment shader code in WebGL.  WebGL2 supports a newer version of GLSL called GLSL3, whereas WebGL1 only supports GLSL1.  GLSL3 provides new types, operators, and functions that were not previously supported by GLSL1 and has a slightly different syntax for importing/exporting data from shader programs.
 
-- All unsigned integer types (`uint`, `uvec2`, `uvec3`, `uvec4`, `usampler2D`) are converted to signed integer types (`int`, `ivec2`, `ivec3`, `ivec4`, `isampler2D`) in GLSL1
-- The only texture lookup function officially supported by this library is `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)`.  Currently, the bias parameter is not supported.  Other built-in texture lookup functions may also work, but have not been tested.
-- out_fragColor is required.
+When necessary, gpu-io will attempt to automatically convert GLSL3 shaders to GLSL1 so that they can be run in browsers that only support WebGL1.  This simplifies the process of developing an application by removing the burden of managing multiple sets of shaders targeting different GLSL versions.  All of the [Examples](https://github.com/amandaghassaei/gpu-io#examples) in this repository run in both WebGL2 and WebGL1; you can test this for yourself using the WebGL controls menu:
 
-More information about the implementation can be found in [regex.ts](../src/regex.ts) and [polyfills.ts](../src/polyfills.ts).  Pull requests welcome, I'm sure there are ways to speed some of these functions up.
+![WebGL setting controls](./imgs/WebGLControls.png)
+
+By comparing the GLSL3 vs GLSL1 spec, you'll notice that many GLSL3 types, operators, and functions are not supported by GLSL1:
+
+- [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf)
+- [WebGL2 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl20-reference-guide.pdf)
+
+When running on a WebGL1 device, gpu-io preprocesses your GLSL3 shader code to convert it into GLSL1.  Additionally, gpu-io provides several polyfills to extend the built-in functionality of GLSL1 to more closely match GLSL3, giving you more functionality than bare-bones GLSL1.  This page gives detailed info about the GLSL3 functionality that has been added to GLSL1 by gpu-io and a list of functions/types/operators that are not currently supported (and should be avoided if you want your application to support WebGL1).
+
+In general, I recommend writing your application for WebGL2 with GLSL3 shaders and allowing gpu-io to convert your GLSL3 to GLSL1 when needed, rather than running GLSL1 shaders in WebGL2.  To test out how your application performs in WebGL1, initialize your GPUComposer to force it to target WebGL1:
+
+```js
+import { WEBGL1, GPUComposer } from 'gpu-io';
+// Init with WebGL1 with GLSL1 (GLSL3 is not supported in WebGL1).
+const composer = new GPUComposer({
+	canvas: document.createElement('canvas'),
+	contextID: WEBGL1,
+});
+```
+
+In 2022 WebGL2 was finally rolled out to all major platforms (including iOS, the last holdout), so the need to convert shaders to GLSL1 will eventually disappear, but for now this functionality will help to support many devices that are not receiving regular updates. (This project was started long before widespread WebGL2 support.)
+
+
+## Overview of GLSL3 to GLSL1 Conversion
+
+- All unsigned integer types (`uint`, `uvec2`, `uvec3`, `uvec4`, `usampler2D`) are automatically converted to signed integer types (`int`, `ivec2`, `ivec3`, `ivec4`, `isampler2D`) when targeting GLSL1.
+- The only texture lookup function officially supported by gpu-io is `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)`.  Currently, the bias parameter is not supported.  Other built-in GLSL1 texture lookup functions may also work, but have not been tested.
+- `out float|int|[u|i]vec(2|3|4) out_fragColor` is required for all GLSL3 fragment shader programs.  This output will be automatically converted to gl_FragColor when targeting GLSL1;  Additionally it will be typecast and padded with extra zeros in the case where `out_fragColor` is not a `vec4` type.
+
+More information about the implementation can be found in [regex.ts](../src/regex.ts) and [polyfills.ts](../src/polyfills.ts).  Pull requests welcome, I'm sure there are ways to speed some of these functions up.  The [bitwise logical operators](#operators) are particularly in need of help, as they include branching conditional statements.
 
 Type annotations used in function descriptions:
 
@@ -14,7 +41,7 @@ Type annotations used in function descriptions:
 `TI` = `int` | `ivec2` | `ivec3` | `ivec4`  
 `TU` = `uint` | `uvec2` | `uvec3` | `uvec4`  
 
-(note that any unsigned integer types will be cast as signed integer types within the GLSL1 fragment shader, as there is no unsigned integer types in GLSL1)
+(Note that any unsigned integer types will be cast as signed integer types within the GLSL1 fragment shader, as there are no unsigned integer types in GLSL1)
 
 
 ## Types
@@ -62,7 +89,7 @@ Eventually, operator overloading could be handled in JavaScript by preprocessing
 
 ## Built-In Functions
 
-gpu-io contains GLSL1 polyfills for many GLSL3 built-in functions (pages 7-8 in the [WebGL2 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl20-reference-guide.pdf)).  Along with the built-in functions described the in the WebGL1/GLSL! spec (page 4 in the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf)), the following functions are available to GLSL1 fragment shader programs:
+gpu-io contains GLSL1 polyfills for many GLSL3 built-in functions (pages 7-8 in the [WebGL2 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl20-reference-guide.pdf)).  Along with the built-in functions described the in the WebGL1/GLSL1 spec (page 4 in the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf)), the following functions are available to GLSL1 fragment shader programs:
 
 ### Common Functions
 
@@ -98,12 +125,28 @@ gpu-io contains GLSL1 polyfills for many GLSL3 built-in functions (pages 7-8 in 
 
 - `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)` (no bias parameter)
 
-TODO: talk about type casting for u/i sampler2D.
+Currently gpu-io replaces all instances of `texture` with a custom function that ensures the correct filtering and wrap settings are applied to the sampler2D (polyfilling with a fragment shader implementation when necessary, this is needed for both WebGL1 and WebGL2).  For int and uint sampler2D types (which are not natively supported by GLSL1), gpu-io will additionally cast the value of `texture(sampler, uv)` to an `ivec4` so that the following shader code will work in GLSL1:
+
+```glsl
+varying vec2 v_uv;
+uniform isampler2D u_intSampler;
+uniform usampler2D u_uintSampler;
+
+....
+
+void main() {
+	ivec4 intValue1 = texture(u_intSampler, v_uv);
+	int intValue2 = texture(u_intSampler, v_uv).x;
+	uvec4 uintValue1 = texture(u_uintSampler, v_uv);
+	uvec2 uintValue2 = texture(u_uintSampler, v_uv).xy;
+	....
+}
+```
 
 
 # Unsupported GLSL3 Features
 
-The following GLSL3 types and methods are not currently polyfilled by gpu-io, and therefore are not accessible to GLSL1 shaders.  Using these types and methods in your shader code may throw an error in some browsers (typically mobile) that only support WebGL1.
+The following GLSL3 types and methods are NOT currently polyfilled by gpu-io, and therefore are not accessible to GLSL1 shaders.  Using these types and methods in your shader code may throw an error in some browsers (typically mobile) that only support WebGL1.
 
 
 ## Unsupported Types
@@ -153,7 +196,7 @@ The following GLSL3 functions are currently NOT available to GLSL1 fragment shad
 
 ### Texture Lookup Functions
 
-- All texture lookup functions other than `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)` are NOT officially supported by this library.  Many of them may still work, but none of have been tested.  See the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) to find out what is supported in GLSL1.
+- All texture lookup functions other than `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)` are not officially supported by this library.  Most of them probably still work, but none of have been tested.  See the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) to find out what is supported in GLSL1.
 
 ### Fragment Processing Functions
 
@@ -164,6 +207,6 @@ The following functions are not polyfilled by this library, but they may still b
 - `fwidth`
 
 
-# Other Notes
-
+## Other GLSL1 Gotchas
+ TODO:
 - Uniforms can be used as for loop 

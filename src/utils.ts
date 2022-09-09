@@ -576,7 +576,6 @@ function preprocessShader(shaderSource: string) {
  * @private
  */
 function convertShaderToGLSL1(shaderSource: string) {
-	// TODO: there are probably more to add here.
 	// No isampler2D or usampler2D.
 	shaderSource = glsl1Sampler2D(shaderSource);
 	// Unsigned int types are not supported, use int types instead.

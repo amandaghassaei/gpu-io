@@ -261,7 +261,6 @@ export class GPUComposer {
 			console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
 			glslVersion = GLSL1; // Fall back to GLSL1 in these cases.
 		}
-		// TODO: check that this is valid.
 		this.glslVersion = glslVersion;
 
 		// Set default int/float precision.
@@ -776,6 +775,7 @@ export class GPUComposer {
 	private _setVertexAttribute(program: WebGLProgram, name: string, size: number, programName: string) {
 		const { gl } = this;
 		// Point attribute to the currently bound VBO.
+		// TODO: cache attribute location.
 		const location = gl.getAttribLocation(program, name);
 		if (location < 0) {
 			throw new Error(`Unable to find vertex attribute "${name}" in program "${programName}".`);
