@@ -309,9 +309,9 @@ export declare const GPUIO_VS_POSITION_W_ACCUM = "GPUIO_VS_POSITION_W_ACCUM";
  */
 export declare type PROGRAM_NAME_INTERNAL = typeof DEFAULT_PROGRAM_NAME | typeof SEGMENT_PROGRAM_NAME | typeof LAYER_POINTS_PROGRAM_NAME | typeof LAYER_LINES_PROGRAM_NAME | typeof LAYER_VECTOR_FIELD_PROGRAM_NAME;
 /**
- * Object containing compile-time #define variables for GPUProgram fragment shader.
+ * Object containing compile time #define constants for GPUProgram fragment shader.
  */
-export declare type CompileTimeVars = {
+export declare type CompileTimeConstants = {
     [key: string]: string;
 };
 /**

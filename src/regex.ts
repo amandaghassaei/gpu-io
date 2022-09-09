@@ -303,7 +303,7 @@ export function getSampler2DsInProgram(shaderSource: string) {
 	const regex = '\\buniform\\s+(((highp)|(mediump)|(lowp))\\s+)?(i|u)?sampler2D\\s+(\\w+)\\s?;';
 	const samplers = shaderSource.match(new RegExp(regex, 'g'));
 	if (!samplers || samplers.length === 0) return [];
-	// We need to be a bit careful as same sampler could be declared multiple times if compile-time args are used.
+	// We need to be a bit careful as same sampler could be declared multiple times if compile time conditionals are used.
 	// Extract uniform name.
 	const uniformMatch = new RegExp(regex);
 	samplers.forEach(sampler => {

@@ -2631,7 +2631,7 @@ var GPUComposer = /** @class */ (function () {
      *
      * @private
      */
-    GPUComposer.prototype._getVertexShader = function (name, vertexID, vertexDefines, programName) {
+    GPUComposer.prototype._getVertexShader = function (name, vertexID, vertexCompileConstants, programName) {
         var _a = this, _errorCallback = _a._errorCallback, _vertexShaders = _a._vertexShaders, gl = _a.gl, glslVersion = _a.glslVersion, intPrecision = _a.intPrecision, floatPrecision = _a.floatPrecision;
         var _b = _vertexShaders[name], compiledShaders = _b.compiledShaders, src = _b.src;
         if (vertexID === '')
@@ -2642,7 +2642,7 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("Error compiling GPUProgram \"".concat(programName, "\": no source for vertex shader with name \"").concat(name, "\"."));
             }
             var preprocessedSrc = (0, utils_1.preprocessVertexShader)(src, glslVersion);
-            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexDefines, true);
+            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexCompileConstants, true);
             if (!shader) {
                 _errorCallback("Unable to compile \"".concat(name).concat(vertexID, "\" vertex shader for GPUProgram \"").concat(programName, "\"."));
                 return;
@@ -2663,7 +2663,7 @@ var GPUComposer = /** @class */ (function () {
         this._height = height;
     };
     ;
-    GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexDefines, fullscreenRender, input, output) {
+    GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexCompileConstants, fullscreenRender, input, output) {
         var gl = this.gl;
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
@@ -2683,7 +2683,7 @@ var GPUComposer = /** @class */ (function () {
                 }
             }
         }
-        var program = gpuProgram._getProgramWithName(programName, vertexDefines, inputTextures);
+        var program = gpuProgram._getProgramWithName(programName, vertexCompileConstants, inputTextures);
         // Set output framebuffer.
         // This may modify WebGL internal state.
         this._setOutputLayer(fullscreenRender, input, output);
@@ -5226,14 +5226,14 @@ var GPUProgram = /** @class */ (function () {
      * @param params.name - Name of GPUProgram, used for error logging.
      * @param params.fragmentShader - Fragment shader source or array of sources to be joined.
      * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform().
-     * @param params.defines - Compile-time #define variables to include with fragment shader.
+     * @param params.compileTimeConstants - Compile time #define constants to include with fragment shader.
      */
     function GPUProgram(composer, params) {
         var _this = this;
-        // Compiled fragment shaders (we hang onto different versions depending on compile-time variables).
+        // Compiled fragment shaders (we hang onto different versions depending on compile time constants).
         this._fragmentShaders = {};
         // #define variables for fragment shader program.
-        this._defines = {};
+        this._compileTimeConstants = {};
         // Uniform locations, values, and types.
         this._uniforms = {};
         // Store WebGLProgram's - we need to compile several WebGLPrograms of GPUProgram.fragmentShader + various vertex shaders.
@@ -5256,7 +5256,7 @@ var GPUProgram = /** @class */ (function () {
             throw new Error("Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got ".concat(JSON.stringify(params), "."));
         }
         // Check params keys.
-        var validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
+        var validKeys = ['name', 'fragmentShader', 'uniforms', 'compileTimeConstants'];
         var requiredKeys = ['name', 'fragmentShader'];
         var keys = Object.keys(params);
         keys.forEach(function (key) {
@@ -5270,7 +5270,7 @@ var GPUProgram = /** @class */ (function () {
                 throw new Error("Required params key \"".concat(key, "\" was not passed to GPUProgram(composer, params) with name \"").concat(name, "\"."));
             }
         });
-        var fragmentShader = params.fragmentShader, uniforms = params.uniforms, defines = params.defines;
+        var fragmentShader = params.fragmentShader, uniforms = params.uniforms, compileTimeConstants = params.compileTimeConstants;
         // Save arguments.
         this._composer = composer;
         this.name = name;
@@ -5287,9 +5287,9 @@ var GPUProgram = /** @class */ (function () {
                 shaderIndex: i,
             });
         });
-        // Save defines.
-        if (defines) {
-            this._defines = __assign({}, defines);
+        // Save compile time constants.
+        if (compileTimeConstants) {
+            this._compileTimeConstants = __assign({}, compileTimeConstants);
         }
         // Set program uniforms.
         if (uniforms) {
@@ -5304,23 +5304,23 @@ var GPUProgram = /** @class */ (function () {
      * Used internally.
      * @private
      */
-    GPUProgram.prototype._getFragmentShader = function (fragmentId, internalDefines) {
+    GPUProgram.prototype._getFragmentShader = function (fragmentId, internalCompileTimeConstants) {
         var _fragmentShaders = this._fragmentShaders;
         if (_fragmentShaders[fragmentId]) {
             // No need to recompile.
             return _fragmentShaders[fragmentId];
         }
-        var _a = this, _composer = _a._composer, name = _a.name, _fragmentShaderSource = _a._fragmentShaderSource, _defines = _a._defines;
+        var _a = this, _composer = _a._composer, name = _a.name, _fragmentShaderSource = _a._fragmentShaderSource, _compileTimeConstants = _a._compileTimeConstants;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback, verboseLogging = _composer.verboseLogging, glslVersion = _composer.glslVersion, floatPrecision = _composer.floatPrecision, intPrecision = _composer.intPrecision;
-        // Update internalDefines.
-        var keys = Object.keys(internalDefines);
+        // Update compile time constants.
+        var keys = Object.keys(internalCompileTimeConstants);
         for (var i = 0; i < keys.length; i++) {
             var key = keys[i];
-            _defines[key] = internalDefines[key];
+            _compileTimeConstants[key] = internalCompileTimeConstants[key];
         }
         if (verboseLogging)
-            console.log("Compiling fragment shader for GPUProgram \"".concat(name, "\" with defines: ").concat(JSON.stringify(_defines)));
-        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _defines, Object.keys(_fragmentShaders).length === 0);
+            console.log("Compiling fragment shader for GPUProgram \"".concat(name, "\" with compile time constants: ").concat(JSON.stringify(_compileTimeConstants)));
+        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _compileTimeConstants, Object.keys(_fragmentShaders).length === 0);
         if (!shader) {
             _errorCallback("Unable to compile fragment shader for GPUProgram \"".concat(name, "\"."));
             return;
@@ -5332,10 +5332,10 @@ var GPUProgram = /** @class */ (function () {
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    GPUProgram.prototype._getProgramWithName = function (name, vertexDefines, input) {
+    GPUProgram.prototype._getProgramWithName = function (name, vertexCompileConstants, input) {
         var _a = this, _samplerUniformsIndices = _a._samplerUniformsIndices, _composer = _a._composer;
         var fragmentID = '';
-        var fragmentDefines = {};
+        var fragmentCompileConstants = {};
         for (var i = 0, length_1 = _samplerUniformsIndices.length; i < length_1; i++) {
             var inputIndex = _samplerUniformsIndices[i].inputIndex;
             var layer = input[inputIndex].layer;
@@ -5344,14 +5344,14 @@ var GPUProgram = /** @class */ (function () {
             var wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === constants_1.REPEAT ? 1 : 0);
             var filterVal = filter === _internalFilter ? 0 : (filter === constants_1.LINEAR ? 1 : 0);
             fragmentID += "_IN".concat(i, "_").concat(wrapXVal, "_").concat(wrapYVal, "_").concat(filterVal);
-            fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_X).concat(i)] = "".concat(wrapXVal);
-            fragmentDefines["".concat(polyfills_1.SAMPLER2D_WRAP_Y).concat(i)] = "".concat(wrapYVal);
-            fragmentDefines["".concat(polyfills_1.SAMPLER2D_FILTER).concat(i)] = "".concat(filterVal);
+            fragmentCompileConstants["".concat(polyfills_1.SAMPLER2D_WRAP_X).concat(i)] = "".concat(wrapXVal);
+            fragmentCompileConstants["".concat(polyfills_1.SAMPLER2D_WRAP_Y).concat(i)] = "".concat(wrapYVal);
+            fragmentCompileConstants["".concat(polyfills_1.SAMPLER2D_FILTER).concat(i)] = "".concat(filterVal);
             if (_composer.glslVersion === constants_1.GLSL1 && (0, utils_1.isIntType)(type)) {
-                fragmentDefines["".concat(polyfills_1.SAMPLER2D_CAST_INT).concat(i)] = '1';
+                fragmentCompileConstants["".concat(polyfills_1.SAMPLER2D_CAST_INT).concat(i)] = '1';
             }
         }
-        var vertexID = Object.keys(vertexDefines).map(function (key) { return "_".concat(key, "_").concat(vertexDefines[key]); }).join();
+        var vertexID = Object.keys(vertexCompileConstants).map(function (key) { return "_".concat(key, "_").concat(vertexCompileConstants[key]); }).join();
         var key = "".concat(name).concat(vertexID).concat(fragmentID);
         // Check if we've already compiled program.
         if (this._programs[key])
@@ -5359,12 +5359,12 @@ var GPUProgram = /** @class */ (function () {
         // Otherwise, we need to compile a new program on the fly.
         var _b = this, _uniforms = _b._uniforms, _programs = _b._programs, _programsKeyLookup = _b._programsKeyLookup;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
-        var vertexShader = _composer._getVertexShader(name, vertexID, vertexDefines, this.name);
+        var vertexShader = _composer._getVertexShader(name, vertexID, vertexCompileConstants, this.name);
         if (vertexShader === undefined) {
             _errorCallback("Unable to init vertex shader \"".concat(name).concat(vertexID, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
         }
-        var fragmentShader = this._getFragmentShader(fragmentID, fragmentDefines);
+        var fragmentShader = this._getFragmentShader(fragmentID, fragmentCompileConstants);
         if (fragmentShader === undefined) {
             _errorCallback("Unable to init fragment shader \"".concat(fragmentID, "\" for GPUProgram \"").concat(this.name, "\"."));
             return;
@@ -5688,7 +5688,7 @@ var GPUProgram = /** @class */ (function () {
         // @ts-ignore
         delete this._fragmentShaderSource;
         // @ts-ignore
-        delete this._defines;
+        delete this._compileTimeConstants;
         // @ts-ignore
         delete this._uniforms;
         // @ts-ignore
@@ -6353,7 +6353,7 @@ exports.LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
  * @private
  */
 exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
-// Vertex shader compile time vars.
+// Vertex shader compile time constants.
 /**
  * @private
  */
@@ -6454,7 +6454,7 @@ exports.MIN_FLOAT_INT = -16777216;
  * @private
  */
 exports.MAX_FLOAT_INT = 16777216;
-// Precision compile-time variables
+// Precision compile time constants
 /**
  * @private
  */
@@ -7321,7 +7321,7 @@ function getSampler2DsInProgram(shaderSource) {
     var samplers = shaderSource.match(new RegExp(regex, 'g'));
     if (!samplers || samplers.length === 0)
         return [];
-    // We need to be a bit careful as same sampler could be declared multiple times if compile-time args are used.
+    // We need to be a bit careful as same sampler could be declared multiple times if compile time conditionals are used.
     // Extract uniform name.
     var uniformMatch = new RegExp(regex);
     samplers.forEach(function (sampler) {
@@ -7396,36 +7396,36 @@ function isIntType(type) {
 }
 exports.isIntType = isIntType;
 /**
- * Create a string to pass defines into shader.
+ * Create a string to pass compile time constants into shader.
  * @private
  */
-function convertDefinesToString(defines) {
-    var definesSource = '';
-    var keys = Object.keys(defines);
+function convertCompileTimeConstantsToString(compileTimeConstants) {
+    var CTCSource = '';
+    var keys = Object.keys(compileTimeConstants);
     for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
         // Check that define is passed in as a string.
-        if (!(0, checks_1.isString)(key) || !(0, checks_1.isString)(defines[key])) {
-            throw new Error("GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [".concat(typeof key, " : ").concat(typeof defines[key], "] for key ").concat(key, "."));
+        if (!(0, checks_1.isString)(key) || !(0, checks_1.isString)(compileTimeConstants[key])) {
+            throw new Error("GPUProgram compile time constants must be passed in as key value pairs that are both strings, got key value pair of type [".concat(typeof key, " : ").concat(typeof compileTimeConstants[key], "] for key ").concat(key, "."));
         }
-        definesSource += "#define ".concat(key, " ").concat(defines[key], "\n");
+        CTCSource += "#define ".concat(key, " ").concat(compileTimeConstants[key], "\n");
     }
-    return definesSource;
+    return CTCSource;
 }
 /**
  * Create header string for fragment and vertex shaders.
  * Export this for testing purposes.
  * @private
  */
-function makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines) {
+function makeShaderHeader(glslVersion, intPrecision, floatPrecision, compileTimeConstants) {
     var _a;
     var versionSource = glslVersion === constants_1.GLSL3 ? "#version ".concat(constants_1.GLSL3, "\n") : '';
-    var definesSource = defines ? convertDefinesToString(defines) : '';
-    var precisionDefinesSource = convertDefinesToString((_a = {},
+    var compileTimeConstantsSource = compileTimeConstants ? convertCompileTimeConstantsToString(compileTimeConstants) : '';
+    var precisionConstantsSource = convertCompileTimeConstantsToString((_a = {},
         _a[constants_1.GPUIO_INT_PRECISION] = "".concat((0, conversions_1.intForPrecision)(intPrecision)),
         _a[constants_1.GPUIO_FLOAT_PRECISION] = "".concat((0, conversions_1.intForPrecision)(floatPrecision)),
         _a));
-    return "".concat(versionSource).concat(definesSource).concat(precisionDefinesSource).concat(precision_1.PRECISION_SOURCE);
+    return "".concat(versionSource).concat(compileTimeConstantsSource).concat(precisionConstantsSource).concat(precision_1.PRECISION_SOURCE);
 }
 exports.makeShaderHeader = makeShaderHeader;
 /**
@@ -7434,7 +7434,7 @@ exports.makeShaderHeader = makeShaderHeader;
  * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
  * @private
  */
-function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, errorCallback, defines, checkCompileStatus) {
+function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, errorCallback, compileTimeConstants, checkCompileStatus) {
     if (checkCompileStatus === void 0) { checkCompileStatus = false; }
     // Create the shader object
     var shader = gl.createShader(shaderType);
@@ -7443,7 +7443,7 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
         return null;
     }
     // Set the shader source code.
-    var shaderHeader = makeShaderHeader(glslVersion, intPrecision, floatPrecision, defines);
+    var shaderHeader = makeShaderHeader(glslVersion, intPrecision, floatPrecision, compileTimeConstants);
     var fullShaderSource = "".concat(shaderHeader).concat(shaderSource);
     gl.shaderSource(shader, fullShaderSource);
     // Compile the shader

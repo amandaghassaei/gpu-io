@@ -1,4 +1,4 @@
-import { CompileTimeVars, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerType, UniformType, UniformValue } from './constants';
+import { CompileTimeConstants, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerType, UniformType, UniformValue } from './constants';
 /**
  * Test whether a GPULayer type is a float type.
  * @private
@@ -24,14 +24,14 @@ export declare function isIntType(type: GPULayerType): boolean;
  * Export this for testing purposes.
  * @private
  */
-export declare function makeShaderHeader(glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, defines?: CompileTimeVars): string;
+export declare function makeShaderHeader(glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, compileTimeConstants?: CompileTimeConstants): string;
 /**
  * Compile vertex or fragment shaders.
  * Fragment shaders may be compiled on the fly, so keep this efficient.
  * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
  * @private
  */
-export declare function compileShader(gl: WebGLRenderingContext | WebGL2RenderingContext, glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, shaderSource: string, shaderType: number, programName: string, errorCallback: ErrorCallback, defines?: CompileTimeVars, checkCompileStatus?: boolean): WebGLShader | null;
+export declare function compileShader(gl: WebGLRenderingContext | WebGL2RenderingContext, glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, shaderSource: string, shaderType: number, programName: string, errorCallback: ErrorCallback, compileTimeConstants?: CompileTimeConstants, checkCompileStatus?: boolean): WebGLShader | null;
 /**
  * Init a WebGL program from vertex and fragment shaders.
  * GLPrograms may be inited on the fly, so keep this efficient.

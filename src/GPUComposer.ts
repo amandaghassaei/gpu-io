@@ -20,7 +20,7 @@ import {
 	RGBA,
 	TextureType,
 	PROGRAM_NAME_INTERNAL,
-	CompileTimeVars,
+	CompileTimeConstants,
 	DEFAULT_PROGRAM_NAME,
 	SEGMENT_PROGRAM_NAME,
 	LAYER_POINTS_PROGRAM_NAME,
@@ -578,7 +578,7 @@ export class GPUComposer {
 	 _getVertexShader(
 		name: PROGRAM_NAME_INTERNAL,
 		vertexID: string,
-		vertexDefines: CompileTimeVars,
+		vertexCompileConstants: CompileTimeConstants,
 		programName: string,
 	) {
 		const {
@@ -606,7 +606,7 @@ export class GPUComposer {
 				gl.VERTEX_SHADER,
 				programName,
 				_errorCallback,
-				vertexDefines,
+				vertexCompileConstants,
 				true,
 			);
 			if (!shader) {
@@ -633,7 +633,7 @@ export class GPUComposer {
 	private _drawSetup(
 		gpuProgram: GPUProgram,
 		programName: PROGRAM_NAME_INTERNAL,
-		vertexDefines: CompileTimeVars,
+		vertexCompileConstants: CompileTimeConstants,
 		fullscreenRender: boolean,
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer,
@@ -658,7 +658,7 @@ export class GPUComposer {
 			}
 		}
 
-		const program = gpuProgram._getProgramWithName(programName, vertexDefines, inputTextures)!;
+		const program = gpuProgram._getProgramWithName(programName, vertexCompileConstants, inputTextures)!;
 
 		// Set output framebuffer.
 		// This may modify WebGL internal state.
@@ -1160,7 +1160,7 @@ export class GPUComposer {
 			}
 		}
 
-		const vertexShaderOptions: CompileTimeVars = {};
+		const vertexShaderOptions: CompileTimeConstants = {};
 		if (uvs) vertexShaderOptions[GPUIO_VS_UV_ATTRIBUTE] = '1';
 		if (normals) vertexShaderOptions[GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
 
@@ -1206,7 +1206,7 @@ export class GPUComposer {
 		const { program, input, output, positions, uvs, normals } = params;
 		const { gl, _width, _height } = this;
 
-		const vertexShaderOptions: CompileTimeVars = {};
+		const vertexShaderOptions: CompileTimeConstants = {};
 		if (uvs) vertexShaderOptions[GPUIO_VS_UV_ATTRIBUTE] = '1';
 		if (normals) vertexShaderOptions[GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
 
@@ -1258,7 +1258,7 @@ export class GPUComposer {
 			throw new Error(`GPUComposer.stepLines() can't be called with closeLoop == true and indices.`);
 		}
 
-		const vertexShaderOptions: CompileTimeVars = {};
+		const vertexShaderOptions: CompileTimeConstants = {};
 		if (uvs) vertexShaderOptions[GPUIO_VS_UV_ATTRIBUTE] = '1';
 		if (normals) vertexShaderOptions[GPUIO_VS_NORMAL_ATTRIBUTE] = '1';
 
@@ -1348,7 +1348,7 @@ export class GPUComposer {
 		// Add positions to end of input if needed.
 		const input = this._addLayerToInputs(positions, params.input);
 
-		const vertexShaderOptions: CompileTimeVars = {};
+		const vertexShaderOptions: CompileTimeConstants = {};
 		// Tell whether we are using an absolute position (2 components),
 		// or position with accumulation buffer (4 components, better floating pt accuracy).
 		if (positions.numComponents === 4) vertexShaderOptions[GPUIO_VS_POSITION_W_ACCUM] = '1';
@@ -1421,7 +1421,7 @@ export class GPUComposer {
 		// Add positionLayer to end of input if needed.
 		const input = this._addLayerToInputs(positions, params.input);
 
-		const vertexShaderOptions: CompileTimeVars = {};
+		const vertexShaderOptions: CompileTimeConstants = {};
 		// Tell whether we are using an absolute position (2 components),
 		// or position with accumulation buffer (4 components, better floating pt accuracy).
 		if (positions.numComponents === 4) vertexShaderOptions[GPUIO_VS_POSITION_W_ACCUM] = '1';

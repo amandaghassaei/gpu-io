@@ -1,5 +1,5 @@
 import { GPUComposer } from './GPUComposer';
-import { UniformType, UniformValue, CompileTimeVars, PROGRAM_NAME_INTERNAL, UniformParams, GPULayerState } from './constants';
+import { UniformType, UniformValue, CompileTimeConstants, PROGRAM_NAME_INTERNAL, UniformParams, GPULayerState } from './constants';
 export declare class GPUProgram {
     private readonly _composer;
     /**
@@ -8,7 +8,7 @@ export declare class GPUProgram {
     readonly name: string;
     private _fragmentShaders;
     private readonly _fragmentShaderSource;
-    private readonly _defines;
+    private readonly _compileTimeConstants;
     private readonly _uniforms;
     private readonly _programs;
     private readonly _programsKeyLookup;
@@ -20,13 +20,13 @@ export declare class GPUProgram {
      * @param params.name - Name of GPUProgram, used for error logging.
      * @param params.fragmentShader - Fragment shader source or array of sources to be joined.
      * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform().
-     * @param params.defines - Compile-time #define variables to include with fragment shader.
+     * @param params.compileTimeConstants - Compile time #define constants to include with fragment shader.
      */
     constructor(composer: GPUComposer, params: {
         name: string;
         fragmentShader: string | string[];
         uniforms?: UniformParams[];
-        defines?: CompileTimeVars;
+        compileTimeConstants?: CompileTimeConstants;
     });
     /**
      * Get fragment shader for GPUProgram, compile new onw if needed.
@@ -38,7 +38,7 @@ export declare class GPUProgram {
      * Get GLProgram associated with a specific vertex shader.
      * @private
      */
-    _getProgramWithName(name: PROGRAM_NAME_INTERNAL, vertexDefines: CompileTimeVars, input: GPULayerState[]): WebGLProgram | undefined;
+    _getProgramWithName(name: PROGRAM_NAME_INTERNAL, vertexCompileConstants: CompileTimeConstants, input: GPULayerState[]): WebGLProgram | undefined;
     /**
      * Set uniform for GLProgram.
      * @private

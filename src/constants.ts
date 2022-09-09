@@ -320,7 +320,7 @@ export const LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
  * @private
  */
 export const LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
-// Vertex shader compile time vars.
+// Vertex shader compile time constants.
 /**
  * @private
  */
@@ -358,9 +358,9 @@ export type PROGRAM_NAME_INTERNAL =
 
 // Pass in #defines as strings to make it easier to control float vs int.
 /**
- * Object containing compile-time #define variables for GPUProgram fragment shader.
+ * Object containing compile time #define constants for GPUProgram fragment shader.
  */
-export type CompileTimeVars = { [key: string]: string };
+export type CompileTimeConstants = { [key: string]: string };
 
 // Each buffer in GPULayer contains a WebGLTexture and WebGLFramebuffer.
 /**
@@ -451,7 +451,7 @@ export const MIN_FLOAT_INT = -16777216;
  */
 export const MAX_FLOAT_INT = 16777216;
 
-// Precision compile-time variables
+// Precision compile time constants
 /**
  * @private
  */

@@ -56,7 +56,7 @@
 			});
 			it('should error if unknown params passed in', () => {
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "", otherThing: 2 }); },
-					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","defines"].');
+					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","compileTimeConstants"].');
 			});
 			it('should throw errors for bad fragment source code', () => {
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "" }); },

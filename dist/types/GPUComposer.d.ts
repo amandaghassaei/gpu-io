@@ -1,5 +1,5 @@
 import { GPULayer } from './GPULayer';
-import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeVars, ErrorCallback, GLSLPrecision, GPULayerState } from './constants';
+import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
@@ -104,7 +104,7 @@ export declare class GPUComposer {
      *
      * @private
      */
-    _getVertexShader(name: PROGRAM_NAME_INTERNAL, vertexID: string, vertexDefines: CompileTimeVars, programName: string): WebGLShader | undefined;
+    _getVertexShader(name: PROGRAM_NAME_INTERNAL, vertexID: string, vertexCompileConstants: CompileTimeConstants, programName: string): WebGLShader | undefined;
     resize(width: number, height: number): void;
     private _drawSetup;
     private _setBlendMode;

@@ -21,7 +21,7 @@ import {
 	UniformType,
 	UniformInternalType,
 	UniformValue,
-	CompileTimeVars,
+	CompileTimeConstants,
 	PROGRAM_NAME_INTERNAL,
 	UINT_1D_UNIFORM,
 	UINT_2D_UNIFORM,
@@ -63,13 +63,13 @@ export class GPUProgram {
 	 */
 	readonly name: string;
 
-	// Compiled fragment shaders (we hang onto different versions depending on compile-time variables).
+	// Compiled fragment shaders (we hang onto different versions depending on compile time constants).
 	private _fragmentShaders: {[key: string]: WebGLShader} = {};
 	// Source code for fragment shader.
 	// Hold onto this in case we need to recompile with different #defines.
 	private readonly _fragmentShaderSource: string;
 	// #define variables for fragment shader program.
-	private readonly _defines: CompileTimeVars = {};
+	private readonly _compileTimeConstants: CompileTimeConstants = {};
 	// Uniform locations, values, and types.
 	private readonly _uniforms: { [ key: string]: Uniform } = {};
 
@@ -90,7 +90,7 @@ export class GPUProgram {
 	 * @param params.name - Name of GPUProgram, used for error logging.
 	 * @param params.fragmentShader - Fragment shader source or array of sources to be joined.
 	 * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform().
-	 * @param params.defines - Compile-time #define variables to include with fragment shader.
+	 * @param params.compileTimeConstants - Compile time #define constants to include with fragment shader.
      */
 	constructor(
 		composer: GPUComposer,
@@ -99,8 +99,8 @@ export class GPUProgram {
 			// We may want to pass in an array of shader string sources, if split across several files.
 			fragmentShader: string | string[],
 			uniforms?: UniformParams[],
-			// We'll allow some compile-time variables to be passed in as #define to the preprocessor for the fragment shader.
-			defines?: CompileTimeVars,
+			// We'll allow some compile time constants to be passed in as #define to the preprocessor for the fragment shader.
+			compileTimeConstants?: CompileTimeConstants,
 		},
 	) {
 		// Check constructor parameters.
@@ -115,7 +115,7 @@ export class GPUProgram {
 			throw new Error(`Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got ${JSON.stringify(params)}.`);
 		}
 		// Check params keys.
-		const validKeys = ['name', 'fragmentShader', 'uniforms', 'defines'];
+		const validKeys = ['name', 'fragmentShader', 'uniforms', 'compileTimeConstants'];
 		const requiredKeys = ['name', 'fragmentShader'];
 		const keys = Object.keys(params);
 		keys.forEach(key => {
@@ -130,7 +130,7 @@ export class GPUProgram {
 			}
 		});
 
-		const { fragmentShader, uniforms, defines } = params;
+		const { fragmentShader, uniforms, compileTimeConstants } = params;
 
 		// Save arguments.
 		this._composer = composer;
@@ -152,9 +152,9 @@ export class GPUProgram {
 			});
 		});
 
-		// Save defines.
-		if (defines) {
-			this._defines = { ...defines };
+		// Save compile time constants.
+		if (compileTimeConstants) {
+			this._compileTimeConstants = { ...compileTimeConstants };
 		}
 
 		// Set program uniforms.
@@ -171,14 +171,14 @@ export class GPUProgram {
 	 * Used internally.
 	 * @private
 	 */
-	private _getFragmentShader(fragmentId: string, internalDefines: CompileTimeVars, ) {
+	private _getFragmentShader(fragmentId: string, internalCompileTimeConstants: CompileTimeConstants, ) {
 		const { _fragmentShaders } = this;
 		if (_fragmentShaders[fragmentId]) {
 			// No need to recompile.
 			return _fragmentShaders[fragmentId];
 		}
 
-		const { _composer, name, _fragmentShaderSource, _defines } = this;
+		const { _composer, name, _fragmentShaderSource, _compileTimeConstants } = this;
 		const {
 			gl,
 			_errorCallback,
@@ -188,14 +188,14 @@ export class GPUProgram {
 			intPrecision,
 		} = _composer;
 		
-		// Update internalDefines.
-		const keys = Object.keys(internalDefines);
+		// Update compile time constants.
+		const keys = Object.keys(internalCompileTimeConstants);
 		for (let i = 0; i < keys.length; i++) {
 			const key = keys[i];
-			_defines[key] = internalDefines[key];
+			_compileTimeConstants[key] = internalCompileTimeConstants[key];
 		}
 
-		if (verboseLogging) console.log(`Compiling fragment shader for GPUProgram "${name}" with defines: ${JSON.stringify(_defines)}`);
+		if (verboseLogging) console.log(`Compiling fragment shader for GPUProgram "${name}" with compile time constants: ${JSON.stringify(_compileTimeConstants)}`);
 		const shader = compileShader(
 			gl,
 			glslVersion,
@@ -205,7 +205,7 @@ export class GPUProgram {
 			gl.FRAGMENT_SHADER,
 			name,
 			_errorCallback,
-			_defines,
+			_compileTimeConstants,
 			Object.keys(_fragmentShaders).length === 0,
 		);
 		if (!shader) {
@@ -220,11 +220,11 @@ export class GPUProgram {
 	 * Get GLProgram associated with a specific vertex shader.
 	 * @private
 	 */
-	_getProgramWithName(name: PROGRAM_NAME_INTERNAL, vertexDefines: CompileTimeVars, input: GPULayerState[]) {
+	_getProgramWithName(name: PROGRAM_NAME_INTERNAL, vertexCompileConstants: CompileTimeConstants, input: GPULayerState[]) {
 		const { _samplerUniformsIndices, _composer } = this;
 
 		let fragmentID = '';
-		const fragmentDefines: CompileTimeVars = {};
+		const fragmentCompileConstants: CompileTimeConstants = {};
 		for (let i = 0, length = _samplerUniformsIndices.length; i < length; i++) {
 			const { inputIndex } = _samplerUniformsIndices[i];
 			const { layer } = input[inputIndex];
@@ -236,14 +236,14 @@ export class GPUProgram {
 			const wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === REPEAT ? 1 : 0);
 			const filterVal = filter === _internalFilter ? 0 : (filter === LINEAR ? 1 : 0);
 			fragmentID += `_IN${i}_${wrapXVal}_${wrapYVal}_${filterVal}`;
-			fragmentDefines[`${SAMPLER2D_WRAP_X}${i}`] = `${wrapXVal}`;
-			fragmentDefines[`${SAMPLER2D_WRAP_Y}${i}`] = `${wrapYVal}`;
-			fragmentDefines[`${SAMPLER2D_FILTER}${i}`] = `${filterVal}`;
+			fragmentCompileConstants[`${SAMPLER2D_WRAP_X}${i}`] = `${wrapXVal}`;
+			fragmentCompileConstants[`${SAMPLER2D_WRAP_Y}${i}`] = `${wrapYVal}`;
+			fragmentCompileConstants[`${SAMPLER2D_FILTER}${i}`] = `${filterVal}`;
 			if (_composer.glslVersion === GLSL1 && isIntType(type)) {
-				fragmentDefines[`${SAMPLER2D_CAST_INT}${i}`] = '1';
+				fragmentCompileConstants[`${SAMPLER2D_CAST_INT}${i}`] = '1';
 			}
 		}
-		const vertexID = Object.keys(vertexDefines).map(key => `_${key}_${vertexDefines[key]}`).join();
+		const vertexID = Object.keys(vertexCompileConstants).map(key => `_${key}_${vertexCompileConstants[key]}`).join();
 		const key = `${name}${vertexID}${fragmentID}`;
 
 		// Check if we've already compiled program.
@@ -253,13 +253,13 @@ export class GPUProgram {
 		const { _uniforms, _programs, _programsKeyLookup } = this;
 		const { gl, _errorCallback } = _composer;
 
-		const vertexShader = _composer._getVertexShader(name, vertexID, vertexDefines, this.name);
+		const vertexShader = _composer._getVertexShader(name, vertexID, vertexCompileConstants, this.name);
 		if (vertexShader === undefined) {
 			_errorCallback(`Unable to init vertex shader "${name}${vertexID}" for GPUProgram "${this.name}".`);
 			return;
 		}
 
-		const fragmentShader = this._getFragmentShader(fragmentID, fragmentDefines);
+		const fragmentShader = this._getFragmentShader(fragmentID, fragmentCompileConstants);
 		if (fragmentShader === undefined) {
 			_errorCallback(`Unable to init fragment shader "${fragmentID}" for GPUProgram "${this.name}".`);
 			return;
@@ -612,7 +612,7 @@ export class GPUProgram {
 		// @ts-ignore
 		delete this._fragmentShaderSource;
 		// @ts-ignore
-		delete this._defines;
+		delete this._compileTimeConstants;
 		// @ts-ignore
 		delete this._uniforms;
 		// @ts-ignore

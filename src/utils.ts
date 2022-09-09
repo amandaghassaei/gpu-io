@@ -13,7 +13,7 @@ import {
 	BOOL_3D_UNIFORM,
 	BOOL_4D_UNIFORM,
 	BYTE,
-	CompileTimeVars,
+	CompileTimeConstants,
 	DEFAULT_ERROR_CALLBACK,
 	ErrorCallback,
 	FLOAT,
@@ -113,21 +113,21 @@ export function isFloatType(type: GPULayerType) {
 }
 
 /**
- * Create a string to pass defines into shader.
+ * Create a string to pass compile time constants into shader.
  * @private
  */
-function convertDefinesToString(defines: CompileTimeVars) {
-	let definesSource = '';
-	const keys = Object.keys(defines);
+function convertCompileTimeConstantsToString(compileTimeConstants: CompileTimeConstants) {
+	let CTCSource = '';
+	const keys = Object.keys(compileTimeConstants);
 	for (let i = 0; i < keys.length; i++) {
 		const key = keys[i];
 		// Check that define is passed in as a string.
-		if (!isString(key) || !isString(defines[key])) {
-			throw new Error(`GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof defines[key]}] for key ${key}.`)
+		if (!isString(key) || !isString(compileTimeConstants[key])) {
+			throw new Error(`GPUProgram compile time constants must be passed in as key value pairs that are both strings, got key value pair of type [${typeof key} : ${typeof compileTimeConstants[key]}] for key ${key}.`)
 		}
-		definesSource += `#define ${key} ${defines[key]}\n`;
+		CTCSource += `#define ${key} ${compileTimeConstants[key]}\n`;
 	}
-	return definesSource;
+	return CTCSource;
 }
 
 /**
@@ -139,15 +139,15 @@ export function makeShaderHeader(
 	glslVersion: GLSLVersion,
 	intPrecision: GLSLPrecision,
 	floatPrecision: GLSLPrecision,
-	defines?: CompileTimeVars,
+	compileTimeConstants?: CompileTimeConstants,
 ) {
 	const versionSource = glslVersion === GLSL3 ? `#version ${GLSL3}\n` : '';
-	const definesSource = defines ? convertDefinesToString(defines) : '';
-	const precisionDefinesSource = convertDefinesToString({
+	const compileTimeConstantsSource = compileTimeConstants ? convertCompileTimeConstantsToString(compileTimeConstants) : '';
+	const precisionConstantsSource = convertCompileTimeConstantsToString({
 		[GPUIO_INT_PRECISION]: `${intForPrecision(intPrecision)}`,
 		[GPUIO_FLOAT_PRECISION]: `${intForPrecision(floatPrecision)}`,
 	});
-	return `${versionSource}${definesSource}${precisionDefinesSource}${PRECISION_SOURCE}`;
+	return `${versionSource}${compileTimeConstantsSource}${precisionConstantsSource}${PRECISION_SOURCE}`;
 }
 
 /**
@@ -165,7 +165,7 @@ export function compileShader(
 	shaderType: number,
 	programName: string,
 	errorCallback: ErrorCallback,
-	defines?: CompileTimeVars,
+	compileTimeConstants?: CompileTimeConstants,
 	checkCompileStatus = false,
 ) {
 	// Create the shader object
@@ -180,7 +180,7 @@ export function compileShader(
 		glslVersion,
 		intPrecision,
 		floatPrecision,
-		defines,
+		compileTimeConstants,
 	);
 	const fullShaderSource = `${shaderHeader}${shaderSource}`;
 	gl.shaderSource(shader, fullShaderSource);

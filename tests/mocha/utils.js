@@ -289,7 +289,7 @@
 					{ GPUIO_INT: '1' },
 				), 'WebGLShader');
 			});
-			it('should throw error if define is not a string', () => {
+			it('should throw error if compile time constant is not a string', () => {
 				const webgl1 = document.createElement('canvas').getContext(WEBGL1);
 				assert.throws(() => { compileShader(
 					webgl1,
@@ -301,7 +301,7 @@
 					'fragment-shader-test',
 					(message) => {console.log(message)},
 					{ GPUIO_INT: 1 },
-				); }, 'GPUProgram defines must be passed in as key value pairs that are both strings, got key value pair of type [string : number] for key GPUIO_INT');
+				); }, 'GPUProgram compile time constants must be passed in as key value pairs that are both strings, got key value pair of type [string : number] for key GPUIO_INT');
 			});
 			it('should throw error if precision is not valid value', () => {
 				const webgl1 = document.createElement('canvas').getContext(WEBGL1);
