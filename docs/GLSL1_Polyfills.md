@@ -216,7 +216,7 @@ The following code will run in GLSL3, but not in GLSL1:
 ```js
 // JavaScript
 const program = new GPUProgram({
-	composer, fragmentShader, uniforms: [{ name: 'u_numIters', type: INT, value: 7 }],
+	name: 'example', composer, fragmentShader, uniforms: [{ name: 'u_numIters', type: INT, value: 7 }],
 });
 ....
 
@@ -257,7 +257,7 @@ OR use compile-time constants:
 ```js
 // JavaScript
 const program = new GPUProgram({
-	composer, fragmentShader, compileTimeConstants: { NUM_ITERS: '7' },
+	name: 'example', composer, fragmentShader, compileTimeConstants: { NUM_ITERS: '7' },
 });
 ....
 
