@@ -24,10 +24,12 @@ const {
 MicroModal.init();
 
 const browserReport = browserReportSync();
+const browser = `${browserReport.browser.name} ${browserReport.browser.version ? `v${browserReport.browser.version}` : 'unknown version'}`;
+const os = `${browserReport.os.name} ${browserReport.os.version ? `v${browserReport.os.version}` : 'unknown version'}`;
 
 document.getElementById('info').innerHTML =  `
-Browser: ${browserReport.browser.name} ${browserReport.browser.version ? `v${browserReport.browser.version}` : 'unknown version'}<br/>
-Operating System: ${browserReport.os.name} ${browserReport.os.version ? `v${browserReport.os.version}` : 'unknown version'}<br/>
+Browser: ${browser}<br/>
+Operating System: ${os}<br/>
 <br/>
 WebGL2 Supported: ${isWebGL2Supported()}<br/>
 Vertex shader mediump precision handled as: ${getVertexShaderMediumpPrecision()}<br/>
@@ -41,7 +43,20 @@ All tests are performed on non-power of 2 textures.<br/>
 In cases where INT types are not available, FLOAT types are used instead, but may be limited in the range of int values they can represent.<br/>
 "default" is NEAREST filtering with CLAMP_TO_EDGE wrapping.<br/>
 * indicates that fragment shader polyfill was used.<br/>
-Extrema (min, max, min magnitude, max magnitude) for each type are tested.`;
+Extrema (min, max, min magnitude, max magnitude) for each type are tested.<br/>
+<br/>
+<a href="#" id="savePNG">Save results as PNG</a>`;
+
+document.getElementById('savePNG').addEventListener('click', (e) => {
+	e.preventDefault();
+	domtoimage.toPng(document.getElementById('output'))
+		.then(function (dataUrl) {
+			const link = document.createElement('a');
+			link.download = `${document.getElementById('testTitle').innerHTML}_${browser}_${os}.png`.replace(' ', '_');
+			link.href = dataUrl;
+			link.click();
+		});
+});
 
 function addModal() {
 	const modalHTML = `<div class="modal micromodal-slide" id="modal-1" aria-hidden="true">

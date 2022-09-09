@@ -58,6 +58,11 @@ gpu-io
 - [isHighpSupportedInFragmentShader](README.md#ishighpsupportedinfragmentshader)
 - [getVertexShaderMediumpPrecision](README.md#getvertexshadermediumpprecision)
 - [getFragmentShaderMediumpPrecision](README.md#getfragmentshadermediumpprecision)
+- [copyProgram](README.md#copyprogram)
+- [addLayersProgram](README.md#addlayersprogram)
+- [addValueProgram](README.md#addvalueprogram)
+- [renderAmplitudeGrayscaleProgram](README.md#renderamplitudegrayscaleprogram)
+- [setValueProgram](README.md#setvalueprogram)
 
 ## Variables
 
@@ -447,3 +452,113 @@ From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 ``"mediump"`` \| ``"highp"``
 
 - Fragment shader supported mediump precision.
+
+___
+
+### copyProgram
+
+▸ **copyProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Copy contents of one GPULayer to another GPULayer.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | - |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the GPULayer to be copied. |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input and output (must be the same). |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### addLayersProgram
+
+▸ **addLayersProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Add several GPULayers together.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | - |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the GPULayers to be added (must all be the same). |
+| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components of the GPULayers to be added (must all be the same). |
+| `params.numInputs?` | `number` | The number of input GPULayers to add together, defaults to 2. |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the inputs and output (must all be the same). |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### addValueProgram
+
+▸ **addValueProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Add uniform value to a GPULayer.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | - |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the GPULayer. |
+| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components of the GPULayer. |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input and output. |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### renderAmplitudeGrayscaleProgram
+
+▸ **renderAmplitudeGrayscaleProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Set value of all elements in a GPULayer via a uniform "u_value".
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | - |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the GPULayer to be set. |
+| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components in the uniform. |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the uniform and output (must be the same). |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### setValueProgram
+
+▸ **setValueProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Set value of all elements in a GPULayer via a uniform "u_value".
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | - |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the GPULayer to be set. |
+| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components in the uniform. |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the uniform and output (must be the same). |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)

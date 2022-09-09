@@ -10,6 +10,8 @@ canvas {
 
 #output {
 	min-width: 930px;
+	display: inline-block;
+	padding-bottom: 5px;
 }
 
 #title {
@@ -29,6 +31,10 @@ a, a:link, a:visited, a:hover, a:active {
 	text-decoration: none;
 	background-color: transparent;
 	color: black;
+}
+#savePNG {
+	text-decoration: underline;
+	color: blue;
 }
 
 .container {

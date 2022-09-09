@@ -21,8 +21,10 @@
 
 - [initWithThreeRenderer](GPUComposer.md#initwiththreerenderer)
 - [isWebGL2](GPUComposer.md#iswebgl2)
+- [\_getQuadPositionsBuffer](GPUComposer.md#_getquadpositionsbuffer)
 - [initTexture](GPUComposer.md#inittexture)
 - [resize](GPUComposer.md#resize)
+- [\_setPositionAttribute](GPUComposer.md#_setpositionattribute)
 - [step](GPUComposer.md#step)
 - [stepBoundary](GPUComposer.md#stepboundary)
 - [stepNonBoundary](GPUComposer.md#stepnonboundary)
@@ -129,6 +131,16 @@ ___
 
 ___
 
+### \_getQuadPositionsBuffer
+
+▸ **_getQuadPositionsBuffer**(): `WebGLBuffer`
+
+#### Returns
+
+`WebGLBuffer`
+
+___
+
 ### initTexture
 
 ▸ **initTexture**(`params`): `WebGLTexture`
@@ -170,6 +182,23 @@ ___
 
 ___
 
+### \_setPositionAttribute
+
+▸ **_setPositionAttribute**(`program`, `programName`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `program` | `WebGLProgram` |
+| `programName` | `string` |
+
+#### Returns
+
+`void`
+
+___
+
 ### step
 
 ▸ **step**(`params`): `void`
@@ -180,7 +209,7 @@ ___
 | :------ | :------ |
 | `params` | `Object` |
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.shouldBlendAlpha?` | `boolean` |
 
@@ -200,7 +229,7 @@ ___
 | :------ | :------ |
 | `params` | `Object` |
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.singleEdge?` | ``"LEFT"`` \| ``"RIGHT"`` \| ``"TOP"`` \| ``"BOTTOM"`` |
 | `params.shouldBlendAlpha?` | `boolean` |
@@ -221,7 +250,7 @@ ___
 | :------ | :------ |
 | `params` | `Object` |
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.shouldBlendAlpha?` | `boolean` |
 
@@ -242,8 +271,8 @@ ___
 | `params` | `Object` |
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
 | `params.position` | [`number`, `number`] |
-| `params.radius` | `number` |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.diameter` | `number` |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.numSegments?` | `number` |
 | `params.shouldBlendAlpha?` | `boolean` |
@@ -267,7 +296,7 @@ ___
 | `params.position1` | [`number`, `number`] |
 | `params.position2` | [`number`, `number`] |
 | `params.thickness` | `number` |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.endCaps?` | `boolean` |
 | `params.numCapSegments?` | `number` |
@@ -291,7 +320,7 @@ ___
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
 | `params.positions` | [`number`, `number`][] |
 | `params.thickness` | `number` |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.closeLoop?` | `boolean` |
 | `params.includeUVs?` | `boolean` |
@@ -317,7 +346,7 @@ ___
 | `params.positions` | `Float32Array` |
 | `params.normals?` | `Float32Array` |
 | `params.uvs?` | `Float32Array` |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.count?` | `number` |
 | `params.shouldBlendAlpha?` | `boolean` |
@@ -342,7 +371,7 @@ ___
 | `params.indices?` | `Int16Array` \| `Uint16Array` \| `Int32Array` \| `Uint32Array` |
 | `params.normals?` | `Float32Array` |
 | `params.uvs?` | `Float32Array` |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.count?` | `number` |
 | `params.closeLoop?` | `boolean` |
@@ -365,7 +394,7 @@ ___
 | `params` | `Object` |
 | `params.positions` | [`GPULayer`](GPULayer.md) |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.pointSize?` | `number` |
 | `params.count?` | `number` |
@@ -392,7 +421,7 @@ ___
 | `params.positions` | [`GPULayer`](GPULayer.md) |
 | `params.indices?` | `Int16Array` \| `Uint16Array` \| `Int32Array` \| `Uint32Array` \| `Float32Array` |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.count?` | `number` |
 | `params.color?` | [`number`, `number`, `number`] |
@@ -418,7 +447,7 @@ ___
 | `params` | `Object` |
 | `params.data` | [`GPULayer`](GPULayer.md) |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.vectorSpacing?` | `number` |
 | `params.vectorScale?` | `number` |
@@ -441,7 +470,7 @@ ___
 | :------ | :------ |
 | `params` | `Object` |
 | `params.data` | [`GPULayer`](GPULayer.md) |
-| `params.input?` | `WebGLTexture` \| [`GPULayer`](GPULayer.md) \| (`WebGLTexture` \| [`GPULayer`](GPULayer.md))[] |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| `GPULayerState` \| ([`GPULayer`](GPULayer.md) \| `GPULayerState`)[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
 | `params.scale?` | `number` |
 | `params.color?` | [`number`, `number`, `number`] |

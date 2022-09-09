@@ -183,25 +183,25 @@ ___
 
 ### currentState
 
-• `get` **currentState**(): `WebGLTexture`
+• `get` **currentState**(): `GPULayerState`
 
-Get the current state as a GLTexture.
+Get the current state as a GPULayerState object.
 
 #### Returns
 
-`WebGLTexture`
+`GPULayerState`
 
 ___
 
 ### lastState
 
-• `get` **lastState**(): `WebGLTexture`
+• `get` **lastState**(): `GPULayerState`
 
-Get the previous state as a GLTexture (only available for GPULayers with numBuffers > 1).
+Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
 
 #### Returns
 
-`WebGLTexture`
+`GPULayerState`
 
 ___
 
@@ -259,9 +259,9 @@ ___
 
 ### getStateAtIndex
 
-▸ **getStateAtIndex**(`index`): `WebGLTexture`
+▸ **getStateAtIndex**(`index`): `GPULayerState`
 
-Get the state at a specified index as a GLTexture.
+Get the state at a specified index as a GPULayerState object.
 
 #### Parameters
 
@@ -271,7 +271,7 @@ Get the state at a specified index as a GLTexture.
 
 #### Returns
 
-`WebGLTexture`
+`GPULayerState`
 
 ___
 
