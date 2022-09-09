@@ -223,8 +223,8 @@ uniform lowp isampler2D u_state;
 out vec4 out_fragColor;
 
 void main() {
-	lowp int state = texture(u_state, v_uv).r;
-	....
+    lowp int state = texture(u_state, v_uv).r;
+    ....
 }
 ```
 
