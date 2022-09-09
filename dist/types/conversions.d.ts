@@ -17,3 +17,7 @@ export declare function glslTypeForType(type: GPULayerType, numComponents: GPULa
  * @private
  */
 export declare function glslPrefixForType(type: GPULayerType): "" | "u" | "i";
+/**
+ * @private
+ */
+export declare function glslComponentSelectionForNumComponents(numComponents: GPULayerNumComponents): "" | ".x" | ".xy" | ".xyz";

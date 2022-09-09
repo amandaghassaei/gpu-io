@@ -8,6 +8,8 @@ function main({ gui, glslVersion, contextID }) {
 		FLOAT,
 		REPEAT,
 		LINEAR,
+		renderAmplitudeGrayscaleProgram,
+		addValueProgram,
 	} = GPUIO;
 
 	// More info about these parameters given in Jones 2010:
@@ -348,34 +350,12 @@ function main({ gui, glslVersion, contextID }) {
 		writable: true,
 	});
 	// Fragment shader program for adding chemical attractant from particles to trail layer.
-	const deposit = new GPUProgram(composer, {
-		name: 'deposit',
-		fragmentShader: `
-			in vec2 v_uv;
-
-			uniform sampler2D u_trail;
-			uniform float u_depositAmount;
-
-			out float out_fragColor;
-
-			void main() {
-				float prevState = texture(u_trail, v_uv).x;
-				// Add new state on top of previous.
-				out_fragColor = prevState + u_depositAmount;
-			}`,
-		uniforms: [
-			{
-				name: 'u_trail',
-				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
-				type: INT,
-			},
-			{
-				name: 'u_depositAmount',
-				value: PARAMS.depositAmount,
-				type: FLOAT,
-			},
-		],
+	const deposit = addValueProgram({
+		composer,
+		type: trail.type,
+		numComponents: trail.numComponents,
 	});
+	deposit.setUniform('u_value', PARAMS.depositAmount);
 	// Fragment shader program for diffusing trail state.
 	const diffuseAndDecay = new GPUProgram(composer, {
 		name: 'diffuseAndDecay',
@@ -454,33 +434,12 @@ function main({ gui, glslVersion, contextID }) {
 		],
 	});
 	// Fragment shader program for rendering trail state to screen (with a scaling factor).
-	const render = new GPUProgram(composer, {
-		name: 'render',
-		fragmentShader: `
-			in vec2 v_uv;
-
-			uniform sampler2D u_trail;
-			uniform float u_renderAmplitude;
-
-			out vec4 out_fragColor;
-
-			void main() {
-				float amp = u_renderAmplitude * texture(u_trail, v_uv).x;
-				out_fragColor = vec4(amp, amp, amp, 1);
-			}`,
-		uniforms: [
-			{
-				name: 'u_trail',
-				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
-				type: INT,
-			},
-			{
-				name: 'u_renderAmplitude',
-				value: PARAMS.renderAmplitude,
-				type: FLOAT,
-			}
-		],
+	const render = renderAmplitudeGrayscaleProgram({
+		composer,
+		type: trail.type,
+		numComponents: trail.numComponents,
 	});
+	render.setUniform('u_scale', PARAMS.renderAmplitude);
 
 	/**
 	 * Init a simple GUI.
@@ -512,7 +471,7 @@ function main({ gui, glslVersion, contextID }) {
 	particlesGUI.open();
 	const trailsGUI = gui.addFolder('Trails');
 	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
-		deposit.setUniform('u_depositAmount', value);
+		deposit.setUniform('u_value', value);
 		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * value);
 	}).name('Deposit Amount');
 	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).onChange((value) => {
@@ -520,7 +479,7 @@ function main({ gui, glslVersion, contextID }) {
 	}).name('Decay Factor');
 	const renderGUI = gui.addFolder('Render Settings');
 	renderGUI.add(PARAMS, 'renderAmplitude', 0, 1, 0.01).onChange((value) => {
-		render.setUniform('u_renderAmplitude', value);
+		render.setUniform('u_scale', value);
 	}).name('Amplitude');
 	// Interesting presets to try out.
 	const presetsGUI = gui.addFolder('Presets');
@@ -684,10 +643,10 @@ function main({ gui, glslVersion, contextID }) {
 		rotateParticles.setUniform('u_sensorDistance', PARAMS.sensorDistance);
 		rotateParticles.setUniform('u_rotationAngle', PARAMS.rotationAngle * Math.PI / 180);
 		moveParticles.setUniform('u_stepSize', PARAMS.stepSize);
-		deposit.setUniform('u_depositAmount', PARAMS.depositAmount);
+		deposit.setUniform('u_value', PARAMS.depositAmount);
 		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * PARAMS.depositAmount);
 		diffuseAndDecay.setUniform('u_decayFactor', PARAMS.decayFactor);
-		render.setUniform('u_renderAmplitude', PARAMS.renderAmplitude);
+		render.setUniform('u_scale', PARAMS.renderAmplitude);
 		trail.clear();
 		onResize();
 	}

@@ -75,7 +75,7 @@ import { SEGMENT_VERTEX_SHADER_SOURCE } from './glsl/vertex/SegmentVertexShader'
 import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerPointsVertexShader';
 import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVectorFieldVertexShader';
 import { uniformTypeForType } from './conversions';
-import { copyProgramForType, setValueProgramForTypeAndNumComponents, vectorMagnitudeProgramForType, wrappedLineColorProgram } from './Programs';
+import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
 
 export class GPUComposer {
 	readonly canvas: HTMLCanvasElement;
@@ -329,7 +329,7 @@ export class GPUComposer {
 		const { _setValuePrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
 		if (_setValuePrograms[key] === undefined) {
-			_setValuePrograms[key] = setValueProgramForTypeAndNumComponents(this, type, 4);
+			_setValuePrograms[key] = setValueProgram({ composer: this, type, numComponents: 4 });
 		}
 		return _setValuePrograms[key]!;
 	}
@@ -338,14 +338,14 @@ export class GPUComposer {
 		const { _copyPrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
 		if (_copyPrograms[key] === undefined) {
-			_copyPrograms[key] = copyProgramForType(this, type);
+			_copyPrograms[key] = copyProgram({ composer: this, type });
 		}
 		return _copyPrograms[key]!;
 	}
 
 	private _getWrappedLineColorProgram() {
 		if (this._wrappedLineColorProgram === undefined) {
-			this._wrappedLineColorProgram = wrappedLineColorProgram(this);
+			this._wrappedLineColorProgram = wrappedLineColorProgram({ composer: this });
 		}
 		return this._wrappedLineColorProgram;
 	}
@@ -354,7 +354,7 @@ export class GPUComposer {
 		const { _vectorMagnitudePrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
 		if (_vectorMagnitudePrograms[key] === undefined) {
-			_vectorMagnitudePrograms[key] = vectorMagnitudeProgramForType(this, type);
+			_vectorMagnitudePrograms[key] = vectorMagnitudeProgram({ composer: this, type });
 		}
 		return _vectorMagnitudePrograms[key]!;
 	}

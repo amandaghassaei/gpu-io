@@ -2,6 +2,7 @@ import * as utils from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
+import * as Programs from './Programs';
 /**
  * @private
  */
@@ -10,6 +11,7 @@ declare const _testing: {
     uniformTypeForType(type: import("./constants").GPULayerType, glslVersion: import("./constants").GLSLVersion): "FLOAT" | "INT" | "UINT";
     glslTypeForType(type: import("./constants").GPULayerType, numComponents: import("./constants").GPULayerNumComponents): string;
     glslPrefixForType(type: import("./constants").GPULayerType): "" | "u" | "i";
+    glslComponentSelectionForNumComponents(numComponents: import("./constants").GPULayerNumComponents): "" | ".x" | ".xy" | ".xyz";
     texturePolyfill(shaderSource: string): {
         shaderSource: string;
         samplerUniforms: string[];
@@ -128,4 +130,5 @@ declare const _testing: {
 };
 export * from './constants';
 declare const isWebGL2: typeof utils.isWebGL2, isWebGL2Supported: typeof utils.isWebGL2Supported, isHighpSupportedInVertexShader: typeof utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader: typeof utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision: typeof utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision: typeof utils.getFragmentShaderMediumpPrecision;
-export { GPUComposer, GPULayer, GPUProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, _testing, };
+declare const copyProgram: typeof Programs.copyProgram, addLayersProgram: typeof Programs.addLayersProgram, addValueProgram: typeof Programs.addValueProgram, renderAmplitudeGrayscaleProgram: typeof Programs.renderAmplitudeGrayscaleProgram, setValueProgram: typeof Programs.setValueProgram;
+export { GPUComposer, GPULayer, GPUProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, copyProgram, addLayersProgram, addValueProgram, renderAmplitudeGrayscaleProgram, setValueProgram, _testing, };

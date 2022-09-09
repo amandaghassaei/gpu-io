@@ -9,6 +9,9 @@ function main({ gui, contextID, glslVersion}) {
 		UINT,
 		FLOAT,
 		REPEAT,
+		renderAmplitudeGrayscaleProgram,
+		copyProgram,
+		PRECISION_LOW_P,
 	} = GPUIO;
 
 	const PARAMS = {
@@ -116,27 +119,27 @@ function main({ gui, contextID, glslVersion}) {
 			},
 		],
 	});
-	const golRender = new GPUProgram(composer, {
-		name: 'golRender',
-		fragmentShader: `
-			in vec2 v_uv;
-
-			uniform lowp isampler2D u_state;
-
-			out vec4 out_fragColor;
-
-			void main() {
-				lowp int state = texture(u_state, v_uv).r;
-				out_fragColor = vec4(state, state, state, 1);
-			}`,
-		uniforms: [
-			{
-				name: 'u_state',
-				value: 0, // We don't even really need to set this, bc all uniforms default to zero.
-				type: INT,
-			},
-		],
+	const golRender = renderAmplitudeGrayscaleProgram({
+		composer,
+		type: state.type,
+		numComponents: state.numComponents,
+		precision: PRECISION_LOW_P,
 	});
+
+	// Render loop.
+	function loop() {
+		composer.step({
+			program: golRules,
+			input: state,
+			output: state,
+		});
+		// If no output, will draw to screen.
+		composer.step({
+			program: golRender,
+			input: state,
+		});
+	}
+
 	// noise is used for touch interactions.
 	const noise = new GPULayer(composer, {
 		name: 'noise',
@@ -148,26 +151,38 @@ function main({ gui, contextID, glslVersion}) {
 		wrapT: REPEAT,
 		writable: false,
 	});
-	const touch = new GPUProgram(composer, {
-		name: 'touch',
-		fragmentShader: `
-			in vec2 v_uv;
-
-			uniform lowp isampler2D u_noise;
-
-			out lowp int out_fragColor;
-
-			void main() {
-				out_fragColor = texture(u_noise, v_uv).r;
-			}`,
-		uniforms: [
-			{
-				name: 'u_noise',
-				value: 0, // We don't even really need to set this, bc all uniforms default to zero.
-				type: INT,
-			},
-		],
+	// During touch, copy data from noise over to state.
+	const touch = copyProgram({
+		composer,
+		type: noise.type,
+		precision: PRECISION_LOW_P,
 	});
+
+	// Touch events.
+	const activeTouches = {};
+	function onPointerMove(e) {
+		if (activeTouches[e.pointerId]) {
+			composer.stepCircle({
+				program: touch,
+				input: noise,
+				output: state,
+				position: [e.clientX, canvas.height - e.clientY],
+				diameter: 30,
+			});
+		}
+	}
+	function onPointerStop(e) {
+		delete activeTouches[e.pointerId];
+	}
+	function onPointerStart(e) {
+		activeTouches[e.pointerId] = true;
+	}
+	window.addEventListener('pointermove', onPointerMove);
+	window.addEventListener('pointerdown', onPointerStart);
+	window.addEventListener('pointerup', onPointerStop);
+	window.addEventListener('pointerout', onPointerStop);
+	window.addEventListener('pointercancel', onPointerStop);
+
 
 	function changeBit(key, bit, index) {
 		const mask = 1 << index;
@@ -238,46 +253,6 @@ function main({ gui, contextID, glslVersion}) {
 	}).name('Seed Ratio');
 	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
 	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
-
-	// Render loop.
-	function loop() {
-		composer.step({
-			program: golRules,
-			input: state,
-			output: state,
-		});
-		// If no output, will draw to screen.
-		composer.step({
-			program: golRender,
-			input: state,
-		});
-	}
-
-	// Touch events.
-	const activeTouches = {};
-	function onPointerMove(e) {
-		if (activeTouches[e.pointerId]) {
-			composer.stepCircle({
-				program: touch,
-				input: noise,
-				output: state,
-				position: [e.clientX, canvas.height - e.clientY],
-				diameter: 30,
-			});
-		}
-		
-	}
-	function onPointerStop(e) {
-		delete activeTouches[e.pointerId];
-	}
-	function onPointerStart(e) {
-		activeTouches[e.pointerId] = true;
-	}
-	window.addEventListener('pointermove', onPointerMove);
-	window.addEventListener('pointerdown', onPointerStart);
-	window.addEventListener('pointerup', onPointerStop);
-	window.addEventListener('pointerout', onPointerStop);
-	window.addEventListener('pointercancel', onPointerStop);
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {

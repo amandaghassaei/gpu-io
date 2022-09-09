@@ -1,4 +1,4 @@
-import { getSampler2DsInProgram, stripComments } from './regex';
+import { getSampler2DsInProgram } from './regex';
 
 /**
  * Wrap type to use in polyfill.

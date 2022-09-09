@@ -2425,7 +2425,7 @@ var GPUComposer = /** @class */ (function () {
         var _setValuePrograms = this._setValuePrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_setValuePrograms[key] === undefined) {
-            _setValuePrograms[key] = (0, Programs_1.setValueProgramForTypeAndNumComponents)(this, type, 4);
+            _setValuePrograms[key] = (0, Programs_1.setValueProgram)({ composer: this, type: type, numComponents: 4 });
         }
         return _setValuePrograms[key];
     };
@@ -2433,13 +2433,13 @@ var GPUComposer = /** @class */ (function () {
         var _copyPrograms = this._copyPrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_copyPrograms[key] === undefined) {
-            _copyPrograms[key] = (0, Programs_1.copyProgramForType)(this, type);
+            _copyPrograms[key] = (0, Programs_1.copyProgram)({ composer: this, type: type });
         }
         return _copyPrograms[key];
     };
     GPUComposer.prototype._getWrappedLineColorProgram = function () {
         if (this._wrappedLineColorProgram === undefined) {
-            this._wrappedLineColorProgram = (0, Programs_1.wrappedLineColorProgram)(this);
+            this._wrappedLineColorProgram = (0, Programs_1.wrappedLineColorProgram)({ composer: this });
         }
         return this._wrappedLineColorProgram;
     };
@@ -2447,7 +2447,7 @@ var GPUComposer = /** @class */ (function () {
         var _vectorMagnitudePrograms = this._vectorMagnitudePrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_vectorMagnitudePrograms[key] === undefined) {
-            _vectorMagnitudePrograms[key] = (0, Programs_1.vectorMagnitudeProgramForType)(this, type);
+            _vectorMagnitudePrograms[key] = (0, Programs_1.vectorMagnitudeProgram)({ composer: this, type: type });
         }
         return _vectorMagnitudePrograms[key];
     };
@@ -5713,21 +5713,24 @@ exports.GPUProgram = GPUProgram;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.vectorMagnitudeProgramForType = exports.wrappedLineColorProgram = exports.setValueProgramForTypeAndNumComponents = exports.copyProgramForType = void 0;
+exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderAmplitudeGrayscaleProgram = exports.setValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
 var GPUProgram_1 = __webpack_require__(664);
 /**
- *
- * @param composer
- * @param type
+ * Copy contents of one GPULayer to another GPULayer.
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the GPULayer to be copied.
+ * @param params.precision - Optionally specify the precision of the input and output (must be the same).
  * @returns
  */
-function copyProgramForType(composer, type) {
+function copyProgram(params) {
+    var composer = params.composer, type = params.type;
+    var precision = params.precision || '';
     var glslType = (0, conversions_1.glslTypeForType)(type, 4);
     return new GPUProgram_1.GPUProgram(composer, {
-        name: "copy-".concat(glslType),
-        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = texture(u_state, v_uv);\n}"),
+        name: "copy_".concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_layer"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = texture(u_state, v_uv);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -5737,15 +5740,82 @@ function copyProgramForType(composer, type) {
         ],
     });
 }
-exports.copyProgramForType = copyProgramForType;
+exports.copyProgram = copyProgram;
 /**
- *
+ * Add several GPULayers together.
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the GPULayers to be added (must all be the same).
+ * @param params.numComponents - The number of components of the GPULayers to be added (must all be the same).
+ * @param params.numInputs - The number of input GPULayers to add together, defaults to 2.
+ * @param params.precision - Optionally specify the precision of the inputs and output (must all be the same).
+ * @returns
  */
-function setValueProgramForTypeAndNumComponents(composer, type, numComponents) {
+function addLayersProgram(params) {
+    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+    var numInputs = params.numInputs || 2;
+    var precision = params.precision || '';
+    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var arrayOfLengthNumInputs = new Array(numInputs);
+    var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: "".concat(numInputs, "-way_add_").concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_w_").concat(numComponents, "_components"),
+        fragmentShader: "\nin vec2 v_uv;\n".concat(arrayOfLengthNumInputs.map(function (el, i) { return "uniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state").concat(i, ";"); }).join('\n'), "\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(arrayOfLengthNumInputs.map(function (el, i) { return "texture(u_state".concat(i, ", v_uv)").concat(componentSelection); }).join(' + '), ";\n}"),
+        uniforms: arrayOfLengthNumInputs.map(function (el, i) {
+            return {
+                name: "u_state".concat(i),
+                value: i,
+                type: constants_1.INT,
+            };
+        }),
+    });
+}
+exports.addLayersProgram = addLayersProgram;
+/**
+ * Add uniform value to a GPULayer.
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the GPULayer.
+ * @param params.numComponents - The number of components of the GPULayer.
+ * @param params.precision - Optionally specify the precision of the input and output.
+ * @returns
+ */
+function addValueProgram(params) {
+    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+    var precision = params.precision || '';
+    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: "addValue_".concat(glslType, "_w_").concat(numComponents, "_components"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(glslType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value + texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
+        uniforms: [
+            {
+                name: 'u_state',
+                value: 0,
+                type: constants_1.INT,
+            },
+            {
+                name: 'u_value',
+                value: (new Array(numComponents)).fill(0),
+                type: (0, conversions_1.uniformTypeForType)(type, composer.glslVersion),
+            },
+        ],
+    });
+}
+exports.addValueProgram = addValueProgram;
+/**
+ * Set value of all elements in a GPULayer via a uniform "u_value".
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the GPULayer to be set.
+ * @param params.numComponents - The number of components in the uniform.
+ * @param params.precision - Optionally specify the precision of the uniform and output (must be the same).
+ * @returns
+ */
+function setValueProgram(params) {
+    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+    var precision = params.precision || '';
     var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
     return new GPUProgram_1.GPUProgram(composer, {
-        name: "setValue-".concat(glslType, ",").concat(numComponents),
-        fragmentShader: "\nuniform ".concat(glslType, " u_value;\nout ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value;\n}"),
+        name: "setValue_".concat(glslType, "_w_").concat(numComponents, "_components"),
+        fragmentShader: "\nuniform ".concat(precision, " ").concat(glslType, " u_value;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value;\n}"),
         uniforms: [
             {
                 name: 'u_value',
@@ -5755,11 +5825,51 @@ function setValueProgramForTypeAndNumComponents(composer, type, numComponents) {
         ],
     });
 }
-exports.setValueProgramForTypeAndNumComponents = setValueProgramForTypeAndNumComponents;
+exports.setValueProgram = setValueProgram;
+/**
+ * Set value of all elements in a GPULayer via a uniform "u_value".
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the GPULayer to be set.
+ * @param params.numComponents - The number of components in the uniform.
+ * @param params.precision - Optionally specify the precision of the uniform and output (must be the same).
+ * @returns
+ */
+function renderAmplitudeGrayscaleProgram(params) {
+    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+    var precision = params.precision || '';
+    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var glslFloatType = (0, conversions_1.glslTypeForType)(constants_1.FLOAT, numComponents);
+    var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
+    var shouldCast = glslFloatType === glslType;
+    var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: "renderAmplitude_".concat(glslType, "_w_").concat(numComponents, "_components"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_fragColor;\nvoid main() {\n\t").concat(glslFloatType, " amplitude = u_scale * ").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(componentSelection, ");\n\tout_fragColor = vec4(amplitude, amplitude, amplitude, u_opacity);\n}"),
+        uniforms: [
+            {
+                name: 'u_state',
+                value: 0,
+                type: constants_1.INT,
+            },
+            {
+                name: 'u_scale',
+                value: 1,
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_opacity',
+                value: 1,
+                type: constants_1.FLOAT,
+            },
+        ],
+    });
+}
+exports.renderAmplitudeGrayscaleProgram = renderAmplitudeGrayscaleProgram;
 /**
  * @private
  */
-function wrappedLineColorProgram(composer) {
+function wrappedLineColorProgram(params) {
+    var composer = params.composer;
     return new GPUProgram_1.GPUProgram(composer, {
         name: "wrappedLineColor",
         fragmentShader: "\nin vec2 v_lineWrapping;\nuniform vec4 u_value;\nout vec4 out_fragColor;\nvoid main() {\n\t// Check if this line has wrapped.\n\tif ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {\n\t\t// Render nothing.\n\t\tdiscard;\n\t\treturn;\n\t}\n\tout_fragColor = vec4(u_value);\n}",
@@ -5770,14 +5880,15 @@ exports.wrappedLineColorProgram = wrappedLineColorProgram;
  * Fragment shader that draws the magnitude of a GPULayer as a color.
  * @private
  */
-function vectorMagnitudeProgramForType(composer, type) {
+function vectorMagnitudeProgram(params) {
+    var composer = params.composer, type = params.type;
     var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
     return new GPUProgram_1.GPUProgram(composer, {
         name: "vectorMagnitude",
         fragmentShader: "\nin vec2 v_uv;\nuniform vec3 u_color;\nuniform float u_scale;\nuniform ".concat(glslPrefix, "sampler2D u_gpuio_data;\nout vec4 out_fragColor;\nvoid main() {\n\tuvec4 value = texture(u_gpuio_data, v_uv);\n\tfloat mag = length(value);\n\tout_fragColor = vec4(mag * u_scale * u_color, 1);\n}"),
     });
 }
-exports.vectorMagnitudeProgramForType = vectorMagnitudeProgramForType;
+exports.vectorMagnitudeProgram = vectorMagnitudeProgram;
 
 
 /***/ }),
@@ -6364,7 +6475,7 @@ exports.GPUIO_FLOAT_PRECISION = 'GPUIO_FLOAT_PRECISION';
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.glslPrefixForType = exports.glslTypeForType = exports.uniformTypeForType = exports.intForPrecision = void 0;
+exports.glslComponentSelectionForNumComponents = exports.glslPrefixForType = exports.glslTypeForType = exports.uniformTypeForType = exports.intForPrecision = void 0;
 var constants_1 = __webpack_require__(601);
 /**
  * Enum for precision values.
@@ -6426,9 +6537,8 @@ function glslTypeForType(type, numComponents) {
             if (numComponents === 1)
                 return 'int';
             return "ivec".concat(numComponents);
-        default:
-            throw new Error("Invalid type: ".concat(type, " passed to glslTypeForType."));
     }
+    throw new Error("Invalid type: ".concat(type, " passed to glslTypeForType."));
 }
 exports.glslTypeForType = glslTypeForType;
 /**
@@ -6447,11 +6557,27 @@ function glslPrefixForType(type) {
         case constants_1.SHORT:
         case constants_1.INT:
             return 'i';
-        default:
-            throw new Error("Invalid type: ".concat(type, " passed to glslPrefixForType."));
     }
+    throw new Error("Invalid type: ".concat(type, " passed to glslPrefixForType."));
 }
 exports.glslPrefixForType = glslPrefixForType;
+/**
+ * @private
+ */
+function glslComponentSelectionForNumComponents(numComponents) {
+    switch (numComponents) {
+        case 1:
+            return '.x';
+        case 2:
+            return '.xy';
+        case 3:
+            return '.xyz';
+        case 4:
+            return '';
+    }
+    throw new Error("Invalid numComponents: ".concat(numComponents, " passed to glslComponentSelectionForNumComponents."));
+}
+exports.glslComponentSelectionForNumComponents = glslComponentSelectionForNumComponents;
 
 
 /***/ }),
@@ -6648,7 +6774,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.setValueProgram = exports.renderAmplitudeGrayscaleProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils = __webpack_require__(593);
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
@@ -6661,12 +6787,13 @@ var GPULayerHelpers = __webpack_require__(191);
 var regex = __webpack_require__(126);
 var extensions = __webpack_require__(581);
 var polyfills = __webpack_require__(360);
-var enums = __webpack_require__(690);
+var conversions = __webpack_require__(690);
+var Programs = __webpack_require__(579);
 // These exports are only used for testing.
 /**
  * @private
  */
-var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, extensions), regex), checks), GPULayerHelpers), polyfills), enums);
+var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue }, extensions), regex), checks), GPULayerHelpers), polyfills), conversions);
 exports._testing = _testing;
 // Named exports.
 __exportStar(__webpack_require__(601), exports);
@@ -6677,6 +6804,12 @@ exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
 exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
 exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
 exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
+var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, renderAmplitudeGrayscaleProgram = Programs.renderAmplitudeGrayscaleProgram, setValueProgram = Programs.setValueProgram;
+exports.copyProgram = copyProgram;
+exports.addLayersProgram = addLayersProgram;
+exports.addValueProgram = addValueProgram;
+exports.renderAmplitudeGrayscaleProgram = renderAmplitudeGrayscaleProgram;
+exports.setValueProgram = setValueProgram;
 
 
 /***/ }),

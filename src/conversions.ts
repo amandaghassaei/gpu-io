@@ -71,9 +71,8 @@ export function glslTypeForType(type: GPULayerType, numComponents: GPULayerNumCo
 		case INT:
 			if (numComponents === 1) return 'int';
 			return `ivec${numComponents}`;
-		default:
-			throw new Error(`Invalid type: ${type} passed to glslTypeForType.`);
 	}
+	throw new Error(`Invalid type: ${type} passed to glslTypeForType.`);
 }
 
 /**
@@ -92,7 +91,23 @@ export function glslTypeForType(type: GPULayerType, numComponents: GPULayerNumCo
 		case SHORT:
 		case INT:
 			return 'i';
-		default:
-			throw new Error(`Invalid type: ${type} passed to glslPrefixForType.`);
 	}
+	throw new Error(`Invalid type: ${type} passed to glslPrefixForType.`);
+}
+
+/**
+ * @private
+ */
+export function glslComponentSelectionForNumComponents(numComponents: GPULayerNumComponents) {
+	switch (numComponents) {
+		case 1:
+			return '.x';
+		case 2:
+			return '.xy';
+		case 3:
+			return '.xyz';
+		case 4:
+			return '';
+	}
+	throw new Error(`Invalid numComponents: ${numComponents} passed to glslComponentSelectionForNumComponents.`);
 }

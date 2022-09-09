@@ -7,7 +7,8 @@ import * as GPULayerHelpers from './GPULayerHelpers';
 import * as regex from './regex';
 import * as extensions from './extensions';
 import * as polyfills from './polyfills';
-import * as enums from './conversions';
+import * as conversions from './conversions';
+import * as Programs from './Programs';
 
 // These exports are only used for testing.
 /**
@@ -32,7 +33,7 @@ const _testing = {
 	...checks,
 	...GPULayerHelpers,
 	...polyfills,
-	...enums,
+	...conversions,
 }
 
 // Named exports.
@@ -45,6 +46,13 @@ const {
 	getVertexShaderMediumpPrecision,
 	getFragmentShaderMediumpPrecision,
 } = utils;
+const {
+	copyProgram,
+	addLayersProgram,
+	addValueProgram,
+	renderAmplitudeGrayscaleProgram,
+	setValueProgram,
+} = Programs;
 export {
 	GPUComposer,
 	GPULayer,
@@ -55,5 +63,10 @@ export {
 	isHighpSupportedInFragmentShader,
 	getVertexShaderMediumpPrecision,
 	getFragmentShaderMediumpPrecision,
+	copyProgram,
+	addLayersProgram,
+	addValueProgram,
+	renderAmplitudeGrayscaleProgram,
+	setValueProgram,
 	_testing,
 }
