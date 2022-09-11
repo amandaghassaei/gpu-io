@@ -3008,7 +3008,7 @@ var GPUComposer = /** @class */ (function () {
         var onePx = [1 / width, 1 / height];
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], constants_1.FLOAT);
         program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, constants_1.FLOAT);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
         this._setPositionAttribute(glProgram, program.name);
         // Draw.
         this._setBlendMode(params.shouldBlendAlpha);

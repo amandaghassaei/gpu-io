@@ -1042,7 +1042,7 @@ export class GPUComposer {
 		const onePx = [ 1 / width, 1 / height] as [number, number];
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
 		program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, FLOAT);
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
 		this._setPositionAttribute(glProgram, program.name);
 		
 		// Draw.
@@ -1141,7 +1141,6 @@ export class GPUComposer {
 			// Use a rectangle in case of no caps.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
 		}
-
 		this._setPositionAttribute(glProgram, program.name);
 		
 		// Draw.

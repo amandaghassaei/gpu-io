@@ -24,6 +24,7 @@ function main({ gui, contextID, glslVersion}) {
 		savePNG: savePNG,
 	};
 	const PML_WIDTH = 20;
+	const PULSE_DELAY_TIME = 100;
 
 	const DT_OVER_DX = 0.5 * 3e8; // Half the speed of light.
 	const C = 0.5;
@@ -276,25 +277,26 @@ function main({ gui, contextID, glslVersion}) {
 	let t = 0;
 
 	setValue1D.setUniform('u_value', 0.5);
-	const NUM_PILLARS = 40;
-	for (let i = 0; i < NUM_PILLARS; i++) {
-		const xStart = 150;
-		const xEnd = 250;
-		const y = canvas.height * i / NUM_PILLARS;
-		composer.stepSegment({
-			position1: [xStart, y],
-			position2: [xEnd, y],
-			thickness: 10 - Math.abs(canvas.height / 2 - y) / 20,
-			program: setValue1D,
-			output: permittivityFactor,
-		});
-	}
-	// composer.stepCircle({
-	// 	position: [200, canvas.height / 2],
-	// 	diameter: 300,
-	// 	program: setValue1D,
-	// 	output: permittivityFactor,
-	// });
+	// const NUM_PILLARS = 40;
+	// for (let i = 0; i < NUM_PILLARS; i++) {
+	// 	const xStart = 150;
+	// 	const xEnd = 250;
+	// 	const y = canvas.height * i / NUM_PILLARS;
+	// 	composer.stepSegment({
+	// 		position1: [xStart, y],
+	// 		position2: [xEnd, y],
+	// 		thickness: 10 - Math.abs(canvas.height / 2 - y) / 20,
+	// 		program: setValue1D,
+	// 		output: permittivityFactor,
+	// 	});
+	// }
+	composer.stepCircle({
+		position: [400, canvas.height / 2],
+		diameter: 300,
+		program: setValue1D,
+		numSegments: 100,
+		output: permittivityFactor,
+	});
 	composer.step({
 		program: stepPML,
 		output: pml,
@@ -303,17 +305,14 @@ function main({ gui, contextID, glslVersion}) {
 	// Render loop.
 	function loop() {
 		// Apply source.
-		setValue2D.setUniform('u_value',[ 0.25 * Math.sin(t / 7),  0.25 * Math.sin(t / 7)]);
-		composer.stepSegment({
-			position1: [50, 50],
-			position2: [50, canvas.height - 50],
-			thickness: 1,
+		setValue2D.setUniform('u_value',[ Math.sin(t / 7),  Math.sin(t / 7)]);
+		composer.stepCircle({
+			position: [150, canvas.height / 2],
+			// position2: [50, canvas.height - 50],
+			diameter: 10,
 			program: setValue2D,
 			output: electricField,
 		});
-
-
-		// Apply boundary conditions.
 
 		composer.step({
 			program: stepMagnetic,
