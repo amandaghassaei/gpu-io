@@ -99,7 +99,7 @@ export declare class GPUComposer {
      * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
      * @param params.context - Pass in a WebGL context for the GPUcomposer to user.
      * @param params.contextID - Set the contextID to use when initing a new WebGL context.
-     * @param params.contextOptions - Options to pass to WebGL context on initialization.
+     * @param params.contextAttributes - Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for ore information).
      * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
@@ -110,8 +110,7 @@ export declare class GPUComposer {
         canvas: HTMLCanvasElement;
         context?: WebGLRenderingContext | WebGL2RenderingContext;
         contextID?: typeof WEBGL2 | typeof WEBGL1 | typeof EXPERIMENTAL_WEBGL | typeof EXPERIMENTAL_WEBGL2 | string;
-        contextOptions?: {
-            antialias?: boolean;
+        contextAttributes?: {
             [key: string]: any;
         };
         glslVersion?: GLSLVersion;
@@ -258,39 +257,62 @@ export declare class GPUComposer {
     private _setUVAttribute;
     /**
      * Step GPUProgram entire fullscreen quad.
-     * @param params
+     * @param params - Step parameters.
+     * @param params.program - GPUProgram to run.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
      */
     step(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
-        shouldBlendAlpha?: boolean;
+        blendAlpha?: boolean;
     }): void;
     /**
      * Step GPUProgram only for a 1px strip of pixels along the boundary.
-     * @param params
+     * @param params - Step parameters.
+     * @param params.program - GPUProgram to run.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.edges - Specify which edges to step, defaults to stepping entire boundary.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
      */
     stepBoundary(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         edges?: BOUNDARY_EDGE | BOUNDARY_EDGE[];
-        shouldBlendAlpha?: boolean;
+        blendAlpha?: boolean;
     }): void;
     /**
      * Step GPUProgram for all but a 1px strip of pixels along the boundary.
-     * @param params
+     * @param params - Step parameters.
+     * @param params.program - GPUProgram to run.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
      */
     stepNonBoundary(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
-        shouldBlendAlpha?: boolean;
+        blendAlpha?: boolean;
     }): void;
     /**
-     * Step GPUProgram inside a circular spot.
-     * This is useful for touch interactions.
-     * @param params
+     * Step GPUProgram inside a circular spot.  This is useful for touch interactions.
+     * @param params - Step parameters.
+     * @param params.program - GPUProgram to run.
+     * @param params.position - Position of center of circle.
+     * @param params.diameter - Circle diameter in pixels.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.numSegments - Number of segments in circle, defaults to 18.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
      */
     stepCircle(params: {
         program: GPUProgram;
@@ -299,12 +321,22 @@ export declare class GPUComposer {
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         numSegments?: number;
-        shouldBlendAlpha?: boolean;
+        blendAlpha?: boolean;
     }): void;
     /**
      * Step GPUProgram inside a line segment (rounded end caps available).
      * This is useful for touch interactions during pointermove.
-     * @param params
+     * @param params - Step parameters.
+     * @param params.program - GPUProgram to run.
+     * @param params.position1 - Position of one end of segment.
+     * @param params.position2 - Position of the other end of segment.
+     * @param params.thickness - Thickness in pixels.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.endCaps - Flag to draw with rounded end caps, defaults to false.
+     * @param params.numSegments - Number of segments in rounded end caps, defaults to 9, must be divisible by 3.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
      */
     stepSegment(params: {
         program: GPUProgram;
@@ -315,41 +347,23 @@ export declare class GPUComposer {
         output?: GPULayer;
         endCaps?: boolean;
         numCapSegments?: number;
-        shouldBlendAlpha?: boolean;
+        blendAlpha?: boolean;
     }): void;
-    stepPolyline(params: {
-        program: GPUProgram;
-        positions: [number, number][];
-        thickness: number;
-        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
-        closeLoop?: boolean;
-        includeUVs?: boolean;
-        includeNormals?: boolean;
-        shouldBlendAlpha?: boolean;
-    }): void;
-    stepTriangleStrip(params: {
-        program: GPUProgram;
-        positions: Float32Array;
-        normals?: Float32Array;
-        uvs?: Float32Array;
-        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
-        count?: number;
-        shouldBlendAlpha?: boolean;
-    }): void;
-    stepLines(params: {
-        program: GPUProgram;
-        positions: Float32Array;
-        indices?: Uint16Array | Uint32Array | Int16Array | Int32Array;
-        normals?: Float32Array;
-        uvs?: Float32Array;
-        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
-        count?: number;
-        closeLoop?: boolean;
-        shouldBlendAlpha?: boolean;
-    }): void;
+    /**
+     * Draw the contents of a GPULayer as points.  This assumes the components of the GPULayer have the form [xPosition, yPosition] or [xPosition, yPosition, xOffset, yOffset].
+     * @param params - Draw parameters.
+     * @param params.positions - GPULayer containing position data.
+     * @param params.program - GPUProgram to run, defaults to drawing points in red.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.pointSize - Pixel size of points.
+     * @param params.count - How many point sto draw, defaults to positions.length.
+     * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
+     * @param params.wrapX - Wrap points positions in X, defaults to false.
+     * @param params.wrapY - Wrap points positions in Y, defaults to false.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
+     */
     drawLayerAsPoints(params: {
         positions: GPULayer;
         program?: GPUProgram;
@@ -360,55 +374,7 @@ export declare class GPUComposer {
         color?: [number, number, number];
         wrapX?: boolean;
         wrapY?: boolean;
-        shouldBlendAlpha?: boolean;
-    }): void;
-    drawLayerAsLines(params: {
-        positions: GPULayer;
-        indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array;
-        program?: GPUProgram;
-        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
-        count?: number;
-        color?: [number, number, number];
-        wrapX?: boolean;
-        wrapY?: boolean;
-        closeLoop?: boolean;
-        shouldBlendAlpha?: boolean;
-    }): void;
-    drawLayerAsVectorField(params: {
-        data: GPULayer;
-        program?: GPUProgram;
-        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
-        vectorSpacing?: number;
-        vectorScale?: number;
-        color?: [number, number, number];
-        shouldBlendAlpha?: boolean;
-    }): void;
-    drawLayerMagnitude(params: {
-        data: GPULayer;
-        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
-        scale?: number;
-        color?: [number, number, number];
-        shouldBlendAlpha?: boolean;
-    }): void;
-    /**
-     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
-     */
-    resetThreeState(): void;
-    /**
-     * Save the current state of the canvas to png.
-     * @param params - PNG parameters.
-     * @param params.filename - PNG filename (no extension).
-     * @param params.dpi - PNG dpi (defaults to 72dpi).
-     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
-    */
-    savePNG(params?: {
-        filename?: string;
-        dpi?: number;
-        multiplier?: number;
-        callback?: (blob: Blob, filename: string) => void;
+        blendAlpha?: boolean;
     }): void;
     /**
      * Call tick() from your render loop to measure the FPS of your application.
