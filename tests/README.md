@@ -21,7 +21,7 @@ Here are some results I've gathered testing different combinations of hardware/b
 
 - macOS v10.15.7 + Chrome v105.0.0.0 [readwrite](results/READWRITE_Chrome_v105.0.0.0_macOS_v10.15.7.png) / [read](results/READ_Chrome_v105.0.0.0_macOS_v10.15.7.png)
 - macOS v10.15.7 + Firefox v104.0 [readwrite](results/READWRITE_Firefox_v104.0_macOS_v10.15.7.png) / [read](results/READ_Firefox_v104.0_macOS_v10.15.7.png)
-- macOS v10.15.7 + Safari v14.0.3 (WebGL1 only) [readwrite](results/results/READWRITE_Safari_v14.0.3_macOS_v10.15.7.png) / [read](results/READ_Safari_v14.0.3_macOS_v10.15.7.png)
+- macOS v10.15.7 + Safari v14.0.3 (WebGL1 only) [readwrite](results/READWRITE_Safari_v14.0.3_macOS_v10.15.7.png) / [read](results/READ_Safari_v14.0.3_macOS_v10.15.7.png)
 
 
 ### Windows
