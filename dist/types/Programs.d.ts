@@ -87,6 +87,23 @@ export declare function setValueProgram(params: {
     precision?: GLSLPrecision;
 }): GPUProgram;
 /**
+ * Set all elements in a GPULayer to uniform "u_value".
+ * @param params - Program parameters.
+ * @param params.composer - The current GPUComposer.
+ * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
+ * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.precision - Optionally specify the precision of the output/uniforms.
+ * @returns
+ */
+export declare function setColorProgram(params: {
+    composer: GPUComposer;
+    color?: number[];
+    opacity?: number;
+    name?: string;
+    precision?: GLSLPrecision;
+}): GPUProgram;
+/**
  * Zero output GPULayer.
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.

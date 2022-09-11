@@ -45,14 +45,14 @@ In cases where INT types are not available, FLOAT types are used instead, but ma
 * indicates that fragment shader polyfill was used.<br/>
 Extrema (min, max, min magnitude, max magnitude) for each type are tested.<br/>
 <br/>
-<a href="#" id="savePNG">Save results as PNG</a>`;
+<a href="#" id="saveImage">Save results as PNG</a>`;
 
-document.getElementById('savePNG').addEventListener('click', (e) => {
+document.getElementById('saveImage').addEventListener('click', (e) => {
 	e.preventDefault();
 	domtoimage.toPng(document.getElementById('output'))
 		.then(function (dataUrl) {
 			const link = document.createElement('a');
-			link.download = `${document.getElementById('testTitle').innerHTML}_${browser}_${os}.png`.replace(' ', '_');
+			link.download = `${document.getElementById('testTitle').innerHTML}_${browser}_${os}.png`.replace(/\s+/g, '_');
 			link.href = dataUrl;
 			link.click();
 		});

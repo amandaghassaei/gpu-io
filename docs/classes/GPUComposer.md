@@ -228,7 +228,7 @@ Step GPUProgram only for a 1px strip of pixels along the boundary.
 | `params.program` | [`GPUProgram`](GPUProgram.md) |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] |
 | `params.output?` | [`GPULayer`](GPULayer.md) |
-| `params.singleEdge?` | ``"LEFT"`` \| ``"RIGHT"`` \| ``"TOP"`` \| ``"BOTTOM"`` |
+| `params.edges?` | [`BOUNDARY_EDGE`](../README.md#boundary_edge) \| [`BOUNDARY_EDGE`](../README.md#boundary_edge)[] |
 | `params.shouldBlendAlpha?` | `boolean` |
 
 #### Returns

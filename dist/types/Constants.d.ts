@@ -406,3 +406,8 @@ export declare const GPUIO_INT_PRECISION = "GPUIO_INT_PRECISION";
  * @private
  */
 export declare const GPUIO_FLOAT_PRECISION = "GPUIO_FLOAT_PRECISION";
+export declare const BOUNDARY_TOP = "BOUNDARY_TOP";
+export declare const BOUNDARY_BOTTOM = "BOUNDARY_BOTTOM";
+export declare const BOUNDARY_LEFT = "BOUNDARY_LEFT";
+export declare const BOUNDARY_RIGHT = "BOUNDARY_RIGHT";
+export declare type BOUNDARY_EDGE = typeof BOUNDARY_TOP | typeof BOUNDARY_BOTTOM | typeof BOUNDARY_LEFT | typeof BOUNDARY_RIGHT;

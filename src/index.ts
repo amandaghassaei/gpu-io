@@ -55,6 +55,7 @@ const {
 	renderAmplitudeProgram,
 	renderSignedAmplitudeProgram,
 	setValueProgram,
+	setColorProgram,
 } = Programs;
 export {
 	GPUComposer,
@@ -73,5 +74,6 @@ export {
 	renderAmplitudeProgram,
 	renderSignedAmplitudeProgram,
 	setValueProgram,
+	setColorProgram,
 	_testing,
 }

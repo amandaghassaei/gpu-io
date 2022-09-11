@@ -35,6 +35,10 @@ gpu-io
 - [PRECISION\_LOW\_P](README.md#precision_low_p)
 - [PRECISION\_MEDIUM\_P](README.md#precision_medium_p)
 - [PRECISION\_HIGH\_P](README.md#precision_high_p)
+- [BOUNDARY\_TOP](README.md#boundary_top)
+- [BOUNDARY\_BOTTOM](README.md#boundary_bottom)
+- [BOUNDARY\_LEFT](README.md#boundary_left)
+- [BOUNDARY\_RIGHT](README.md#boundary_right)
 
 ### Type Aliases
 
@@ -51,6 +55,7 @@ gpu-io
 - [UniformParams](README.md#uniformparams)
 - [CompileTimeConstants](README.md#compiletimeconstants)
 - [ErrorCallback](README.md#errorcallback)
+- [BOUNDARY\_EDGE](README.md#boundary_edge)
 
 ### Functions
 
@@ -63,8 +68,11 @@ gpu-io
 - [copyProgram](README.md#copyprogram)
 - [addLayersProgram](README.md#addlayersprogram)
 - [addValueProgram](README.md#addvalueprogram)
-- [renderAmplitudeGrayscaleProgram](README.md#renderamplitudegrayscaleprogram)
+- [multiplyValueProgram](README.md#multiplyvalueprogram)
+- [renderAmplitudeProgram](README.md#renderamplitudeprogram)
+- [renderSignedAmplitudeProgram](README.md#rendersignedamplitudeprogram)
 - [setValueProgram](README.md#setvalueprogram)
+- [setColorProgram](README.md#setcolorprogram)
 
 ## Variables
 
@@ -250,6 +258,30 @@ ___
 
 GLSL highp precision declaration.
 
+___
+
+### BOUNDARY\_TOP
+
+• `Const` **BOUNDARY\_TOP**: ``"BOUNDARY_TOP"``
+
+___
+
+### BOUNDARY\_BOTTOM
+
+• `Const` **BOUNDARY\_BOTTOM**: ``"BOUNDARY_BOTTOM"``
+
+___
+
+### BOUNDARY\_LEFT
+
+• `Const` **BOUNDARY\_LEFT**: ``"BOUNDARY_LEFT"``
+
+___
+
+### BOUNDARY\_RIGHT
+
+• `Const` **BOUNDARY\_RIGHT**: ``"BOUNDARY_RIGHT"``
+
 ## Type Aliases
 
 ### GPULayerArray
@@ -386,6 +418,12 @@ ___
 
 `void`
 
+___
+
+### BOUNDARY\_EDGE
+
+Ƭ **BOUNDARY\_EDGE**: typeof [`BOUNDARY_TOP`](README.md#boundary_top) \| typeof [`BOUNDARY_BOTTOM`](README.md#boundary_bottom) \| typeof [`BOUNDARY_LEFT`](README.md#boundary_left) \| typeof [`BOUNDARY_RIGHT`](README.md#boundary_right)
+
 ## Functions
 
 ### isWebGL2
@@ -516,8 +554,8 @@ Add several GPULayers together.
 | `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the inputs/output. |
-| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components of the inputs/output. |
-| `params.name` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
+| `params.components?` | `string` | Component(s) of inputs to add, defaults to 'xyzw. |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.numInputs?` | `number` | The number of inputs to add together, defaults to 2. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the inputs/output. |
 
@@ -540,7 +578,7 @@ Add uniform "u_value" to a GPULayer.
 | `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output (we assume "u_value" has the same type). |
-| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components of the input/output and "u_value". |
+| `params.value` | `number` \| `number`[] | Initial value to add, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input/output/"u_value". |
 
@@ -550,11 +588,34 @@ Add uniform "u_value" to a GPULayer.
 
 ___
 
-### renderAmplitudeGrayscaleProgram
+### multiplyValueProgram
 
-▸ **renderAmplitudeGrayscaleProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **multiplyValueProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
 
-Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
+Multiply uniform "u_value" to a GPULayer.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Program parameters. |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output (we assume "u_value" has the same type). |
+| `params.value` | `number` \| `number`[] | Initial value to multiply, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input/output/"u_value". |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### renderAmplitudeProgram
+
+▸ **renderAmplitudeProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
 
 #### Parameters
 
@@ -563,8 +624,40 @@ Render RGBA greyscale color corresponding to the amplitude of an input GPULayer.
 | `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
-| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components in the input. |
+| `params.components?` | `string` | Component(s) of input GPULayer to render, defaults to 'xyzw'. |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
+| `params.scale?` | `number` | Scaling factor, defaults to 1.  Change this later using uniform "u_scale". |
+| `params.opacity?` | `number` | Opacity, defaults to 1.  Change this later using uniform "u_opacity". |
+| `params.color?` | `number`[] | RGB color for non-zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_color". |
+| `params.colorZero` | `number`[] | RGB color for zero amplitudes, scaled to [-0,1] range, defaults to black.  Change this later using uniform "u_colorZero". |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### renderSignedAmplitudeProgram
+
+▸ **renderSignedAmplitudeProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Render signed amplitude of an input GPULayer to linearly interpolated colors.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Program parameters. |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
+| `params.component?` | ``"x"`` \| ``"y"`` \| ``"z"`` \| ``"w"`` | Component of input GPULayer to render, defaults to "x". |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
+| `params.scale?` | `number` | Scaling factor, defaults to 1.  Change this later using uniform "u_scale". |
+| `params.opacity?` | `number` | Opacity, defaults to 1.  Change this later using uniform "u_opacity". |
+| `params.colorNegative?` | `number`[] | RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative". |
+| `params.colorPositive?` | `number`[] | RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive". |
+| `params.colorZero?` | `number`[] | RGB color for zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_colorZero". |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns
@@ -586,9 +679,32 @@ Set all elements in a GPULayer to uniform "u_value".
 | `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the output (we assume "u_value" has same type). |
-| `params.numComponents` | [`GPULayerNumComponents`](README.md#gpulayernumcomponents) | The number of components in the output/"u_value". |
+| `params.value` | `number` \| `number`[] | Initial value to set, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the output/"u_value". |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### setColorProgram
+
+▸ **setColorProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Set all elements in a GPULayer to uniform "u_value".
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Program parameters. |
+| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.color?` | `number`[] | Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color". |
+| `params.opacity?` | `number` | - |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the output/uniforms. |
 
 #### Returns
 

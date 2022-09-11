@@ -230,6 +230,52 @@ void main() {
 }
 
 /**
+ * Set all elements in a GPULayer to uniform "u_value".
+ * @param params - Program parameters.
+ * @param params.composer - The current GPUComposer.
+ * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
+ * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.precision - Optionally specify the precision of the output/uniforms.
+ * @returns
+ */
+ export function setColorProgram(params: {
+	composer: GPUComposer,
+	color?: number[],
+	opacity?: number,
+	name?: string,
+	precision?: GLSLPrecision,
+}) {
+	const { composer } = params;
+	const precision = params.precision || '';
+	const opacity = params.opacity === undefined ? 1 : params.opacity;
+	const color = params.color || [0, 0, 0];
+	const name = params.name || `setColor`;
+	return new GPUProgram(composer, {
+		name,
+		fragmentShader: `
+uniform ${precision} vec3 u_color;
+uniform ${precision} float u_opacity;
+out ${precision} vec4 out_fragColor;
+void main() {
+	out_fragColor = vec4(u_color, u_opacity);
+}`,
+		uniforms: [
+			{
+				name: 'u_color',
+				value: color,
+				type: FLOAT,
+			},
+			{
+				name: 'u_opacity',
+				value: opacity,
+				type: FLOAT,
+			},
+		],
+	});
+}
+
+/**
  * Zero output GPULayer.
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.

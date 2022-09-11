@@ -46,6 +46,11 @@ import {
 	MAX_FLOAT_INT,
 	GPUIO_VS_INDEXED_POSITIONS,
 	EXPERIMENTAL_WEBGL2,
+	BOUNDARY_EDGE,
+	BOUNDARY_LEFT,
+	BOUNDARY_RIGHT,
+	BOUNDARY_TOP,
+	BOUNDARY_BOTTOM,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -975,7 +980,7 @@ export class GPUComposer {
 			program: GPUProgram,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
-			singleEdge?: 'LEFT' | 'RIGHT' | 'TOP' | 'BOTTOM';
+			edges?: BOUNDARY_EDGE | BOUNDARY_EDGE[];
 			shouldBlendAlpha?: boolean,
 		},
 	) {
@@ -1000,22 +1005,24 @@ export class GPUComposer {
 
 		// Draw.
 		this._setBlendMode(params.shouldBlendAlpha);
-		if (params.singleEdge) {
-			switch(params.singleEdge) {
-				case 'LEFT':
+		if (params.edges) {
+			let { edges } = params;
+			if (!isArray(edges)) edges = [edges as BOUNDARY_EDGE];
+			for (let i = 0, numEdges = edges.length; i < numEdges; i++) {
+				// TODO: do this in one draw call.
+				const edge = edges[i];
+				if (edge === BOUNDARY_LEFT) {
 					gl.drawArrays(gl.LINES, 3, 2);
-					break;
-				case 'RIGHT':
+				}
+				if (edge === BOUNDARY_RIGHT) {
 					gl.drawArrays(gl.LINES, 1, 2);
-					break;
-				case 'TOP':
+				}
+				if (edge === BOUNDARY_TOP) {
 					gl.drawArrays(gl.LINES, 2, 2);
-					break;
-				case 'BOTTOM':
+				}
+				if (edge === BOUNDARY_BOTTOM) {
 					gl.drawArrays(gl.LINES, 0, 2);
-					break;
-				default:
-					throw new Error(`Unknown boundary edge type: ${params.singleEdge}.`);
+				}
 			}
 		} else {
 			gl.drawArrays(gl.LINE_LOOP, 0, 4);

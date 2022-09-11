@@ -12,6 +12,7 @@ canvas {
 	min-width: 930px;
 	display: inline-block;
 	padding-bottom: 5px;
+	background: white;
 }
 
 #title {
@@ -32,7 +33,7 @@ a, a:link, a:visited, a:hover, a:active {
 	background-color: transparent;
 	color: black;
 }
-#savePNG {
+#saveImage {
 	text-decoration: underline;
 	color: blue;
 }

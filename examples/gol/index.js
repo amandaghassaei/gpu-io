@@ -262,7 +262,7 @@ function main({ gui, contextID, glslVersion}) {
 			program: golRender,
 			input: state,
 		});
-		composer.savePNG({ filename: 'gol' });
+		composer.savePNG({ filename: `gol_S${PARAMS.survivalRules}_B${PARAMS.birthRules}` });
 	}
 	window.addEventListener('keydown', onKeydown);
 	function onKeydown(e) {

@@ -2974,22 +2974,25 @@ var GPUComposer = /** @class */ (function () {
         this._setPositionAttribute(glProgram, program.name);
         // Draw.
         this._setBlendMode(params.shouldBlendAlpha);
-        if (params.singleEdge) {
-            switch (params.singleEdge) {
-                case 'LEFT':
+        if (params.edges) {
+            var edges = params.edges;
+            if (!(0, checks_1.isArray)(edges))
+                edges = [edges];
+            for (var i = 0, numEdges = edges.length; i < numEdges; i++) {
+                // TODO: do this in one draw call.
+                var edge = edges[i];
+                if (edge === constants_1.BOUNDARY_LEFT) {
                     gl.drawArrays(gl.LINES, 3, 2);
-                    break;
-                case 'RIGHT':
+                }
+                if (edge === constants_1.BOUNDARY_RIGHT) {
                     gl.drawArrays(gl.LINES, 1, 2);
-                    break;
-                case 'TOP':
+                }
+                if (edge === constants_1.BOUNDARY_TOP) {
                     gl.drawArrays(gl.LINES, 2, 2);
-                    break;
-                case 'BOTTOM':
+                }
+                if (edge === constants_1.BOUNDARY_BOTTOM) {
                     gl.drawArrays(gl.LINES, 0, 2);
-                    break;
-                default:
-                    throw new Error("Unknown boundary edge type: ".concat(params.singleEdge, "."));
+                }
             }
         }
         else {
@@ -5891,7 +5894,7 @@ exports.GPUProgram = GPUProgram;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.zeroProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
+exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.zeroProgram = exports.setColorProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
@@ -6060,6 +6063,40 @@ function setValueProgram(params) {
     });
 }
 exports.setValueProgram = setValueProgram;
+/**
+ * Set all elements in a GPULayer to uniform "u_value".
+ * @param params - Program parameters.
+ * @param params.composer - The current GPUComposer.
+ * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
+ * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.precision - Optionally specify the precision of the output/uniforms.
+ * @returns
+ */
+function setColorProgram(params) {
+    var composer = params.composer;
+    var precision = params.precision || '';
+    var opacity = params.opacity === undefined ? 1 : params.opacity;
+    var color = params.color || [0, 0, 0];
+    var name = params.name || "setColor";
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: name,
+        fragmentShader: "\nuniform ".concat(precision, " vec3 u_color;\nuniform ").concat(precision, " float u_opacity;\nout ").concat(precision, " vec4 out_fragColor;\nvoid main() {\n\tout_fragColor = vec4(u_color, u_opacity);\n}"),
+        uniforms: [
+            {
+                name: 'u_color',
+                value: color,
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_opacity',
+                value: opacity,
+                type: constants_1.FLOAT,
+            },
+        ],
+    });
+}
+exports.setColorProgram = setColorProgram;
 /**
  * Zero output GPULayer.
  * @param params - Program parameters.
@@ -6471,7 +6508,7 @@ exports.isBoolean = isBoolean;
 // Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL2 = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
-exports.GPUIO_FLOAT_PRECISION = exports.GPUIO_INT_PRECISION = exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = void 0;
+exports.BOUNDARY_RIGHT = exports.BOUNDARY_LEFT = exports.BOUNDARY_BOTTOM = exports.BOUNDARY_TOP = exports.GPUIO_FLOAT_PRECISION = exports.GPUIO_INT_PRECISION = exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = void 0;
 /**
  * Half float data type.
  */
@@ -6799,6 +6836,10 @@ exports.GPUIO_INT_PRECISION = 'GPUIO_INT_PRECISION';
  * @private
  */
 exports.GPUIO_FLOAT_PRECISION = 'GPUIO_FLOAT_PRECISION';
+exports.BOUNDARY_TOP = 'BOUNDARY_TOP';
+exports.BOUNDARY_BOTTOM = 'BOUNDARY_BOTTOM';
+exports.BOUNDARY_LEFT = 'BOUNDARY_LEFT';
+exports.BOUNDARY_RIGHT = 'BOUNDARY_RIGHT';
 
 
 /***/ }),
@@ -7107,7 +7148,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.setColorProgram = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils = __webpack_require__(593);
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
@@ -7137,7 +7178,7 @@ exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
 exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
 exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
 exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
-var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, multiplyValueProgram = Programs.multiplyValueProgram, renderAmplitudeProgram = Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram = Programs.renderSignedAmplitudeProgram, setValueProgram = Programs.setValueProgram;
+var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, multiplyValueProgram = Programs.multiplyValueProgram, renderAmplitudeProgram = Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram = Programs.renderSignedAmplitudeProgram, setValueProgram = Programs.setValueProgram, setColorProgram = Programs.setColorProgram;
 exports.copyProgram = copyProgram;
 exports.addLayersProgram = addLayersProgram;
 exports.addValueProgram = addValueProgram;
@@ -7145,6 +7186,7 @@ exports.multiplyValueProgram = multiplyValueProgram;
 exports.renderAmplitudeProgram = renderAmplitudeProgram;
 exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 exports.setValueProgram = setValueProgram;
+exports.setColorProgram = setColorProgram;
 
 
 /***/ }),
@@ -7319,7 +7361,7 @@ var FRAGMENT_SHADER_POLYFILLS;
 function fragmentShaderPolyfills() {
     if (FRAGMENT_SHADER_POLYFILLS)
         return FRAGMENT_SHADER_POLYFILLS;
-    var mod = function (type1, type2) { return "".concat(type1, " mod(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); };
+    var modi = function (type1, type2) { return "".concat(type1, " modi(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); };
     var bitshiftLeft = function (type1, type2) {
         return "".concat(type1, " bitshiftLeft(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a << b;\n\t#else\n\t\treturn a * ").concat(type1, "(pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b)));\n\t#endif\n}");
     };
@@ -7330,18 +7372,18 @@ function fragmentShaderPolyfills() {
     // Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
     // Seems like these could be optimized.
     var bitwiseOr = function (numBits) {
-        return "int bitwiseOr".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a | b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+        return "int bitwiseOr".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a | b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) || (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
     var bitwiseXOR = function (numBits) {
-        return "int bitwiseXOR".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a ^ b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+        return "int bitwiseXOR".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a ^ b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) != (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
     var bitwiseAnd = function (numBits) {
-        return "int bitwiseAnd".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a & b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 && b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+        return "int bitwiseAnd".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a & b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) && (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 && b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
     var bitwiseNot = function (numBits) {
-        return "int bitwiseNot".concat(numBits === 32 ? '' : numBits, "(int a) {\n\t#if (__VERSION__ == 300)\n\t\treturn ~a;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif (mod(a, 2) == 0) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tn = n * 2;\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+        return "int bitwiseNot".concat(numBits === 32 ? '' : numBits, "(int a) {\n\t#if (__VERSION__ == 300)\n\t\treturn ~a;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif (modi(a, 2) == 0) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tn = n * 2;\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
-    FRAGMENT_SHADER_POLYFILLS = "\n".concat(mod('int', 'int'), "\n").concat(mod('ivec2', 'ivec2'), "\n").concat(mod('ivec3', 'ivec3'), "\n").concat(mod('ivec4', 'ivec4'), "\n").concat(mod('ivec2', 'int'), "\n").concat(mod('ivec3', 'int'), "\n").concat(mod('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(mod('uint', 'uint'), "\n").concat(mod('uvec2', 'uvec2'), "\n").concat(mod('uvec3', 'uvec3'), "\n").concat(mod('uvec4', 'uvec4'), "\n").concat(mod('uvec2', 'uint'), "\n").concat(mod('uvec3', 'uint'), "\n").concat(mod('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n\n").concat(bitwiseOr(8), "\n").concat(bitwiseOr(16), "\n").concat(bitwiseOr(32), "\n\n").concat(bitwiseXOR(8), "\n").concat(bitwiseXOR(16), "\n").concat(bitwiseXOR(32), "\n\n").concat(bitwiseAnd(8), "\n").concat(bitwiseAnd(16), "\n").concat(bitwiseAnd(32), "\n\n").concat(bitwiseNot(8), "\n").concat(bitwiseNot(16), "\n").concat(bitwiseNot(32), "\n\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
+    FRAGMENT_SHADER_POLYFILLS = "\n".concat(modi('int', 'int'), "\n").concat(modi('ivec2', 'ivec2'), "\n").concat(modi('ivec3', 'ivec3'), "\n").concat(modi('ivec4', 'ivec4'), "\n").concat(modi('ivec2', 'int'), "\n").concat(modi('ivec3', 'int'), "\n").concat(modi('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(modi('uint', 'uint'), "\n").concat(modi('uvec2', 'uvec2'), "\n").concat(modi('uvec3', 'uvec3'), "\n").concat(modi('uvec4', 'uvec4'), "\n").concat(modi('uvec2', 'uint'), "\n").concat(modi('uvec3', 'uint'), "\n").concat(modi('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n\n").concat(bitwiseOr(8), "\n").concat(bitwiseOr(16), "\n").concat(bitwiseOr(32), "\n\n").concat(bitwiseXOR(8), "\n").concat(bitwiseXOR(16), "\n").concat(bitwiseXOR(32), "\n\n").concat(bitwiseAnd(8), "\n").concat(bitwiseAnd(16), "\n").concat(bitwiseAnd(32), "\n\n").concat(bitwiseNot(8), "\n").concat(bitwiseNot(16), "\n").concat(bitwiseNot(32), "\n\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
         return "\nuint bitwiseOr".concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseOr").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseXOR").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseXOR").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseAnd").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseAnd").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseNot").concat(suffix, "(uint a) {\n\treturn uint(bitwiseNot").concat(suffix, "(int(a)));\n}");
     }).join('\n'), "\n\n#endif\n");
     return FRAGMENT_SHADER_POLYFILLS;

@@ -411,7 +411,7 @@ let FRAGMENT_SHADER_POLYFILLS: string;
 export function fragmentShaderPolyfills() {
 	if (FRAGMENT_SHADER_POLYFILLS) return FRAGMENT_SHADER_POLYFILLS;
 
-	const mod = (type1: TI | TU, type2: TI | TU) => `${type1} mod(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`;
+	const modi = (type1: TI | TU, type2: TI | TU) => `${type1} modi(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`;
 	const bitshiftLeft = (type1: TI | TU, type2: TI | TU) => {
 return`${type1} bitshiftLeft(const ${type1} a, const ${type2} b) {
 	#if (__VERSION__ == 300)
@@ -442,7 +442,7 @@ return `int bitwiseOr${numBits === 32 ? '' : numBits}(int a, int b) {
 		int n = 1;
 		
 		for (int i = 0; i < ${numBits}; i++) {
-			if ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {
+			if ((modi(a, 2) == 1) || (modi(b, 2) == 1)) {
 				result += n;
 			}
 			a = a / 2;
@@ -464,7 +464,7 @@ return `int bitwiseXOR${numBits === 32 ? '' : numBits}(int a, int b) {
 		int n = 1;
 		
 		for (int i = 0; i < ${numBits}; i++) {
-			if ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {
+			if ((modi(a, 2) == 1) != (modi(b, 2) == 1)) {
 				result += n;
 			}
 			a = a / 2;
@@ -485,7 +485,7 @@ return `int bitwiseAnd${numBits === 32 ? '' : numBits}(int a, int b) {
 		int result = 0;
 		int n = 1;
 		for (int i = 0; i < ${numBits}; i++) {
-			if ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {
+			if ((modi(a, 2) == 1) && (modi(b, 2) == 1)) {
 				result += n;
 			}
 			a = a / 2;
@@ -507,7 +507,7 @@ return `int bitwiseNot${numBits === 32 ? '' : numBits}(int a) {
 		int n = 1;
 
 		for (int i = 0; i < ${numBits}; i++) {
-			if (mod(a, 2) == 0) {
+			if (modi(a, 2) == 0) {
 				result += n;
 			}
 			a = a / 2;
@@ -518,21 +518,21 @@ return `int bitwiseNot${numBits === 32 ? '' : numBits}(int a) {
 }`; }
 
 	FRAGMENT_SHADER_POLYFILLS = `
-${mod('int', 'int')}
-${mod('ivec2', 'ivec2')}
-${mod('ivec3', 'ivec3')}
-${mod('ivec4', 'ivec4')}
-${mod('ivec2', 'int')}
-${mod('ivec3', 'int')}
-${mod('ivec4', 'int')}
+${modi('int', 'int')}
+${modi('ivec2', 'ivec2')}
+${modi('ivec3', 'ivec3')}
+${modi('ivec4', 'ivec4')}
+${modi('ivec2', 'int')}
+${modi('ivec3', 'int')}
+${modi('ivec4', 'int')}
 #if (__VERSION__ == 300)
-${mod('uint', 'uint')}
-${mod('uvec2', 'uvec2')}
-${mod('uvec3', 'uvec3')}
-${mod('uvec4', 'uvec4')}
-${mod('uvec2', 'uint')}
-${mod('uvec3', 'uint')}
-${mod('uvec4', 'uint')}
+${modi('uint', 'uint')}
+${modi('uvec2', 'uvec2')}
+${modi('uvec3', 'uvec3')}
+${modi('uvec4', 'uvec4')}
+${modi('uvec2', 'uint')}
+${modi('uvec3', 'uint')}
+${modi('uvec4', 'uint')}
 #endif
 
 ${bitshiftLeft('int', 'int')}
