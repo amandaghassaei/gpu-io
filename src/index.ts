@@ -38,7 +38,6 @@ const _testing = {
 }
 
 // Named exports.
-export * from './constants';
 const {
 	isWebGL2,
 	isWebGL2Supported,
@@ -77,3 +76,4 @@ export {
 	setColorProgram,
 	_testing,
 }
+export * from './constants';

@@ -410,4 +410,4 @@ export declare const BOUNDARY_TOP = "BOUNDARY_TOP";
 export declare const BOUNDARY_BOTTOM = "BOUNDARY_BOTTOM";
 export declare const BOUNDARY_LEFT = "BOUNDARY_LEFT";
 export declare const BOUNDARY_RIGHT = "BOUNDARY_RIGHT";
-export declare type BOUNDARY_EDGE = typeof BOUNDARY_TOP | typeof BOUNDARY_BOTTOM | typeof BOUNDARY_LEFT | typeof BOUNDARY_RIGHT;
+export declare type BoundaryEdge = typeof BOUNDARY_TOP | typeof BOUNDARY_BOTTOM | typeof BOUNDARY_LEFT | typeof BOUNDARY_RIGHT;

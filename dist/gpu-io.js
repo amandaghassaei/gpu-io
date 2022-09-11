@@ -4073,7 +4073,6 @@ var GPULayer = /** @class */ (function () {
                 return;
             }
             gl.bindTexture(gl.TEXTURE_2D, texture);
-            // TODO: are there other params to look into:
             // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texParameter
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, _glWrapS);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, _glWrapT);
@@ -5990,7 +5989,8 @@ var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
 var GPUProgram_1 = __webpack_require__(664);
 /**
- * Copy contents of one GPULayer to another GPULayer.
+ * Init GPUProgram to copy contents of one GPULayer to another GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output.
@@ -6017,7 +6017,8 @@ function copyProgram(params) {
 }
 exports.copyProgram = copyProgram;
 /**
- * Add several GPULayers together.
+ * Init GPUProgram to add several GPULayers together.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the inputs/output.
@@ -6049,7 +6050,8 @@ function addLayersProgram(params) {
 }
 exports.addLayersProgram = addLayersProgram;
 /**
- * Add uniform "u_value" to a GPULayer.
+ * Init GPUProgram to add uniform "u_value" to a GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
@@ -6086,7 +6088,8 @@ function addValueProgram(params) {
 }
 exports.addValueProgram = addValueProgram;
 /**
- * Multiply uniform "u_value" to a GPULayer.
+ * Init GPUProgram to multiply uniform "u_value" to a GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
@@ -6123,7 +6126,8 @@ function multiplyValueProgram(params) {
 }
 exports.multiplyValueProgram = multiplyValueProgram;
 /**
- * Set all elements in a GPULayer to uniform "u_value".
+ * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output (we assume "u_value" has same type).
@@ -6154,7 +6158,8 @@ function setValueProgram(params) {
 }
 exports.setValueProgram = setValueProgram;
 /**
- * Set all elements in a GPULayer to uniform "u_value".
+ * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
@@ -6188,7 +6193,8 @@ function setColorProgram(params) {
 }
 exports.setColorProgram = setColorProgram;
 /**
- * Zero output GPULayer.
+ * Init GPUProgram to zero output GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
@@ -6204,7 +6210,8 @@ function zeroProgram(params) {
 }
 exports.zeroProgram = zeroProgram;
 /**
- * Render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
+ * Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
@@ -6261,7 +6268,8 @@ function renderAmplitudeProgram(params) {
 }
 exports.renderAmplitudeProgram = renderAmplitudeProgram;
 /**
- * Render signed amplitude of an input GPULayer to linearly interpolated colors.
+ * Init GPUProgram to render signed amplitude of an input GPULayer to linearly interpolated colors.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
@@ -7209,7 +7217,6 @@ var Programs = __webpack_require__(579);
 var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue, indexOfLayerInArray: utils.indexOfLayerInArray }, extensions), regex), checks), GPULayerHelpers), polyfills), conversions);
 exports._testing = _testing;
 // Named exports.
-__exportStar(__webpack_require__(601), exports);
 var isWebGL2 = utils.isWebGL2, isWebGL2Supported = utils.isWebGL2Supported, isHighpSupportedInVertexShader = utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader = utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision = utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision = utils.getFragmentShaderMediumpPrecision;
 exports.isWebGL2 = isWebGL2;
 exports.isWebGL2Supported = isWebGL2Supported;
@@ -7226,6 +7233,7 @@ exports.renderAmplitudeProgram = renderAmplitudeProgram;
 exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 exports.setValueProgram = setValueProgram;
 exports.setColorProgram = setColorProgram;
+__exportStar(__webpack_require__(601), exports);
 
 
 /***/ }),

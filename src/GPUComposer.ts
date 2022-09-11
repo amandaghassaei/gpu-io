@@ -1,5 +1,3 @@
-// @ts-ignore
-import { changeDpiBlob } from 'changedpi';
 import { GPULayer } from './GPULayer';
 import {
 	GPULayerFilter,
@@ -46,7 +44,7 @@ import {
 	MAX_FLOAT_INT,
 	GPUIO_VS_INDEXED_POSITIONS,
 	EXPERIMENTAL_WEBGL2,
-	BOUNDARY_EDGE,
+	BoundaryEdge,
 	BOUNDARY_LEFT,
 	BOUNDARY_RIGHT,
 	BOUNDARY_TOP,
@@ -59,7 +57,6 @@ import {
 	WebGLRenderer,
 	Vector4,
 } from 'three';
-import * as utils from './Vector4';
 import {
 	isWebGL2,
 	isPowerOf2,
@@ -990,7 +987,7 @@ export class GPUComposer {
 			program: GPUProgram,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
-			edges?: BOUNDARY_EDGE | BOUNDARY_EDGE[];
+			edges?: BoundaryEdge | BoundaryEdge[];
 			blendAlpha?: boolean,
 		},
 	) {
@@ -1017,7 +1014,7 @@ export class GPUComposer {
 		this._setBlendMode(params.blendAlpha);
 		if (params.edges) {
 			let { edges } = params;
-			if (!isArray(edges)) edges = [edges as BOUNDARY_EDGE];
+			if (!isArray(edges)) edges = [edges as BoundaryEdge];
 			for (let i = 0, numEdges = edges.length; i < numEdges; i++) {
 				// TODO: do this in one draw call.
 				const edge = edges[i];

@@ -1,5 +1,5 @@
 import { GPULayer } from './GPULayer';
-import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BOUNDARY_EDGE } from './constants';
+import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
@@ -284,7 +284,7 @@ export declare class GPUComposer {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
-        edges?: BOUNDARY_EDGE | BOUNDARY_EDGE[];
+        edges?: BoundaryEdge | BoundaryEdge[];
         blendAlpha?: boolean;
     }): void;
     /**

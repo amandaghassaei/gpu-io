@@ -5,7 +5,8 @@ import { GPUComposer } from './GPUComposer';
 import { GPUProgram } from './GPUProgram';
 
 /**
- * Copy contents of one GPULayer to another GPULayer.
+ * Init GPUProgram to copy contents of one GPULayer to another GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output.
@@ -43,7 +44,8 @@ void main() {
 }
 
 /**
- * Add several GPULayers together.
+ * Init GPUProgram to add several GPULayers together.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the inputs/output.
@@ -88,7 +90,8 @@ void main() {
 }
 
 /**
- * Add uniform "u_value" to a GPULayer.
+ * Init GPUProgram to add uniform "u_value" to a GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
@@ -138,7 +141,8 @@ void main() {
 }
 
 /**
- * Multiply uniform "u_value" to a GPULayer.
+ * Init GPUProgram to multiply uniform "u_value" to a GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
@@ -188,7 +192,8 @@ void main() {
 }
 
 /**
- * Set all elements in a GPULayer to uniform "u_value".
+ * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output (we assume "u_value" has same type).
@@ -230,7 +235,8 @@ void main() {
 }
 
 /**
- * Set all elements in a GPULayer to uniform "u_value".
+ * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
@@ -276,7 +282,8 @@ void main() {
 }
 
 /**
- * Zero output GPULayer.
+ * Init GPUProgram to zero output GPULayer.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
@@ -295,7 +302,8 @@ void main() {
 }
 
 /**
- * Render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
+ * Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
@@ -374,7 +382,8 @@ void main() {
 }
 
 /**
- * Render signed amplitude of an input GPULayer to linearly interpolated colors.
+ * Init GPUProgram to render signed amplitude of an input GPULayer to linearly interpolated colors.
+ * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.

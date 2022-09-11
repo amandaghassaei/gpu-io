@@ -219,7 +219,7 @@ Step GPUProgram only for a 1px strip of pixels along the boundary.
 | `params.program` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
-| `params.edges?` | [`BOUNDARY_EDGE`](../README.md#boundary_edge) \| [`BOUNDARY_EDGE`](../README.md#boundary_edge)[] | Specify which edges to step, defaults to stepping entire boundary. |
+| `params.edges?` | [`BoundaryEdge`](../README.md#boundaryedge) \| [`BoundaryEdge`](../README.md#boundaryedge)[] | Specify which edges to step, defaults to stepping entire boundary. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
 #### Returns
