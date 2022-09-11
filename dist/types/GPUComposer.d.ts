@@ -32,7 +32,7 @@ export declare class GPUComposer {
      * @private
      */
     readonly _errorCallback: ErrorCallback;
-    private _errorThrown;
+    private _errorState;
     /**
      * @private
      */

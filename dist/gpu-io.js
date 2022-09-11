@@ -2282,7 +2282,7 @@ var GPUComposer = /** @class */ (function () {
      */
     function GPUComposer(params) {
         var _a;
-        this._errorThrown = false;
+        this._errorState = false;
         // Cache multiple circle positions buffers for various num segments, use numSegments as key.
         this._circlePositionsBuffer = {};
         /**
@@ -2357,10 +2357,10 @@ var GPUComposer = /** @class */ (function () {
         // Save callback in case we run into an error.
         var self = this;
         this._errorCallback = function (message) {
-            if (self._errorThrown) {
+            if (self._errorState) {
                 return;
             }
-            self._errorThrown = true;
+            self._errorState = true;
             params.errorCallback ? params.errorCallback(message) : (0, constants_1.DEFAULT_ERROR_CALLBACK)(message);
         };
         var canvas = params.canvas;
@@ -2936,8 +2936,10 @@ var GPUComposer = /** @class */ (function () {
      * @param params
      */
     GPUComposer.prototype.step = function (params) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
+        if (_errorState)
+            return;
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, true, input, output);
         // Update uniforms and buffers.
@@ -2955,8 +2957,10 @@ var GPUComposer = /** @class */ (function () {
      * @param params
      */
     GPUComposer.prototype.stepBoundary = function (params) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
+        if (_errorState)
+            return;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
         // Do setup - this must come first.
@@ -2998,8 +3002,10 @@ var GPUComposer = /** @class */ (function () {
      * @param params
      */
     GPUComposer.prototype.stepNonBoundary = function (params) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
+        if (_errorState)
+            return;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
         // Do setup - this must come first.
@@ -3045,8 +3051,10 @@ var GPUComposer = /** @class */ (function () {
      * @param params
      */
     GPUComposer.prototype.stepSegment = function (params) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
+        if (_errorState)
+            return;
         var width = output ? output.width : this._width;
         var height = output ? output.height : this._height;
         // Do setup - this must come first.
@@ -3089,10 +3097,12 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.stepPolyline = function (params) {
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
+        if (_errorState)
+            return;
         var vertices = params.positions;
         var closeLoop = !!params.closeLoop;
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
         // Offset vertices.
         var halfThickness = params.thickness / 2;
         var numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
@@ -3254,8 +3264,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.stepTriangleStrip = function (params) {
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output, positions = params.positions, uvs = params.uvs, normals = params.normals;
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
+        if (_errorState)
+            return;
         var vertexShaderOptions = {};
         if (uvs)
             vertexShaderOptions[constants_1.GPUIO_VS_UV_ATTRIBUTE] = '1';
@@ -3286,8 +3298,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.stepLines = function (params) {
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, _errorState = _a._errorState;
         var indices = params.indices, uvs = params.uvs, normals = params.normals, input = params.input, output = params.output, program = params.program;
+        if (_errorState)
+            return;
         // Check that params are valid.
         if (params.closeLoop && indices) {
             throw new Error("GPUComposer.stepLines() can't be called with closeLoop == true and indices.");
@@ -3343,8 +3357,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
-        var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion;
+        var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
         var positions = params.positions, output = params.output;
+        if (_errorState)
+            return;
         // Check that numPoints is valid.
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
             throw new Error("GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
@@ -3401,8 +3417,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsLines = function (params) {
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion;
+        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
         var positions = params.positions, output = params.output;
+        if (_errorState)
+            return;
         // Check that positions is valid.
         if (positions.numComponents !== 2 && positions.numComponents !== 4) {
             throw new Error("GPUComposer.drawLayerAsLines() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
@@ -3481,8 +3499,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerAsVectorField = function (params) {
-        var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion;
+        var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
         var data = params.data, output = params.output;
+        if (_errorState)
+            return;
         // Check that field is valid.
         if (data.numComponents !== 2) {
             throw new Error("GPUComposer.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer \"".concat(data.name, "\" with ").concat(data.numComponents, " components."));
@@ -3529,8 +3549,10 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     GPUComposer.prototype.drawLayerMagnitude = function (params) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var data = params.data, output = params.output;
+        if (_errorState)
+            return;
         var program = this._vectorMagnitudeProgramForType(data.type);
         var color = params.color || [1, 0, 0]; // Default to red.
         program.setUniform('u_color', color, constants_1.FLOAT);

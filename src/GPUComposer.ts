@@ -110,7 +110,7 @@ export class GPUComposer {
 	 * @private
 	 */
 	readonly _errorCallback: ErrorCallback;
-	private _errorThrown = false;
+	private _errorState = false;
 
 	// Save threejs renderer if passed in.
 	/**
@@ -263,10 +263,10 @@ export class GPUComposer {
 		// Save callback in case we run into an error.
 		const self = this;
 		this._errorCallback = (message: string) => {
-			if (self._errorThrown) {
+			if (self._errorState) {
 				return;
 			}
-			self._errorThrown = true;
+			self._errorState = true;
 			params.errorCallback ? params.errorCallback(message) : DEFAULT_ERROR_CALLBACK(message);
 		}
 
@@ -946,8 +946,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl } = this;
+		const { gl, _errorState } = this;
 		const { program, input, output } = params;
+
+		if (_errorState) return;
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, true, input, output);
@@ -977,8 +979,11 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl } = this;
+		const { gl, _errorState } = this;
 		const { program, input, output } = params;
+
+		if (_errorState) return;
+
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
 
@@ -1030,8 +1035,11 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl } = this;
+		const { gl, _errorState } = this;
 		const { program, input, output } = params;
+
+		if (_errorState) return;
+
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
 
@@ -1107,8 +1115,11 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl } = this;
+		const { gl, _errorState } = this;
 		const { program, position1, position2, thickness, input, output } = params;
+
+		if (_errorState) return;
+
 		const width = output ? output.width : this._width;
 		const height = output ? output.height : this._height;
 
@@ -1166,12 +1177,14 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
+		const { gl, _width, _height, _errorState } = this;
 		const { program, input, output } = params;
+
+		if (_errorState) return;
+
 		const vertices = params.positions;
 		const closeLoop = !!params.closeLoop;
 		
-		const { gl, _width, _height } = this
-
 		// Offset vertices.
 		const halfThickness = params.thickness / 2;
 		const numPositions = closeLoop ? vertices.length * 4 + 2 : (vertices.length - 1) * 4;
@@ -1352,9 +1365,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-
+		const { gl, _width, _height, _errorState } = this;
 		const { program, input, output, positions, uvs, normals } = params;
-		const { gl, _width, _height } = this;
+
+		if (_errorState) return;
 
 		const vertexShaderOptions: CompileTimeConstants = {};
 		if (uvs) vertexShaderOptions[GPUIO_VS_UV_ATTRIBUTE] = '1';
@@ -1400,8 +1414,10 @@ export class GPUComposer {
 		closeLoop?: boolean,
 		shouldBlendAlpha?: boolean,
 	}) {
-		const { gl, _width, _height } = this;
+		const { gl, _width, _height, _errorState } = this;
 		const { indices, uvs, normals, input, output, program } = params;
+
+		if (_errorState) return;
 
 		// Check that params are valid.
 		if (params.closeLoop && indices) {
@@ -1472,8 +1488,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _pointIndexArray, _width, _height, glslVersion } = this;
+		const { gl, _pointIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { positions, output } = params;
+
+		if (_errorState) return;
 
 		// Check that numPoints is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
@@ -1549,8 +1567,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _width, _height, glslVersion } = this;
+		const { gl, _width, _height, glslVersion, _errorState } = this;
 		const { positions, output } = params;
+
+		if (_errorState) return;
 
 		// Check that positions is valid.
 		if (positions.numComponents !== 2 && positions.numComponents !== 4) {
@@ -1641,8 +1661,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl, _vectorFieldIndexArray, _width, _height, glslVersion } = this;
+		const { gl, _vectorFieldIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { data, output } = params;
+
+		if (_errorState) return;
 
 		// Check that field is valid.
 		if (data.numComponents !== 2) {
@@ -1704,8 +1726,10 @@ export class GPUComposer {
 			shouldBlendAlpha?: boolean,
 		},
 	) {
-		const { gl } = this;
+		const { gl, _errorState } = this;
 		const { data, output } = params;
+
+		if (_errorState) return;
 
 		const program = this._vectorMagnitudeProgramForType(data.type);
 		const color = params.color || [1, 0, 0]; // Default to red.
