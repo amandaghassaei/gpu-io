@@ -29,4 +29,7 @@ macOS v10.15.7 + Safari v14.0.3 (WebGL1 only) [readwrite](READWRITE_Safari_v14.0
 
 ### iOS
 
+iOS v14.7.1  Safari v14.1.2 (WebGL1 only) [readwrite](READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) [read](READ_Safari_v14.1.2_iOS_v14.7.1.png)
+
+
 ### Android
