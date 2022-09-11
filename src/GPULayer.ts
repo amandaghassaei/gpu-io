@@ -462,7 +462,6 @@ export class GPULayer {
 			}
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 
-			// TODO: are there other params to look into:
 			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texParameter
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, _glWrapS);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, _glWrapT);

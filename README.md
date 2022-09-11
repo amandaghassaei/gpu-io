@@ -143,6 +143,34 @@ More info about using gpu-io to update mesh positions data is coming soon.
 ### Limitations
 
 - This library does not currently allow you to pass in your own vertex shaders.  Currently all computation is happening in user-specified fragment shaders and vertex shaders are managed internally.
+- In order for the WRAP/FILTER polyfilling to work correctly, any calls to texture() must contain a direct reference to the sampler2D that it should operate on.  For example:
+
+```glsl
+varying vec2 v_uv;
+
+uniform sampler2D u_sampler1;
+uniform sampler2D u_sampler2;
+
+out vec4 out_fragColor;
+
+vec4 lookupSampler2(vec2 uv) {
+    // This is good, it passes u_sampler2 directly to texture().
+    return texture(u_sampler2, uv);
+}
+
+vec4 lookupSampler(sampler2D sampler, vec2 uv) {
+    // At compile time it is hard to say which sampler is passed to texture().
+    // This will not be polyfilled, it will throw a warning.
+    return texture(sampler, uv);
+}
+
+void main() {
+    // This is good, it passes u_sampler1 directly to texture().
+    vec2 position = texture(u_sampler1, v_uv).xy;
+
+    ....
+}
+```
 
 
 ### GLSL Version
@@ -187,10 +215,10 @@ More info about the difference between GLSL and WebGL versions:
 You might notice that this library does not use any transform feedback to e.g. handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](#examples)), but currently all the computation happens in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
 
 - The main use case for this library is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays and 2D/3D vertex manipulations, but that is a secondary functionality.
-- Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, it will take some time for many people to update (for example, luddites like me who never update their apps), so for now I'd like to support all functionality in this library in WebGL1.
+- Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, it will take some time everyone to update, so for now I'd like to support all functionality in this library in WebGL1.
 - I played around with the idea of using transform feedback if WebGL2 is available, then falling back to a fragment shader implementation if only WebGL1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
 
-My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API by forcing GPGPU to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term if possible.
+My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch by default in some browsers, and then re-evaluate some of the design decisions made in this library.  WebGL puts a lot of artificial constraints on the current API by forcing GPGPU to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term if possible.
 
 
 ### Precision
