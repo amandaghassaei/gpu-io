@@ -99,7 +99,7 @@ export declare class GPUComposer {
      * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
      * @param params.context - Pass in a WebGL context for the GPUcomposer to user.
      * @param params.contextID - Set the contextID to use when initing a new WebGL context.
-     * @param params.contextAttributes - Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for ore information).
+     * @param params.contextAttributes - Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more information).
      * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
@@ -334,7 +334,7 @@ export declare class GPUComposer {
      * @param params.input - Input GPULayers to GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.endCaps - Flag to draw with rounded end caps, defaults to false.
-     * @param params.numSegments - Number of segments in rounded end caps, defaults to 9, must be divisible by 3.
+     * @param params.numCapSegments - Number of segments in rounded end caps, defaults to 9, must be divisible by 3.
      * @param params.blendAlpha - Blend mode for draw, defaults to false.
      * @returns
      */
@@ -382,12 +382,7 @@ export declare class GPUComposer {
      */
     tick(): {
         fps: number;
-        milliseconds: number;
-        numTicks?: undefined;
-    } | {
-        fps: number;
         numTicks: number;
-        milliseconds?: undefined;
     };
     /**
      * Deallocate GPUComposer instance and associated WebGL properties.

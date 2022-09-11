@@ -222,7 +222,7 @@ export class GPUComposer {
 	 * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
 	 * @param params.context - Pass in a WebGL context for the GPUcomposer to user.
 	 * @param params.contextID - Set the contextID to use when initing a new WebGL context.
-	 * @param params.contextAttributes - Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for ore information).
+	 * @param params.contextAttributes - Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more information).
 	 * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
 	 * @param params.intPrecision - Set the global integer precision in shader programs.
 	 * @param params.floatPrecision - Set the global float precision in shader programs.
@@ -1137,7 +1137,7 @@ export class GPUComposer {
 	 * @param params.input - Input GPULayers to GPUProgram.
 	 * @param params.output - Output GPULayer, will draw to screen if undefined.
 	 * @param params.endCaps - Flag to draw with rounded end caps, defaults to false.
-	 * @param params.numSegments - Number of segments in rounded end caps, defaults to 9, must be divisible by 3.
+	 * @param params.numCapSegments - Number of segments in rounded end caps, defaults to 9, must be divisible by 3.
 	 * @param params.blendAlpha - Blend mode for draw, defaults to false.
 	 * @returns 
 	 */
@@ -1862,12 +1862,13 @@ export class GPUComposer {
 	 * Call tick() from your render loop to measure the FPS of your application.
 	 * Internally, this does some low pass filtering to give consistent results.
 	 */
-	tick() {
+	tick(): { fps: number, numTicks: number} {
+		this._numTicks += 1;
 		let { _lastTickTime, _lastTickFPS } = this;
 		const currentTime = performance.now();
 		this._lastTickTime = currentTime;
 		if (!_lastTickTime) {
-			return { fps: 0, milliseconds: 0 };
+			return { fps: 0, numTicks: this._numTicks };
 		}
 		const currentFPS = 1000 / (currentTime - _lastTickTime);
 		if (!_lastTickFPS) _lastTickFPS = currentFPS;
@@ -1875,11 +1876,10 @@ export class GPUComposer {
 		const factor = 0.9;
 		const fps =  Number.parseFloat((factor * _lastTickFPS + (1 - factor) * currentFPS).toFixed(1));
 		this._lastTickFPS = fps;
-		this._numTicks += 1;
 		return {
 			fps,
 			numTicks: this._numTicks,
-		}
+		};
 	}
 	
 	/**

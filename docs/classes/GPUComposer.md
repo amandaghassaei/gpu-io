@@ -96,7 +96,7 @@ Create a GPUComposer.
 | `params.canvas` | `HTMLCanvasElement` | HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself). |
 | `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` | Pass in a WebGL context for the GPUcomposer to user. |
 | `params.contextID?` | `string` | Set the contextID to use when initing a new WebGL context. |
-| `params.contextAttributes?` | `Object` | Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for ore information). |
+| `params.contextAttributes?` | `Object` | Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more information). |
 | `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
 | `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
 | `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global float precision in shader programs. |
@@ -294,7 +294,7 @@ This is useful for touch interactions during pointermove.
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
 | `params.endCaps?` | `boolean` | Flag to draw with rounded end caps, defaults to false. |
-| `params.numCapSegments?` | `number` | - |
+| `params.numCapSegments?` | `number` | Number of segments in rounded end caps, defaults to 9, must be divisible by 3. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
 #### Returns
@@ -333,14 +333,19 @@ ___
 
 ### tick
 
-▸ **tick**(): { `fps`: `number` = 0; `milliseconds`: `number` = 0; `numTicks`: `undefined`  } \| { `milliseconds`: `undefined` = 0; `fps`: `number` ; `numTicks`: `number`  }
+▸ **tick**(): `Object`
 
 Call tick() from your render loop to measure the FPS of your application.
 Internally, this does some low pass filtering to give consistent results.
 
 #### Returns
 
-{ `fps`: `number` = 0; `milliseconds`: `number` = 0; `numTicks`: `undefined`  } \| { `milliseconds`: `undefined` = 0; `fps`: `number` ; `numTicks`: `number`  }
+`Object`
+
+| Name | Type |
+| :------ | :------ |
+| `fps` | `number` |
+| `numTicks` | `number` |
 
 ___
 
