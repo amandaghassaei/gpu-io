@@ -342,6 +342,8 @@ Internally, this does some low pass filtering to give consistent results.
 
 `Object`
 
+An Object containing the current fps of your application and the number of times tick() has been called.
+
 | Name | Type |
 | :------ | :------ |
 | `fps` | `number` |

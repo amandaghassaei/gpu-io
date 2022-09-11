@@ -3712,6 +3712,7 @@ var GPUComposer = /** @class */ (function () {
     /**
      * Call tick() from your render loop to measure the FPS of your application.
      * Internally, this does some low pass filtering to give consistent results.
+     * @returns An Object containing the current fps of your application and the number of times tick() has been called.
      */
     GPUComposer.prototype.tick = function () {
         this._numTicks += 1;

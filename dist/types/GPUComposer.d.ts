@@ -379,6 +379,7 @@ export declare class GPUComposer {
     /**
      * Call tick() from your render loop to measure the FPS of your application.
      * Internally, this does some low pass filtering to give consistent results.
+     * @returns An Object containing the current fps of your application and the number of times tick() has been called.
      */
     tick(): {
         fps: number;

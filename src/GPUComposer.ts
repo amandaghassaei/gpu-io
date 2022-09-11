@@ -1858,16 +1858,10 @@ export class GPUComposer {
 	// 	}, 'image/png');
 	// }
 
-
-	/**
-	 * @typedef {Object} TickResult
-	 * @property {number} fps - The current fps of the application.
-	 * @property {number} numTicks - The number of times tick() has been called.
-	 */
 	/**
 	 * Call tick() from your render loop to measure the FPS of your application.
 	 * Internally, this does some low pass filtering to give consistent results.
-	 * @returns {TickResult}
+	 * @returns An Object containing the current fps of your application and the number of times tick() has been called.
 	 */
 	tick(): { fps: number, numTicks: number} {
 		this._numTicks += 1;
