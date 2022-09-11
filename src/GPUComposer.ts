@@ -396,7 +396,7 @@ export class GPUComposer {
 		const { _setValuePrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
 		if (_setValuePrograms[key] === undefined) {
-			_setValuePrograms[key] = setValueProgram({ composer: this, type, numComponents: 4 });
+			_setValuePrograms[key] = setValueProgram({ composer: this, type, value: [0, 0, 0, 0] });
 		}
 		return _setValuePrograms[key]!;
 	}

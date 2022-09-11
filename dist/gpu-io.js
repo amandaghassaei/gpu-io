@@ -2467,7 +2467,7 @@ var GPUComposer = /** @class */ (function () {
         var _setValuePrograms = this._setValuePrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_setValuePrograms[key] === undefined) {
-            _setValuePrograms[key] = (0, Programs_1.setValueProgram)({ composer: this, type: type, numComponents: 4 });
+            _setValuePrograms[key] = (0, Programs_1.setValueProgram)({ composer: this, type: type, value: [0, 0, 0, 0] });
         }
         return _setValuePrograms[key];
     };
@@ -5869,7 +5869,8 @@ exports.GPUProgram = GPUProgram;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.setValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
+exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.zeroProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
+var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
 var GPUProgram_1 = __webpack_require__(664);
@@ -5905,23 +5906,23 @@ exports.copyProgram = copyProgram;
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the inputs/output.
- * @param params.numComponents - The number of components of the inputs/output.
+ * @param params.components - Component(s) of inputs to add, defaults to 'xyzw.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.numInputs - The number of inputs to add together, defaults to 2.
  * @param params.precision - Optionally specify the precision of the inputs/output.
  * @returns
  */
 function addLayersProgram(params) {
-    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+    var composer = params.composer, type = params.type;
     var numInputs = params.numInputs || 2;
     var precision = params.precision || '';
-    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var components = params.components || 'xyzw';
+    var glslType = (0, conversions_1.glslTypeForType)(type, components.length);
     var arrayOfLengthNumInputs = new Array(numInputs);
-    var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
-    var name = params.name || "".concat(numInputs, "-way_add_").concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_w_").concat(numComponents, "_components");
+    var name = params.name || "".concat(numInputs, "-way_add_").concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_").concat(components);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\n".concat(arrayOfLengthNumInputs.map(function (el, i) { return "uniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state").concat(i, ";"); }).join('\n'), "\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(arrayOfLengthNumInputs.map(function (el, i) { return "texture(u_state".concat(i, ", v_uv)").concat(componentSelection); }).join(' + '), ";\n}"),
+        fragmentShader: "\nin vec2 v_uv;\n".concat(arrayOfLengthNumInputs.map(function (el, i) { return "uniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state").concat(i, ";"); }).join('\n'), "\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(arrayOfLengthNumInputs.map(function (el, i) { return "texture(u_state".concat(i, ", v_uv).").concat(components); }).join(' + '), ";\n}"),
         uniforms: arrayOfLengthNumInputs.map(function (el, i) {
             return {
                 name: "u_state".concat(i),
@@ -5937,21 +5938,23 @@ exports.addLayersProgram = addLayersProgram;
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
- * @param params.numComponents - The number of components of the input/output and "u_value".
+ * @param params.value - Initial value to add, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
- * @param params.value - Initial value to add, defaults to 0 vector of length numComponents.  Change this later using uniform "u_value".
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
 function addValueProgram(params) {
-    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+    var composer = params.composer, type = params.type, value = params.value;
     var precision = params.precision || '';
-    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var valueLength = (0, checks_1.isArray)(value) ? value.length : 1;
+    var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
+    var numComponents = valueLength === 1 ? 4 : valueLength;
+    var outputType = (0, conversions_1.glslTypeForType)(type, numComponents);
     var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
-    var name = params.name || "addValue_".concat(glslType, "_w_").concat(numComponents, "_components");
+    var name = params.name || "addValue_".concat(valueType, "_w_length_").concat(valueLength);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(glslType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value + texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(outputType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value) + texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -5960,7 +5963,7 @@ function addValueProgram(params) {
             },
             {
                 name: 'u_value',
-                value: params.value !== undefined ? params.value : (new Array(numComponents)).fill(0),
+                value: value,
                 type: (0, conversions_1.uniformTypeForType)(type, composer.glslVersion),
             },
         ],
@@ -5968,28 +5971,67 @@ function addValueProgram(params) {
 }
 exports.addValueProgram = addValueProgram;
 /**
+ * Multiply uniform "u_value" to a GPULayer.
+ * @param params - Program parameters.
+ * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the input/output (we assume "u_value" has the same type).
+ * @param params.value - Initial value to multiply, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.precision - Optionally specify the precision of the input/output/"u_value".
+ * @returns
+ */
+function multiplyValueProgram(params) {
+    var composer = params.composer, type = params.type, value = params.value;
+    var precision = params.precision || '';
+    var valueLength = (0, checks_1.isArray)(value) ? value.length : 1;
+    var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
+    var numComponents = valueLength === 1 ? 4 : valueLength;
+    var outputType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var componentSelection = (0, conversions_1.glslComponentSelectionForNumComponents)(numComponents);
+    var name = params.name || "addValue_".concat(valueType, "_w_length_").concat(valueLength);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: name,
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(outputType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value) * texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
+        uniforms: [
+            {
+                name: 'u_state',
+                value: 0,
+                type: constants_1.INT,
+            },
+            {
+                name: 'u_value',
+                value: value,
+                type: (0, conversions_1.uniformTypeForType)(type, composer.glslVersion),
+            },
+        ],
+    });
+}
+exports.multiplyValueProgram = multiplyValueProgram;
+/**
  * Set all elements in a GPULayer to uniform "u_value".
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output (we assume "u_value" has same type).
- * @param params.numComponents - The number of components in the output/"u_value".
+ * @param params.value - Initial value to set, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
- * @param params.value - Initial value to set, defaults to 0 vector of length numComponents.  Change this later using uniform "u_value".
  * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
 function setValueProgram(params) {
-    var composer = params.composer, type = params.type, numComponents = params.numComponents;
+    var composer = params.composer, type = params.type, value = params.value;
     var precision = params.precision || '';
-    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
-    var name = params.name || "setValue_".concat(glslType, "_w_").concat(numComponents, "_components");
+    var valueLength = (0, checks_1.isArray)(value) ? value.length : 1;
+    var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
+    var numComponents = valueLength === 1 ? 4 : valueLength;
+    var outputType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var name = params.name || "setValue_".concat(valueType, "_w_length_").concat(valueLength);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nuniform ".concat(precision, " ").concat(glslType, " u_value;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = u_value;\n}"),
+        fragmentShader: "\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nout ").concat(precision, " ").concat(outputType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value);\n}"),
         uniforms: [
             {
                 name: 'u_value',
-                value: params.value !== undefined ? params.value : (new Array(numComponents)).fill(0),
+                value: value,
                 type: (0, conversions_1.uniformTypeForType)(type, composer.glslVersion),
             },
         ],
@@ -5997,11 +6039,27 @@ function setValueProgram(params) {
 }
 exports.setValueProgram = setValueProgram;
 /**
- * Render RGBA amplitude of an input GPULayer's components, defaults to greyscale rendering and works for scalar and vector fields.
+ * Zero output GPULayer.
+ * @param params - Program parameters.
+ * @param params.composer - The current GPUComposer.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @returns
+ */
+function zeroProgram(params) {
+    return setValueProgram({
+        composer: params.composer,
+        type: constants_1.FLOAT,
+        value: 0,
+        name: params.name,
+    });
+}
+exports.zeroProgram = zeroProgram;
+/**
+ * Render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
- * @param params.components - Component(s) of input GPULayer to render.
+ * @param params.components - Component(s) of input GPULayer to render, defaults to 'xyzw'.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
@@ -6011,8 +6069,9 @@ exports.setValueProgram = setValueProgram;
  * @returns
  */
 function renderAmplitudeProgram(params) {
-    var composer = params.composer, type = params.type, components = params.components;
+    var composer = params.composer, type = params.type;
     var precision = params.precision || '';
+    var components = params.components || 'xyzw';
     var numComponents = components.length;
     var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
     var glslFloatType = (0, conversions_1.glslTypeForType)(constants_1.FLOAT, numComponents);
@@ -6073,7 +6132,7 @@ function renderSignedAmplitudeProgram(params) {
     var glslType = (0, conversions_1.glslTypeForType)(type, 1);
     var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
     var castFloat = glslType === 'float';
-    var component = 'x';
+    var component = params.component || 'x';
     var name = params.name || "renderAmplitude_".concat(glslType, "_").concat(component);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
@@ -6126,6 +6185,7 @@ function wrappedLineColorProgram(params) {
 exports.wrappedLineColorProgram = wrappedLineColorProgram;
 /**
  * Fragment shader that draws the magnitude of a GPULayer as a color.
+ * TODO: this could be replaced with something else.
  * @private
  */
 function vectorMagnitudeProgram(params) {
@@ -7025,7 +7085,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils = __webpack_require__(593);
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
@@ -7055,10 +7115,11 @@ exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
 exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
 exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
 exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
-var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, renderAmplitudeProgram = Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram = Programs.renderSignedAmplitudeProgram, setValueProgram = Programs.setValueProgram;
+var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, multiplyValueProgram = Programs.multiplyValueProgram, renderAmplitudeProgram = Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram = Programs.renderSignedAmplitudeProgram, setValueProgram = Programs.setValueProgram;
 exports.copyProgram = copyProgram;
 exports.addLayersProgram = addLayersProgram;
 exports.addValueProgram = addValueProgram;
+exports.multiplyValueProgram = multiplyValueProgram;
 exports.renderAmplitudeProgram = renderAmplitudeProgram;
 exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 exports.setValueProgram = setValueProgram;
@@ -7237,21 +7298,26 @@ function fragmentShaderPolyfills() {
     if (FRAGMENT_SHADER_POLYFILLS)
         return FRAGMENT_SHADER_POLYFILLS;
     var mod = function (type1, type2) { return "".concat(type1, " mod(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); };
-    var bitshiftLeft = function (type1, type2) { return "".concat(type1, " bitshiftLeft(const ").concat(type1, " a, const ").concat(type2, " b) { return a * ").concat(type1, "(pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b))); }"); };
-    var bitshiftRight = function (type1, type2) { return "".concat(type1, " bitshiftRight(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(round(").concat(floatTypeForIntType(type1), "(a) / pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b)))); }"); };
+    var bitshiftLeft = function (type1, type2) {
+        return "".concat(type1, " bitshiftLeft(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a << b;\n\t#else\n\t\treturn a * ").concat(type1, "(pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b)));\n\t#endif\n}");
+    };
+    var bitshiftRight = function (type1, type2) {
+        return "".concat(type1, " bitshiftRight(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a >> b;\n\t#else\n\t\treturn ").concat(type1, "(round(").concat(floatTypeForIntType(type1), "(a) / pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b))));\n\t#endif\n}");
+    };
+    // TODO: fix these for glsl3
     // Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
     // Seems like these could be optimized.
     var bitwiseOr = function (numBits) {
-        return "int bitwiseOr".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\tint result = 0;\n\tint n = 1;\n\t\n\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\tif ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {\n\t\t\tresult += n;\n\t\t}\n\t\ta = a / 2;\n\t\tb = b / 2;\n\t\tn = n * 2;\n\t\tif(!(a > 0 || b > 0)) {\n\t\t\tbreak;\n\t\t}\n\t}\n\treturn result;\n}");
+        return "int bitwiseOr".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a | b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
     var bitwiseXOR = function (numBits) {
-        return "int bitwiseXOR".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\tint result = 0;\n\tint n = 1;\n\t\n\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\tif ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {\n\t\t\tresult += n;\n\t\t}\n\t\ta = a / 2;\n\t\tb = b / 2;\n\t\tn = n * 2;\n\t\tif(!(a > 0 || b > 0)) {\n\t\t\tbreak;\n\t\t}\n\t}\n\treturn result;\n}");
+        return "int bitwiseXOR".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a ^ b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
     var bitwiseAnd = function (numBits) {
-        return "int bitwiseAnd".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\tint result = 0;\n\tint n = 1;\n\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\tif ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {\n\t\t\tresult += n;\n\t\t}\n\t\ta = a / 2;\n\t\tb = b / 2;\n\t\tn = n * 2;\n\t\tif(!(a > 0 && b > 0)) {\n\t\t\tbreak;\n\t\t}\n\t}\n\treturn result;\n}");
+        return "int bitwiseAnd".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a & b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 && b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
     var bitwiseNot = function (numBits) {
-        return "int bitwiseNot".concat(numBits === 32 ? '' : numBits, "(int a) {\n\tint result = 0;\n\tint n = 1;\n\n\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\tif (mod(a, 2) == 0) {\n\t\t\tresult += n;\n\t\t}\n\t\ta = a / 2;\n\t\tn = n * 2;\n\t}\n\treturn result;\n}");
+        return "int bitwiseNot".concat(numBits === 32 ? '' : numBits, "(int a) {\n\t#if (__VERSION__ == 300)\n\t\treturn ~a;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif (mod(a, 2) == 0) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tn = n * 2;\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
     FRAGMENT_SHADER_POLYFILLS = "\n".concat(mod('int', 'int'), "\n").concat(mod('ivec2', 'ivec2'), "\n").concat(mod('ivec3', 'ivec3'), "\n").concat(mod('ivec4', 'ivec4'), "\n").concat(mod('ivec2', 'int'), "\n").concat(mod('ivec3', 'int'), "\n").concat(mod('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(mod('uint', 'uint'), "\n").concat(mod('uvec2', 'uvec2'), "\n").concat(mod('uvec3', 'uvec3'), "\n").concat(mod('uvec4', 'uvec4'), "\n").concat(mod('uvec2', 'uint'), "\n").concat(mod('uvec3', 'uint'), "\n").concat(mod('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n\n").concat(bitwiseOr(8), "\n").concat(bitwiseOr(16), "\n").concat(bitwiseOr(32), "\n\n").concat(bitwiseXOR(8), "\n").concat(bitwiseXOR(16), "\n").concat(bitwiseXOR(32), "\n\n").concat(bitwiseAnd(8), "\n").concat(bitwiseAnd(16), "\n").concat(bitwiseAnd(32), "\n\n").concat(bitwiseNot(8), "\n").concat(bitwiseNot(16), "\n").concat(bitwiseNot(32), "\n\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
         return "\nuint bitwiseOr".concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseOr").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseXOR").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseXOR").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseAnd").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseAnd").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseNot").concat(suffix, "(uint a) {\n\treturn uint(bitwiseNot").concat(suffix, "(int(a)));\n}");

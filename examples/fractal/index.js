@@ -173,7 +173,7 @@ function main({ gui, contextID, glslVersion}) {
 	// Add mouse events.
 	canvas.addEventListener('pointermove', onMove);
 	function onMove() {
-
+		// TODO: 
 	}
 
 

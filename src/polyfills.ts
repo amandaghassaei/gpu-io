@@ -412,77 +412,109 @@ export function fragmentShaderPolyfills() {
 	if (FRAGMENT_SHADER_POLYFILLS) return FRAGMENT_SHADER_POLYFILLS;
 
 	const mod = (type1: TI | TU, type2: TI | TU) => `${type1} mod(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`;
-	const bitshiftLeft = (type1: TI | TU, type2: TI | TU) => `${type1} bitshiftLeft(const ${type1} a, const ${type2} b) { return a * ${type1}(pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b))); }`;
-	const bitshiftRight = (type1: TI | TU, type2: TI | TU) => `${type1} bitshiftRight(const ${type1} a, const ${type2} b) { return ${type1}(round(${floatTypeForIntType(type1)}(a) / pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b)))); }`;
-
+	const bitshiftLeft = (type1: TI | TU, type2: TI | TU) => {
+return`${type1} bitshiftLeft(const ${type1} a, const ${type2} b) {
+	#if (__VERSION__ == 300)
+		return a << b;
+	#else
+		return a * ${type1}(pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b)));
+	#endif
+}`;
+	}
+	const bitshiftRight = (type1: TI | TU, type2: TI | TU) => {
+return `${type1} bitshiftRight(const ${type1} a, const ${type2} b) {
+	#if (__VERSION__ == 300)
+		return a >> b;
+	#else
+		return ${type1}(round(${floatTypeForIntType(type1)}(a) / pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b))));
+	#endif
+}`;
+	}
+// TODO: fix these for glsl3
 	// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
 	// Seems like these could be optimized.
 	const bitwiseOr = (numBits: 8 | 16 | 32) => {
 return `int bitwiseOr${numBits === 32 ? '' : numBits}(int a, int b) {
-	int result = 0;
-	int n = 1;
-	
-	for (int i = 0; i < ${numBits}; i++) {
-		if ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {
-			result += n;
+	#if (__VERSION__ == 300)
+		return a | b;
+	#else
+		int result = 0;
+		int n = 1;
+		
+		for (int i = 0; i < ${numBits}; i++) {
+			if ((mod(a, 2) == 1) || (mod(b, 2) == 1)) {
+				result += n;
+			}
+			a = a / 2;
+			b = b / 2;
+			n = n * 2;
+			if(!(a > 0 || b > 0)) {
+				break;
+			}
 		}
-		a = a / 2;
-		b = b / 2;
-		n = n * 2;
-		if(!(a > 0 || b > 0)) {
-			break;
-		}
-	}
-	return result;
+		return result;
+	#endif
 }`; };
 const bitwiseXOR = (numBits: 8 | 16 | 32) => {
 return `int bitwiseXOR${numBits === 32 ? '' : numBits}(int a, int b) {
-	int result = 0;
-	int n = 1;
-	
-	for (int i = 0; i < ${numBits}; i++) {
-		if ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {
-			result += n;
+	#if (__VERSION__ == 300)
+		return a ^ b;
+	#else
+		int result = 0;
+		int n = 1;
+		
+		for (int i = 0; i < ${numBits}; i++) {
+			if ((mod(a, 2) == 1) != (mod(b, 2) == 1)) {
+				result += n;
+			}
+			a = a / 2;
+			b = b / 2;
+			n = n * 2;
+			if(!(a > 0 || b > 0)) {
+				break;
+			}
 		}
-		a = a / 2;
-		b = b / 2;
-		n = n * 2;
-		if(!(a > 0 || b > 0)) {
-			break;
-		}
-	}
-	return result;
+		return result;
+	#endif
 }`; }
 	const bitwiseAnd = (numBits: 8 | 16 | 32) => {
 return `int bitwiseAnd${numBits === 32 ? '' : numBits}(int a, int b) {
-	int result = 0;
-	int n = 1;
-	for (int i = 0; i < ${numBits}; i++) {
-		if ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {
-			result += n;
+	#if (__VERSION__ == 300)
+		return a & b;
+	#else
+		int result = 0;
+		int n = 1;
+		for (int i = 0; i < ${numBits}; i++) {
+			if ((mod(a, 2) == 1) && (mod(b, 2) == 1)) {
+				result += n;
+			}
+			a = a / 2;
+			b = b / 2;
+			n = n * 2;
+			if(!(a > 0 && b > 0)) {
+				break;
+			}
 		}
-		a = a / 2;
-		b = b / 2;
-		n = n * 2;
-		if(!(a > 0 && b > 0)) {
-			break;
-		}
-	}
-	return result;
+		return result;
+	#endif
 }`; };
 	const bitwiseNot = (numBits: 8 | 16 | 32) => {
 return `int bitwiseNot${numBits === 32 ? '' : numBits}(int a) {
-	int result = 0;
-	int n = 1;
+	#if (__VERSION__ == 300)
+		return ~a;
+	#else
+		int result = 0;
+		int n = 1;
 
-	for (int i = 0; i < ${numBits}; i++) {
-		if (mod(a, 2) == 0) {
-			result += n;
+		for (int i = 0; i < ${numBits}; i++) {
+			if (mod(a, 2) == 0) {
+				result += n;
+			}
+			a = a / 2;
+			n = n * 2;
 		}
-		a = a / 2;
-		n = n * 2;
-	}
-	return result;
+		return result;
+	#endif
 }`; }
 
 	FRAGMENT_SHADER_POLYFILLS = `

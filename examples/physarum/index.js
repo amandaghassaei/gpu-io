@@ -353,9 +353,8 @@ function main({ gui, glslVersion, contextID }) {
 		name: 'deposit',
 		composer,
 		type: trail.type,
-		numComponents: trail.numComponents,
+		value: PARAMS.depositAmount,
 	});
-	deposit.setUniform('u_value', PARAMS.depositAmount);
 	// Fragment shader program for diffusing trail state.
 	const diffuseAndDecay = new GPUProgram(composer, {
 		name: 'diffuseAndDecay',
@@ -402,45 +401,14 @@ function main({ gui, glslVersion, contextID }) {
 			},
 		],
 	});
-	// Fragment shader program for touch interactions.
-	const TOUCH_DEPOSIT_SCALE_FACTOR = 2;
-	const touch = new GPUProgram(composer, {
-		name: 'touch',
-		fragmentShader: `
-			in vec2 v_uv;
-			in vec2 v_uv_local;
-
-			uniform sampler2D u_trail;
-			uniform float u_depositAmount;
-
-			out float out_fragColor;
-
-			void main() {
-				vec2 diffCenterNormalized = 2.0 * (v_uv_local - 0.5);
-				float distSq = 1.0 - dot(diffCenterNormalized, diffCenterNormalized);
-				out_fragColor = texture(u_trail, v_uv).x + distSq * u_depositAmount;
-			}`,
-		uniforms: [
-			{
-				name: 'u_trail',
-				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
-				type: INT,
-			},
-			{
-				name: 'u_depositAmount',
-				value: TOUCH_DEPOSIT_SCALE_FACTOR * PARAMS.depositAmount,
-				type: FLOAT,
-			},
-		],
-	});
 	// Fragment shader program for rendering trail state to screen (with a scaling factor).
 	const render = renderAmplitudeProgram({
 		name: 'render',
 		composer,
 		type: trail.type,
 		components: 'x',
+		scale: PARAMS.renderAmplitude,
 	});
-	render.setUniform('u_scale', PARAMS.renderAmplitude);
 
 	/**
 	 * This loop is where all the action happens.
@@ -496,13 +464,13 @@ function main({ gui, glslVersion, contextID }) {
 
 	// Touch events.
 	const activeTouches = {};
-	const TOUCH_DIAMETER = 30;
+	const TOUCH_DIAMETER = 25;
 	function onPointerMove(e) {
 		const lastPosition = activeTouches[e.pointerId];
 		if (lastPosition) {
 			const currentPosition = [e.clientX, canvas.height - e.clientY];
 			composer.stepSegment({
-				program: touch,
+				program: deposit,
 				input: trail,
 				output: trail,
 				position1: currentPosition,
@@ -520,7 +488,7 @@ function main({ gui, glslVersion, contextID }) {
 	function onPointerStart(e) {
 		const currentPosition = [e.clientX, canvas.height - e.clientY];
 		composer.stepCircle({
-			program: touch,
+			program: deposit,
 			input: trail,
 			output: trail,
 			position: currentPosition,
@@ -581,7 +549,6 @@ function main({ gui, glslVersion, contextID }) {
 	const trailsGUI = gui.addFolder('Trails');
 	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
 		deposit.setUniform('u_value', value);
-		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * value);
 	}).name('Deposit Amount');
 	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).onChange((value) => {
 		diffuseAndDecay.setUniform('u_decayFactor', value);
@@ -641,7 +608,6 @@ function main({ gui, glslVersion, contextID }) {
 		rotateParticles.setUniform('u_rotationAngle', PARAMS.rotationAngle * Math.PI / 180);
 		moveParticles.setUniform('u_stepSize', PARAMS.stepSize);
 		deposit.setUniform('u_value', PARAMS.depositAmount);
-		touch.setUniform('u_depositAmount', TOUCH_DEPOSIT_SCALE_FACTOR * PARAMS.depositAmount);
 		diffuseAndDecay.setUniform('u_decayFactor', PARAMS.decayFactor);
 		render.setUniform('u_scale', PARAMS.renderAmplitude);
 		trail.clear();
@@ -665,7 +631,6 @@ function main({ gui, glslVersion, contextID }) {
 		trail.dispose();
 		deposit.dispose();
 		diffuseAndDecay.dispose();
-		touch.dispose();
 		render.dispose();
 		composer.dispose();
 
