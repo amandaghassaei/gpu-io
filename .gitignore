@@ -3,3 +3,4 @@ src/DataArray-Feedback.ts
 dist/DataArray-Feedback*
 *.DS_Store
 examples/shells/*
+examples/fdtd/*
