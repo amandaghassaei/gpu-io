@@ -60,7 +60,9 @@ const state = new GPULayer(composer, {
     numComponents: 1,
     type: FLOAT,
     filter: LINEAR,
-    numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
+    // Use 2 buffers so we can toggle read/write
+    // from one to the other.
+    numBuffers: 2,
     wrapS: REPEAT,
     wrapT: REPEAT,
     writable: true,
@@ -71,22 +73,22 @@ const state = new GPULayer(composer, {
 const diffuseProgram = new GPUProgram(composer, {
     name: 'render',
     fragmentShader: `
-        in vec2 v_uv;
+in vec2 v_uv;
 
-        uniform sampler2D u_state;
-        uniform vec2 u_halfPx;
+uniform sampler2D u_state;
+uniform vec2 u_halfPx;
 
-        out float out_fragColor;
+out float out_fragColor;
 
-        void main() {
-            // Average this pixel with neighbors.
-            float prevStateNE = texture(u_state, v_uv + u_halfPx).x;
-            float prevStateNW = texture(u_state, v_uv + vec2(-u_halfPx.x, u_halfPx.y)).x;
-            float prevStateSE = texture(u_state, v_uv + vec2(u_halfPx.x, -u_halfPx.y)).x;
-            float prevStateSW = texture(u_state, v_uv - u_halfPx).x;
-            out_fragColor = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
-        }
-    `,
+void main() {
+    // Average this pixel with neighbors.
+    float prevStateNE = texture(u_state, v_uv + u_halfPx).x;
+    float prevStateNW = texture(u_state, v_uv + vec2(-u_halfPx.x, u_halfPx.y)).x;
+    float prevStateSE = texture(u_state, v_uv + vec2(u_halfPx.x, -u_halfPx.y)).x;
+    float prevStateSW = texture(u_state, v_uv - u_halfPx).x;
+    out_fragColor = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
+}
+`,
     uniforms: [
         { // Index of sampler2D uniform to assign to value "u_state".
             name: 'u_state',
@@ -102,7 +104,8 @@ const diffuseProgram = new GPUProgram(composer, {
 });
 
 // Init a program to render state to screen.
-// See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions for more built-in GPUPrograms to use.
+// See docs/README#gpuprogram-helper-functions
+// for more built-in GPUPrograms to use.
 const renderProgram = renderAmplitudeProgram({
     name: 'render',
     composer,
