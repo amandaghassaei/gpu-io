@@ -20,16 +20,27 @@
 				  <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
 				</header>
 				<main class="modal__content" id="modal-1-content">
-				  <p>
-					This is a WebGL fragment shader implementation of <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a>, written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
-				  </p>
-				  <p>
-					Instructions: Touch/drag to add new pixels.
-					Change the birth and survival rules in the menu to control the dynamics of the system.
-				  </p>
+					<p>
+						This simulation solves the <a href="https://en.wikipedia.org/wiki/Navier%E2%80%93Stokes_equations">Navier-Stokes equations</a> for incompressible fluids.
+						The fluid visualization includes thousands of <a href="https://en.wikipedia.org/wiki/Lagrangian_particle_tracking">Lagrangian particles</a> that follow the fluid's velocity field and leave behind semi-transparent trails as they move.
+						All computation happens in several GPU fragment shaders for real-time performance.  Written by <a href="http://www.amandaghassaei.com/">Amanda Ghassaei</a>.
+					</p>
+					<p>
+						Instructions: Touch/mouseover to apply a force to the fluid.  Toggle between showing the underlying pressure velocity fields using the controls on the right.
+					</p>
+					<p>
+						To learn more about the math involved, check out the following sources:
+					</p>
+					</p>
+						<a href="https://pdfs.semanticscholar.org/84b8/c7b7eecf90ebd9d54a51544ca0f8ff93c137.pdf">Real-time ink simulation using a grid-particle method</a> - mixing Eulerian and Lagrangian techniques for fluids.<br/>
+						<a href="http://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html">Fast Fluid Dynamics Simulation on the GPU</a> - a very well written tutorial about programming the Navier-Stokes equations on a GPU.
+						Though not WebGL specific, it was still very useful.<br/>
+						<a href="http://jamie-wong.com/2016/08/05/webgl-fluid-simulation/">Fluid Simulation (with WebGL demo)</a> - this article has some nice, interactive graphics that helped me debug my code.<br/>
+						<a href="http://pages.cs.wisc.edu/~chaol/data/cs777/stam-stable_fluids.pdf">Stable Fluids</a> - a paper about stable numerical methods for evaluating Navier-Stokes on a discrete grid.  Also check out Stam's book <a href="https://amzn.to/3mmA8gI">The Art of Fluid Animation</a>.
+					</p>
 				  <p>
 					This page is part of a series of examples using <a href="https://github.com/amandaghassaei/gpu-io">gpu-io</a>, a GPU-accelerated computing library for physics simulations, cellular automata, and general-purpose computing.
-					Find the source code on <a href="https://github.com/amandaghassaei/gpu-io/tree/main/examples/gol">Github</a>.
+					Find the source code on <a href="https://github.com/amandaghassaei/gpu-io/tree/main/examples/fluid">Github</a>.
 				  </p>
 				</main>
 			  </div>

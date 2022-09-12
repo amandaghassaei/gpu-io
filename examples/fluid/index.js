@@ -26,7 +26,7 @@ function main({ gui, contextID, glslVersion}) {
 	const TOUCH_FORCE_SCALE = 1;
 	// Approx avg num particles per px.
 	const PARTICLE_DENSITY = 0.1;
-	const MAX_NUM_PARTICLES = 130000;
+	const MAX_NUM_PARTICLES = 100000;
 	// How long do the particles last before they are reset.
 	// If we don't have then reset they tend to clump up.
 	const PARTICLE_LIFETIME = 1000;
