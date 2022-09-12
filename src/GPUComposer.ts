@@ -477,7 +477,7 @@ export class GPUComposer {
 	 * @private
 	 */
 	_cloneGPULayer(gpuLayer: GPULayer, name?: string) {
-		let dimensions: number | [number, number] = 0;
+		let dimensions: number | number[] = 0;
 		try {
 			dimensions = gpuLayer.length;
 		} catch {
@@ -864,7 +864,7 @@ export class GPUComposer {
 
 		// Update uniforms and buffers.
 		// Frame needs to be offset and scaled so that all four sides are in viewport.
-		const onePx = [ 1 / width, 1 / height] as [number, number];
+		const onePx = [ 1 / width, 1 / height];
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - onePx[0], 1 - onePx[1]], FLOAT);
 		program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getBoundaryPositionsBuffer());
@@ -926,7 +926,7 @@ export class GPUComposer {
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
-		const onePx = [ 1 / width, 1 / height] as [number, number];
+		const onePx = [ 1 / width, 1 / height];
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 - 2 * onePx[0], 1 - 2 * onePx[1]], FLOAT);
 		program._setVertexUniform(glProgram, 'u_gpuio_translation', onePx, FLOAT);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
@@ -954,7 +954,7 @@ export class GPUComposer {
 	stepCircle(
 		params: {
 			program: GPUProgram,
-			position: [number, number], // Position is in units of pixels.
+			position: number[], // Position is in units of pixels.
 			diameter: number, // Diameter is in units of pixels.
 			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
@@ -1009,8 +1009,8 @@ export class GPUComposer {
 	stepSegment(
 		params: {
 			program: GPUProgram,
-			position1: [number, number], 
-			position2: [number, number],
+			position1: number[], 
+			position2: number[],
 			thickness: number,
 			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
@@ -1069,10 +1069,52 @@ export class GPUComposer {
 		gl.disable(gl.BLEND);
 	}
 
+	/**
+	 * Step GPUProgram inside a line segment (rounded end caps available).
+	 * This is useful for touch interactions during pointermove.
+	 * @param params - Step parameters.
+	 * @param params.program - GPUProgram to run.
+	 * @param params.position - Position of one top corner of rectangle.
+	 * @param params.size - Width and height of rectangle.
+	 * @param params.useOutputScale - If true position and size are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
+	 * @param params.input - Input GPULayers to GPUProgram.
+	 * @param params.output - Output GPULayer, will draw to screen if undefined.
+	 * @param params.blendAlpha - Blend mode for draw, defaults to false.
+	 * @returns 
+	 */
+	 stepRect(
+		params: {
+			program: GPUProgram,
+			position: number[],
+			size: number[],
+			thickness: number,
+			useOutputScale?: boolean,
+			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
+			output?: GPULayer,
+			endCaps?: boolean,
+			numCapSegments?: number,
+			blendAlpha?: boolean,
+		},
+	) {
+		const position1 = [params.position[0], params.position[1] + params.size[1] / 2];
+		const position2 = [params.position[0], position1[1]];
+		this.stepSegment({
+			program: params.program,
+			position1,
+			position2,
+			thickness: params.size[1],
+			useOutputScale: params.useOutputScale,
+			input: params.input,
+			output: params.output,
+			endCaps: false,
+			blendAlpha: params.blendAlpha,
+		});
+	}
+
 	// stepPolyline(
 	// 	params: {
 	// 		program: GPUProgram,
-	// 		positions: [number, number][],
+	// 		positions: number[][],
 	// 		thickness: number, // Thickness of line is in units of pixels.
 	// 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 	// 		output?: GPULayer, // Undefined renders to screen.
@@ -1402,7 +1444,7 @@ export class GPUComposer {
 			output?: GPULayer,
 			pointSize?: number,
 			count?: number,
-			color?: [number, number, number],
+			color?: number[],
 			wrapX?: boolean,
 			wrapY?: boolean,
 			blendAlpha?: boolean,
@@ -1430,6 +1472,7 @@ export class GPUComposer {
 		if (program === undefined) {
 			program = this._setValueProgramForType(FLOAT);
 			const color = params.color || [1, 0, 0]; // Default of red.
+			if (color.length !== 3) throw new Error(`color parameter must have length 3, got ${JSON.stringify(color)}.`);
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
 
@@ -1452,7 +1495,7 @@ export class GPUComposer {
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
 		program._setVertexUniform(glProgram, 'u_gpuio_pointSize', pointSize, FLOAT);
-		const positionLayerDimensions = [layer.width, layer.height] as [number, number];
+		const positionLayerDimensions = [layer.width, layer.height];
 		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
 		// We get this for free in GLSL3 with gl_VertexID.
 		if (glslVersion === GLSL1) {
@@ -1480,7 +1523,7 @@ export class GPUComposer {
 	// 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 	// 		output?: GPULayer,
 	// 		count?: number,
-	// 		color?: [number, number, number],
+	// 		color?: number[]
 	// 		wrapX?: boolean,
 	// 		wrapY?: boolean,
 	// 		closeLoop?: boolean,
@@ -1505,6 +1548,7 @@ export class GPUComposer {
 	// 	if (program === undefined) {
 	// 		program = params.wrapX || params.wrapY ? this._getWrappedLineColorProgram() : this._setValueProgramForType(FLOAT);;
 	// 		const color = params.color || [1, 0, 0]; // Default to red.
+	//		if (color.length !== 3) throw new Error(`color parameter must have length 3, got ${JSON.stringify(color)}.`);
 	// 		program.setUniform('u_value', [...color, 1], FLOAT);
 	// 	}
 
@@ -1527,7 +1571,7 @@ export class GPUComposer {
 	// 	// Update uniforms and buffers.
 	// 	program._setVertexUniform(glProgram, 'u_gpuio_positions', indexOfLayerInArray(positions, input), INT);
 	// 	program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
-	// 	const positionLayerDimensions = [positions.width, positions.height] as [number, number];
+	// 	const positionLayerDimensions = [positions.width, positions.height];
 	// 	program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
 	// 	// Only pass in indices if we are using indexed pts or GLSL1, otherwise we get this for free from gl_VertexID.
 	// 	if (params.indices || glslVersion === GLSL1) {
@@ -1590,7 +1634,7 @@ export class GPUComposer {
 			output?: GPULayer,
 			vectorSpacing?: number,
 			vectorScale?: number,
-			color?: [number, number, number],
+			color?: number[],
 			blendAlpha?: boolean,
 		},
 	) {
@@ -1613,6 +1657,7 @@ export class GPUComposer {
 		if (program === undefined) {
 			program = this._setValueProgramForType(FLOAT);;
 			const color = params.color || [1, 0, 0]; // Default to red.
+			if (color.length !== 3) throw new Error(`color parameter must have length 3, got ${JSON.stringify(color)}.`);
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
 
@@ -1628,7 +1673,7 @@ export class GPUComposer {
 		const vectorScale = params.vectorScale || 1;
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [vectorScale / _width, vectorScale / _height], FLOAT);
 		const vectorSpacing = params.vectorSpacing || 10;
-		const spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)] as [number, number];
+		const spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)];
 		program._setVertexUniform(glProgram, 'u_gpuio_dimensions', spacedDimensions, FLOAT);
 		const length = 2 * spacedDimensions[0] * spacedDimensions[1];
 		// We get this for free in GLSL3 with gl_VertexID.

@@ -7,16 +7,18 @@
 [![NPM Downloads](https://img.shields.io/npm/dw/gpu-io)](https://www.npmtrends.com/gpu-io)
 [![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE) -->
 
-GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of 2D spatially-distributed state (such as 2D physics simulations or cellular automata).  It also includes an interface for performing general purpose computing operations on large arrays of data (via a fragment shader implementation).
+GPU-accelerated computing in the browser
 
-gpu-io supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers!
+gpu-io is designed for running GPU shader programs that operate on one or more layers of 2D spatially-distributed state (such as 2D physics simulations or cellular automata).  It supports interactive applications that render directly to the screen and has some built-in utilities that make this easy - e.g. running a program within a specified region for handling mouse/touch events.  gpu-io also allows you to perform general-purpose computing operations on large arrays of data.  See [Examples](#examples) for more details.
 
-Update 9/22:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [examples](https://github.com/amandaghassaei/gpu-io#examples) for more info about how to use this framework.
+Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers!  WebGPU support is planned in the future.
 
 
 ### Motivation
 
-One of the main purposes of gpu-io is to allow people to write GPGPU programs without worrying too much about low level WebGL details, available WebGL versions, or spec inconsistencies across different browsers/hardware.  [As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge), but even among WebGL2 implementations there are differences in behavior across browsers and inconsistencies in how they implement the spec.  Some devices are still running older browsers with no WebGL2 support, and many WebGL1 implementations do not support rendering to float32 or non-uint8 integer textures (see [The miserable state of affairs of floating point support](https://www.khronos.org/webgl/public-mailing-list/public_webgl/1703/msg00043.php)).  gpu-io rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  gpu-io will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that it can run on WebGL1 in a pinch.
+The main motivation behind gpu-io is to write gpu-accelerated programs without worrying too much about low-level WebGL details.  This framework manages WebGL state, implements shader and program caching, and deals with issues of available WebGL versions or spec inconsistencies across different browsers/hardware.  It should significantly cut down on the amount of boilerplate code and state management you need to do in your applications.  At the same time, gpu-io gives you enough low-level control to write extremely efficient programs for demanding simulation applications.
+
+[As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge) - but even among WebGL2 implementations, there are differences in behavior across browsers (especially mobile).  Some devices are still running older browsers with no WebGL2 support, and many WebGL1 implementations do not support rendering to float32 or non-uint8 integer textures (see [The miserable state of affairs of floating point support](https://www.khronos.org/webgl/public-mailing-list/public_webgl/1703/msg00043.php)).  gpu-io rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  gpu-io will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that it can run on WebGL1 in a pinch.
 
 - [Use](#use)
 - [Examples](#examples)
@@ -57,16 +59,14 @@ noise.forEach((el, i) => noise[i] = Math.random());
 const state = new GPULayer(composer, {
     name: 'state',
     dimensions: [canvas.width, canvas.height],
-    numComponents: 1,
+    numComponents: 1, // Scalar field.
     type: FLOAT,
-    filter: LINEAR,
-    // Use 2 buffers so we can toggle read/write
-    // from one to the other.
-    numBuffers: 2,
-    wrapS: REPEAT,
+    filter: LINEAR, // Linear interpolation.
+    numBuffers: 2, // Toggle read/write from one buffer to the other.
+    wrapS: REPEAT, // Wrap boundaries.
     wrapT: REPEAT,
     writable: true,
-    array: noise,
+    array: noise, // Initial state.
 });
 
 // Init a program to diffuse state.
@@ -195,6 +195,8 @@ More information about writing GLSL shaders for gpu-io can be found at [docs/GLS
 
 
 ## Compatibility with Threejs
+
+TODO: this still needs to be tested more.
 
 Currently, gpu-io can run in a separate webgl context from threejs with no problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so, though I am still sorting out some lingering WebGL warnings:
 
@@ -330,7 +332,7 @@ More info about the difference between GLSL and WebGL versions:
 
 ### Transform Feedback
 
-You might notice that gpu-io does not use any transform feedback to e.g. handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](https://github.com/amandaghassaei/gpu-io#examples)), but currently all the computation happens in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
+You might notice that gpu-io does not use any transform feedback to e.g. handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](#examples)), but currently all the computation happens in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
 
 - The main use case for gpu-io is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays and 2D/3D vertex manipulations, but that is a secondary functionality.
 - Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, it will take some time everyone to update, so for now I'd like to support all functionality in gpu-io in WebGL1.
@@ -426,6 +428,8 @@ This work is distributed under an MIT license.  Note that gpu-io depends on a fe
 
 
 ## Development
+
+Update 9/22:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [Examples](#examples) for more info about how to use this framework.
 
 Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://twitter.com/amandaghassaei) if you end up using this, I'd love to see what you're making!  
 

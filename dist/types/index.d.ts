@@ -25,7 +25,7 @@ declare const _testing: {
     SAMPLER2D_HALF_PX_UNIFORM: "u_gpuio_half_px";
     SAMPLER2D_DIMENSIONS_UNIFORM: "u_gpuio_dimensions";
     initArrayForType(type: import("./constants").GPULayerType, length: number, halfFloatsAsFloats?: boolean): Float32Array | Uint16Array | Uint8Array | Int8Array | Int16Array | Uint32Array | Int32Array;
-    calcGPULayerSize(size: number | [number, number], name: string, verboseLogging: boolean): {
+    calcGPULayerSize(size: number | number[], name: string, verboseLogging: boolean): {
         width: number;
         height: number;
         length: number;

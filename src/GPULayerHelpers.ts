@@ -103,7 +103,7 @@ export function initArrayForType(
  */
 // TODO: should we relax adherence to power of 2?
 export function calcGPULayerSize(
-	size: number | [number, number],
+	size: number | number[],
 	name: string,
 	verboseLogging: boolean,
 ) {
@@ -124,11 +124,11 @@ export function calcGPULayerSize(
 		if (verboseLogging) console.log(`Using [${width}, ${height}] for 1D array of length ${size} in GPULayer "${name}".`);
 		return { width, height, length };
 	}
-	const width = (size as [number, number])[0];
+	const width = (size as number[])[0];
 	if (!isPositiveInteger(width)) {
 		throw new Error(`Invalid width: ${JSON.stringify(width)} for GPULayer "${name}", must be positive integer.`);
 	}
-	const height = (size as [number, number])[1];
+	const height = (size as number[])[1];
 	if (!isPositiveInteger(height)) {
 		throw new Error(`Invalid height: ${JSON.stringify(height)} for GPULayer "${name}", must be positive integer.`);
 	}

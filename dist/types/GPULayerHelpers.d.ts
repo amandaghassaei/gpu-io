@@ -12,7 +12,7 @@ export declare function initArrayForType(type: GPULayerType, length: number, hal
  * Also checks that size elements are valid.
  * @private
  */
-export declare function calcGPULayerSize(size: number | [number, number], name: string, verboseLogging: boolean): {
+export declare function calcGPULayerSize(size: number | number[], name: string, verboseLogging: boolean): {
     width: number;
     height: number;
     length: number;

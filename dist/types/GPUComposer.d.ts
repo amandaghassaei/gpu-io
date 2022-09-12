@@ -296,7 +296,7 @@ export declare class GPUComposer {
      */
     stepCircle(params: {
         program: GPUProgram;
-        position: [number, number];
+        position: number[];
         diameter: number;
         useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
@@ -322,8 +322,33 @@ export declare class GPUComposer {
      */
     stepSegment(params: {
         program: GPUProgram;
-        position1: [number, number];
-        position2: [number, number];
+        position1: number[];
+        position2: number[];
+        thickness: number;
+        useOutputScale?: boolean;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
+        output?: GPULayer;
+        endCaps?: boolean;
+        numCapSegments?: number;
+        blendAlpha?: boolean;
+    }): void;
+    /**
+     * Step GPUProgram inside a line segment (rounded end caps available).
+     * This is useful for touch interactions during pointermove.
+     * @param params - Step parameters.
+     * @param params.program - GPUProgram to run.
+     * @param params.position - Position of one top corner of rectangle.
+     * @param params.size - Width and height of rectangle.
+     * @param params.useOutputScale - If true position and size are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
+     */
+    stepRect(params: {
+        program: GPUProgram;
+        position: number[];
+        size: number[];
         thickness: number;
         useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
@@ -354,7 +379,7 @@ export declare class GPUComposer {
         output?: GPULayer;
         pointSize?: number;
         count?: number;
-        color?: [number, number, number];
+        color?: number[];
         wrapX?: boolean;
         wrapY?: boolean;
         blendAlpha?: boolean;
@@ -379,7 +404,7 @@ export declare class GPUComposer {
         output?: GPULayer;
         vectorSpacing?: number;
         vectorScale?: number;
-        color?: [number, number, number];
+        color?: number[];
         blendAlpha?: boolean;
     }): void;
     /**

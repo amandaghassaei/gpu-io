@@ -264,7 +264,7 @@ export class GPULayer {
 			name: string,
 			type: GPULayerType,
 			numComponents: GPULayerNumComponents,
-			dimensions: number | [number, number],
+			dimensions: number | number[],
 			array?: GPULayerArray | number[],
 			filter?: GPULayerFilter,
 			wrapS?: GPULayerWrap,
@@ -684,7 +684,7 @@ export class GPULayer {
 	}
 
 	resize(
-		dimensions: number | [number, number],
+		dimensions: number | number[],
 		array?: GPULayerArray | number[],
 	) {
 		const { name, _composer } = this;
@@ -702,7 +702,7 @@ export class GPULayer {
 		const { name, _composer } = this;
 		const { verboseLogging } = _composer;
 		// TODO: check compatible type.
-		const dimensions = [image.width, image.height] as [number, number];
+		const dimensions = [image.width, image.height];
 		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
 		const { length, width, height } = calcGPULayerSize(dimensions, name, verboseLogging);
 		this._length = length;
@@ -754,7 +754,7 @@ export class GPULayer {
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
 		if (this.writable) {
 			const program = _composer._setValueProgramForType(type);
-			program.setUniform('u_value', value as [number, number, number, number]);
+			program.setUniform('u_value', value);
 			for (let i = startIndex; i < endIndex; i++) {
 				// Write clear value to buffers.
 				_composer.step({

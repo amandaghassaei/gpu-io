@@ -126,7 +126,7 @@ export declare class GPULayer {
         name: string;
         type: GPULayerType;
         numComponents: GPULayerNumComponents;
-        dimensions: number | [number, number];
+        dimensions: number | number[];
         array?: GPULayerArray | number[];
         filter?: GPULayerFilter;
         wrapS?: GPULayerWrap;
@@ -192,7 +192,7 @@ export declare class GPULayer {
      */
     _prepareForWrite(incrementBufferIndex: boolean): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
-    resize(dimensions: number | [number, number], array?: GPULayerArray | number[]): void;
+    resize(dimensions: number | number[], array?: GPULayerArray | number[]): void;
     setFromImage(image: HTMLImageElement): void;
     /**
      * Set the clearValue of the GPULayer, which is applied during GPULayer.clear().

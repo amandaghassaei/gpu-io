@@ -3032,10 +3032,38 @@ var GPUComposer = /** @class */ (function () {
         }
         gl.disable(gl.BLEND);
     };
+    /**
+     * Step GPUProgram inside a line segment (rounded end caps available).
+     * This is useful for touch interactions during pointermove.
+     * @param params - Step parameters.
+     * @param params.program - GPUProgram to run.
+     * @param params.position - Position of one top corner of rectangle.
+     * @param params.size - Width and height of rectangle.
+     * @param params.useOutputScale - If true position and size are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
+     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
+     */
+    GPUComposer.prototype.stepRect = function (params) {
+        var position1 = [params.position[0], params.position[1] + params.size[1] / 2];
+        var position2 = [params.position[0], position1[1]];
+        this.stepSegment({
+            program: params.program,
+            position1: position1,
+            position2: position2,
+            thickness: params.size[1],
+            useOutputScale: params.useOutputScale,
+            input: params.input,
+            output: params.output,
+            endCaps: false,
+            blendAlpha: params.blendAlpha,
+        });
+    };
     // stepPolyline(
     // 	params: {
     // 		program: GPUProgram,
-    // 		positions: [number, number][],
+    // 		positions: number[][],
     // 		thickness: number, // Thickness of line is in units of pixels.
     // 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
     // 		output?: GPULayer, // Undefined renders to screen.
@@ -3347,6 +3375,8 @@ var GPUComposer = /** @class */ (function () {
         if (program === undefined) {
             program = this._setValueProgramForType(constants_1.FLOAT);
             var color = params.color || [1, 0, 0]; // Default of red.
+            if (color.length !== 3)
+                throw new Error("color parameter must have length 3, got ".concat(JSON.stringify(color), "."));
             program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
         }
         // Add positions to end of input if needed.
@@ -3394,7 +3424,7 @@ var GPUComposer = /** @class */ (function () {
     // 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
     // 		output?: GPULayer,
     // 		count?: number,
-    // 		color?: [number, number, number],
+    // 		color?: number[]
     // 		wrapX?: boolean,
     // 		wrapY?: boolean,
     // 		closeLoop?: boolean,
@@ -3416,6 +3446,7 @@ var GPUComposer = /** @class */ (function () {
     // 	if (program === undefined) {
     // 		program = params.wrapX || params.wrapY ? this._getWrappedLineColorProgram() : this._setValueProgramForType(FLOAT);;
     // 		const color = params.color || [1, 0, 0]; // Default to red.
+    //		if (color.length !== 3) throw new Error(`color parameter must have length 3, got ${JSON.stringify(color)}.`);
     // 		program.setUniform('u_value', [...color, 1], FLOAT);
     // 	}
     // 	// Add positionLayer to end of input if needed.
@@ -3433,7 +3464,7 @@ var GPUComposer = /** @class */ (function () {
     // 	// Update uniforms and buffers.
     // 	program._setVertexUniform(glProgram, 'u_gpuio_positions', indexOfLayerInArray(positions, input), INT);
     // 	program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
-    // 	const positionLayerDimensions = [positions.width, positions.height] as [number, number];
+    // 	const positionLayerDimensions = [positions.width, positions.height];
     // 	program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
     // 	// Only pass in indices if we are using indexed pts or GLSL1, otherwise we get this for free from gl_VertexID.
     // 	if (params.indices || glslVersion === GLSL1) {
@@ -3505,6 +3536,8 @@ var GPUComposer = /** @class */ (function () {
             program = this._setValueProgramForType(constants_1.FLOAT);
             ;
             var color = params.color || [1, 0, 0]; // Default to red.
+            if (color.length !== 3)
+                throw new Error("color parameter must have length 3, got ".concat(JSON.stringify(color), "."));
             program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
         }
         // Add data to end of input if needed.
