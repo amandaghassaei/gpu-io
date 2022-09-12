@@ -142,10 +142,10 @@ To really understand how gpu-io works, see the following examples.  Many of them
 
 Source code for all examples can be found in [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
 
-- [Conway's Game of Life](http://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
-- [Julia Set Fractal](http://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
-- [Fluid Simulation](http://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
-- [Physarum Transport Network](http://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
+- [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
+- [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
+- [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
+- [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
 
 Please let me kow if you have something that you would like to add to this list!
 
@@ -449,7 +449,7 @@ I'm using mocha + karma + chai + headless Chrome to test the components of gpu-i
 npm run test
 ```
 
-I've also included a few html pages (in the [tests/browser/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/browser/) directory) for testing various functions of gpu-io in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
+I've also included a few html pages (in the [tests/browser/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/browser/) directory) for testing various functions of gpu-io in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](https://apps.amandaghassaei.com/gpu-io/tests/).
 
 To run these tests locally:
 
