@@ -20,6 +20,9 @@ For `drawLayerAsPoints()`:
 - `in vec2 v_uv_array` - The UV coordinates of this point within the points GPULayer.
 - `in vec2 v_position` - Position of the current point.
 
+For `drawLayerAsVectorField()`:
+
+- `in int v_index` - The index of the current vector.
 
 ## Helper Functions
 

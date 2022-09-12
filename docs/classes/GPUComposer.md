@@ -29,6 +29,9 @@
 - [stepCircle](GPUComposer.md#stepcircle)
 - [stepSegment](GPUComposer.md#stepsegment)
 - [drawLayerAsPoints](GPUComposer.md#drawlayeraspoints)
+- [drawLayerAsVectorField](GPUComposer.md#drawlayerasvectorfield)
+- [resetThreeState](GPUComposer.md#resetthreestate)
+- [savePNG](GPUComposer.md#savepng)
 - [tick](GPUComposer.md#tick)
 - [dispose](GPUComposer.md#dispose)
 
@@ -264,6 +267,7 @@ Step GPUProgram inside a circular spot.  This is useful for touch interactions.
 | `params.program` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run. |
 | `params.position` | [`number`, `number`] | Position of center of circle. |
 | `params.diameter` | `number` | Circle diameter in pixels. |
+| `params.useOutputScale?` | `boolean` | If true position and diameter are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
 | `params.numSegments?` | `number` | Number of segments in circle, defaults to 18. |
@@ -291,6 +295,7 @@ This is useful for touch interactions during pointermove.
 | `params.position1` | [`number`, `number`] | Position of one end of segment. |
 | `params.position2` | [`number`, `number`] | Position of the other end of segment. |
 | `params.thickness` | `number` | Thickness in pixels. |
+| `params.useOutputScale?` | `boolean` | If true position and thickness are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
 | `params.endCaps?` | `boolean` | Flag to draw with rounded end caps, defaults to false. |
@@ -314,16 +319,76 @@ Draw the contents of a GPULayer as points.  This assumes the components of the G
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Draw parameters. |
-| `params.positions` | [`GPULayer`](GPULayer.md) | GPULayer containing position data. |
+| `params.layer` | [`GPULayer`](GPULayer.md) | GPULayer containing position data. |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run, defaults to drawing points in red. |
-| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
 | `params.pointSize?` | `number` | Pixel size of points. |
-| `params.count?` | `number` | How many point sto draw, defaults to positions.length. |
+| `params.count?` | `number` | How many points to draw, defaults to positions.length. |
 | `params.color?` | [`number`, `number`, `number`] | (If no program passed in) RGB color in range [0, 1] to draw points. |
 | `params.wrapX?` | `boolean` | Wrap points positions in X, defaults to false. |
 | `params.wrapY?` | `boolean` | Wrap points positions in Y, defaults to false. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
+
+#### Returns
+
+`void`
+
+___
+
+### drawLayerAsVectorField
+
+▸ **drawLayerAsVectorField**(`params`): `void`
+
+Draw the contents of a 2 component GPULayer as a vector field.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Draw parameters. |
+| `params.layer` | [`GPULayer`](GPULayer.md) | - |
+| `params.program?` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run, defaults to drawing vector lines in red. |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
+| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.vectorSpacing?` | `number` | Spacing between vectors, defaults to drawing a vector every 10 pixels. |
+| `params.vectorScale?` | `number` | Scale factor to apply to vector lengths. |
+| `params.color?` | [`number`, `number`, `number`] | (If no program passed in) RGB color in range [0, 1] to draw points. |
+| `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
+
+#### Returns
+
+`void`
+
+___
+
+### resetThreeState
+
+▸ **resetThreeState**(): `void`
+
+If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
+
+#### Returns
+
+`void`
+
+___
+
+### savePNG
+
+▸ **savePNG**(`params?`): `void`
+
+Save the current state of the canvas to png.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | PNG parameters. |
+| `params.filename?` | `string` | PNG filename (no extension). |
+| `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
+| `params.multiplier?` | `number` | - |
+| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
 
 #### Returns
 

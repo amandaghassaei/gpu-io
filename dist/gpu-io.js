@@ -2252,8 +2252,11 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUComposer = void 0;
+// @ts-ignore
+var changedpi_1 = __webpack_require__(809);
 var GPULayer_1 = __webpack_require__(355);
 var constants_1 = __webpack_require__(601);
+var ThreejsUtils = __webpack_require__(404);
 var utils_1 = __webpack_require__(593);
 var checks_1 = __webpack_require__(707);
 var DefaultVertexShader_1 = __webpack_require__(651);
@@ -2302,7 +2305,6 @@ var GPUComposer = /** @class */ (function () {
          * These are used by GPULayer.clear(), among other things
          */
         this._setValuePrograms = {};
-        this._vectorMagnitudePrograms = {};
         /**
          * Vertex shaders are shared across all GPUProgram instances.
          * @private
@@ -2490,18 +2492,6 @@ var GPUComposer = /** @class */ (function () {
             this._wrappedLineColorProgram = (0, Programs_1.wrappedLineColorProgram)({ composer: this });
         }
         return this._wrappedLineColorProgram;
-    };
-    /**
-     * Gets (and caches) generic programs for rending vector magnitudes for several input types.
-     * @private
-     */
-    GPUComposer.prototype._vectorMagnitudeProgramForType = function (type) {
-        var _vectorMagnitudePrograms = this._vectorMagnitudePrograms;
-        var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
-        if (_vectorMagnitudePrograms[key] === undefined) {
-            _vectorMagnitudePrograms[key] = (0, Programs_1.vectorMagnitudeProgram)({ composer: this, type: type });
-        }
-        return _vectorMagnitudePrograms[key];
     };
     /**
      * Init a buffer for vertex shader attributes.
@@ -3417,12 +3407,12 @@ var GPUComposer = /** @class */ (function () {
     /**
      * Draw the contents of a GPULayer as points.  This assumes the components of the GPULayer have the form [xPosition, yPosition] or [xPosition, yPosition, xOffset, yOffset].
      * @param params - Draw parameters.
-     * @param params.positions - GPULayer containing position data.
+     * @param params.layer - GPULayer containing position data.
      * @param params.program - GPUProgram to run, defaults to drawing points in red.
-     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.input - Input GPULayers for GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.pointSize - Pixel size of points.
-     * @param params.count - How many point sto draw, defaults to positions.length.
+     * @param params.count - How many points to draw, defaults to positions.length.
      * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
      * @param params.wrapX - Wrap points positions in X, defaults to false.
      * @param params.wrapY - Wrap points positions in Y, defaults to false.
@@ -3431,17 +3421,17 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
         var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
-        var positions = params.positions, output = params.output;
+        var layer = params.layer, output = params.output;
         if (_errorState)
             return;
         // Check that numPoints is valid.
-        if (positions.numComponents !== 2 && positions.numComponents !== 4) {
-            throw new Error("GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(positions.name, "\" with ").concat(positions.numComponents, " components."));
+        if (layer.numComponents !== 2 && layer.numComponents !== 4) {
+            throw new Error("GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer \"".concat(layer.name, "\" with ").concat(layer.numComponents, " components."));
         }
-        if (glslVersion === constants_1.GLSL1 && positions.width * positions.height > constants_1.MAX_FLOAT_INT) {
-            console.warn("Points positions array length: ".concat(positions.width * positions.height, " is longer than what is supported by GLSL1 : ").concat(constants_1.MAX_FLOAT_INT, ", expect index overflow."));
+        if (glslVersion === constants_1.GLSL1 && layer.width * layer.height > constants_1.MAX_FLOAT_INT) {
+            console.warn("Points positions array length: ".concat(layer.width * layer.height, " is longer than what is supported by GLSL1 : ").concat(constants_1.MAX_FLOAT_INT, ", expect index overflow."));
         }
-        var length = positions.length;
+        var length = layer.length;
         var count = params.count || length;
         if (count > length) {
             throw new Error("Invalid count ".concat(count, " for position GPULayer of length ").concat(length, "."));
@@ -3453,11 +3443,11 @@ var GPUComposer = /** @class */ (function () {
             program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
         }
         // Add positions to end of input if needed.
-        var input = this._addLayerToInputs(positions, params.input);
+        var input = this._addLayerToInputs(layer, params.input);
         var vertexShaderOptions = {};
         // Tell whether we are using an absolute position (2 components),
         // or position with accumulation buffer (4 components, better floating pt accuracy).
-        if (positions.numComponents === 4)
+        if (layer.numComponents === 4)
             vertexShaderOptions[constants_1.GPUIO_VS_POSITION_W_ACCUM] = '1';
         if (params.wrapX)
             vertexShaderOptions[constants_1.GPUIO_VS_WRAP_X] = '1';
@@ -3466,12 +3456,12 @@ var GPUComposer = /** @class */ (function () {
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.LAYER_POINTS_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_gpuio_positions', (0, utils_1.indexOfLayerInArray)(positions, input), constants_1.INT);
+        program._setVertexUniform(glProgram, 'u_gpuio_positions', (0, utils_1.indexOfLayerInArray)(layer, input), constants_1.INT);
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], constants_1.FLOAT);
         // Set default pointSize.
         var pointSize = params.pointSize || 1;
         program._setVertexUniform(glProgram, 'u_gpuio_pointSize', pointSize, constants_1.FLOAT);
-        var positionLayerDimensions = [positions.width, positions.height];
+        var positionLayerDimensions = [layer.width, layer.height];
         program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
         // We get this for free in GLSL3 with gl_VertexID.
         if (glslVersion === constants_1.GLSL1) {
@@ -3576,145 +3566,112 @@ var GPUComposer = /** @class */ (function () {
     // 	}
     // 	gl.disable(gl.BLEND);
     // }
-    // drawLayerAsVectorField(
-    // 	params: {
-    // 		data: GPULayer,
-    // 		program?: GPUProgram,
-    // 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-    // 		output?: GPULayer,
-    // 		vectorSpacing?: number,
-    // 		vectorScale?: number,
-    // 		color?: [number, number, number],
-    // 		blendAlpha?: boolean,
-    // 	},
-    // ) {
-    // 	const { gl, _vectorFieldIndexArray, _width, _height, glslVersion, _errorState } = this;
-    // 	const { data, output } = params;
-    // 	if (_errorState) return;
-    // 	// Check that field is valid.
-    // 	if (data.numComponents !== 2) {
-    // 		throw new Error(`GPUComposer.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${data.name}" with ${data.numComponents} components.`)
-    // 	}
-    // 	// Check aspect ratio.
-    // 	// const dimensions = [vectorLayer.width, vectorLayer.height];
-    // 	// if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.01) {
-    // 	// 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector GPULayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
-    // 	// }
-    // 	let program = params.program;
-    // 	if (program === undefined) {
-    // 		program = this._setValueProgramForType(FLOAT);;
-    // 		const color = params.color || [1, 0, 0]; // Default to red.
-    // 		program.setUniform('u_value', [...color, 1], FLOAT);
-    // 	}
-    // 	// Add data to end of input if needed.
-    // 	const input = this._addLayerToInputs(data, params.input);
-    // 	// Do setup - this must come first.
-    // 	const glProgram = this._drawSetup(program, LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
-    // 	// Update uniforms and buffers.
-    // 	program._setVertexUniform(glProgram, 'u_gpuio_vectors', indexOfLayerInArray(data, input), INT);
-    // 	// Set default scale.
-    // 	const vectorScale = params.vectorScale || 1;
-    // 	program._setVertexUniform(glProgram, 'u_gpuio_scale', [vectorScale / _width, vectorScale / _height], FLOAT);
-    // 	const vectorSpacing = params.vectorSpacing || 10;
-    // 	const spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)] as [number, number];
-    // 	program._setVertexUniform(glProgram, 'u_gpuio_dimensions', spacedDimensions, FLOAT);
-    // 	const length = 2 * spacedDimensions[0] * spacedDimensions[1];
-    // 	// We get this for free in GLSL3 with gl_VertexID.
-    // 	if (glslVersion === GLSL1) {
-    // 		if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
-    // 			// Have to use float32 array bc int is not supported as a vertex attribute type.
-    // 			const indices = initSequentialFloatArray(length);
-    // 			this._vectorFieldIndexArray = indices;
-    // 			this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
-    // 		}
-    // 		gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer!);
-    // 		this._setIndexAttribute(glProgram, program.name);
-    // 	}
-    // 	// Draw.
-    // 	this._setBlendMode(params.blendAlpha);
-    // 	gl.drawArrays(gl.LINES, 0, length);
-    // 	gl.disable(gl.BLEND);
-    // }
-    // drawLayerMagnitude(
-    // 	params: {
-    // 		data: GPULayer,
-    // 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-    // 		output?: GPULayer,
-    // 		scale?: number,
-    // 		color?: [number, number, number],
-    // 		blendAlpha?: boolean,
-    // 	},
-    // ) {
-    // 	const { gl, _errorState } = this;
-    // 	const { data, output } = params;
-    // 	if (_errorState) return;
-    // 	const program = this._vectorMagnitudeProgramForType(data.type);
-    // 	const color = params.color || [1, 0, 0]; // Default to red.
-    // 	program.setUniform('u_color', color, FLOAT);
-    // 	const scale = params.scale || 1;
-    // 	program.setUniform('u_scale', scale, FLOAT);
-    // 	program.setUniform('u_gpuio_numDimensions', data.numComponents, INT);
-    // 	// Add data to end of input if needed.
-    // 	const input = this._addLayerToInputs(data, params.input);
-    // 	// Do setup - this must come first.
-    // 	const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, true, input, output);
-    // 	// Update uniforms and buffers.
-    // 	program._setVertexUniform(glProgram, 'u_gpuio_data', indexOfLayerInArray(data, input), INT);
-    // 	program._setVertexUniform(glProgram, 'u_gpuio_scale', [1, 1], FLOAT);
-    // 	program._setVertexUniform(glProgram, 'u_gpuio_translation', [0, 0], FLOAT);
-    // 	gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
-    // 	this._setPositionAttribute(glProgram, program.name);
-    // 	// Draw.
-    // 	this._setBlendMode(params.blendAlpha);
-    // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    // 	gl.disable(gl.BLEND);
-    // }
-    // /**
-    //  * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
-    //  */
-    // resetThreeState() {
-    // 	if (!this._renderer) {
-    // 		throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
-    // 	}
-    // 	const { gl } = this;
-    // 	// Reset viewport.
-    // 	const viewport = this._renderer.getViewport(new utils.Vector4() as Vector4);
-    // 	gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-    // 	// Unbind framebuffer (render to screen).
-    // 	this._renderer.setRenderTarget(null);
-    // 	// Reset texture bindings.
-    // 	this._renderer.resetState();
-    // }
-    // /**
-    //  * Save the current state of the canvas to png.
-    //  * @param params - PNG parameters.
-    //  * @param params.filename - PNG filename (no extension).
-    //  * @param params.dpi - PNG dpi (defaults to 72dpi).
-    //  * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js. 
-    // */
-    // savePNG(params: {
-    // 	filename?: string,
-    // 	dpi?: number,
-    // 	multiplier?: number,
-    // 	callback?: (blob: Blob, filename: string) => void,
-    // } = {}) {
-    // 	const { canvas } = this;
-    // 	const filename = params.filename || 'output';
-    // 	const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
-    // 	canvas.toBlob((blob) => {
-    // 		if (!blob) {
-    // 			console.warn(`Problem saving PNG, unable to init blob from canvas.`);
-    // 			return;
-    // 		}
-    // 		if (params.dpi) {
-    // 			changeDpiBlob(blob, params.dpi).then((blob: Blob) => {
-    // 				callback(blob, `${filename}.png`);
-    // 			});
-    // 		} else {
-    // 			callback(blob, `${filename}.png`);
-    // 		}
-    // 	}, 'image/png');
-    // }
+    /**
+     * Draw the contents of a 2 component GPULayer as a vector field.
+     * @param params - Draw parameters.
+     * @param params.positions - GPULayer containing vector data.
+     * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
+     * @param params.input - Input GPULayers for GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.vectorSpacing - Spacing between vectors, defaults to drawing a vector every 10 pixels.
+     * @param params.vectorScale - Scale factor to apply to vector lengths.
+     * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
+     */
+    GPUComposer.prototype.drawLayerAsVectorField = function (params) {
+        var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
+        var layer = params.layer, output = params.output;
+        if (_errorState)
+            return;
+        // Check that field is valid.
+        if (layer.numComponents !== 2) {
+            throw new Error("GPUComposer.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer \"".concat(layer.name, "\" with ").concat(layer.numComponents, " components."));
+        }
+        // Check aspect ratio.
+        // const dimensions = [vectorLayer.width, vectorLayer.height];
+        // if (Math.abs(dimensions[0] / dimensions[1] - width / height) > 0.01) {
+        // 	throw new Error(`Invalid aspect ratio ${(dimensions[0] / dimensions[1]).toFixed(3)} vector GPULayer with dimensions [${dimensions[0]}, ${dimensions[1]}], expected ${(width / height).toFixed(3)}.`);
+        // }
+        var program = params.program;
+        if (program === undefined) {
+            program = this._setValueProgramForType(constants_1.FLOAT);
+            ;
+            var color = params.color || [1, 0, 0]; // Default to red.
+            program.setUniform('u_value', __spreadArray(__spreadArray([], color, true), [1], false), constants_1.FLOAT);
+        }
+        // Add data to end of input if needed.
+        var input = this._addLayerToInputs(layer, params.input);
+        // Do setup - this must come first.
+        var glProgram = this._drawSetup(program, constants_1.LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, false, input, output);
+        // Update uniforms and buffers.
+        program._setVertexUniform(glProgram, 'u_gpuio_vectors', (0, utils_1.indexOfLayerInArray)(layer, input), constants_1.INT);
+        // Set default scale.
+        var vectorScale = params.vectorScale || 1;
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [vectorScale / _width, vectorScale / _height], constants_1.FLOAT);
+        var vectorSpacing = params.vectorSpacing || 10;
+        var spacedDimensions = [Math.floor(_width / vectorSpacing), Math.floor(_height / vectorSpacing)];
+        program._setVertexUniform(glProgram, 'u_gpuio_dimensions', spacedDimensions, constants_1.FLOAT);
+        var length = 2 * spacedDimensions[0] * spacedDimensions[1];
+        // We get this for free in GLSL3 with gl_VertexID.
+        if (glslVersion === constants_1.GLSL1) {
+            if (this._vectorFieldIndexBuffer === undefined || (_vectorFieldIndexArray && _vectorFieldIndexArray.length < length)) {
+                // Have to use float32 array bc int is not supported as a vertex attribute type.
+                var indices = (0, utils_1.initSequentialFloatArray)(length);
+                this._vectorFieldIndexArray = indices;
+                this._vectorFieldIndexBuffer = this._initVertexBuffer(indices);
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vectorFieldIndexBuffer);
+            this._setIndexAttribute(glProgram, program.name);
+        }
+        // Draw.
+        this._setBlendMode(params.blendAlpha);
+        gl.drawArrays(gl.LINES, 0, length);
+        gl.disable(gl.BLEND);
+    };
+    /**
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
+     */
+    GPUComposer.prototype.resetThreeState = function () {
+        if (!this._renderer) {
+            throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
+        }
+        var gl = this.gl;
+        // Reset viewport.
+        var viewport = this._renderer.getViewport(new ThreejsUtils.Vector4());
+        gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+        // Unbind framebuffer (render to screen).
+        this._renderer.setRenderTarget(null);
+        // Reset texture bindings.
+        this._renderer.resetState();
+    };
+    /**
+     * Save the current state of the canvas to png.
+     * @param params - PNG parameters.
+     * @param params.filename - PNG filename (no extension).
+     * @param params.dpi - PNG dpi (defaults to 72dpi).
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+    */
+    GPUComposer.prototype.savePNG = function (params) {
+        if (params === void 0) { params = {}; }
+        var canvas = this.canvas;
+        var filename = params.filename || 'output';
+        var callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+        canvas.toBlob(function (blob) {
+            if (!blob) {
+                console.warn("Problem saving PNG, unable to init blob from canvas.");
+                return;
+            }
+            if (params.dpi) {
+                (0, changedpi_1.changeDpiBlob)(blob, params.dpi).then(function (blob) {
+                    callback(blob, "".concat(filename, ".png"));
+                });
+            }
+            else {
+                callback(blob, "".concat(filename, ".png"));
+            }
+        }, 'image/png');
+    };
     /**
      * Call tick() from your render loop to measure the FPS of your application.
      * Internally, this does some low pass filtering to give consistent results.
@@ -3745,7 +3702,7 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.dispose = function () {
         var _a;
-        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, _copyPrograms = _b._copyPrograms, _setValuePrograms = _b._setValuePrograms, _vectorMagnitudePrograms = _b._vectorMagnitudePrograms, _vertexAttributeLocations = _b._vertexAttributeLocations;
+        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, _copyPrograms = _b._copyPrograms, _setValuePrograms = _b._setValuePrograms, _vertexAttributeLocations = _b._vertexAttributeLocations;
         if (verboseLogging)
             console.log("Deallocating GPUComposer.");
         // TODO: delete buffers.
@@ -3781,15 +3738,6 @@ var GPUComposer = /** @class */ (function () {
         Object.keys(_setValuePrograms).forEach(function (key) {
             // @ts-ignore
             delete _setValuePrograms[key];
-        });
-        Object.values(_vectorMagnitudePrograms).forEach(function (program) {
-            // @ts-ignore
-            if (program.dispose)
-                program.dispose();
-        });
-        Object.keys(_vectorMagnitudePrograms).forEach(function (key) {
-            // @ts-ignore
-            delete _vectorMagnitudePrograms[key];
         });
         (_a = this._wrappedLineColorProgram) === null || _a === void 0 ? void 0 : _a.dispose();
         delete this._wrappedLineColorProgram;
@@ -6364,6 +6312,57 @@ exports.vectorMagnitudeProgram = vectorMagnitudeProgram;
 
 /***/ }),
 
+/***/ 404:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Vector4 = void 0;
+/**
+ * These are the parts of threejs Vector4 that we need.
+ * Used internally.
+ * @private
+ */
+var Vector4 = /** @class */ (function () {
+    function Vector4(x, y, z, w) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        if (z === void 0) { z = 0; }
+        if (w === void 0) { w = 1; }
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+    }
+    Object.defineProperty(Vector4.prototype, "width", {
+        get: function () {
+            return this.z;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Vector4.prototype, "height", {
+        get: function () {
+            return this.w;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Vector4.prototype.copy = function (v) {
+        this.x = v.x;
+        this.y = v.y;
+        this.z = v.z;
+        this.w = v.w;
+        return this;
+    };
+    return Vector4;
+}());
+exports.Vector4 = Vector4;
+
+
+/***/ }),
+
 /***/ 707:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
@@ -7141,7 +7140,7 @@ exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VE
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = void 0;
 var VertexShaderHelpers_1 = __webpack_require__(324);
-exports.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_vectors; // Texture lookup with vector data.\nuniform vec2 u_gpuio_dimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nflat out int v_index;\n\nvoid main() {\n\t#if (__VERSION__ == 300)\n\t\t// Divide index by 2.\n\t\tint index = gl_VertexID / 2;\n\t\tv_index = gl_VertexID;\n\t#else\n\t\t// Divide index by 2.\n\t\tfloat index = floor((a_gpuio_index + 0.5) / 2.0);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a uv based on the vertex index attribute.\n\tv_uv = uvFromIndex(index, u_gpuio_dimensions);\n\t#if (__VERSION__ == 300)\n\t\t// Add vector displacement if needed.\n\t\tv_uv += float(gl_VertexID - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#else\n\t\t// Add vector displacement if needed.\n\t\tv_uv += (a_gpuio_index - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#endif\n\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
+exports.LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_vectors; // Texture lookup with vector data.\nuniform vec2 u_gpuio_dimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nflat out int v_index;\n\nvoid main() {\n\t#if (__VERSION__ == 300)\n\t\t// Divide index by 2.\n\t\tint index = gl_VertexID / 2;\n\t\tv_index = index;\n\t#else\n\t\t// Divide index by 2.\n\t\tfloat index = floor((a_gpuio_index + 0.5) / 2.0);\n\t\tv_index = int(index);\n\t#endif\n\n\t// Calculate a uv based on the vertex index attribute.\n\tv_uv = uvFromIndex(index, u_gpuio_dimensions);\n\t#if (__VERSION__ == 300)\n\t\t// Add vector displacement if needed.\n\t\tv_uv += float(gl_VertexID - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#else\n\t\t// Add vector displacement if needed.\n\t\tv_uv += (a_gpuio_index - 2.0 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;\n\t#endif\n\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),

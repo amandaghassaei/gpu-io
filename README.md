@@ -139,6 +139,7 @@ Source code for all examples can be found in [examples/](https://github.com/aman
 
 - [Conway's Game of Life](http://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
 - [Julia Set Fractal](http://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
+- [Fluid Simulation](http://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
 - [Physarum Transport Network](http://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
 
 Please let me kow if you have something that you would like to add to this list!

@@ -123,7 +123,7 @@ function main({ gui, contextID, glslVersion}) {
 		dimensions: [canvas.width, canvas.height],
 		type: FLOAT,
 		filter: NEAREST,
-		numComponents: 4, // RGBA
+		numComponents: 1,
 		writable: true,
 		numBuffers: 2,
 	});
@@ -289,7 +289,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniform isampler2D u_ages;
 		uniform sampler2D u_velocity;
 
-		out vec4 out_fragColor;
+		out float out_fragColor;
 
 		void main() {
 			float ageFraction = float(texture(u_ages, v_uv_array).x) / ${PARTICLE_LIFETIME.toFixed(1)};
@@ -298,7 +298,7 @@ function main({ gui, contextID, glslVersion}) {
 			vec2 velocity = texture(u_velocity, v_uv).xy;
 			// Show the fastest regions with darker color.
 			float multiplier = clamp(dot(velocity, velocity) * 0.05 + 0.7, 0.0, 1.0);
-			out_fragColor = vec4(0, 0, 0.2, opacity * multiplier); // Render as dark blue.
+			out_fragColor = opacity * multiplier;
 		}`,
 		uniforms: [
 			{
@@ -409,12 +409,10 @@ function main({ gui, contextID, glslVersion}) {
 		uniform sampler2D u_image;
 		uniform float u_increment;
 
-		out vec4 out_fragColor;
+		out float out_fragColor;
 
 		void main() {
-			vec4 px = texture(u_image, v_uv);
-			px.a = max(px.a + u_increment, 0.0);
-			out_fragColor = px;
+			out_fragColor = max(texture(u_image, v_uv).x + u_increment, 0.0);
 		}`,
 		uniforms: [
 			{
@@ -429,10 +427,18 @@ function main({ gui, contextID, glslVersion}) {
 			},
 		],
 	});
-	const overlayTexture = copyProgram({
-		composer,
-		name: 'particleOverlay',
-		type: trailState.type,
+	const renderTrails = new GPUProgram(composer, {
+		name: 'renderTrails',
+		fragmentShader: `
+			in vec2 v_uv;
+			uniform sampler2D u_trailState;
+			out vec4 out_fragColor;
+			void main() {
+				vec3 background = vec3(0.98, 0.922, 0.843);
+				vec3 particle = vec3(0, 0, 0.2);
+				out_fragColor = vec4(mix(background, particle, texture(u_trailState, v_uv).x), 1);
+			}
+		`,
 	});
 	const renderPressure = renderSignedAmplitudeProgram({
 		composer,
@@ -487,6 +493,12 @@ function main({ gui, contextID, glslVersion}) {
 				program: renderVelocityAmplitude,
 				input: velocityState,
 			});
+			composer.drawLayerAsVectorField({
+				layer: velocityState,
+				vectorSpacing: 10,
+				vectorScale: 5,
+				color: [1, 0, 1],
+			});
 		} else {
 			// Increment particle age.
 			composer.step({
@@ -509,7 +521,7 @@ function main({ gui, contextID, glslVersion}) {
 				});
 				// Render particles to texture for trail effect.
 				composer.drawLayerAsPoints({
-					positions: particlePositionState,
+					layer: particlePositionState,
 					program: renderParticles,
 					input: [particleAgeState, velocityState],
 					output: trailState,
@@ -519,7 +531,7 @@ function main({ gui, contextID, glslVersion}) {
 			}
 			// Render particle trails to screen.
 			composer.step({
-				program: overlayTexture,
+				program: renderTrails,
 				input: trailState,
 			});
 		}
@@ -694,10 +706,10 @@ function main({ gui, contextID, glslVersion}) {
 		renderParticles.dispose();
 		ageParticles.dispose();
 		advectParticles.dispose();
-		overlayTexture.dispose();
+		renderTrails.dispose();
 		fadeTrails.dispose();
 		renderPressure.dispose();
-		renderAmplitudeProgram.dispose();
+		renderVelocityAmplitude.dispose();
 		touch.dispose();
 		composer.dispose();
 		gui.remove(trailLength);

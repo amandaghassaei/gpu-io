@@ -70,7 +70,6 @@ export declare class GPUComposer {
      */
     private readonly _setValuePrograms;
     private _wrappedLineColorProgram?;
-    private readonly _vectorMagnitudePrograms;
     /**
      * Vertex shaders are shared across all GPUProgram instances.
      * @private
@@ -157,11 +156,6 @@ export declare class GPUComposer {
      * @private
      */
     private _getWrappedLineColorProgram;
-    /**
-     * Gets (and caches) generic programs for rending vector magnitudes for several input types.
-     * @private
-     */
-    private _vectorMagnitudeProgramForType;
     /**
      * Init a buffer for vertex shader attributes.
      * @private
@@ -356,12 +350,12 @@ export declare class GPUComposer {
     /**
      * Draw the contents of a GPULayer as points.  This assumes the components of the GPULayer have the form [xPosition, yPosition] or [xPosition, yPosition, xOffset, yOffset].
      * @param params - Draw parameters.
-     * @param params.positions - GPULayer containing position data.
+     * @param params.layer - GPULayer containing position data.
      * @param params.program - GPUProgram to run, defaults to drawing points in red.
-     * @param params.input - Input GPULayers to GPUProgram.
+     * @param params.input - Input GPULayers for GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.pointSize - Pixel size of points.
-     * @param params.count - How many point sto draw, defaults to positions.length.
+     * @param params.count - How many points to draw, defaults to positions.length.
      * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
      * @param params.wrapX - Wrap points positions in X, defaults to false.
      * @param params.wrapY - Wrap points positions in Y, defaults to false.
@@ -369,7 +363,7 @@ export declare class GPUComposer {
      * @returns
      */
     drawLayerAsPoints(params: {
-        positions: GPULayer;
+        layer: GPULayer;
         program?: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
@@ -379,6 +373,46 @@ export declare class GPUComposer {
         wrapX?: boolean;
         wrapY?: boolean;
         blendAlpha?: boolean;
+    }): void;
+    /**
+     * Draw the contents of a 2 component GPULayer as a vector field.
+     * @param params - Draw parameters.
+     * @param params.positions - GPULayer containing vector data.
+     * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
+     * @param params.input - Input GPULayers for GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.vectorSpacing - Spacing between vectors, defaults to drawing a vector every 10 pixels.
+     * @param params.vectorScale - Scale factor to apply to vector lengths.
+     * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
+     */
+    drawLayerAsVectorField(params: {
+        layer: GPULayer;
+        program?: GPUProgram;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
+        output?: GPULayer;
+        vectorSpacing?: number;
+        vectorScale?: number;
+        color?: [number, number, number];
+        blendAlpha?: boolean;
+    }): void;
+    /**
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
+     */
+    resetThreeState(): void;
+    /**
+     * Save the current state of the canvas to png.
+     * @param params - PNG parameters.
+     * @param params.filename - PNG filename (no extension).
+     * @param params.dpi - PNG dpi (defaults to 72dpi).
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+    */
+    savePNG(params?: {
+        filename?: string;
+        dpi?: number;
+        multiplier?: number;
+        callback?: (blob: Blob, filename: string) => void;
     }): void;
     /**
      * Call tick() from your render loop to measure the FPS of your application.

@@ -438,7 +438,7 @@ function main({ gui, glslVersion, contextID }) {
 		// Jones 2010 described a collision detection scheme that could avoid this overlap issue,
 		// but none of that is implemented in this code for simplicity.
 		composer.drawLayerAsPoints({
-			positions: particlesPositions,
+			layer: particlesPositions,
 			program: deposit,
 			input: trail,
 			output: trail,

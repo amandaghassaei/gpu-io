@@ -20,11 +20,11 @@ void main() {
 	#if (__VERSION__ == 300)
 		// Divide index by 2.
 		int index = gl_VertexID / 2;
-		v_index = gl_VertexID;
+		v_index = index;
 	#else
 		// Divide index by 2.
 		float index = floor((a_gpuio_index + 0.5) / 2.0);
-		v_index = int(a_gpuio_index);
+		v_index = int(index);
 	#endif
 
 	// Calculate a uv based on the vertex index attribute.
@@ -34,7 +34,7 @@ void main() {
 		v_uv += float(gl_VertexID - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;
 	#else
 		// Add vector displacement if needed.
-		v_uv += (a_gpuio_index - 2 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;
+		v_uv += (a_gpuio_index - 2.0 * index) * texture(u_gpuio_vectors, v_uv).xy * u_gpuio_scale;
 	#endif
 
 
