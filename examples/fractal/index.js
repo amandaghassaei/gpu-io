@@ -57,7 +57,7 @@ function main({ gui, contextID, glslVersion}) {
 				float radius = (max(u_boundsMax.x - u_boundsMin.x, u_boundsMax.y - u_boundsMin.y)) / 2.0;
 				for (int i = 0; i < ${MAX_ITERS_MAX}; i++) {
 					// We can't use u_maxIters as loop length directly in GLSL1.
-					// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Polyfills.md
+					// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md
 					if (i == u_maxIters) break;
 					if (z.x * z.x + z.y * z.y > radius * radius) break;
 					float xTemp = z.x * z.x - z.y * z.y;

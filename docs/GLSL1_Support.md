@@ -1,4 +1,4 @@
-# GLSL1 Polyfills
+# GLSL1 Support
 
 OpenGL Shading Language (GLSL) is the language used for writing vertex and fragment shader code in WebGL.  WebGL2 supports a newer version of GLSL called GLSL3, whereas WebGL1 only supports GLSL1.  GLSL3 provides new types, operators, and functions that were not previously supported by GLSL1 and has a slightly different syntax for importing/exporting data from shader programs.
 
@@ -209,7 +209,7 @@ The following functions are not polyfilled by this library, but they may still b
 
 ## Other GLSL1 Gotchas
 
-- GLSL1 uniforms cannot be used to set the length of a for loop
+- GLSL1 uniforms cannot be used to set the length of a for loop.
 
 The following code will run in GLSL3, but not in GLSL1:
 

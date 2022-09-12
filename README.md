@@ -16,16 +16,132 @@ Update 9/22:  I'm switching gears a bit to focus on some new projects, but I'll 
 
 ### Motivation
 
-One of the main purposes of this library is to allow people to write GPGPU programs without worrying too much about low level WebGL details, available WebGL versions, or spec inconsistencies across different browsers/hardware.  [As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge), but even among WebGL2 implementations there are differences in behavior across browsers and inconsistencies in how they implement the spec.  Some devices are still running older browsers with no WebGL2 support, and many WebGL1 implementations do not support rendering to float32 or non-uint8 integer textures (see [The miserable state of affairs of floating point support](https://www.khronos.org/webgl/public-mailing-list/public_webgl/1703/msg00043.php)).  This library rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  This library will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Polyfills.md) so that it can run on WebGL1 in a pinch.
+One of the main purposes of this library is to allow people to write GPGPU programs without worrying too much about low level WebGL details, available WebGL versions, or spec inconsistencies across different browsers/hardware.  [As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge), but even among WebGL2 implementations there are differences in behavior across browsers and inconsistencies in how they implement the spec.  Some devices are still running older browsers with no WebGL2 support, and many WebGL1 implementations do not support rendering to float32 or non-uint8 integer textures (see [The miserable state of affairs of floating point support](https://www.khronos.org/webgl/public-mailing-list/public_webgl/1703/msg00043.php)).  This library rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  This library will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that it can run on WebGL1 in a pinch.
 
+- [Use](#use)
+- [Examples](#examples)
 - [Installation](#installation)
 - [API](#api)
-- [Examples](#examples)
 - [Compatibility with Threejs](#compatibility-with-threejs)
-- [Limitations/Caveats/Notes](#limitationscaveatsnotes)
+- [Limitations/Notes](#limitationsnotes)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 - [Development](#development)
+
+## Use
+
+A simple example of how to use gpu-io to simulate 2D diffusion:
+
+```js
+import {
+    GPUComposer,
+    GPULayer,
+    GPUProgram,
+    renderAmplitudeProgram,
+    FLOAT,
+    INT,
+    REPEAT,
+    LINEAR,
+} from 'gpu-io';
+
+// Init a canvas element.
+const canvas = document.createElement('canvas');
+document.body.appendChild(canvas);
+
+// Init a composer.
+const composer = new GPUComposer({ canvas });
+
+// Init a layer of float data filled with noise.
+const noise = new Float32Array(canvas.width * canvas.height);
+noise.forEach((el, i) => noise[i] = Math.random());
+const state = new GPULayer(composer, {
+    name: 'state',
+    dimensions: [canvas.width, canvas.height],
+    numComponents: 1,
+    type: FLOAT,
+    filter: LINEAR,
+    numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
+    wrapS: REPEAT,
+    wrapT: REPEAT,
+    writable: true,
+    array: noise,
+});
+
+// Init a program to diffuse state.
+const diffuseProgram = new GPUProgram(composer, {
+    name: 'render',
+    fragmentShader: `
+        in vec2 v_uv;
+
+        uniform sampler2D u_state;
+        uniform vec2 u_halfPx;
+
+        out float out_fragColor;
+
+        void main() {
+            // Average this pixel with neighbors.
+            float prevStateNE = texture(u_state, v_uv + u_halfPx).x;
+            float prevStateNW = texture(u_state, v_uv + vec2(-u_halfPx.x, u_halfPx.y)).x;
+            float prevStateSE = texture(u_state, v_uv + vec2(u_halfPx.x, -u_halfPx.y)).x;
+            float prevStateSW = texture(u_state, v_uv - u_halfPx).x;
+            out_fragColor = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
+        }
+    `,
+    uniforms: [
+        { // Index of sampler2D uniform to assign to value "u_state".
+            name: 'u_state',
+            value: 0,
+            type: INT,
+        },
+        { // Calculate the size of a half px step in UV coordinates.
+            name: 'u_halfPx',
+            value: [0.5 / canvas.width, 0.5 / canvas.height],
+            type: FLOAT,
+        },
+    ],
+});
+
+// Init a program to render state to screen.
+// See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions for more built-in GPUPrograms to use.
+const renderProgram = renderAmplitudeProgram({
+    name: 'render',
+    composer,
+    type: state.type,
+    components: 'x',
+});
+
+// Simulation/render loop.
+function loop() {
+    window.requestAnimationFrame(loop);
+
+    // Diffuse state.
+    composer.step({
+        program: diffuseProgram,
+        input: state,
+        output: state,
+    });
+
+    // If no output, will draw to screen.
+    composer.step({
+        program: renderProgram,
+        input: state,
+    });
+}
+loop(); // Start animation loop.
+```
+
+
+## Examples
+
+To really understand how gpu-io works, see the following examples.  Many of them show how to easily create touch interactions in your application.
+
+Source code for all examples can be found in [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
+
+- [Conway's Game of Life](http://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
+- [Julia Set Fractal](http://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
+- [Physarum Transport Network](http://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
+
+Please let me kow if you have something that you would like to add to this list!
 
 
 ## Installation
@@ -68,17 +184,6 @@ const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
 ## API
 
 Full API documentation can be found in the [docs/](https://github.com/amandaghassaei/gpu-io/tree/main/docs)
-
-
-## Examples
-
-Source code for all examples can be found in [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
-
-- [Conway's Game of Life](http://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
-- [Julia Set Fractal](http://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
-- [Physarum Transport Network](http://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
-
-Please let me kow if you have something that you would like to add to this list!
 
 
 ## Compatibility with Threejs
@@ -142,7 +247,7 @@ const mesh = new THREE.Mesh(
 More info about using gpu-io to update mesh positions data is coming soon.
 
 
-## Limitations/Caveats/Notes
+## Limitations/Notes
 
 
 ### Limitations
@@ -204,7 +309,7 @@ const composer2 = new GPUComposer({
 
 See [docs>GPUComposer>constructor](https://github.com/amandaghassaei/gpu-io/blob/main/docs/classes/GPUComposer.md#constructor) for more information.
 
-This library will automatically convert any GLSL3 shaders to GLSL1 when targeting WebGL1.  If supporting WebGL1 is important to you, see the [GLSL1 Polyfills](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Polyfills.md) doc for more info about what functions/types/operators are available in gpu-io's flavor of GLSL1.
+This library will automatically convert any GLSL3 shaders to GLSL1 when targeting WebGL1.  If supporting WebGL1/GLSL1 is important to you, see the [GLSL1 Support](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) doc for more info about what functions/types/operators are available in gpu-io's flavor of GLSL1.
 
 More info about the difference between GLSL and WebGL versions:
 
@@ -316,11 +421,7 @@ This work is distributed under an MIT license.  Note that this library depends o
 
 Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://twitter.com/amandaghassaei) if you end up using this, I'd love to see what you're making!  
 
-Some specific things that I think could be improved:
-
-- 
-- I'm sure there are some additional tricks that could be used to further speed up some of the underlying GLSL code and polyfills.
-
+<!-- Some specific things that I think could be improved: -->
 
 ### Compiling with Webpack
 
