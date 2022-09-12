@@ -2483,16 +2483,16 @@ var GPUComposer = /** @class */ (function () {
         }
         return _copyPrograms[key];
     };
-    /**
-     * Gets (and caches) a generic color program for wrapped line segment rendering.
-     * @private
-     */
-    GPUComposer.prototype._getWrappedLineColorProgram = function () {
-        if (this._wrappedLineColorProgram === undefined) {
-            this._wrappedLineColorProgram = (0, Programs_1.wrappedLineColorProgram)({ composer: this });
-        }
-        return this._wrappedLineColorProgram;
-    };
+    // /**
+    //  * Gets (and caches) a generic color program for wrapped line segment rendering.
+    //  * @private
+    //  */
+    // private _getWrappedLineColorProgram() {
+    // 	if (this._wrappedLineColorProgram === undefined) {
+    // 		this._wrappedLineColorProgram = wrappedLineColorProgram({ composer: this });
+    // 	}
+    // 	return this._wrappedLineColorProgram;
+    // }
     /**
      * Init a buffer for vertex shader attributes.
      * @private
@@ -2593,99 +2593,6 @@ var GPUComposer = /** @class */ (function () {
         }
         // TODO: Increment clone's buffer index until it is identical to the original layer.
         return clone;
-    };
-    // TODO: move this to GPULayer.
-    GPUComposer.prototype.initTexture = function (params) {
-        // Check params.
-        var validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
-        Object.keys(params).forEach(function (key) {
-            if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key \"".concat(key, "\" passed to GPUComposer.initTexture with name \"").concat(params.name, "\".  Valid keys are ").concat(validKeys.join(', '), "."));
-            }
-        });
-        var url = params.url, name = params.name;
-        if (!(0, checks_1.isString)(url)) {
-            throw new Error("Expected GPUComposer.initTexture params to have url of type string, got ".concat(url, " of type ").concat(typeof url, "."));
-        }
-        if (!(0, checks_1.isString)(name)) {
-            throw new Error("Expected GPUComposer.initTexture params to have name of type string, got ".concat(name, " of type ").concat(typeof name, "."));
-        }
-        // Get filter type, default to nearest.
-        var filter = params.filter !== undefined ? params.filter : constants_1.NEAREST;
-        if (!(0, checks_1.isValidFilter)(filter)) {
-            throw new Error("Invalid filter: ".concat(filter, " for GPULayer \"").concat(name, "\", must be ").concat(constants_1.validFilters.join(', '), "."));
-        }
-        // Get wrap types, default to clamp to edge.
-        var wrapS = params.wrapS !== undefined ? params.wrapS : constants_1.CLAMP_TO_EDGE;
-        if (!(0, checks_1.isValidWrap)(wrapS)) {
-            throw new Error("Invalid wrapS: ".concat(wrapS, " for GPULayer \"").concat(name, "\", must be ").concat(constants_1.validWraps.join(', '), "."));
-        }
-        var wrapT = params.wrapT !== undefined ? params.wrapT : constants_1.CLAMP_TO_EDGE;
-        if (!(0, checks_1.isValidWrap)(wrapT)) {
-            throw new Error("Invalid wrapT: ".concat(wrapT, " for GPULayer \"").concat(name, "\", must be ").concat(constants_1.validWraps.join(', '), "."));
-        }
-        // Get image format type, default to rgba.
-        var format = params.format !== undefined ? params.format : constants_1.RGBA;
-        if (!(0, checks_1.isValidTextureFormat)(format)) {
-            throw new Error("Invalid format: ".concat(format, " for GPULayer \"").concat(name, "\", must be ").concat(constants_1.validTextureFormats.join(', '), "."));
-        }
-        // Get image data type, default to unsigned byte.
-        var type = params.type !== undefined ? params.type : constants_1.UNSIGNED_BYTE;
-        if (!(0, checks_1.isValidTextureType)(type)) {
-            throw new Error("Invalid type: ".concat(type, " for GPULayer \"").concat(name, "\", must be ").concat(constants_1.validTextureTypes.join(', '), "."));
-        }
-        var _a = this, gl = _a.gl, _errorCallback = _a._errorCallback;
-        var texture = gl.createTexture();
-        if (texture === null) {
-            throw new Error("Unable to init glTexture.");
-        }
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        // Because images have to be downloaded over the internet
-        // they might take a moment until they are ready.
-        // Until then put a single pixel in the texture so we can
-        // use it immediately. When the image has finished downloading
-        // we'll update the texture with the contents of the image.
-        var level = 0;
-        var internalFormat = gl.RGBA;
-        var width = 1;
-        var height = 1;
-        var border = 0;
-        var srcFormat = gl[format];
-        var srcType = gl[type];
-        var pixel = new Uint8Array([0, 0, 0, 0]);
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
-        var image = new Image();
-        image.onload = function () {
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
-            // WebGL1 has different requirements for power of 2 images
-            // vs non power of 2 images so check if the image is a
-            // power of 2 in both dimensions.
-            if ((0, utils_1.isPowerOf2)(image.width) && (0, utils_1.isPowerOf2)(image.height)) {
-                // // Yes, it's a power of 2. Generate mips.
-                // gl.generateMipmap(gl.TEXTURE_2D);
-            }
-            else {
-                // TODO: finish implementing this.
-                console.warn("Texture ".concat(name, " dimensions [").concat(image.width, ", ").concat(image.height, "] are not power of 2."));
-                // // No, it's not a power of 2. Turn off mips and set
-                // // wrapping to clamp to edge
-                // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            }
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl[wrapS]);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl[wrapT]);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[filter]);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[filter]);
-            // Callback when texture has loaded.
-            if (params.onLoad)
-                params.onLoad(texture);
-        };
-        image.onerror = function (e) {
-            _errorCallback("Error loading image ".concat(name, ": ").concat(e));
-        };
-        image.src = url;
-        return texture;
     };
     /**
      * Gets (and caches) vertex shaders based on shader source code and compile time constants.
@@ -3772,6 +3679,110 @@ var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var GPULayerHelpers_1 = __webpack_require__(191);
 var GPULayer = /** @class */ (function () {
+    // // TODO: move this to GPULayer.
+    // static initFromImage(composer: GPUComposer,
+    // 	params: {
+    // 		name: string,
+    // 		url: string,
+    // 		filter?: GPULayerFilter,
+    // 		wrapS?: GPULayerWrap,
+    // 		wrapT?: GPULayerWrap,
+    // 		format?: TextureFormat,
+    // 		type?: TextureType,
+    // 		onLoad?: (texture: WebGLTexture) => void,
+    // 	},
+    // ) {
+    // 	// Check params.
+    // 	const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
+    // 	Object.keys(params).forEach(key => {
+    // 		if (validKeys.indexOf(key) < 0) {
+    // 			throw new Error(`Invalid key "${key}" passed to GPUComposer.initTexture with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
+    // 		}
+    // 	});
+    // 	const { url, name } = params;
+    // 	if (!isString(url)) {
+    // 		throw new Error(`Expected GPUComposer.initTexture params to have url of type string, got ${url} of type ${typeof url}.`)
+    // 	}
+    // 	if (!isString(name)) {
+    // 		throw new Error(`Expected GPUComposer.initTexture params to have name of type string, got ${name} of type ${typeof name}.`)
+    // 	}
+    // 	// Get filter type, default to nearest.
+    // 	const filter = params.filter !== undefined ? params.filter : NEAREST;
+    // 	if (!isValidFilter(filter)) {
+    // 		throw new Error(`Invalid filter: ${filter} for GPULayer "${name}", must be ${validFilters.join(', ')}.`);
+    // 	}
+    // 	// Get wrap types, default to clamp to edge.
+    // 	const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
+    // 	if (!isValidWrap(wrapS)) {
+    // 		throw new Error(`Invalid wrapS: ${wrapS} for GPULayer "${name}", must be ${validWraps.join(', ')}.`);
+    // 	}
+    // 	const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
+    // 	if (!isValidWrap(wrapT)) {
+    // 		throw new Error(`Invalid wrapT: ${wrapT} for GPULayer "${name}", must be ${validWraps.join(', ')}.`);
+    // 	}
+    // 	// Get image format type, default to rgba.
+    // 	const format = params.format !== undefined ? params.format : RGBA;
+    // 	if (!isValidTextureFormat(format)) {
+    // 		throw new Error(`Invalid format: ${format} for GPULayer "${name}", must be ${validTextureFormats.join(', ')}.`);
+    // 	}
+    // 	// Get image data type, default to unsigned byte.
+    // 	const type = params.type !== undefined ? params.type : UNSIGNED_BYTE;
+    // 	if (!isValidTextureType(type)) {
+    // 		throw new Error(`Invalid type: ${type} for GPULayer "${name}", must be ${validTextureTypes.join(', ')}.`);
+    // 	}
+    // 	const { gl, _errorCallback } = composer;
+    // 	const texture = gl.createTexture();
+    // 	if (texture === null) {
+    // 		throw new Error(`Unable to init glTexture.`);
+    // 	}
+    // 	gl.bindTexture(gl.TEXTURE_2D, texture);
+    // 	// Because images have to be downloaded over the internet
+    // 	// they might take a moment until they are ready.
+    // 	// Until then put a single pixel in the texture so we can
+    // 	// use it immediately. When the image has finished downloading
+    // 	// we'll update the texture with the contents of the image.
+    // 	const level = 0;
+    // 	const internalFormat = gl.RGBA;
+    // 	const width = 1;
+    // 	const height = 1;
+    // 	const border = 0;
+    // 	const srcFormat = gl[format];
+    // 	const srcType = gl[type];
+    // 	const pixel = new Uint8Array([0, 0, 0, 0]);
+    // 	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+    // 		width, height, border, srcFormat, srcType, pixel);
+    // 	const image = new Image();
+    // 	image.onload = () => {
+    // 		gl.bindTexture(gl.TEXTURE_2D, texture);
+    // 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+    // 			srcFormat, srcType, image);
+    // 		// WebGL1 has different requirements for power of 2 images
+    // 		// vs non power of 2 images so check if the image is a
+    // 		// power of 2 in both dimensions.
+    // 		if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+    // 			// // Yes, it's a power of 2. Generate mips.
+    // 			// gl.generateMipmap(gl.TEXTURE_2D);
+    // 		} else {
+    // 			// TODO: finish implementing this.
+    // 			console.warn(`Texture ${name} dimensions [${image.width}, ${image.height}] are not power of 2.`);
+    // 			// // No, it's not a power of 2. Turn off mips and set
+    // 			// // wrapping to clamp to edge
+    // 			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    // 			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    // 		}
+    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl[wrapS]);
+    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl[wrapT]);
+    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[filter]);
+    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[filter]);
+    // 		// Callback when texture has loaded.
+    // 		if (params.onLoad) params.onLoad(texture);
+    // 	};
+    // 	image.onerror = (e) => {
+    // 		_errorCallback(`Error loading image ${name}: ${e}`);
+    // 	}
+    // 	image.src = url;
+    // 	return texture;
+    // }
     /**
      * Create a GPULayer.
      * @param composer - The current GPUComposer instance.

@@ -21,7 +21,6 @@
 
 - [initWithThreeRenderer](GPUComposer.md#initwiththreerenderer)
 - [isWebGL2](GPUComposer.md#iswebgl2)
-- [initTexture](GPUComposer.md#inittexture)
 - [resize](GPUComposer.md#resize)
 - [step](GPUComposer.md#step)
 - [stepBoundary](GPUComposer.md#stepboundary)
@@ -140,30 +139,6 @@ Test whether this GPUComposer is using WebGL2 (may depend on browser support).
 #### Returns
 
 `boolean`
-
-___
-
-### initTexture
-
-▸ **initTexture**(`params`): `WebGLTexture`
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `params` | `Object` |
-| `params.name` | `string` |
-| `params.url` | `string` |
-| `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) |
-| `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) |
-| `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) |
-| `params.format?` | `TextureFormat` |
-| `params.type?` | ``"UNSIGNED_BYTE"`` |
-| `params.onLoad?` | (`texture`: `WebGLTexture`) => `void` |
-
-#### Returns
-
-`WebGLTexture`
 
 ___
 

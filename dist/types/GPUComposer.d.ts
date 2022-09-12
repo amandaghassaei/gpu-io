@@ -1,5 +1,5 @@
 import { GPULayer } from './GPULayer';
-import { GPULayerFilter, GPULayerType, GPULayerWrap, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, TextureFormat, TextureType, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
+import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
 import { GPUProgram } from './GPUProgram';
 import { WebGLRenderer } from 'three';
 export declare class GPUComposer {
@@ -152,11 +152,6 @@ export declare class GPUComposer {
      */
     private _copyProgramForType;
     /**
-     * Gets (and caches) a generic color program for wrapped line segment rendering.
-     * @private
-     */
-    private _getWrappedLineColorProgram;
-    /**
      * Init a buffer for vertex shader attributes.
      * @private
      */
@@ -181,16 +176,6 @@ export declare class GPUComposer {
      * @private
      */
     _cloneGPULayer(gpuLayer: GPULayer, name?: string): GPULayer;
-    initTexture(params: {
-        name: string;
-        url: string;
-        filter?: GPULayerFilter;
-        wrapS?: GPULayerWrap;
-        wrapT?: GPULayerWrap;
-        format?: TextureFormat;
-        type?: TextureType;
-        onLoad?: (texture: WebGLTexture) => void;
-    }): WebGLTexture;
     /**
      * Gets (and caches) vertex shaders based on shader source code and compile time constants.
      * Tries to minimize the number of new vertex shaders that must be compiled.
