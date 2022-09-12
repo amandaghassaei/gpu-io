@@ -573,8 +573,9 @@ function main({ gui, glslVersion, contextID }) {
 		}
 		reset();
 	}
-	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
-	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
+	ui = [];
+	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
+	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
 	// Resize if needed.
 	window.addEventListener('resize', onResize);
@@ -642,8 +643,9 @@ function main({ gui, glslVersion, contextID }) {
 		gui.removeFolder(trailsGUI);
 		gui.removeFolder(presetsGUI);
 		gui.removeFolder(renderGUI);
-		gui.remove(resetButton);
-		gui.remove(saveButton);
+		ui.forEach(el => {
+			gui.remove(el);
+		});
 	}
 	return {
 		loop,

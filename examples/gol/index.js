@@ -250,11 +250,12 @@ function main({ gui, contextID, glslVersion}) {
 		changeBit('birthRules', val, 7);
 	});
 	// birth.open();
-	const seedRatio = gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
+	const ui = [];
+	ui.push(gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
 		onResize();
-	}).name('Seed Ratio');
-	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
-	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
+	}).name('Seed Ratio'));
+	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
+	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
@@ -309,9 +310,9 @@ function main({ gui, contextID, glslVersion}) {
 		composer.dispose();
 		gui.removeFolder(survival);
 		gui.removeFolder(birth);
-		gui.remove(seedRatio);
-		gui.remove(resetButton);
-		gui.remove(saveButton);
+		ui.forEach(el => {
+			gui.remove(el);
+		});
 	}
 
 	return {

@@ -3009,7 +3009,7 @@ var GPUComposer = /** @class */ (function () {
         var numSegments = params.numCapSegments ? params.numCapSegments * 2 : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (params.endCaps) {
             if (numSegments < 6 || numSegments % 6 !== 0) {
-                throw new Error("numSegments for GPUComposer.stepSegment must be divisible by 6, got ".concat(numSegments, "."));
+                throw new Error("numCapSegments for GPUComposer.stepSegment must be divisible by 3, got ".concat(numSegments / 2, "."));
             }
             // Have to subtract a small offset from length.
             program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness * Math.sin(Math.PI / numSegments), constants_1.FLOAT);
@@ -3033,8 +3033,7 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     /**
-     * Step GPUProgram inside a line segment (rounded end caps available).
-     * This is useful for touch interactions during pointermove.
+     * Step GPUProgram inside a rectangle.
      * @param params - Step parameters.
      * @param params.program - GPUProgram to run.
      * @param params.position - Position of one top corner of rectangle.
@@ -6128,6 +6127,7 @@ exports.setValueProgram = setValueProgram;
  * @category GPUProgram Helper
  * @param params - Program parameters.
  * @param params.composer - The current GPUComposer.
+ * @param params.type - The type of the output.
  * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
  * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
@@ -6135,14 +6135,15 @@ exports.setValueProgram = setValueProgram;
  * @returns
  */
 function setColorProgram(params) {
-    var composer = params.composer;
+    var composer = params.composer, type = params.type;
     var precision = params.precision || '';
     var opacity = params.opacity === undefined ? 1 : params.opacity;
     var color = params.color || [0, 0, 0];
     var name = params.name || "setColor";
+    var glslType = (0, conversions_1.glslTypeForType)(type, 4);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nuniform ".concat(precision, " vec3 u_color;\nuniform ").concat(precision, " float u_opacity;\nout ").concat(precision, " vec4 out_FragColor;\nvoid main() {\n\tout_FragColor = vec4(u_color, u_opacity);\n}"),
+        fragmentShader: "\nuniform ".concat(precision, " vec3 u_color;\nuniform ").concat(precision, " float u_opacity;\nout ").concat(precision, " ").concat(glslType, " out_FragColor;\nvoid main() {\n\tout_FragColor = ").concat(glslType, "(u_color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_color',

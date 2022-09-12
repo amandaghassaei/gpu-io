@@ -82,6 +82,7 @@ out float out_FragColor;
 
 void main() {
     // Average this pixel with neighbors.
+    // Use built-in linear filtering to reduce the number of lookups.
     float prevStateNE = texture(u_state, v_uv + u_halfPx).x;
     float prevStateNW = texture(u_state, v_uv + vec2(-u_halfPx.x, u_halfPx.y)).x;
     float prevStateSE = texture(u_state, v_uv + vec2(u_halfPx.x, -u_halfPx.y)).x;
@@ -338,7 +339,7 @@ You might notice that gpu-io does not use any transform feedback to e.g. handle 
 - Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, it will take some time everyone to update, so for now I'd like to support all functionality in gpu-io in WebGL1.
 - I played around with the idea of using transform feedback if WebGL2 is available, then falling back to a fragment shader implementation if only WebGL1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
 
-My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch by default in some browsers, and then re-evaluate some of the design decisions made in gpu-io.  WebGL puts a lot of artificial constraints on the current API by forcing GPGPU to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term if possible.
+My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch by default in some browsers, and then re-evaluate some of the design decisions made in gpu-io.  WebGL puts a lot of artificial constraints on the current API by forcing general-purpose computing to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term if possible.
 
 
 ### Precision

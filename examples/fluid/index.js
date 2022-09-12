@@ -616,19 +616,20 @@ function main({ gui, contextID, glslVersion}) {
 			gui.__controllers[i].updateDisplay();
 		}
 	}
-	const trailLength = gui.add(PARAMS, 'trailLength', 0, 100, 1).onChange((value) => {
+	const ui = [];
+	ui.push(gui.add(PARAMS, 'trailLength', 0, 100, 1).onChange((value) => {
 		fadeTrails.setUniform('u_increment', -1 / value);
-	}).name('Trail Length');
-	const showPressureField = gui.add(PARAMS, 'showPressureField').onChange((value) => {
+	}).name('Trail Length'));
+	ui.push(gui.add(PARAMS, 'showPressureField').onChange((value) => {
 		if (value) PARAMS.showVelocityField = false;
 		refreshGUI();
-	}).name('Show Pressure');
-	const showVelocityField = gui.add(PARAMS, 'showVelocityField').onChange((value) => {
+	}).name('Show Pressure'));
+	ui.push(gui.add(PARAMS, 'showVelocityField').onChange((value) => {
 		if (value) PARAMS.showPressureField = false;
 		refreshGUI();
-	}).name('Show Velocity');
-	const resetButton = gui.add(PARAMS, 'reset').name('Reset');
-	const saveButton = gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
+	}).name('Show Velocity'));
+	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
+	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
@@ -712,11 +713,9 @@ function main({ gui, contextID, glslVersion}) {
 		renderVelocityAmplitude.dispose();
 		touch.dispose();
 		composer.dispose();
-		gui.remove(trailLength);
-		gui.remove(showPressureField);
-		gui.remove(showVelocityField);
-		gui.remove(resetButton);
-		gui.remove(saveButton);
+		ui.forEach(el => {
+			gui.remove(el);
+		});
 	}
 
 	return {

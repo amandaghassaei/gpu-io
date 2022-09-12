@@ -98,11 +98,11 @@
 		// Update fps counter.
 		const { fps, numTicks } = composer.tick();
 		if (numTicks % 10 === 0) {
-			settings.name = `${title} (${fps.toFixed(1)} FPS)`
+			settings.name = `${title} (${fps.toFixed(1)} FPS)`;
 		}
 		window.requestAnimationFrame(outerLoop);
 		// Run example loop.
-		loop();
+		if (loop) loop();
 	}
 	// Start loop.
 	outerLoop();

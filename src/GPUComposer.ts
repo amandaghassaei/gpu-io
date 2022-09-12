@@ -1046,7 +1046,7 @@ export class GPUComposer {
 		const numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (params.endCaps) {
 			if (numSegments < 6 || numSegments % 6 !== 0) {
-				throw new Error(`numSegments for GPUComposer.stepSegment must be divisible by 6, got ${numSegments}.`);
+				throw new Error(`numCapSegments for GPUComposer.stepSegment must be divisible by 3, got ${numSegments / 2}.`);
 			}
 			// Have to subtract a small offset from length.
 			program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
@@ -1070,8 +1070,7 @@ export class GPUComposer {
 	}
 
 	/**
-	 * Step GPUProgram inside a line segment (rounded end caps available).
-	 * This is useful for touch interactions during pointermove.
+	 * Step GPUProgram inside a rectangle.
 	 * @param params - Step parameters.
 	 * @param params.program - GPUProgram to run.
 	 * @param params.position - Position of one top corner of rectangle.

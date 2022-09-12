@@ -333,8 +333,7 @@ export declare class GPUComposer {
         blendAlpha?: boolean;
     }): void;
     /**
-     * Step GPUProgram inside a line segment (rounded end caps available).
-     * This is useful for touch interactions during pointermove.
+     * Step GPUProgram inside a rectangle.
      * @param params - Step parameters.
      * @param params.program - GPUProgram to run.
      * @param params.position - Position of one top corner of rectangle.
