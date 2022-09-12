@@ -15,7 +15,7 @@ I've also included a few html pages (in the [tests/browser/](https://github.com/
 
 ## Browser Support
 
-Here are some results I've gathered testing different combinations of hardware/browsers.  All tests are passing, but some combinations require a fragment shader polyfill (indicated by a *) to achieve the desired WRAP/FILTER combination and others fall back on data types that do not fully cover the range of values expected in the desired type (e.g. using FLOAT types instead of INT types, FLOAT only covers integers in the range [-16,777,216, 16,777,216.], while INT covers the range [-2,147,483,648, 2,147,483,647]).
+Here are some results I've gathered testing different combinations of hardware/browsers.  All tests are passing, but some combinations require a fragment shader polyfill (indicated by a `*`) to achieve the desired WRAP/FILTER combination and others fall back on data types that do not fully cover the range of values expected in the desired type (e.g. using FLOAT types instead of INT types, FLOAT only covers integers in the range [-16,777,216, 16,777,216.], while INT covers the range [-2,147,483,648, 2,147,483,647]).
 
 
 ### Mac
@@ -31,7 +31,7 @@ Here are some results I've gathered testing different combinations of hardware/b
 
 ### iOS
 
--iOS v15.5 + Safari v15.5 [readwrite](results/READWRITE_Safari_v15.5_iOS_v15.5.png) / [read](results/READ_Safari_v15.5_iOS_v15.5.png)
+- iOS v15.5 + Safari v15.5 [readwrite](results/READWRITE_Safari_v15.5_iOS_v15.5.png) / [read](results/READ_Safari_v15.5_iOS_v15.5.png)
 - iOS v14.7.1 + Safari v14.1.2 (WebGL1 only) [readwrite](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) / [read](results/READ_Safari_v14.1.2_iOS_v14.7.1.png)
 
 
