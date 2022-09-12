@@ -5121,7 +5121,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     var offset = filter === constants_1.LINEAR ? 0.5 : 1;
     // Run program to perform linear filter.
     var programName = 'testFilterWrap-program';
-    var fragmentShaderSource = "\nin vec2 v_uv;\nuniform vec2 u_offset;\n#ifdef GPUIO_INT\n\tuniform isampler2D u_input;\n\tout int out_fragColor;\n#endif\n#ifdef GPUIO_UINT\n\tuniform usampler2D u_input;\n\tout uint out_fragColor;\n#endif\n#ifdef GPUIO_FLOAT\n\tuniform sampler2D u_input;\n\tout float out_fragColor;\n#endif\nvoid main() {\n\tout_fragColor = texture(u_input, v_uv + offset).x;\n}";
+    var fragmentShaderSource = "\nin vec2 v_uv;\nuniform vec2 u_offset;\n#ifdef GPUIO_INT\n\tuniform isampler2D u_input;\n\tout int out_FragColor;\n#endif\n#ifdef GPUIO_UINT\n\tuniform usampler2D u_input;\n\tout uint out_FragColor;\n#endif\n#ifdef GPUIO_FLOAT\n\tuniform sampler2D u_input;\n\tout float out_FragColor;\n#endif\nvoid main() {\n\tout_FragColor = texture(u_input, v_uv + offset).x;\n}";
     if (glslVersion !== constants_1.GLSL3) {
         fragmentShaderSource = (0, utils_1.convertFragmentShaderToGLSL1)(fragmentShaderSource, programName);
     }
@@ -5970,7 +5970,7 @@ function copyProgram(params) {
     var name = params.name || "copy_".concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_layer");
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = texture(u_state, v_uv);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(glslType, " out_FragColor;\nvoid main() {\n\tout_FragColor = texture(u_state, v_uv);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -6003,7 +6003,7 @@ function addLayersProgram(params) {
     var name = params.name || "".concat(numInputs, "-way_add_").concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_").concat(components);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\n".concat(arrayOfLengthNumInputs.map(function (el, i) { return "uniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state").concat(i, ";"); }).join('\n'), "\nout ").concat(precision, " ").concat(glslType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(arrayOfLengthNumInputs.map(function (el, i) { return "texture(u_state".concat(i, ", v_uv).").concat(components); }).join(' + '), ";\n}"),
+        fragmentShader: "\nin vec2 v_uv;\n".concat(arrayOfLengthNumInputs.map(function (el, i) { return "uniform ".concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state").concat(i, ";"); }).join('\n'), "\nout ").concat(precision, " ").concat(glslType, " out_FragColor;\nvoid main() {\n\tout_FragColor = ").concat(arrayOfLengthNumInputs.map(function (el, i) { return "texture(u_state".concat(i, ", v_uv).").concat(components); }).join(' + '), ";\n}"),
         uniforms: arrayOfLengthNumInputs.map(function (el, i) {
             return {
                 name: "u_state".concat(i),
@@ -6036,7 +6036,7 @@ function addValueProgram(params) {
     var name = params.name || "addValue_".concat(valueType, "_w_length_").concat(valueLength);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(outputType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value) + texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(outputType, " out_FragColor;\nvoid main() {\n\tout_FragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value) + texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -6074,7 +6074,7 @@ function multiplyValueProgram(params) {
     var name = params.name || "addValue_".concat(valueType, "_w_length_").concat(valueLength);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(outputType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value) * texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nuniform ").concat(precision, " ").concat((0, conversions_1.glslPrefixForType)(type), "sampler2D u_state;\nout ").concat(precision, " ").concat(outputType, " out_FragColor;\nvoid main() {\n\tout_FragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value) * texture(u_state, v_uv)").concat(componentSelection, ";\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -6111,7 +6111,7 @@ function setValueProgram(params) {
     var name = params.name || "setValue_".concat(valueType, "_w_length_").concat(valueLength);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nout ").concat(precision, " ").concat(outputType, " out_fragColor;\nvoid main() {\n\tout_fragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value);\n}"),
+        fragmentShader: "\nuniform ".concat(precision, " ").concat(valueType, " u_value;\nout ").concat(precision, " ").concat(outputType, " out_FragColor;\nvoid main() {\n\tout_FragColor = ").concat(valueType !== outputType ? outputType : '', "(u_value);\n}"),
         uniforms: [
             {
                 name: 'u_value',
@@ -6141,7 +6141,7 @@ function setColorProgram(params) {
     var name = params.name || "setColor";
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nuniform ".concat(precision, " vec3 u_color;\nuniform ").concat(precision, " float u_opacity;\nout ").concat(precision, " vec4 out_fragColor;\nvoid main() {\n\tout_fragColor = vec4(u_color, u_opacity);\n}"),
+        fragmentShader: "\nuniform ".concat(precision, " vec3 u_color;\nuniform ").concat(precision, " float u_opacity;\nout ").concat(precision, " vec4 out_FragColor;\nvoid main() {\n\tout_FragColor = vec4(u_color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_color',
@@ -6201,7 +6201,7 @@ function renderAmplitudeProgram(params) {
     var name = params.name || "renderAmplitude_".concat(glslType, "_w_").concat(numComponents, "_components");
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_color;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_fragColor;\nvoid main() {\n\tfloat amplitude = u_scale * ").concat(numComponents === 1 ? 'abs' : 'length', "(").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(components === 'xyzw' || components === 'rgba' || components === 'stpq' ? '' : ".".concat(components), "));\n\tvec3 color = mix(u_colorZero, u_color, amplitude);\n\tout_fragColor = vec4(color, u_opacity);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_color;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_FragColor;\nvoid main() {\n\tfloat amplitude = u_scale * ").concat(numComponents === 1 ? 'abs' : 'length', "(").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(components === 'xyzw' || components === 'rgba' || components === 'stpq' ? '' : ".".concat(components), "));\n\tvec3 color = mix(u_colorZero, u_color, amplitude);\n\tout_FragColor = vec4(color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -6258,7 +6258,7 @@ function renderSignedAmplitudeProgram(params) {
     var name = params.name || "renderAmplitude_".concat(glslType, "_").concat(component);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_colorNegative;\nuniform vec3 u_colorPositive;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_fragColor;\nvoid main() {\n\tfloat signedAmplitude = u_scale * ").concat(castFloat ? '' : 'float', "(texture(u_state, v_uv).").concat(component, ");\n\tfloat amplitudeSign = sign(signedAmplitude);\n\tvec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);\n\tvec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);\n\tout_fragColor = vec4(color, u_opacity);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_colorNegative;\nuniform vec3 u_colorPositive;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_FragColor;\nvoid main() {\n\tfloat signedAmplitude = u_scale * ").concat(castFloat ? '' : 'float', "(texture(u_state, v_uv).").concat(component, ");\n\tfloat amplitudeSign = sign(signedAmplitude);\n\tvec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);\n\tvec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);\n\tout_FragColor = vec4(color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -6301,7 +6301,7 @@ function wrappedLineColorProgram(params) {
     var composer = params.composer;
     return new GPUProgram_1.GPUProgram(composer, {
         name: "wrappedLineColor",
-        fragmentShader: "\nin vec2 v_lineWrapping;\nuniform vec4 u_value;\nout vec4 out_fragColor;\nvoid main() {\n\t// Check if this line has wrapped.\n\tif ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {\n\t\t// Render nothing.\n\t\tdiscard;\n\t\treturn;\n\t}\n\tout_fragColor = vec4(u_value);\n}",
+        fragmentShader: "\nin vec2 v_lineWrapping;\nuniform vec4 u_value;\nout vec4 out_FragColor;\nvoid main() {\n\t// Check if this line has wrapped.\n\tif ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {\n\t\t// Render nothing.\n\t\tdiscard;\n\t\treturn;\n\t}\n\tout_FragColor = vec4(u_value);\n}",
     });
 }
 exports.wrappedLineColorProgram = wrappedLineColorProgram;
@@ -6315,7 +6315,7 @@ function vectorMagnitudeProgram(params) {
     var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
     return new GPUProgram_1.GPUProgram(composer, {
         name: "vectorMagnitude",
-        fragmentShader: "\nin vec2 v_uv;\nuniform vec3 u_color;\nuniform float u_scale;\nuniform ".concat(glslPrefix, "sampler2D u_gpuio_data;\nout vec4 out_fragColor;\nvoid main() {\n\tuvec4 value = texture(u_gpuio_data, v_uv);\n\tfloat mag = length(value);\n\tout_fragColor = vec4(mag * u_scale * u_color, 1);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform vec3 u_color;\nuniform float u_scale;\nuniform ".concat(glslPrefix, "sampler2D u_gpuio_data;\nout vec4 out_FragColor;\nvoid main() {\n\tuvec4 value = texture(u_gpuio_data, v_uv);\n\tfloat mag = length(value);\n\tout_FragColor = vec4(mag * u_scale * u_color, 1);\n}"),
     });
 }
 exports.vectorMagnitudeProgram = vectorMagnitudeProgram;
@@ -7580,11 +7580,11 @@ function glsl1FragmentIn(shaderSource) {
 }
 exports.glsl1FragmentIn = glsl1FragmentIn;
 /**
- * Contains out_fragColor.
+ * Contains out_FragColor.
  * @private
  */
 function containsOutFragColor(shaderSource) {
-    return !!shaderSource.match(/\bout_fragColor\b/);
+    return !!shaderSource.match(/\bout_FragColor\b/);
 }
 /**
  * Contains gl_FragColor.
@@ -7600,29 +7600,29 @@ function containsGLFragColor(shaderSource) {
  */
 function getFragmentOutType(shaderSource, name) {
     // Do this without lookbehind to support older browsers.
-    // const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
-    var type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_fragColor;/);
+    // const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_FragColor;)/);
+    var type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_FragColor;/);
     if (!type || !type[3]) {
-        throw new Error("No type found in out_fragColor declaration for GPUProgram \"".concat(name, "\"."));
+        throw new Error("No type found in out_FragColor declaration for GPUProgram \"".concat(name, "\"."));
     }
     return type[3];
 }
 exports.getFragmentOutType = getFragmentOutType;
 /**
- * Convert out_fragColor to gl_FragColor.
+ * Convert out_FragColor to gl_FragColor.
  * @private
  */
 function glsl1FragmentOut(shaderSource, name) {
     if (containsOutFragColor(shaderSource)) {
         var type = getFragmentOutType(shaderSource, name);
-        // Remove out_fragColor declaration.
-        shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor\s*;/g, '');
+        // Remove out_FragColor declaration.
+        shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_FragColor\s*;/g, '');
         var assignmentFound = false;
-        // Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
+        // Replace each instance of out_FragColor = with gl_FragColor = and cast to vec4.
         // Do this without lookbehind to support older browsers.
-        // const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+        // const output = shaderSource.match(/(?<=\bout_FragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
         // ? puts this in lazy mode (match shortest strings).
-        var regex = new RegExp(/\bout_fragColor\s*=\s*(\S.*?);/s);
+        var regex = new RegExp(/\bout_FragColor\s*=\s*(\S.*?);/s);
         while (true) {
             var output = shaderSource.match(regex); // /s makes this work for multiline.
             if (output && output[1]) {
@@ -7649,7 +7649,7 @@ function glsl1FragmentOut(shaderSource, name) {
             }
             else {
                 if (!assignmentFound)
-                    throw new Error("No assignment found for out_fragColor in GPUProgram \"".concat(name, "\"."));
+                    throw new Error("No assignment found for out_FragColor in GPUProgram \"".concat(name, "\"."));
                 break;
             }
         }
@@ -7658,26 +7658,26 @@ function glsl1FragmentOut(shaderSource, name) {
 }
 exports.glsl1FragmentOut = glsl1FragmentOut;
 /**
- * Check that out_fragColor or gl_FragColor is present in fragment shader source.
+ * Check that out_FragColor or gl_FragColor is present in fragment shader source.
  * @private
  */
 function checkFragmentShaderForFragColor(shaderSource, glslVersion, name) {
     var gl_FragColor = containsGLFragColor(shaderSource);
-    var out_fragColor = containsOutFragColor(shaderSource);
+    var out_FragColor = containsOutFragColor(shaderSource);
     if (glslVersion === constants_1.GLSL3) {
         // Check that fragment shader source DOES NOT contain gl_FragColor
         if (gl_FragColor) {
             throw new Error("Found \"gl_FragColor\" declaration in fragment shader for GPUProgram \"".concat(name, "\": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader."));
         }
-        // Check that fragment shader source DOES contain out_fragColor.
-        if (!out_fragColor) {
-            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
+        // Check that fragment shader source DOES contain out_FragColor.
+        if (!out_FragColor) {
+            throw new Error("Found no \"out_FragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
         }
     }
     else {
-        // Check that fragment shader source DOES contain either gl_FragColor or out_fragColor.
-        if (!gl_FragColor && !out_fragColor) {
-            throw new Error("Found no \"out_fragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
+        // Check that fragment shader source DOES contain either gl_FragColor or out_FragColor.
+        if (!gl_FragColor && !out_FragColor) {
+            throw new Error("Found no \"out_FragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
         }
     }
     return true;
@@ -8219,7 +8219,7 @@ function convertFragmentShaderToGLSL1(shaderSource, name) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to varying.
     shaderSource = (0, regex_1.glsl1FragmentIn)(shaderSource);
-    // Convert out_fragColor to gl_FragColor.
+    // Convert out_FragColor to gl_FragColor.
     shaderSource = (0, regex_1.glsl1FragmentOut)(shaderSource, name);
     return shaderSource;
 }

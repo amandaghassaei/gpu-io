@@ -11,15 +11,15 @@ uniform usampler2D u_state;
 #endif
 
 #ifdef GPUIO_FLOAT
-out highp vec4 out_fragColor;
+out highp vec4 out_FragColor;
 #endif
 #ifdef GPUIO_INT
-out highp ivec4 out_fragColor;
+out highp ivec4 out_FragColor;
 #endif
 #ifdef GPUIO_UINT
-out highp uvec4 out_fragColor;
+out highp uvec4 out_FragColor;
 #endif
 
 void main() {
-	out_fragColor = texture(u_state, v_uv);
+	out_FragColor = texture(u_state, v_uv);
 }`;

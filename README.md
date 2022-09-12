@@ -78,7 +78,7 @@ in vec2 v_uv;
 uniform sampler2D u_state;
 uniform vec2 u_halfPx;
 
-out float out_fragColor;
+out float out_FragColor;
 
 void main() {
     // Average this pixel with neighbors.
@@ -86,7 +86,7 @@ void main() {
     float prevStateNW = texture(u_state, v_uv + vec2(-u_halfPx.x, u_halfPx.y)).x;
     float prevStateSE = texture(u_state, v_uv + vec2(u_halfPx.x, -u_halfPx.y)).x;
     float prevStateSW = texture(u_state, v_uv - u_halfPx).x;
-    out_fragColor = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
+    out_FragColor = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
 }
 `,
     uniforms: [
@@ -269,7 +269,7 @@ varying vec2 v_uv;
 uniform sampler2D u_sampler1;
 uniform sampler2D u_sampler2;
 
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 
 vec4 lookupSampler2(vec2 uv) {
     // This is good, it passes u_sampler2 directly to texture().
@@ -367,7 +367,7 @@ in vec2 v_uv;
 // u_state is a BYTE array, so we can set its precision to lowp.
 uniform lowp isampler2D u_state;
 
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 
 void main() {
     lowp int state = texture(u_state, v_uv).r;

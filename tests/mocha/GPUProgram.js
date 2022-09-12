@@ -60,11 +60,11 @@
 			});
 			it('should throw errors for bad fragment source code', () => {
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "" }); },
-					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
+					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
 			});
-			it('should throw errors for missing out_fragColor or gl_FragColor in fragment source code', () => {
+			it('should throw errors for missing out_FragColor or gl_FragColor in fragment source code', () => {
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: badOutputFragmentShader }); },
-					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
+					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
 			});
 			it('should set parameters', () => {
 				const program = new GPUProgram(composer, { name: 'test-program', fragmentShader: setValueFragmentShader });

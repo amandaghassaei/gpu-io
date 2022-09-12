@@ -115,11 +115,11 @@ export function glsl1FragmentIn(shaderSource: string) {
 }
 
 /**
- * Contains out_fragColor.
+ * Contains out_FragColor.
  * @private
  */
 function containsOutFragColor(shaderSource: string) {
-	return !!shaderSource.match(/\bout_fragColor\b/);
+	return !!shaderSource.match(/\bout_FragColor\b/);
 }
 
 /**
@@ -137,29 +137,29 @@ function containsGLFragColor(shaderSource: string) {
  */
 export function getFragmentOutType(shaderSource: string, name: string) {
 	// Do this without lookbehind to support older browsers.
-	// const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_fragColor;)/);
-	const type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_fragColor;/);
+	// const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_FragColor;)/);
+	const type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_FragColor;/);
 	if (!type || !type[3]) {
-		throw new Error(`No type found in out_fragColor declaration for GPUProgram "${name}".`);
+		throw new Error(`No type found in out_FragColor declaration for GPUProgram "${name}".`);
 	}
 	return type[3] as 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 }
 
 /**
- * Convert out_fragColor to gl_FragColor.
+ * Convert out_FragColor to gl_FragColor.
  * @private
  */
 export function glsl1FragmentOut(shaderSource: string, name: string) {
 	if (containsOutFragColor(shaderSource)) {
 		const type = getFragmentOutType(shaderSource, name);
-		// Remove out_fragColor declaration.
-		shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor\s*;/g, '');
+		// Remove out_FragColor declaration.
+		shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_FragColor\s*;/g, '');
 		let assignmentFound = false;
-		// Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
+		// Replace each instance of out_FragColor = with gl_FragColor = and cast to vec4.
 		// Do this without lookbehind to support older browsers.
-		// const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+		// const output = shaderSource.match(/(?<=\bout_FragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
 		// ? puts this in lazy mode (match shortest strings).
-		const regex = new RegExp(/\bout_fragColor\s*=\s*(\S.*?);/s);
+		const regex = new RegExp(/\bout_FragColor\s*=\s*(\S.*?);/s);
 		while (true) {
 			const output = shaderSource.match(regex); // /s makes this work for multiline.
 			if (output && output[1]) {
@@ -184,7 +184,7 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 				// ? puts this in lazy mode (match shortest strings).
 				shaderSource = shaderSource.replace(regex, `gl_FragColor = vec4(${output[1]}${filler});`);
 			} else {
-				if (!assignmentFound) throw new Error(`No assignment found for out_fragColor in GPUProgram "${name}".`);
+				if (!assignmentFound) throw new Error(`No assignment found for out_FragColor in GPUProgram "${name}".`);
 				break;
 			}
 		}
@@ -193,25 +193,25 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 }
 
 /**
- * Check that out_fragColor or gl_FragColor is present in fragment shader source.
+ * Check that out_FragColor or gl_FragColor is present in fragment shader source.
  * @private 
  */
  export function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string) {
 	const gl_FragColor = containsGLFragColor(shaderSource);
-	const out_fragColor = containsOutFragColor(shaderSource);
+	const out_FragColor = containsOutFragColor(shaderSource);
 	if (glslVersion === GLSL3) {
 		// Check that fragment shader source DOES NOT contain gl_FragColor
 		if (gl_FragColor) {
 			throw new Error(`Found "gl_FragColor" declaration in fragment shader for GPUProgram "${name}": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.`);
 		}
-		// Check that fragment shader source DOES contain out_fragColor.
-		if (!out_fragColor) {
-			throw new Error(`Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
+		// Check that fragment shader source DOES contain out_FragColor.
+		if (!out_FragColor) {
+			throw new Error(`Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
 		}
 	} else {
-		// Check that fragment shader source DOES contain either gl_FragColor or out_fragColor.
-		if (!gl_FragColor && !out_fragColor) {
-			throw new Error(`Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
+		// Check that fragment shader source DOES contain either gl_FragColor or out_FragColor.
+		if (!gl_FragColor && !out_FragColor) {
+			throw new Error(`Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
 		}
 	}
 	return true;

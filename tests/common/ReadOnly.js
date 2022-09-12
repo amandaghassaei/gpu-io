@@ -31,10 +31,10 @@ const testLayerReads = (() => {
 	uniform sampler2D u_state;
 	uniform vec2 u_offset;
 
-	out vec4 out_fragColor;
+	out vec4 out_FragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_uv + u_offset);
+		out_FragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			case UNSIGNED_BYTE:
 			case UNSIGNED_SHORT:
@@ -45,10 +45,10 @@ const testLayerReads = (() => {
 	uniform usampler2D u_state;
 	uniform vec2 u_offset;
 
-	out uvec4 out_fragColor;
+	out uvec4 out_FragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_uv + u_offset);
+		out_FragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			case BYTE:
 			case SHORT:
@@ -59,10 +59,10 @@ const testLayerReads = (() => {
 	uniform isampler2D u_state;
 	uniform vec2 u_offset;
 
-	out ivec4 out_fragColor;
+	out ivec4 out_FragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_uv + u_offset);
+		out_FragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			default:
 				throw new Error(`Invalid type: ${type}.`);

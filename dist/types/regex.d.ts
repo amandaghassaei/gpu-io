@@ -37,12 +37,12 @@ export declare function glsl1FragmentIn(shaderSource: string): string;
  */
 export declare function getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
 /**
- * Convert out_fragColor to gl_FragColor.
+ * Convert out_FragColor to gl_FragColor.
  * @private
  */
 export declare function glsl1FragmentOut(shaderSource: string, name: string): string;
 /**
- * Check that out_fragColor or gl_FragColor is present in fragment shader source.
+ * Check that out_FragColor or gl_FragColor is present in fragment shader source.
  * @private
  */
 export declare function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string): boolean;

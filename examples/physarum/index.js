@@ -168,7 +168,7 @@ function main({ gui, glslVersion, contextID }) {
 			uniform float u_rotationAngle;
 			uniform bool u_randomDir;
 
-			out float out_fragColor;
+			out float out_FragColor;
 
 			float sense(vec2 position, float angle) {
 				vec2 sensePosition = position + u_sensorDistance * vec2(cos(angle), sin(angle));
@@ -212,7 +212,7 @@ function main({ gui, glslVersion, contextID }) {
 				// Wrap heading around 2PI.
 				heading = mod(heading + TWO_PI, TWO_PI);
 
-				out_fragColor = heading;
+				out_FragColor = heading;
 			}`,
 		uniforms: [
 			{
@@ -268,7 +268,7 @@ function main({ gui, glslVersion, contextID }) {
 			uniform vec2 u_dimensions;
 			uniform float u_stepSize;
 
-			out vec4 out_fragColor;
+			out vec4 out_FragColor;
 
 			void main() {
 				// Add absolute position plus displacement to get position.
@@ -306,7 +306,7 @@ function main({ gui, glslVersion, contextID }) {
 				absolute = mod(absolute + shouldMerge * nextDisplacement + u_dimensions, u_dimensions);
 				nextDisplacement *= (1.0 - shouldMerge);
 
-				out_fragColor = vec4(absolute, nextDisplacement);
+				out_FragColor = vec4(absolute, nextDisplacement);
 			}`,
 		uniforms: [
 			{
@@ -365,7 +365,7 @@ function main({ gui, glslVersion, contextID }) {
 			uniform vec2 u_pxSize;
 			uniform int u_numParticles;
 
-			out float out_fragColor;
+			out float out_FragColor;
 
 			void main() {
 				vec2 halfPx = u_pxSize / 2.0;
@@ -380,7 +380,7 @@ function main({ gui, glslVersion, contextID }) {
 				float prevStateSE = texture(u_trail, v_uv + vec2(halfPx.x, -halfPx.y)).x;
 				float prevStateSW = texture(u_trail, v_uv - halfPx).x;
 				float diffusedState = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
-				out_fragColor = u_decayFactor * diffusedState;
+				out_FragColor = u_decayFactor * diffusedState;
 			}`,
 		uniforms: [
 			{

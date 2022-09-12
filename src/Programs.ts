@@ -29,9 +29,9 @@ export function copyProgram(params: {
 		fragmentShader: `
 in vec2 v_uv;
 uniform ${precision} ${glslPrefixForType(type)}sampler2D u_state;
-out ${precision} ${glslType} out_fragColor;
+out ${precision} ${glslType} out_FragColor;
 void main() {
-	out_fragColor = texture(u_state, v_uv);
+	out_FragColor = texture(u_state, v_uv);
 }`,
 		uniforms: [
 			{
@@ -75,9 +75,9 @@ void main() {
 		fragmentShader: `
 in vec2 v_uv;
 ${ arrayOfLengthNumInputs.map((el, i) => `uniform ${precision} ${glslPrefixForType(type)}sampler2D u_state${i};`).join('\n') }
-out ${precision} ${glslType} out_fragColor;
+out ${precision} ${glslType} out_FragColor;
 void main() {
-	out_fragColor = ${ arrayOfLengthNumInputs.map((el, i) => `texture(u_state${i}, v_uv).${components}`).join(' + ') };
+	out_FragColor = ${ arrayOfLengthNumInputs.map((el, i) => `texture(u_state${i}, v_uv).${components}`).join(' + ') };
 }`,
 		uniforms: arrayOfLengthNumInputs.map((el, i) => {
 			return {
@@ -121,9 +121,9 @@ void main() {
 in vec2 v_uv;
 uniform ${precision} ${valueType} u_value;
 uniform ${precision} ${glslPrefixForType(type)}sampler2D u_state;
-out ${precision} ${outputType} out_fragColor;
+out ${precision} ${outputType} out_FragColor;
 void main() {
-	out_fragColor = ${valueType !== outputType ? outputType : ''}(u_value) + texture(u_state, v_uv)${componentSelection};
+	out_FragColor = ${valueType !== outputType ? outputType : ''}(u_value) + texture(u_state, v_uv)${componentSelection};
 }`,
 		uniforms: [
 			{
@@ -172,9 +172,9 @@ void main() {
 in vec2 v_uv;
 uniform ${precision} ${valueType} u_value;
 uniform ${precision} ${glslPrefixForType(type)}sampler2D u_state;
-out ${precision} ${outputType} out_fragColor;
+out ${precision} ${outputType} out_FragColor;
 void main() {
-	out_fragColor = ${valueType !== outputType ? outputType : ''}(u_value) * texture(u_state, v_uv)${componentSelection};
+	out_FragColor = ${valueType !== outputType ? outputType : ''}(u_value) * texture(u_state, v_uv)${componentSelection};
 }`,
 		uniforms: [
 			{
@@ -220,9 +220,9 @@ export function setValueProgram(params: {
 		name,
 		fragmentShader: `
 uniform ${precision} ${valueType} u_value;
-out ${precision} ${outputType} out_fragColor;
+out ${precision} ${outputType} out_FragColor;
 void main() {
-	out_fragColor = ${valueType !== outputType ? outputType : ''}(u_value);
+	out_FragColor = ${valueType !== outputType ? outputType : ''}(u_value);
 }`,
 		uniforms: [
 			{
@@ -262,9 +262,9 @@ void main() {
 		fragmentShader: `
 uniform ${precision} vec3 u_color;
 uniform ${precision} float u_opacity;
-out ${precision} vec4 out_fragColor;
+out ${precision} vec4 out_FragColor;
 void main() {
-	out_fragColor = vec4(u_color, u_opacity);
+	out_FragColor = vec4(u_color, u_opacity);
 }`,
 		uniforms: [
 			{
@@ -345,11 +345,11 @@ uniform float u_scale;
 uniform vec3 u_color;
 uniform vec3 u_colorZero;
 uniform ${precision} ${glslPrefix}sampler2D u_state;
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 void main() {
 	float amplitude = u_scale * ${ numComponents === 1 ? 'abs' : 'length'}(${shouldCast ? '' : glslFloatType}(texture(u_state, v_uv)${components === 'xyzw' || components === 'rgba' || components === 'stpq' ? '' : `.${components}`}));
 	vec3 color = mix(u_colorZero, u_color, amplitude);
-	out_fragColor = vec4(color, u_opacity);
+	out_FragColor = vec4(color, u_opacity);
 }`,
 		uniforms: [
 			{
@@ -426,13 +426,13 @@ uniform vec3 u_colorNegative;
 uniform vec3 u_colorPositive;
 uniform vec3 u_colorZero;
 uniform ${precision} ${glslPrefix}sampler2D u_state;
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 void main() {
 	float signedAmplitude = u_scale * ${castFloat ? '' : 'float'}(texture(u_state, v_uv).${component});
 	float amplitudeSign = sign(signedAmplitude);
 	vec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);
 	vec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);
-	out_fragColor = vec4(color, u_opacity);
+	out_FragColor = vec4(color, u_opacity);
 }`,
 		uniforms: [
 			{
@@ -479,7 +479,7 @@ export function wrappedLineColorProgram(params: { composer: GPUComposer }) {
 		fragmentShader: `
 in vec2 v_lineWrapping;
 uniform vec4 u_value;
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 void main() {
 	// Check if this line has wrapped.
 	if ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {
@@ -487,7 +487,7 @@ void main() {
 		discard;
 		return;
 	}
-	out_fragColor = vec4(u_value);
+	out_FragColor = vec4(u_value);
 }`,
 	});
 }
@@ -510,11 +510,11 @@ in vec2 v_uv;
 uniform vec3 u_color;
 uniform float u_scale;
 uniform ${glslPrefix}sampler2D u_gpuio_data;
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 void main() {
 	uvec4 value = texture(u_gpuio_data, v_uv);
 	float mag = length(value);
-	out_fragColor = vec4(mag * u_scale * u_color, 1);
+	out_FragColor = vec4(mag * u_scale * u_color, 1);
 }`,
 	});
 }

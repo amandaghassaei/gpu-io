@@ -19,9 +19,9 @@ uniform bvec2 u_bvalue2;
 uniform bvec3 u_bvalue3;
 uniform bvec4 u_bvalue4;
 
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 void main() {
-	out_fragColor = vec4(
+	out_FragColor = vec4(
 		u_uvalue1 + u_uvalue2.x + u_uvalue2.y + u_uvalue3.x + u_uvalue3.y + u_uvalue3.z + u_uvalue4.x + u_uvalue4.y + u_uvalue4.z + u_uvalue4.a,
 		u_ivalue1 + u_ivalue2.x + u_ivalue2.y + u_ivalue3.x + u_ivalue3.y + u_ivalue3.z + u_ivalue4.x + u_ivalue4.y + u_ivalue4.z + u_ivalue4.a,
 		u_fvalue1 + u_fvalue2.x + u_fvalue2.y + u_fvalue3.x + u_fvalue3.y + u_fvalue3.z + u_fvalue4.x + u_fvalue4.y + u_fvalue4.z + u_fvalue4.a,

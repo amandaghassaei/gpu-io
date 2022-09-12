@@ -694,18 +694,18 @@ in vec2 v_uv;
 uniform vec2 u_offset;
 #ifdef GPUIO_INT
 	uniform isampler2D u_input;
-	out int out_fragColor;
+	out int out_FragColor;
 #endif
 #ifdef GPUIO_UINT
 	uniform usampler2D u_input;
-	out uint out_fragColor;
+	out uint out_FragColor;
 #endif
 #ifdef GPUIO_FLOAT
 	uniform sampler2D u_input;
-	out float out_fragColor;
+	out float out_FragColor;
 #endif
 void main() {
-	out_fragColor = texture(u_input, v_uv + offset).x;
+	out_FragColor = texture(u_input, v_uv + offset).x;
 }`;
 	if (glslVersion !== GLSL3) {
 		fragmentShaderSource = convertFragmentShaderToGLSL1(fragmentShaderSource, programName);

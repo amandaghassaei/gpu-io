@@ -1,5 +1,5 @@
 const setValueFragmentShader = `uniform vec4 u_value;
-out vec4 out_fragColor;
+out vec4 out_FragColor;
 void main() {
-	out_fragColor = u_value;
+	out_FragColor = u_value;
 }`;

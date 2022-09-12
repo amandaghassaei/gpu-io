@@ -101,54 +101,54 @@ void main() {
 		});
 		describe('getFragmentOutType', () => {
 			it('should get type for fragment out declaration', () => {
-				assert.throws(() => { getFragmentOutType('', 'test'); }, 'No type found in out_fragColor declaration for GPUProgram "test".');
-				assert.throws(() => { getFragmentOutType('out_fragColor = ', 'test'); }, 'No type found in out_fragColor declaration for GPUProgram "test".');
+				assert.throws(() => { getFragmentOutType('', 'test'); }, 'No type found in out_FragColor declaration for GPUProgram "test".');
+				assert.throws(() => { getFragmentOutType('out_FragColor = ', 'test'); }, 'No type found in out_FragColor declaration for GPUProgram "test".');
 				// Handle whitespace.
-				assert.equal(getFragmentOutType('out vec4 out_fragColor;'), 'vec4');
-				assert.equal(getFragmentOutType('out    vec4  out_fragColor;'), 'vec4');
+				assert.equal(getFragmentOutType('out vec4 out_FragColor;'), 'vec4');
+				assert.equal(getFragmentOutType('out    vec4  out_FragColor;'), 'vec4');
 				// Test all types.
-				assert.equal(getFragmentOutType('out float out_fragColor;'), 'float');
-				assert.equal(getFragmentOutType('out vec2 out_fragColor;'), 'vec2');
-				assert.equal(getFragmentOutType('out vec3 out_fragColor;'), 'vec3');
-				assert.equal(getFragmentOutType('out vec4 out_fragColor;'), 'vec4');
-				assert.equal(getFragmentOutType('out int out_fragColor;'), 'int');
-				assert.equal(getFragmentOutType('out ivec2 out_fragColor;'), 'ivec2');
-				assert.equal(getFragmentOutType('out ivec3 out_fragColor;'), 'ivec3');
-				assert.equal(getFragmentOutType('out ivec4 out_fragColor;'), 'ivec4');
-				assert.equal(getFragmentOutType('out uvec2 out_fragColor;'), 'uvec2');
-				assert.equal(getFragmentOutType('out uvec3 out_fragColor;'), 'uvec3');
-				assert.equal(getFragmentOutType('out uvec4 out_fragColor;'), 'uvec4');
+				assert.equal(getFragmentOutType('out float out_FragColor;'), 'float');
+				assert.equal(getFragmentOutType('out vec2 out_FragColor;'), 'vec2');
+				assert.equal(getFragmentOutType('out vec3 out_FragColor;'), 'vec3');
+				assert.equal(getFragmentOutType('out vec4 out_FragColor;'), 'vec4');
+				assert.equal(getFragmentOutType('out int out_FragColor;'), 'int');
+				assert.equal(getFragmentOutType('out ivec2 out_FragColor;'), 'ivec2');
+				assert.equal(getFragmentOutType('out ivec3 out_FragColor;'), 'ivec3');
+				assert.equal(getFragmentOutType('out ivec4 out_FragColor;'), 'ivec4');
+				assert.equal(getFragmentOutType('out uvec2 out_FragColor;'), 'uvec2');
+				assert.equal(getFragmentOutType('out uvec3 out_FragColor;'), 'uvec3');
+				assert.equal(getFragmentOutType('out uvec4 out_FragColor;'), 'uvec4');
 				// Handle lowp, mediump, highp.
-				assert.equal(getFragmentOutType('out  lowp  vec4  out_fragColor;'), 'vec4');
-				assert.equal(getFragmentOutType('out   mediump ivec2  out_fragColor;'), 'ivec2');
-				assert.equal(getFragmentOutType('out highp  float  out_fragColor;'), 'float');
+				assert.equal(getFragmentOutType('out  lowp  vec4  out_FragColor;'), 'vec4');
+				assert.equal(getFragmentOutType('out   mediump ivec2  out_FragColor;'), 'ivec2');
+				assert.equal(getFragmentOutType('out highp  float  out_FragColor;'), 'float');
 			});
 		});
 		describe('glsl1FragmentOut', () => {
-			it('should remove out declaration and convert out_fragColor to gl_FragColor', () => {
-				assert.equal(glsl1FragmentOut('out vec4 out_fragColor;\noutVariable;\nout_fragColor = vec4(0);'), '\noutVariable;\ngl_FragColor = vec4(vec4(0));');
+			it('should remove out declaration and convert out_FragColor to gl_FragColor', () => {
+				assert.equal(glsl1FragmentOut('out vec4 out_FragColor;\noutVariable;\nout_FragColor = vec4(0);'), '\noutVariable;\ngl_FragColor = vec4(vec4(0));');
 				// Handle lowp, mediump, highp.
-				assert.equal(glsl1FragmentOut('out  lowp  vec4  out_fragColor;out_fragColor = vec4(0);'), 'gl_FragColor = vec4(vec4(0));');
-				assert.equal(glsl1FragmentOut('out   mediump ivec2  out_fragColor;out_fragColor = ivec2(0);'), 'gl_FragColor = vec4(ivec2(0), 0, 0);');
-				assert.equal(glsl1FragmentOut('out highp  float  out_fragColor;out_fragColor = 0.0;'), 'gl_FragColor = vec4(0.0, 0, 0, 0);');
-				// Handle case where no out_fragColor present.
+				assert.equal(glsl1FragmentOut('out  lowp  vec4  out_FragColor;out_FragColor = vec4(0);'), 'gl_FragColor = vec4(vec4(0));');
+				assert.equal(glsl1FragmentOut('out   mediump ivec2  out_FragColor;out_FragColor = ivec2(0);'), 'gl_FragColor = vec4(ivec2(0), 0, 0);');
+				assert.equal(glsl1FragmentOut('out highp  float  out_FragColor;out_FragColor = 0.0;'), 'gl_FragColor = vec4(0.0, 0, 0, 0);');
+				// Handle case where no out_FragColor present.
 				assert.equal(glsl1FragmentOut(glsl1FragmentShader), glsl1FragmentShader);
 				// Throw error if no assignment.
-				assert.throws(() => { glsl1FragmentOut('out vec4 out_fragColor;', 'test'); }, 'No assignment found for out_fragColor in GPUProgram "test".');
+				assert.throws(() => { glsl1FragmentOut('out vec4 out_FragColor;', 'test'); }, 'No assignment found for out_FragColor in GPUProgram "test".');
 			});
 			it('should handle edge cases', () => {
 				// Make sure regex is lazy.
 				assert.equal(glsl1FragmentOut(`
 				in vec2 v_uv;
 				uniform sampler2D u_initialPositions;
-				out vec4 out_fragColor;
+				out vec4 out_FragColor;
 				void main() {
 					int age = 0;
 					if (age < 1) {
-						out_fragColor = texture(u_initialPositions, v_uv);
+						out_FragColor = texture(u_initialPositions, v_uv);
 						return;
 					}
-					out_fragColor = texture(u_initialPositions, v_uv);
+					out_FragColor = texture(u_initialPositions, v_uv);
 				}`), `
 				in vec2 v_uv;
 				uniform sampler2D u_initialPositions;
@@ -164,13 +164,13 @@ void main() {
 			});
 		});
 		describe('checkFragmentShaderForFragColor', () => {
-			it('should check for out_fragColor in fragment source', () => {
+			it('should check for out_FragColor in fragment source', () => {
 				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL3, 'test'); },
-					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
+					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
 				assert.throws(() => { checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL3, 'test'); },
 					'Found "gl_FragColor" declaration in fragment shader for GPUProgram "test": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.');
 				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL1, 'test'); },
-					'Found no "out_fragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
+					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
 			});
 			it('should allow gl_FragColor in GLSL1', () => {
 				assert.equal(checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL1, 'test'), true);

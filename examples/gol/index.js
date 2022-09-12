@@ -63,7 +63,7 @@ function main({ gui, contextID, glslVersion}) {
 			uniform lowp uint u_survivalRules;
 			uniform lowp uint u_birthRules;
 
-			out lowp int out_fragColor;
+			out lowp int out_FragColor;
 
 			void main() {
 				lowp int state = int(texture(u_state, v_uv).r);
@@ -94,7 +94,7 @@ function main({ gui, contextID, glslVersion}) {
 				lowp uint mask = bitwiseAnd8((u_survivalRules * uint(state) + u_birthRules * uint(1 - state)), uint(bitshiftLeft(1, numLiving - 1)));
 				state = min(int(mask), 1);
 
-				out_fragColor = state;
+				out_FragColor = state;
 			}`,
 		uniforms: [
 			{

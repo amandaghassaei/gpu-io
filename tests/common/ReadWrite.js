@@ -30,10 +30,10 @@ const testLayerWrites = (() => {
 	uniform sampler2D u_state;
 	uniform vec2 u_offset;
 
-	out vec4 out_fragColor;
+	out vec4 out_FragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_uv + u_offset);
+		out_FragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			case UNSIGNED_BYTE:
 			case UNSIGNED_SHORT:
@@ -44,10 +44,10 @@ const testLayerWrites = (() => {
 	uniform usampler2D u_state;
 	uniform vec2 u_offset;
 
-	out uvec4 out_fragColor;
+	out uvec4 out_FragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_uv + u_offset);
+		out_FragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			case BYTE:
 			case SHORT:
@@ -58,10 +58,10 @@ const testLayerWrites = (() => {
 	uniform isampler2D u_state;
 	uniform vec2 u_offset;
 
-	out ivec4 out_fragColor;
+	out ivec4 out_FragColor;
 
 	void main() {
-		out_fragColor = texture(u_state, v_uv + u_offset);
+		out_FragColor = texture(u_state, v_uv + u_offset);
 	}`;
 			default:
 				throw new Error(`Invalid type: ${type}.`);
@@ -73,28 +73,28 @@ const testLayerWrites = (() => {
 			case HALF_FLOAT:
 			case FLOAT:
 				return `
-	out vec4 out_fragColor;
+	out vec4 out_FragColor;
 
 	void main() {
-		out_fragColor = vec4(0);
+		out_FragColor = vec4(0);
 	}`;
 			case UNSIGNED_BYTE:
 			case UNSIGNED_SHORT:
 			case UNSIGNED_INT:
 				return `
-	out uvec4 out_fragColor;
+	out uvec4 out_FragColor;
 
 	void main() {
-		out_fragColor = uvec4(0);
+		out_FragColor = uvec4(0);
 	}`;
 			case BYTE:
 			case SHORT:
 			case INT:
 				return `
-	out ivec4 out_fragColor;
+	out ivec4 out_FragColor;
 
 	void main() {
-		out_fragColor = ivec4(0);
+		out_FragColor = ivec4(0);
 	}`;
 			default:
 				throw new Error(`Invalid type: ${type}.`);

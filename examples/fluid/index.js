@@ -138,11 +138,11 @@ function main({ gui, contextID, glslVersion}) {
 		uniform sampler2D u_velocity;
 		uniform vec2 u_dimensions;
 
-		out vec2 out_fragColor;
+		out vec2 out_FragColor;
 
 		void main() {
 			// Implicitly solve advection.
-			out_fragColor = texture(u_state, v_uv - texture(u_velocity, v_uv).xy / u_dimensions).xy;
+			out_FragColor = texture(u_state, v_uv - texture(u_velocity, v_uv).xy / u_dimensions).xy;
 		}`,
 		uniforms: [
 			{
@@ -170,14 +170,14 @@ function main({ gui, contextID, glslVersion}) {
 		uniform sampler2D u_vectorField;
 		uniform vec2 u_pxSize;
 
-		out float out_fragColor;
+		out float out_FragColor;
 
 		void main() {
 			float n = texture(u_vectorField, v_uv + vec2(0, u_pxSize.y)).y;
 			float s = texture(u_vectorField, v_uv - vec2(0, u_pxSize.y)).y;
 			float e = texture(u_vectorField, v_uv + vec2(u_pxSize.x, 0)).x;
 			float w = texture(u_vectorField, v_uv - vec2(u_pxSize.x, 0)).x;
-			out_fragColor = 0.5 * ( e - w + n - s);
+			out_FragColor = 0.5 * ( e - w + n - s);
 		}`,
 		uniforms: [
 			{
@@ -203,7 +203,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniform sampler2D u_previousState;
 		uniform sampler2D u_divergence;
 
-		out vec4 out_fragColor;
+		out vec4 out_FragColor;
 
 		void main() {
 			vec4 n = texture(u_previousState, v_uv + vec2(0, u_pxSize.y));
@@ -211,7 +211,7 @@ function main({ gui, contextID, glslVersion}) {
 			vec4 e = texture(u_previousState, v_uv + vec2(u_pxSize.x, 0));
 			vec4 w = texture(u_previousState, v_uv - vec2(u_pxSize.x, 0));
 			vec4 d = texture(u_divergence, v_uv);
-			out_fragColor = (n + s + e + w + u_alpha * d) * u_beta;
+			out_FragColor = (n + s + e + w + u_alpha * d) * u_beta;
 		}`,
 		uniforms: [
 			{
@@ -250,7 +250,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniform sampler2D u_scalarField;
 		uniform sampler2D u_vectorField;
 
-		out vec2 out_fragColor;
+		out vec2 out_FragColor;
 
 		void main() {
 			float n = texture(u_scalarField, v_uv + vec2(0, u_pxSize.y)).r;
@@ -258,7 +258,7 @@ function main({ gui, contextID, glslVersion}) {
 			float e = texture(u_scalarField, v_uv + vec2(u_pxSize.x, 0)).r;
 			float w = texture(u_scalarField, v_uv - vec2(u_pxSize.x, 0)).r;
 
-			out_fragColor = texture2D(u_vectorField, v_uv).xy - 0.5 * vec2(e - w, n - s);
+			out_FragColor = texture2D(u_vectorField, v_uv).xy - 0.5 * vec2(e - w, n - s);
 		}`,
 		uniforms: [
 			{
@@ -289,7 +289,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniform isampler2D u_ages;
 		uniform sampler2D u_velocity;
 
-		out float out_fragColor;
+		out float out_FragColor;
 
 		void main() {
 			float ageFraction = float(texture(u_ages, v_uv_array).x) / ${PARTICLE_LIFETIME.toFixed(1)};
@@ -298,7 +298,7 @@ function main({ gui, contextID, glslVersion}) {
 			vec2 velocity = texture(u_velocity, v_uv).xy;
 			// Show the fastest regions with darker color.
 			float multiplier = clamp(dot(velocity, velocity) * 0.05 + 0.7, 0.0, 1.0);
-			out_fragColor = opacity * multiplier;
+			out_FragColor = opacity * multiplier;
 		}`,
 		uniforms: [
 			{
@@ -320,11 +320,11 @@ function main({ gui, contextID, glslVersion}) {
 
 		uniform isampler2D u_ages;
 
-		out int out_fragColor;
+		out int out_FragColor;
 
 		void main() {
 			int age = texture(u_ages, v_uv).x + 1;
-			out_fragColor = stepi(age, ${PARTICLE_LIFETIME}) * age;
+			out_FragColor = stepi(age, ${PARTICLE_LIFETIME}) * age;
 		}`,
 		uniforms: [
 			{
@@ -345,7 +345,7 @@ function main({ gui, contextID, glslVersion}) {
 		uniform isampler2D u_ages;
 		uniform sampler2D u_initialPositions;
 
-		out vec4 out_fragColor;
+		out vec4 out_FragColor;
 
 		void main() {
 			// Store small displacements as separate number until they accumulate sufficiently.
@@ -371,7 +371,7 @@ function main({ gui, contextID, glslVersion}) {
 
 			// If this particle is being reset, give it a random position.
 			int shouldReset = stepi(texture(u_ages, v_uv).x, 1);
-			out_fragColor = mix(vec4(absolute, displacement), texture(u_initialPositions, v_uv), float(shouldReset));
+			out_FragColor = mix(vec4(absolute, displacement), texture(u_initialPositions, v_uv), float(shouldReset));
 		}`,
 		uniforms: [
 			{
@@ -409,10 +409,10 @@ function main({ gui, contextID, glslVersion}) {
 		uniform sampler2D u_image;
 		uniform float u_increment;
 
-		out float out_fragColor;
+		out float out_FragColor;
 
 		void main() {
-			out_fragColor = max(texture(u_image, v_uv).x + u_increment, 0.0);
+			out_FragColor = max(texture(u_image, v_uv).x + u_increment, 0.0);
 		}`,
 		uniforms: [
 			{
@@ -432,11 +432,11 @@ function main({ gui, contextID, glslVersion}) {
 		fragmentShader: `
 			in vec2 v_uv;
 			uniform sampler2D u_trailState;
-			out vec4 out_fragColor;
+			out vec4 out_FragColor;
 			void main() {
 				vec3 background = vec3(0.98, 0.922, 0.843);
 				vec3 particle = vec3(0, 0, 0.2);
-				out_fragColor = vec4(mix(background, particle, texture(u_trailState, v_uv).x), 1);
+				out_FragColor = vec4(mix(background, particle, texture(u_trailState, v_uv).x), 1);
 			}
 		`,
 	});
@@ -551,14 +551,14 @@ function main({ gui, contextID, glslVersion}) {
 		uniform sampler2D u_velocity;
 		uniform vec2 u_vector;
 
-		out vec2 out_fragColor;
+		out vec2 out_FragColor;
 
 		void main() {
 			vec2 radialVec = (v_uv_local * 2.0 - 1.0);
 			float radiusSq = dot(radialVec, radialVec);
 			vec2 velocity = texture(u_velocity, v_uv).xy + (1.0 - radiusSq) * u_vector * ${TOUCH_FORCE_SCALE.toFixed(1)};
 			float velocityMag = length(velocity);
-			out_fragColor = velocity / velocityMag * min(velocityMag, ${MAX_VELOCITY.toFixed(1)});
+			out_FragColor = velocity / velocityMag * min(velocityMag, ${MAX_VELOCITY.toFixed(1)});
 		}`,
 		uniforms: [
 			{
