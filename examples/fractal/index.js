@@ -9,18 +9,21 @@ function main({ gui, contextID, glslVersion}) {
 		renderAmplitudeProgram,
 	} = GPUIO;
 
-	let aspectRatio = window.innerWidth / window.innerHeight;
-	const radius = 1.25;
+	const RADIUS = 1.25;
+
+	function calcBounds() {
+		const aspectRatio = window.innerWidth / window.innerHeight;
+		return {
+			min: aspectRatio > 1 ? [-RADIUS * aspectRatio, -RADIUS] : [-RADIUS, -RADIUS / aspectRatio],
+			max: aspectRatio > 1 ? [RADIUS * aspectRatio, RADIUS] : [RADIUS, RADIUS / aspectRatio],
+		};
+	}
+	let bounds = calcBounds();
 
 	const PARAMS = {
-		bounds: {
-			min: aspectRatio > 1 ? [-radius * aspectRatio, -radius] : [-radius, -radius / aspectRatio],
-			max: aspectRatio > 1 ? [radius * aspectRatio, radius] : [radius, radius / aspectRatio],
-		},
 		cReal: -0.8,
 		cImaginary: 0.16,
 		maxIters: 150,
-		reset: onResize,
 		savePNG: savePNG,
 	};
 	const MAX_ITERS_MAX = 500;
@@ -70,12 +73,12 @@ function main({ gui, contextID, glslVersion}) {
 		uniforms: [
 			{
 				name: 'u_boundsMin',
-				value: PARAMS.bounds.min,
+				value: bounds.min,
 				type: FLOAT,
 			},
 			{
 				name: 'u_boundsMax',
-				value: PARAMS.bounds.max,
+				value: bounds.max,
 				type: FLOAT,
 			},
 			{
@@ -121,20 +124,20 @@ function main({ gui, contextID, glslVersion}) {
 	}
 
 	// Init simple GUI.
-	gui.add(PARAMS, 'cReal', -2, 2, 0.01).onChange((val) => {
+	const ui = [];
+	ui.push(gui.add(PARAMS, 'cReal', -2, 2, 0.01).onChange((val) => {
 		fractalCompute.setUniform('u_cReal', val);
 		needsCompute = true;
-	});
-	gui.add(PARAMS, 'cImaginary', -2, 2, 0.01).onChange((val) => {
+	}));
+	ui.push(gui.add(PARAMS, 'cImaginary', -2, 2, 0.01).onChange((val) => {
 		fractalCompute.setUniform('u_cImaginary', val);
 		needsCompute = true;
-	});
-	gui.add(PARAMS, 'maxIters', 1, MAX_ITERS_MAX, 1).onChange((val) => {
+	}));
+	ui.push(gui.add(PARAMS, 'maxIters', 1, MAX_ITERS_MAX, 1).onChange((val) => {
 		fractalCompute.setUniform('u_maxIters', val);
 		needsCompute = true;
-	});
-	gui.add(PARAMS, 'reset').name('Reset');
-	gui.add(PARAMS, 'savePNG').name('Save PNG (p)');
+	}));
+	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
 	function savePNG() {
 		composer.step({
@@ -157,15 +160,13 @@ function main({ gui, contextID, glslVersion}) {
 		const width = window.innerWidth;
 		const height = window.innerHeight;
 
-		aspectRatio = width / height;
-		const lastWidth = composer.width;
-		const lastHeight = composer.height;
-		// TODO: resize at same aspect ratio.
-
 		// Resize composer.
 		composer.resize(width, height);
 		// Resize state.
 		state.resize([width, height]);
+		bounds = calcBounds();
+		fractalCompute.setUniform('u_boundsMin', bounds.min);
+		fractalCompute.setUniform('u_boundsMax', bounds.max);
 		needsCompute = true;
 	}
 	onResize();
@@ -186,6 +187,8 @@ function main({ gui, contextID, glslVersion}) {
 		fractalRender.dispose();
 		state.dispose();
 		composer.dispose();
+		ui.forEach(el => gui.remove(el));
+		ui.length = 0;
 	}
 
 	return {
