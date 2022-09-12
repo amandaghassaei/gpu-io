@@ -103,29 +103,29 @@ export declare type GPULayerState = {
     layer: GPULayer;
 };
 /**
- * @private
+ * RGB image format.
  */
 export declare const RGB = "RGB";
 /**
- * @private
+ * RGBA image format.
  */
 export declare const RGBA = "RGBA";
 /**
- * @private
+ * Image formats for GPULayer.initFromImage().
  */
-export declare type TextureFormat = typeof RGB | typeof RGBA;
+export declare type ImageFormat = typeof RGB | typeof RGBA;
+/**
+ * Image types for GPULayer.initFromImage().
+ */
+export declare type ImageType = typeof UNSIGNED_BYTE | typeof FLOAT | typeof HALF_FLOAT;
 /**
  * @private
  */
-export declare const validTextureFormats: string[];
+export declare const validImageFormats: string[];
 /**
  * @private
  */
-export declare type TextureType = typeof UNSIGNED_BYTE;
-/**
- * @private
- */
-export declare const validTextureTypes: string[];
+export declare const validImageTypes: string[];
 /**
  * GLSL version 300 (WebGL2 only).
  */

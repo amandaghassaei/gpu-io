@@ -2,8 +2,6 @@ import {
 	validDataTypes,
 	validFilters,
 	validWraps,
-	validTextureFormats,
-	validTextureTypes,
 	GPULayerType,
 	HALF_FLOAT,
 	FLOAT,
@@ -13,6 +11,8 @@ import {
 	UNSIGNED_BYTE,
 	UNSIGNED_SHORT,
 	UNSIGNED_INT,
+	validImageFormats,
+	validImageTypes,
 } from './constants';
 
 /**
@@ -39,14 +39,19 @@ export function isValidWrap(type: string) {
 	return validWraps.indexOf(type) > -1;
 }
 
-// For image urls that are passed in and inited as textures.
-// TODO: add docs
-export function isValidTextureFormat(type: string) {
-	return validTextureFormats.indexOf(type) > -1;
+/**
+ * For image urls that are passed in and inited as GPULayers.
+ * @private
+ */
+export function isValidImageFormat(type: string) {
+	return validImageFormats.indexOf(type) > -1;
 }
-// TODO: add docs
-export function isValidTextureType(type: string) {
-	return validTextureTypes.indexOf(type) > -1;
+/**
+ * For image urls that are passed in and inited as GPULayers.
+ * @private
+ */
+export function isValidImageType(type: string) {
+	return validImageTypes.indexOf(type) > -1;
 }
 
 /**

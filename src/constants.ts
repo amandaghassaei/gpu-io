@@ -116,29 +116,29 @@ export type GPULayerState = {
 // TODO: change this?
 // For image urls that are passed in and inited as textures.
 /**
- * @private
+ * RGB image format.
  */
 export const RGB = 'RGB';
 /**
- * @private
+ * RGBA image format.
  */
 export const RGBA = 'RGBA';
 /**
- * @private
+ * Image formats for GPULayer.initFromImage().
  */
-export type TextureFormat = typeof RGB | typeof RGBA;
+export type ImageFormat = typeof RGB | typeof RGBA;
+/**
+ * Image types for GPULayer.initFromImage().
+ */
+ export type ImageType = typeof UNSIGNED_BYTE | typeof FLOAT | typeof HALF_FLOAT;
 /**
  * @private
  */
-export const validTextureFormats = [RGB, RGBA];
+export const validImageFormats = [RGB, RGBA];
 /**
  * @private
  */
-export type TextureType = typeof UNSIGNED_BYTE;
-/**
- * @private
- */
-export const validTextureTypes = [UNSIGNED_BYTE];
+ export const validImageTypes = [UNSIGNED_BYTE, FLOAT, HALF_FLOAT];
 
 // GLSL versions.
 /**

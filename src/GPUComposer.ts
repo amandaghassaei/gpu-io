@@ -14,11 +14,6 @@ import {
 	WEBGL2,
 	WEBGL1,
 	EXPERIMENTAL_WEBGL,
-	CLAMP_TO_EDGE,
-	TextureFormat,
-	NEAREST,
-	RGBA,
-	TextureType,
 	PROGRAM_NAME_INTERNAL,
 	CompileTimeConstants,
 	DEFAULT_PROGRAM_NAME,
@@ -30,8 +25,6 @@ import {
 	DEFAULT_CIRCLE_NUM_SEGMENTS,
 	validFilters,
 	validWraps,
-	validTextureFormats,
-	validTextureTypes,
 	UINT,
 	GLSLPrecision,
 	PRECISION_HIGH_P,
@@ -70,11 +63,6 @@ import {
 } from './utils';
 import {
 	isArray,
-	isString,
-	isValidFilter,
-	isValidTextureType,
-	isValidTextureFormat,
-	isValidWrap,
 } from './checks';
 import { DEFAULT_VERT_SHADER_SOURCE } from './glsl/vertex/DefaultVertexShader';
 import { LAYER_LINES_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerLinesVertexShader';

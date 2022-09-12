@@ -15,6 +15,22 @@
 - [writable](GPULayer.md#writable)
 - [numBuffers](GPULayer.md#numbuffers)
 
+### Methods
+
+- [initFromImageURL](GPULayer.md#initfromimageurl)
+- [is1D](GPULayer.md#is1d)
+- [incrementBufferIndex](GPULayer.md#incrementbufferindex)
+- [getStateAtIndex](GPULayer.md#getstateatindex)
+- [setFromArray](GPULayer.md#setfromarray)
+- [resize](GPULayer.md#resize)
+- [setFromImage](GPULayer.md#setfromimage)
+- [clear](GPULayer.md#clear)
+- [getValues](GPULayer.md#getvalues)
+- [savePNG](GPULayer.md#savepng)
+- [attachToThreeTexture](GPULayer.md#attachtothreetexture)
+- [clone](GPULayer.md#clone)
+- [dispose](GPULayer.md#dispose)
+
 ### Constructors
 
 - [constructor](GPULayer.md#constructor)
@@ -28,20 +44,6 @@
 - [currentState](GPULayer.md#currentstate)
 - [lastState](GPULayer.md#laststate)
 - [clearValue](GPULayer.md#clearvalue)
-
-### Methods
-
-- [is1D](GPULayer.md#is1d)
-- [incrementBufferIndex](GPULayer.md#incrementbufferindex)
-- [getStateAtIndex](GPULayer.md#getstateatindex)
-- [setFromArray](GPULayer.md#setfromarray)
-- [resize](GPULayer.md#resize)
-- [clear](GPULayer.md#clear)
-- [getValues](GPULayer.md#getvalues)
-- [savePNG](GPULayer.md#savepng)
-- [attachToThreeTexture](GPULayer.md#attachtothreetexture)
-- [clone](GPULayer.md#clone)
-- [dispose](GPULayer.md#dispose)
 
 ## Properties
 
@@ -104,6 +106,231 @@ ___
 ### numBuffers
 
 • `Readonly` **numBuffers**: `number`
+
+## Methods
+
+### initFromImageURL
+
+▸ `Static` **initFromImageURL**(`composer`, `params`): [`GPULayer`](GPULayer.md)
+
+Create a GPULayer from an image url.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](GPUComposer.md) | The current GPUComposer instance. |
+| `params` | `Object` | GPULayer parameters. |
+| `params.name` | `string` | Name of GPULayer, used for error logging. |
+| `params.url` | `string` | URL of the image source.  * |
+| `params.type?` | [`ImageType`](../README.md#imagetype) | Data type represented by GPULayer. |
+| `params.format?` | [`ImageFormat`](../README.md#imageformat) | Image format, either RGB or RGBA. |
+| `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST. |
+| `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.onLoad?` | (`layer`: [`GPULayer`](GPULayer.md)) => `void` | - |
+
+#### Returns
+
+[`GPULayer`](GPULayer.md)
+
+___
+
+### is1D
+
+▸ **is1D**(): `boolean`
+
+Returns whether the GPULayer was inited as a 1D array (rather than 2D).
+
+#### Returns
+
+`boolean`
+
+- true if GPULayer is 1D, else false.
+
+___
+
+### incrementBufferIndex
+
+▸ **incrementBufferIndex**(): `void`
+
+Increment buffer index by 1.
+
+#### Returns
+
+`void`
+
+___
+
+### getStateAtIndex
+
+▸ **getStateAtIndex**(`index`): [`GPULayerState`](../README.md#gpulayerstate)
+
+Get the state at a specified index as a GPULayerState object.
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `index` | `number` |
+
+#### Returns
+
+[`GPULayerState`](../README.md#gpulayerstate)
+
+___
+
+### setFromArray
+
+▸ **setFromArray**(`array`, `applyToAllBuffers?`): `void`
+
+#### Parameters
+
+| Name | Type | Default value |
+| :------ | :------ | :------ |
+| `array` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) | `undefined` |
+| `applyToAllBuffers` | `boolean` | `false` |
+
+#### Returns
+
+`void`
+
+___
+
+### resize
+
+▸ **resize**(`dimensions`, `array?`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `dimensions` | `number` \| [`number`, `number`] |
+| `array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
+
+#### Returns
+
+`void`
+
+___
+
+### setFromImage
+
+▸ **setFromImage**(`image`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `image` | `HTMLImageElement` |
+
+#### Returns
+
+`void`
+
+___
+
+### clear
+
+▸ **clear**(`applyToAllBuffers?`): `void`
+
+Clear all data in GPULayer to GPULayer.clearValue.
+
+#### Parameters
+
+| Name | Type | Default value | Description |
+| :------ | :------ | :------ | :------ |
+| `applyToAllBuffers` | `boolean` | `false` | Flag to apply to all buffers of GPULayer, or just the current output buffer. |
+
+#### Returns
+
+`void`
+
+___
+
+### getValues
+
+▸ **getValues**(): [`GPULayerArray`](../README.md#gpulayerarray)
+
+Returns the current values of the GPULayer as a TypedArray.
+
+#### Returns
+
+[`GPULayerArray`](../README.md#gpulayerarray)
+
+- A TypedArray containing current state of GPULayer.
+
+___
+
+### savePNG
+
+▸ **savePNG**(`params?`): `void`
+
+Save the current state of this GPULayer to png.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | PNG parameters. |
+| `params.filename?` | `string` | PNG filename (no extension, defaults to the name of the GPULayer). |
+| `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
+| `params.multiplier?` | `number` | Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1). |
+| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
+
+#### Returns
+
+`void`
+
+___
+
+### attachToThreeTexture
+
+▸ **attachToThreeTexture**(`texture`): `void`
+
+Attach the output buffer of this GPULayer to a Threejs Texture object.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `texture` | `Texture` | Threejs texture object. |
+
+#### Returns
+
+`void`
+
+___
+
+### clone
+
+▸ **clone**(`name?`): [`GPULayer`](GPULayer.md)
+
+Create a deep copy of GPULayer with current state copied over.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `name?` | `string` | Name of new GPULayer as string. |
+
+#### Returns
+
+[`GPULayer`](GPULayer.md)
+
+- Deep copy of GPULayer.
+
+___
+
+### dispose
+
+▸ **dispose**(): `void`
+
+Deallocate GPULayer instance and associated WebGL properties.
+
+#### Returns
+
+`void`
 
 ## Constructors
 
@@ -224,188 +451,6 @@ Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
 | Name | Type |
 | :------ | :------ |
 | `clearValue` | `number` \| `number`[] |
-
-#### Returns
-
-`void`
-
-## Methods
-
-### is1D
-
-▸ **is1D**(): `boolean`
-
-Returns whether the GPULayer was inited as a 1D array (rather than 2D).
-
-#### Returns
-
-`boolean`
-
-- true if GPULayer is 1D, else false.
-
-___
-
-### incrementBufferIndex
-
-▸ **incrementBufferIndex**(): `void`
-
-Increment buffer index by 1.
-
-#### Returns
-
-`void`
-
-___
-
-### getStateAtIndex
-
-▸ **getStateAtIndex**(`index`): [`GPULayerState`](../README.md#gpulayerstate)
-
-Get the state at a specified index as a GPULayerState object.
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `index` | `number` |
-
-#### Returns
-
-[`GPULayerState`](../README.md#gpulayerstate)
-
-___
-
-### setFromArray
-
-▸ **setFromArray**(`array`, `applyToAllBuffers?`): `void`
-
-#### Parameters
-
-| Name | Type | Default value |
-| :------ | :------ | :------ |
-| `array` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) | `undefined` |
-| `applyToAllBuffers` | `boolean` | `false` |
-
-#### Returns
-
-`void`
-
-___
-
-### resize
-
-▸ **resize**(`dimensions`, `array?`): `void`
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `dimensions` | `number` \| [`number`, `number`] |
-| `array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
-
-#### Returns
-
-`void`
-
-___
-
-### clear
-
-▸ **clear**(`applyToAllBuffers?`): `void`
-
-Clear all data in GPULayer to GPULayer.clearValue.
-
-#### Parameters
-
-| Name | Type | Default value | Description |
-| :------ | :------ | :------ | :------ |
-| `applyToAllBuffers` | `boolean` | `false` | Flag to apply to all buffers of GPULayer, or just the current output buffer. |
-
-#### Returns
-
-`void`
-
-___
-
-### getValues
-
-▸ **getValues**(): [`GPULayerArray`](../README.md#gpulayerarray)
-
-Returns the current values of the GPULayer as a TypedArray.
-
-#### Returns
-
-[`GPULayerArray`](../README.md#gpulayerarray)
-
-- A TypedArray containing current state of GPULayer.
-
-___
-
-### savePNG
-
-▸ **savePNG**(`params?`): `void`
-
-Save the current state of this GPULayer to png.
-
-#### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `params` | `Object` | PNG parameters. |
-| `params.filename?` | `string` | PNG filename (no extension, defaults to the name of the GPULayer). |
-| `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
-| `params.multiplier?` | `number` | Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1). |
-| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
-
-#### Returns
-
-`void`
-
-___
-
-### attachToThreeTexture
-
-▸ **attachToThreeTexture**(`texture`): `void`
-
-Attach the output buffer of this GPULayer to a Threejs Texture object.
-
-#### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `texture` | `Texture` | Threejs texture object. |
-
-#### Returns
-
-`void`
-
-___
-
-### clone
-
-▸ **clone**(`name?`): [`GPULayer`](GPULayer.md)
-
-Create a deep copy of GPULayer with current state copied over.
-
-#### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `name?` | `string` | Name of new GPULayer as string. |
-
-#### Returns
-
-[`GPULayer`](GPULayer.md)
-
-- Deep copy of GPULayer.
-
-___
-
-### dispose
-
-▸ **dispose**(): `void`
-
-Deallocate GPULayer instance and associated WebGL properties.
 
 #### Returns
 

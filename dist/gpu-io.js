@@ -3679,110 +3679,6 @@ var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var GPULayerHelpers_1 = __webpack_require__(191);
 var GPULayer = /** @class */ (function () {
-    // // TODO: move this to GPULayer.
-    // static initFromImage(composer: GPUComposer,
-    // 	params: {
-    // 		name: string,
-    // 		url: string,
-    // 		filter?: GPULayerFilter,
-    // 		wrapS?: GPULayerWrap,
-    // 		wrapT?: GPULayerWrap,
-    // 		format?: TextureFormat,
-    // 		type?: TextureType,
-    // 		onLoad?: (texture: WebGLTexture) => void,
-    // 	},
-    // ) {
-    // 	// Check params.
-    // 	const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
-    // 	Object.keys(params).forEach(key => {
-    // 		if (validKeys.indexOf(key) < 0) {
-    // 			throw new Error(`Invalid key "${key}" passed to GPUComposer.initTexture with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
-    // 		}
-    // 	});
-    // 	const { url, name } = params;
-    // 	if (!isString(url)) {
-    // 		throw new Error(`Expected GPUComposer.initTexture params to have url of type string, got ${url} of type ${typeof url}.`)
-    // 	}
-    // 	if (!isString(name)) {
-    // 		throw new Error(`Expected GPUComposer.initTexture params to have name of type string, got ${name} of type ${typeof name}.`)
-    // 	}
-    // 	// Get filter type, default to nearest.
-    // 	const filter = params.filter !== undefined ? params.filter : NEAREST;
-    // 	if (!isValidFilter(filter)) {
-    // 		throw new Error(`Invalid filter: ${filter} for GPULayer "${name}", must be ${validFilters.join(', ')}.`);
-    // 	}
-    // 	// Get wrap types, default to clamp to edge.
-    // 	const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
-    // 	if (!isValidWrap(wrapS)) {
-    // 		throw new Error(`Invalid wrapS: ${wrapS} for GPULayer "${name}", must be ${validWraps.join(', ')}.`);
-    // 	}
-    // 	const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
-    // 	if (!isValidWrap(wrapT)) {
-    // 		throw new Error(`Invalid wrapT: ${wrapT} for GPULayer "${name}", must be ${validWraps.join(', ')}.`);
-    // 	}
-    // 	// Get image format type, default to rgba.
-    // 	const format = params.format !== undefined ? params.format : RGBA;
-    // 	if (!isValidTextureFormat(format)) {
-    // 		throw new Error(`Invalid format: ${format} for GPULayer "${name}", must be ${validTextureFormats.join(', ')}.`);
-    // 	}
-    // 	// Get image data type, default to unsigned byte.
-    // 	const type = params.type !== undefined ? params.type : UNSIGNED_BYTE;
-    // 	if (!isValidTextureType(type)) {
-    // 		throw new Error(`Invalid type: ${type} for GPULayer "${name}", must be ${validTextureTypes.join(', ')}.`);
-    // 	}
-    // 	const { gl, _errorCallback } = composer;
-    // 	const texture = gl.createTexture();
-    // 	if (texture === null) {
-    // 		throw new Error(`Unable to init glTexture.`);
-    // 	}
-    // 	gl.bindTexture(gl.TEXTURE_2D, texture);
-    // 	// Because images have to be downloaded over the internet
-    // 	// they might take a moment until they are ready.
-    // 	// Until then put a single pixel in the texture so we can
-    // 	// use it immediately. When the image has finished downloading
-    // 	// we'll update the texture with the contents of the image.
-    // 	const level = 0;
-    // 	const internalFormat = gl.RGBA;
-    // 	const width = 1;
-    // 	const height = 1;
-    // 	const border = 0;
-    // 	const srcFormat = gl[format];
-    // 	const srcType = gl[type];
-    // 	const pixel = new Uint8Array([0, 0, 0, 0]);
-    // 	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-    // 		width, height, border, srcFormat, srcType, pixel);
-    // 	const image = new Image();
-    // 	image.onload = () => {
-    // 		gl.bindTexture(gl.TEXTURE_2D, texture);
-    // 		gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-    // 			srcFormat, srcType, image);
-    // 		// WebGL1 has different requirements for power of 2 images
-    // 		// vs non power of 2 images so check if the image is a
-    // 		// power of 2 in both dimensions.
-    // 		if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-    // 			// // Yes, it's a power of 2. Generate mips.
-    // 			// gl.generateMipmap(gl.TEXTURE_2D);
-    // 		} else {
-    // 			// TODO: finish implementing this.
-    // 			console.warn(`Texture ${name} dimensions [${image.width}, ${image.height}] are not power of 2.`);
-    // 			// // No, it's not a power of 2. Turn off mips and set
-    // 			// // wrapping to clamp to edge
-    // 			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    // 			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    // 		}
-    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl[wrapS]);
-    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl[wrapT]);
-    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl[filter]);
-    // 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl[filter]);
-    // 		// Callback when texture has loaded.
-    // 		if (params.onLoad) params.onLoad(texture);
-    // 	};
-    // 	image.onerror = (e) => {
-    // 		_errorCallback(`Error loading image ${name}: ${e}`);
-    // 	}
-    // 	image.src = url;
-    // 	return texture;
-    // }
     /**
      * Create a GPULayer.
      * @param composer - The current GPUComposer instance.
@@ -3920,6 +3816,63 @@ var GPULayer = /** @class */ (function () {
         }
         this._initBuffers(params.array);
     }
+    /**
+     * Create a GPULayer from an image url.
+     * @param composer - The current GPUComposer instance.
+     * @param params  - GPULayer parameters.
+     * @param params.name - Name of GPULayer, used for error logging.
+     * @param params.url - URL of the image source.
+     * @param params.type - Data type represented by GPULayer.
+     * @param params.format - Image format, either RGB or RGBA.
+     * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
+     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.onLoad - Callback when image has loaded.
+     */
+    GPULayer.initFromImageURL = function (composer, params) {
+        // Check params.
+        var validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
+        Object.keys(params).forEach(function (key) {
+            if (validKeys.indexOf(key) < 0) {
+                throw new Error("Invalid key \"".concat(key, "\" passed to GPULayer.initFromImage with name \"").concat(params.name, "\".  Valid keys are ").concat(validKeys.join(', '), "."));
+            }
+        });
+        var url = params.url, name = params.name, filter = params.filter, wrapS = params.wrapS, wrapT = params.wrapT, type = params.type, format = params.format;
+        if (!(0, checks_1.isString)(url)) {
+            throw new Error("Expected GPULayer.initFromImage params to have url of type string, got ".concat(url, " of type ").concat(typeof url, "."));
+        }
+        if (type && !(0, checks_1.isValidImageType)(type)) {
+            throw new Error("Expected GPULayer.initFromImage params to have type of ".concat(JSON.stringify(constants_1.validImageTypes), ", got ").concat(JSON.stringify(type), "."));
+        }
+        if (format && !(0, checks_1.isValidImageFormat)(format)) {
+            throw new Error("Expected GPULayer.initFromImage params to have format of ".concat(JSON.stringify(constants_1.validImageFormats), ", got ").concat(JSON.stringify(format), "."));
+        }
+        // Init a layer to return, we will fill it when image has loaded.
+        var layer = new GPULayer(composer, {
+            name: name,
+            type: type || constants_1.FLOAT,
+            filter: filter,
+            wrapS: wrapS,
+            wrapT: wrapT,
+            numComponents: format ? format.length : 4,
+            dimensions: [1, 1],
+            writable: false,
+            numBuffers: 1,
+        });
+        // Load image.
+        var image = new Image();
+        image.onload = function () {
+            layer.setFromImage(image);
+            // Callback when texture has loaded.
+            if (params.onLoad)
+                params.onLoad(layer);
+        };
+        image.onerror = function (e) {
+            composer._errorCallback("Error loading image ".concat(name, ": ").concat(e));
+        };
+        image.src = url;
+        return layer;
+    };
     Object.defineProperty(GPULayer.prototype, "width", {
         /**
          * The width of the GPULayer array.
@@ -4029,7 +3982,7 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype._initBuffers = function (array) {
         var _a = this, name = _a.name, numBuffers = _a.numBuffers, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, _glFilter = _a._glFilter, _glWrapS = _a._glWrapS, _glWrapT = _a._glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
-        var validatedArray = array ? (0, GPULayerHelpers_1.validateGPULayerArray)(array, this) : undefined;
+        var validatedArray = (0, checks_1.isArray)(array) ? (0, GPULayerHelpers_1.validateGPULayerArray)(array, this) : ((array === null || array === void 0 ? void 0 : array.constructor) === HTMLImageElement ? array : undefined);
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
@@ -4043,6 +3996,7 @@ var GPULayer = /** @class */ (function () {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, _glWrapT);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, _glFilter);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, _glFilter);
+            // @ts-ignore
             gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray ? validatedArray : null);
             var buffer = {
                 texture: texture,
@@ -4187,6 +4141,20 @@ var GPULayer = /** @class */ (function () {
         this._height = height;
         this._destroyBuffers();
         this._initBuffers(array);
+    };
+    GPULayer.prototype.setFromImage = function (image) {
+        var _a = this, name = _a.name, _composer = _a._composer;
+        var verboseLogging = _composer.verboseLogging;
+        // TODO: check compatible type.
+        var dimensions = [image.width, image.height];
+        if (verboseLogging)
+            console.log("Resizing GPULayer \"".concat(name, "\" to ").concat(JSON.stringify(dimensions), "."));
+        var _b = (0, GPULayerHelpers_1.calcGPULayerSize)(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
+        this._length = length;
+        this._width = width;
+        this._height = height;
+        this._destroyBuffers();
+        this._initBuffers(image);
     };
     Object.defineProperty(GPULayer.prototype, "clearValue", {
         /**
@@ -6380,7 +6348,7 @@ exports.Vector4 = Vector4;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isBoolean = exports.isObject = exports.isArray = exports.isString = exports.isNonNegativeInteger = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isNumberOfType = exports.isValidClearValue = exports.isValidTextureType = exports.isValidTextureFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
+exports.isBoolean = exports.isObject = exports.isArray = exports.isString = exports.isNonNegativeInteger = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isNumberOfType = exports.isValidClearValue = exports.isValidImageType = exports.isValidImageFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
 var constants_1 = __webpack_require__(601);
 /**
  * Checks if type is valid GPULayer data type.
@@ -6406,17 +6374,22 @@ function isValidWrap(type) {
     return constants_1.validWraps.indexOf(type) > -1;
 }
 exports.isValidWrap = isValidWrap;
-// For image urls that are passed in and inited as textures.
-// TODO: add docs
-function isValidTextureFormat(type) {
-    return constants_1.validTextureFormats.indexOf(type) > -1;
+/**
+ * For image urls that are passed in and inited as GPULayers.
+ * @private
+ */
+function isValidImageFormat(type) {
+    return constants_1.validImageFormats.indexOf(type) > -1;
 }
-exports.isValidTextureFormat = isValidTextureFormat;
-// TODO: add docs
-function isValidTextureType(type) {
-    return constants_1.validTextureTypes.indexOf(type) > -1;
+exports.isValidImageFormat = isValidImageFormat;
+/**
+ * For image urls that are passed in and inited as GPULayers.
+ * @private
+ */
+function isValidImageType(type) {
+    return constants_1.validImageTypes.indexOf(type) > -1;
 }
-exports.isValidTextureType = isValidTextureType;
+exports.isValidImageType = isValidImageType;
 /**
  * Checks if value is valid GPULayer clear value for numComponents and type.
  * @private
@@ -6570,7 +6543,7 @@ exports.isBoolean = isBoolean;
 
 // Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL2 = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validTextureTypes = exports.validTextureFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
+exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL2 = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validImageTypes = exports.validImageFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.BOUNDARY_RIGHT = exports.BOUNDARY_LEFT = exports.BOUNDARY_BOTTOM = exports.BOUNDARY_TOP = exports.GPUIO_FLOAT_PRECISION = exports.GPUIO_INT_PRECISION = exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = void 0;
 /**
  * Half float data type.
@@ -6649,21 +6622,21 @@ exports.validWraps = [exports.CLAMP_TO_EDGE, exports.REPEAT]; // MIRRORED_REPEAT
 // TODO: change this?
 // For image urls that are passed in and inited as textures.
 /**
- * @private
+ * RGB image format.
  */
 exports.RGB = 'RGB';
 /**
- * @private
+ * RGBA image format.
  */
 exports.RGBA = 'RGBA';
 /**
  * @private
  */
-exports.validTextureFormats = [exports.RGB, exports.RGBA];
+exports.validImageFormats = [exports.RGB, exports.RGBA];
 /**
  * @private
  */
-exports.validTextureTypes = [exports.UNSIGNED_BYTE];
+exports.validImageTypes = [exports.UNSIGNED_BYTE, exports.FLOAT, exports.HALF_FLOAT];
 // GLSL versions.
 /**
  * GLSL version 300 (WebGL2 only).

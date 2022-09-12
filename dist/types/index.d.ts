@@ -78,8 +78,8 @@ declare const _testing: {
     isValidDataType(type: string): boolean;
     isValidFilter(type: string): boolean;
     isValidWrap(type: string): boolean;
-    isValidTextureFormat(type: string): boolean;
-    isValidTextureType(type: string): boolean;
+    isValidImageFormat(type: string): boolean;
+    isValidImageType(type: string): boolean;
     isValidClearValue(clearValue: number | number[], numComponents: number, type: import("./constants").GPULayerType): boolean;
     isNumberOfType(value: any, type: import("./constants").GPULayerType): boolean;
     isNumber(value: any): boolean;

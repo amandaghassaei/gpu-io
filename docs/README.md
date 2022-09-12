@@ -26,6 +26,8 @@ gpu-io
 - [LINEAR](README.md#linear)
 - [CLAMP\_TO\_EDGE](README.md#clamp_to_edge)
 - [REPEAT](README.md#repeat)
+- [RGB](README.md#rgb)
+- [RGBA](README.md#rgba)
 - [GLSL3](README.md#glsl3)
 - [GLSL1](README.md#glsl1)
 - [WEBGL2](README.md#webgl2)
@@ -48,6 +50,8 @@ gpu-io
 - [GPULayerFilter](README.md#gpulayerfilter)
 - [GPULayerWrap](README.md#gpulayerwrap)
 - [GPULayerState](README.md#gpulayerstate)
+- [ImageFormat](README.md#imageformat)
+- [ImageType](README.md#imagetype)
 - [GLSLVersion](README.md#glslversion)
 - [GLSLPrecision](README.md#glslprecision)
 - [UniformType](README.md#uniformtype)
@@ -188,6 +192,22 @@ ___
 • `Const` **REPEAT**: ``"REPEAT"``
 
 Repeat/periodic wrapping.
+
+___
+
+### RGB
+
+• `Const` **RGB**: ``"RGB"``
+
+RGB image format.
+
+___
+
+### RGBA
+
+• `Const` **RGBA**: ``"RGBA"``
+
+RGBA image format.
 
 ___
 
@@ -340,6 +360,22 @@ This data structure also includes a reference back to the GPULayer that it origi
 | :------ | :------ |
 | `texture` | `WebGLTexture` |
 | `layer` | [`GPULayer`](classes/GPULayer.md) |
+
+___
+
+### ImageFormat
+
+Ƭ **ImageFormat**: typeof [`RGB`](README.md#rgb) \| typeof [`RGBA`](README.md#rgba)
+
+Image formats for GPULayer.initFromImage().
+
+___
+
+### ImageType
+
+Ƭ **ImageType**: typeof [`UNSIGNED_BYTE`](README.md#unsigned_byte) \| typeof [`FLOAT`](README.md#float) \| typeof [`HALF_FLOAT`](README.md#half_float)
+
+Image types for GPULayer.initFromImage().
 
 ___
 

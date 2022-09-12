@@ -14,8 +14,16 @@ export declare function isValidFilter(type: string): boolean;
  * @private
  */
 export declare function isValidWrap(type: string): boolean;
-export declare function isValidTextureFormat(type: string): boolean;
-export declare function isValidTextureType(type: string): boolean;
+/**
+ * For image urls that are passed in and inited as GPULayers.
+ * @private
+ */
+export declare function isValidImageFormat(type: string): boolean;
+/**
+ * For image urls that are passed in and inited as GPULayers.
+ * @private
+ */
+export declare function isValidImageType(type: string): boolean;
 /**
  * Checks if value is valid GPULayer clear value for numComponents and type.
  * @private

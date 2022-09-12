@@ -1,5 +1,5 @@
 import { GPUComposer } from './GPUComposer';
-import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap, GPULayerState } from './constants';
+import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap, GPULayerState, ImageFormat, ImageType } from './constants';
 import { Texture } from 'three';
 export declare class GPULayer {
     private readonly _composer;
@@ -83,6 +83,29 @@ export declare class GPULayer {
      */
     readonly _glWrapT: number;
     private _textureOverrides?;
+    /**
+     * Create a GPULayer from an image url.
+     * @param composer - The current GPUComposer instance.
+     * @param params  - GPULayer parameters.
+     * @param params.name - Name of GPULayer, used for error logging.
+     * @param params.url - URL of the image source.
+     * @param params.type - Data type represented by GPULayer.
+     * @param params.format - Image format, either RGB or RGBA.
+     * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
+     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.onLoad - Callback when image has loaded.
+     */
+    static initFromImageURL(composer: GPUComposer, params: {
+        name: string;
+        url: string;
+        type?: ImageType;
+        format?: ImageFormat;
+        filter?: GPULayerFilter;
+        wrapS?: GPULayerWrap;
+        wrapT?: GPULayerWrap;
+        onLoad?: (layer: GPULayer) => void;
+    }): GPULayer;
     /**
      * Create a GPULayer.
      * @param composer - The current GPUComposer instance.
@@ -170,6 +193,7 @@ export declare class GPULayer {
     _prepareForWrite(incrementBufferIndex: boolean): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
     resize(dimensions: number | [number, number], array?: GPULayerArray | number[]): void;
+    setFromImage(image: HTMLImageElement): void;
     /**
      * Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
      */
