@@ -136,6 +136,32 @@ void main() {
 				// Throw error if no assignment.
 				assert.throws(() => { glsl1FragmentOut('out vec4 out_fragColor;', 'test'); }, 'No assignment found for out_fragColor in GPUProgram "test".');
 			});
+			it('should handle edge cases', () => {
+				// Make sure regex is lazy.
+				assert.equal(glsl1FragmentOut(`
+				in vec2 v_uv;
+				uniform sampler2D u_initialPositions;
+				out vec4 out_fragColor;
+				void main() {
+					int age = 0;
+					if (age < 1) {
+						out_fragColor = texture(u_initialPositions, v_uv);
+						return;
+					}
+					out_fragColor = texture(u_initialPositions, v_uv);
+				}`), `
+				in vec2 v_uv;
+				uniform sampler2D u_initialPositions;
+				
+				void main() {
+					int age = 0;
+					if (age < 1) {
+						gl_FragColor = vec4(texture(u_initialPositions, v_uv));
+						return;
+					}
+					gl_FragColor = vec4(texture(u_initialPositions, v_uv));
+				}`);
+			});
 		});
 		describe('checkFragmentShaderForFragColor', () => {
 			it('should check for out_fragColor in fragment source', () => {

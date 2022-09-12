@@ -1,5 +1,9 @@
 # GLSL
 
+## Fragment Shader Outputs
+
+gpu-io requires that fragment shader output be defined as `out float|int|[u|i]vec(2|3|4) out_fragColor`.  This output will be automatically converted to gl_FragColor and typecast when targeting GLSL1.
+
 ## Fragment Shader Inputs
 
 gpu-io makes following inputs available to fragment shaders:
@@ -13,6 +17,8 @@ For `step()`, `stepNonBoundary()`, `stepCircle()`, `stepSegment()`:
 For `drawLayerAsPoints()`:
 
 - `in int v_index` - The index of the current point.
+- `in vec2 v_uv_array` - The UV coordinates of this point within the points GPULayer.
+- `in vec2 v_position` - Position of the current point.
 
 
 ## Helper Functions
@@ -25,6 +31,8 @@ Type annotations used in function descriptions:
 `TI` = `int` | `ivec2` | `ivec3` | `ivec4`  
 `TU` = `uint` | `uvec2` | `uvec3` | `uvec4`  
 
-- `TI|TU modi(TI|TU x, TI|TU y)`
-- `TI|TU modi(TI|TU x, int|uint y)`
+- `TI|TU modi(TI|TU x, TI|TU y)` - Integer version of `mod()`.
+- `TI|TU modi(TI|TU x, int|uint y)` - Integer version of `mod()`.
+- `TI|TU stepi(TI|TU x, TI|TU y)` - Integer version of `step()`.
+- `TI|TU stepi(int|uint x, TI|TU y)` - Integer version of `step()`.
 

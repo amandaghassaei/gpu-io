@@ -31,7 +31,7 @@ In 2022 WebGL2 was finally rolled out to all major platforms (including iOS, the
 
 - All unsigned integer types (`uint`, `uvec2`, `uvec3`, `uvec4`, `usampler2D`) are automatically converted to signed integer types (`int`, `ivec2`, `ivec3`, `ivec4`, `isampler2D`) when targeting GLSL1.
 - The only texture lookup function officially supported by gpu-io is `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)`.  Currently, the bias parameter is not supported.  Other built-in GLSL1 texture lookup functions may also work, but have not been tested.
-- `out float|int|[u|i]vec(2|3|4) out_fragColor` is required for all GLSL3 fragment shader programs.  This output will be automatically converted to gl_FragColor when targeting GLSL1;  Additionally it will be typecast and padded with extra zeros in the case where `out_fragColor` is not a `vec4` type.
+- `out float|int|[u|i]vec(2|3|4) out_fragColor` is required for all GLSL3 fragment shader programs.  This output will be automatically converted to gl_FragColor when targeting GLSL1; additionally it will be typecast and padded with extra zeros in the case where `out_fragColor` is not a `vec4` type.
 
 More information about the implementation can be found in [regex.ts](../src/regex.ts) and [polyfills.ts](../src/polyfills.ts).  Pull requests welcome, I'm sure there are ways to speed some of these functions up.  The [bitwise logical operators](#operators) are particularly in need of help, as they include branching conditional statements.
 

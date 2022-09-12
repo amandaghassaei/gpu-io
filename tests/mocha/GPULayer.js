@@ -15,6 +15,7 @@
 		CLAMP_TO_EDGE,
 		REPEAT,
 		LINEAR,
+		NEAREST,
 		GLSL1,
 		GLSL3,
 		_testing,
@@ -135,6 +136,58 @@
 					assert.equal(values[i], -5);
 				}
 				layer.dispose();
+			})
+			it('should init 1D FLOAT and HALF_FLOAT GPULayers with NEAREST filtering and CLAMP_TO_EDGE wrapping', () => {
+				const layerFloat = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: 100,
+				});
+				assert.equal(layerFloat.type, FLOAT);
+				assert.equal(layerFloat._internalType, FLOAT);
+				assert.equal(layerFloat.filter, NEAREST);
+				assert.equal(layerFloat.wrapS, CLAMP_TO_EDGE);
+				assert.equal(layerFloat.wrapT, CLAMP_TO_EDGE);
+				layerFloat.dispose();
+				const layerHalfFloat = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: HALF_FLOAT,
+					numComponents: 3,
+					dimensions: 100,
+				});
+				assert.equal(layerHalfFloat.type, HALF_FLOAT);
+				assert.equal(layerHalfFloat._internalType, HALF_FLOAT);
+				assert.equal(layerHalfFloat.filter, NEAREST);
+				assert.equal(layerHalfFloat.wrapS, CLAMP_TO_EDGE);
+				assert.equal(layerHalfFloat.wrapT, CLAMP_TO_EDGE);
+				layerHalfFloat.dispose();
+			});
+			it('should init 2D FLOAT and HALF_FLOAT GPULayers with LINEAR filtering and CLAMP_TO_EDGE wrapping', () => {
+				const layerFloat = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [100, 100],
+				});
+				assert.equal(layerFloat.type, FLOAT);
+				assert.equal(layerFloat._internalType, FLOAT);
+				assert.equal(layerFloat.filter, LINEAR);
+				assert.equal(layerFloat.wrapS, CLAMP_TO_EDGE);
+				assert.equal(layerFloat.wrapT, CLAMP_TO_EDGE);
+				layerFloat.dispose();
+				const layerHalfFloat = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: HALF_FLOAT,
+					numComponents: 3,
+					dimensions: [100, 100],
+				});
+				assert.equal(layerHalfFloat.type, HALF_FLOAT);
+				assert.equal(layerHalfFloat._internalType, HALF_FLOAT);
+				assert.equal(layerHalfFloat.filter, LINEAR);
+				assert.equal(layerHalfFloat.wrapS, CLAMP_TO_EDGE);
+				assert.equal(layerHalfFloat.wrapT, CLAMP_TO_EDGE);
+				layerHalfFloat.dispose();
 			});
 		});
 		describe('get width, height, length', () => {

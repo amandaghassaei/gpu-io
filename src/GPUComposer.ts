@@ -1084,6 +1084,7 @@ export class GPUComposer {
 	 * @param params.program - GPUProgram to run.
 	 * @param params.position - Position of center of circle.
 	 * @param params.diameter - Circle diameter in pixels.
+	 * @param params.useOutputScale - If true position and diameter are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
 	 * @param params.input - Input GPULayers to GPUProgram.
 	 * @param params.output - Output GPULayer, will draw to screen if undefined.
 	 * @param params.numSegments - Number of segments in circle, defaults to 18.
@@ -1095,21 +1096,27 @@ export class GPUComposer {
 			program: GPUProgram,
 			position: [number, number], // Position is in units of pixels.
 			diameter: number, // Diameter is in units of pixels.
+			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer, // Undefined renders to screen.
 			numSegments?: number,
 			blendAlpha?: boolean,
 		},
 	) {
-		const { gl, _width, _height } = this;
+		const { gl, _errorState } = this;
 		const { program, position, diameter, input, output } = params;
+
+		if (_errorState) return;
+
+		const width = output && params.useOutputScale ? output.width : this._width;
+		const height = output && params.useOutputScale ? output.height : this._height;
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
 
 		// Update uniforms and buffers.
-		program._setVertexUniform(glProgram, 'u_gpuio_scale', [diameter / _width, diameter / _height], FLOAT);
-		program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [diameter / width, diameter / height], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], FLOAT);
 		const numSegments = params.numSegments ? params.numSegments : DEFAULT_CIRCLE_NUM_SEGMENTS;
 		if (numSegments < 3) {
 			throw new Error(`numSegments for GPUComposer.stepCircle must be greater than 2, got ${numSegments}.`);
@@ -1131,6 +1138,7 @@ export class GPUComposer {
 	 * @param params.position1 - Position of one end of segment.
 	 * @param params.position2 - Position of the other end of segment.
 	 * @param params.thickness - Thickness in pixels.
+	 * @param params.useOutputScale - If true position and thickness are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
 	 * @param params.input - Input GPULayers to GPUProgram.
 	 * @param params.output - Output GPULayer, will draw to screen if undefined.
 	 * @param params.endCaps - Flag to draw with rounded end caps, defaults to false.
@@ -1141,11 +1149,12 @@ export class GPUComposer {
 	stepSegment(
 		params: {
 			program: GPUProgram,
-			position1: [number, number], // Position is in units of pixels.
-			position2: [number, number], // Position is in units of pixels.
-			thickness: number, // Thickness is in units of pixels.
+			position1: [number, number], 
+			position2: [number, number],
+			thickness: number,
+			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer, // Undefined renders to screen.
+			output?: GPULayer,
 			endCaps?: boolean,
 			numCapSegments?: number,
 			blendAlpha?: boolean,
@@ -1156,8 +1165,8 @@ export class GPUComposer {
 
 		if (_errorState) return;
 
-		const width = output ? output.width : this._width;
-		const height = output ? output.height : this._height;
+		const width = output && params.useOutputScale ? output.width : this._width;
+		const height = output && params.useOutputScale ? output.height : this._height;
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, SEGMENT_PROGRAM_NAME, {}, false, input, output);
@@ -1171,7 +1180,7 @@ export class GPUComposer {
 		program._setVertexUniform(glProgram, 'u_gpuio_rotation', angle, FLOAT);
 		const centerX = (position1[0] + position2[0]) / 2;
 		const centerY = (position1[1] + position2[1]) / 2;
-		program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * centerX / this._width - 1, 2 * centerY / this._height - 1], FLOAT);
+		program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * centerX / width - 1, 2 * centerY / height - 1], FLOAT);
 		const length = Math.sqrt(diffX * diffX + diffY * diffY);
 		
 		const numSegments = params.numCapSegments ? params.numCapSegments * 2 : DEFAULT_CIRCLE_NUM_SEGMENTS;
@@ -1183,7 +1192,7 @@ export class GPUComposer {
 			program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
 		} else {
-			// Have to subtract a small offset from length.
+			// Have to subtract a small offset from length. // TODO: ?
 			program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness, FLOAT);
 			// Use a rectangle in case of no caps.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());

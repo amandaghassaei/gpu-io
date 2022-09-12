@@ -412,6 +412,7 @@ export function fragmentShaderPolyfills() {
 	if (FRAGMENT_SHADER_POLYFILLS) return FRAGMENT_SHADER_POLYFILLS;
 
 	const modi = (type1: TI | TU, type2: TI | TU) => `${type1} modi(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`;
+	const stepi = (type1: TI | TU, type2: TI | TU) => `${type2} stepi(const ${type1} x, const ${type2} y) { return ${type2}(step(${floatTypeForIntType(type1)}(x), ${floatTypeForIntType(type2)}(y))); }`;
 	const bitshiftLeft = (type1: TI | TU, type2: TI | TU) => {
 return`${type1} bitshiftLeft(const ${type1} a, const ${type2} b) {
 	#if (__VERSION__ == 300)
@@ -533,6 +534,23 @@ ${modi('uvec4', 'uvec4')}
 ${modi('uvec2', 'uint')}
 ${modi('uvec3', 'uint')}
 ${modi('uvec4', 'uint')}
+#endif
+
+${stepi('int', 'int')}
+${stepi('ivec2', 'ivec2')}
+${stepi('ivec3', 'ivec3')}
+${stepi('ivec4', 'ivec4')}
+${stepi('int', 'ivec2')}
+${stepi('int', 'ivec3')}
+${stepi('int', 'ivec4')}
+#if (__VERSION__ == 300)
+${stepi('uint', 'uint')}
+${stepi('uvec2', 'uvec2')}
+${stepi('uvec3', 'uvec3')}
+${stepi('uvec4', 'uvec4')}
+${stepi('uint', 'uvec2')}
+${stepi('uint', 'uvec3')}
+${stepi('uint', 'uvec4')}
 #endif
 
 ${bitshiftLeft('int', 'int')}

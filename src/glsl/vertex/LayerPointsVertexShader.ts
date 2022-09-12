@@ -18,15 +18,17 @@ uniform vec2 u_gpuio_scale;
 uniform float u_gpuio_pointSize;
 
 out vec2 v_uv;
+out vec2 v_uv_array;
+out vec2 v_position;
 flat out int v_index;
 
 void main() {
 	// Calculate a uv based on the point's index attribute.
 	#if (__VERSION__ == 300)
-		vec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);
+		v_uv_array = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);
 		v_index = gl_VertexID;
 	#else
-		vec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);
+		v_uv_array = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);
 		v_index = int(a_gpuio_index);
 	#endif
 
@@ -34,11 +36,13 @@ void main() {
 	// Lookup vertex position and scale to [0, 1] range.
 	#ifdef ${GPUIO_VS_POSITION_W_ACCUM}
 		// We have packed a 2D displacement with the position.
-		vec4 positionData = texture(u_gpuio_positions, positionUV);
+		vec4 positionData = texture(u_gpuio_positions, v_uv_array);
 		// position = first two components plus last two components (optional accumulation buffer).
-		v_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;
+		v_position = positionData.rg + positionData.ba;
+		v_uv = v_position * u_gpuio_scale;
 	#else
-		v_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;
+		v_position = texture(u_gpuio_positions, v_uv_array).rg;
+		v_uv = v_position * u_gpuio_scale;
 	#endif
 
 	// Wrap if needed.

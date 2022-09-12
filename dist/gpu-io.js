@@ -3043,6 +3043,7 @@ var GPUComposer = /** @class */ (function () {
      * @param params.program - GPUProgram to run.
      * @param params.position - Position of center of circle.
      * @param params.diameter - Circle diameter in pixels.
+     * @param params.useOutputScale - If true position and diameter are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
      * @param params.input - Input GPULayers to GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.numSegments - Number of segments in circle, defaults to 18.
@@ -3050,13 +3051,17 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepCircle = function (params) {
-        var _a = this, gl = _a.gl, _width = _a._width, _height = _a._height;
+        var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, position = params.position, diameter = params.diameter, input = params.input, output = params.output;
+        if (_errorState)
+            return;
+        var width = output && params.useOutputScale ? output.width : this._width;
+        var height = output && params.useOutputScale ? output.height : this._height;
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
-        program._setVertexUniform(glProgram, 'u_gpuio_scale', [diameter / _width, diameter / _height], constants_1.FLOAT);
-        program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * position[0] / _width - 1, 2 * position[1] / _height - 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_scale', [diameter / width, diameter / height], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * position[0] / width - 1, 2 * position[1] / height - 1], constants_1.FLOAT);
         var numSegments = params.numSegments ? params.numSegments : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (numSegments < 3) {
             throw new Error("numSegments for GPUComposer.stepCircle must be greater than 2, got ".concat(numSegments, "."));
@@ -3076,6 +3081,7 @@ var GPUComposer = /** @class */ (function () {
      * @param params.position1 - Position of one end of segment.
      * @param params.position2 - Position of the other end of segment.
      * @param params.thickness - Thickness in pixels.
+     * @param params.useOutputScale - If true position and thickness are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
      * @param params.input - Input GPULayers to GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.endCaps - Flag to draw with rounded end caps, defaults to false.
@@ -3088,8 +3094,8 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
         if (_errorState)
             return;
-        var width = output ? output.width : this._width;
-        var height = output ? output.height : this._height;
+        var width = output && params.useOutputScale ? output.width : this._width;
+        var height = output && params.useOutputScale ? output.height : this._height;
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.SEGMENT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
@@ -3101,7 +3107,7 @@ var GPUComposer = /** @class */ (function () {
         program._setVertexUniform(glProgram, 'u_gpuio_rotation', angle, constants_1.FLOAT);
         var centerX = (position1[0] + position2[0]) / 2;
         var centerY = (position1[1] + position2[1]) / 2;
-        program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * centerX / this._width - 1, 2 * centerY / this._height - 1], constants_1.FLOAT);
+        program._setVertexUniform(glProgram, 'u_gpuio_translation', [2 * centerX / width - 1, 2 * centerY / height - 1], constants_1.FLOAT);
         var length = Math.sqrt(diffX * diffX + diffY * diffY);
         var numSegments = params.numCapSegments ? params.numCapSegments * 2 : constants_1.DEFAULT_CIRCLE_NUM_SEGMENTS;
         if (params.endCaps) {
@@ -3113,7 +3119,7 @@ var GPUComposer = /** @class */ (function () {
             gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
         }
         else {
-            // Have to subtract a small offset from length.
+            // Have to subtract a small offset from length. // TODO: ?
             program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness, constants_1.FLOAT);
             // Use a rectangle in case of no caps.
             gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
@@ -7122,7 +7128,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = void 0;
 var constants_1 = __webpack_require__(601);
 var VertexShaderHelpers_1 = __webpack_require__(324);
-exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_pointSize;\n\nout vec2 v_uv;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tvec2 positionUV = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tvec2 positionUV = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, positionUV);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_uv = (positionData.rg + positionData.ba) * u_gpuio_scale;\n\t#else\n\t\tv_uv = texture(u_gpuio_positions, positionUV).rg  * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tv_uv.x = fract(v_uv.x + ceil(abs(v_uv.x)));\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tv_uv.y = fract(v_uv.y + ceil(abs(v_uv.y)));\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_PointSize = u_gpuio_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}");
+exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_pointSize;\n\nout vec2 v_uv;\nout vec2 v_uv_array;\nout vec2 v_position;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tv_uv_array = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tv_uv_array = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, v_uv_array);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_position = positionData.rg + positionData.ba;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#else\n\t\tv_position = texture(u_gpuio_positions, v_uv_array).rg;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tv_uv.x = fract(v_uv.x + ceil(abs(v_uv.x)));\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tv_uv.y = fract(v_uv.y + ceil(abs(v_uv.y)));\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_PointSize = u_gpuio_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),
@@ -7409,6 +7415,7 @@ function fragmentShaderPolyfills() {
     if (FRAGMENT_SHADER_POLYFILLS)
         return FRAGMENT_SHADER_POLYFILLS;
     var modi = function (type1, type2) { return "".concat(type1, " modi(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); };
+    var stepi = function (type1, type2) { return "".concat(type2, " stepi(const ").concat(type1, " x, const ").concat(type2, " y) { return ").concat(type2, "(step(").concat(floatTypeForIntType(type1), "(x), ").concat(floatTypeForIntType(type2), "(y))); }"); };
     var bitshiftLeft = function (type1, type2) {
         return "".concat(type1, " bitshiftLeft(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a << b;\n\t#else\n\t\treturn a * ").concat(type1, "(pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b)));\n\t#endif\n}");
     };
@@ -7430,7 +7437,7 @@ function fragmentShaderPolyfills() {
     var bitwiseNot = function (numBits) {
         return "int bitwiseNot".concat(numBits === 32 ? '' : numBits, "(int a) {\n\t#if (__VERSION__ == 300)\n\t\treturn ~a;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif (modi(a, 2) == 0) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tn = n * 2;\n\t\t}\n\t\treturn result;\n\t#endif\n}");
     };
-    FRAGMENT_SHADER_POLYFILLS = "\n".concat(modi('int', 'int'), "\n").concat(modi('ivec2', 'ivec2'), "\n").concat(modi('ivec3', 'ivec3'), "\n").concat(modi('ivec4', 'ivec4'), "\n").concat(modi('ivec2', 'int'), "\n").concat(modi('ivec3', 'int'), "\n").concat(modi('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(modi('uint', 'uint'), "\n").concat(modi('uvec2', 'uvec2'), "\n").concat(modi('uvec3', 'uvec3'), "\n").concat(modi('uvec4', 'uvec4'), "\n").concat(modi('uvec2', 'uint'), "\n").concat(modi('uvec3', 'uint'), "\n").concat(modi('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n\n").concat(bitwiseOr(8), "\n").concat(bitwiseOr(16), "\n").concat(bitwiseOr(32), "\n\n").concat(bitwiseXOR(8), "\n").concat(bitwiseXOR(16), "\n").concat(bitwiseXOR(32), "\n\n").concat(bitwiseAnd(8), "\n").concat(bitwiseAnd(16), "\n").concat(bitwiseAnd(32), "\n\n").concat(bitwiseNot(8), "\n").concat(bitwiseNot(16), "\n").concat(bitwiseNot(32), "\n\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
+    FRAGMENT_SHADER_POLYFILLS = "\n".concat(modi('int', 'int'), "\n").concat(modi('ivec2', 'ivec2'), "\n").concat(modi('ivec3', 'ivec3'), "\n").concat(modi('ivec4', 'ivec4'), "\n").concat(modi('ivec2', 'int'), "\n").concat(modi('ivec3', 'int'), "\n").concat(modi('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(modi('uint', 'uint'), "\n").concat(modi('uvec2', 'uvec2'), "\n").concat(modi('uvec3', 'uvec3'), "\n").concat(modi('uvec4', 'uvec4'), "\n").concat(modi('uvec2', 'uint'), "\n").concat(modi('uvec3', 'uint'), "\n").concat(modi('uvec4', 'uint'), "\n#endif\n\n").concat(stepi('int', 'int'), "\n").concat(stepi('ivec2', 'ivec2'), "\n").concat(stepi('ivec3', 'ivec3'), "\n").concat(stepi('ivec4', 'ivec4'), "\n").concat(stepi('int', 'ivec2'), "\n").concat(stepi('int', 'ivec3'), "\n").concat(stepi('int', 'ivec4'), "\n#if (__VERSION__ == 300)\n").concat(stepi('uint', 'uint'), "\n").concat(stepi('uvec2', 'uvec2'), "\n").concat(stepi('uvec3', 'uvec3'), "\n").concat(stepi('uvec4', 'uvec4'), "\n").concat(stepi('uint', 'uvec2'), "\n").concat(stepi('uint', 'uvec3'), "\n").concat(stepi('uint', 'uvec4'), "\n#endif\n\n").concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n\n").concat(bitwiseOr(8), "\n").concat(bitwiseOr(16), "\n").concat(bitwiseOr(32), "\n\n").concat(bitwiseXOR(8), "\n").concat(bitwiseXOR(16), "\n").concat(bitwiseXOR(32), "\n\n").concat(bitwiseAnd(8), "\n").concat(bitwiseAnd(16), "\n").concat(bitwiseAnd(32), "\n\n").concat(bitwiseNot(8), "\n").concat(bitwiseNot(16), "\n").concat(bitwiseNot(32), "\n\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
         return "\nuint bitwiseOr".concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseOr").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseXOR").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseXOR").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseAnd").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseAnd").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseNot").concat(suffix, "(uint a) {\n\treturn uint(bitwiseNot").concat(suffix, "(int(a)));\n}");
     }).join('\n'), "\n\n#endif\n");
     return FRAGMENT_SHADER_POLYFILLS;
@@ -7601,11 +7608,13 @@ function glsl1FragmentOut(shaderSource, name) {
         // Remove out_fragColor declaration.
         shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor\s*;/g, '');
         var assignmentFound = false;
+        // Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
+        // Do this without lookbehind to support older browsers.
+        // const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+        // ? puts this in lazy mode (match shortest strings).
+        var regex = new RegExp(/\bout_fragColor\s*=\s*(\S.*?);/s);
         while (true) {
-            // Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
-            // Do this without lookbehind to support older browsers.
-            // const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
-            var output = shaderSource.match(/\bout_fragColor\s*=\s*(\S.*);/s); // /s makes this work for multiline.
+            var output = shaderSource.match(regex); // /s makes this work for multiline.
             if (output && output[1]) {
                 assignmentFound = true;
                 var filler = '';
@@ -7625,7 +7634,8 @@ function glsl1FragmentOut(shaderSource, name) {
                         filler = ', 0';
                         break;
                 }
-                shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, "gl_FragColor = vec4(".concat(output[1]).concat(filler, ");"));
+                // ? puts this in lazy mode (match shortest strings).
+                shaderSource = shaderSource.replace(regex, "gl_FragColor = vec4(".concat(output[1]).concat(filler, ");"));
             }
             else {
                 if (!assignmentFound)

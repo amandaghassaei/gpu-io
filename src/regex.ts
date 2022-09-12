@@ -155,11 +155,13 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 		// Remove out_fragColor declaration.
 		shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_fragColor\s*;/g, '');
 		let assignmentFound = false;
+		// Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
+		// Do this without lookbehind to support older browsers.
+		// const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+		// ? puts this in lazy mode (match shortest strings).
+		const regex = new RegExp(/\bout_fragColor\s*=\s*(\S.*?);/s);
 		while (true) {
-			// Replace each instance of out_fragColor = with gl_FragColor = and cast to vec4.
-			// Do this without lookbehind to support older browsers.
-			// const output = shaderSource.match(/(?<=\bout_fragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
-			const output = shaderSource.match(/\bout_fragColor\s*=\s*(\S.*);/s); // /s makes this work for multiline.
+			const output = shaderSource.match(regex); // /s makes this work for multiline.
 			if (output && output[1]) {
 				assignmentFound = true;
 				let filler = '';
@@ -179,7 +181,8 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 						filler = ', 0';
 						break;
 				}
-				shaderSource = shaderSource.replace(/\bout_fragColor\s*=\s*.+;/s, `gl_FragColor = vec4(${output[1]}${filler});`);
+				// ? puts this in lazy mode (match shortest strings).
+				shaderSource = shaderSource.replace(regex, `gl_FragColor = vec4(${output[1]}${filler});`);
 			} else {
 				if (!assignmentFound) throw new Error(`No assignment found for out_fragColor in GPUProgram "${name}".`);
 				break;

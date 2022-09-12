@@ -28,9 +28,11 @@ Here are some results I've gathered testing different combinations of hardware/b
 ### Windows
 
 
+
 ### iOS
 
-- iOS v14.7.1  Safari v14.1.2 (WebGL1 only) [readwrite](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) / [read](results/READ_Safari_v14.1.2_iOS_v14.7.1.png)
+-iOS v15.5 + Safari v15.5 [readwrite](results/READWRITE_Safari_v15.5_iOS_v15.5.png) / [read](results/READ_Safari_v15.5_iOS_v15.5.png)
+- iOS v14.7.1 + Safari v14.1.2 (WebGL1 only) [readwrite](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) / [read](results/READ_Safari_v14.1.2_iOS_v14.7.1.png)
 
 
 ### Android

@@ -308,6 +308,7 @@ export declare class GPUComposer {
      * @param params.program - GPUProgram to run.
      * @param params.position - Position of center of circle.
      * @param params.diameter - Circle diameter in pixels.
+     * @param params.useOutputScale - If true position and diameter are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
      * @param params.input - Input GPULayers to GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.numSegments - Number of segments in circle, defaults to 18.
@@ -318,6 +319,7 @@ export declare class GPUComposer {
         program: GPUProgram;
         position: [number, number];
         diameter: number;
+        useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         numSegments?: number;
@@ -331,6 +333,7 @@ export declare class GPUComposer {
      * @param params.position1 - Position of one end of segment.
      * @param params.position2 - Position of the other end of segment.
      * @param params.thickness - Thickness in pixels.
+     * @param params.useOutputScale - If true position and thickness are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
      * @param params.input - Input GPULayers to GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.endCaps - Flag to draw with rounded end caps, defaults to false.
@@ -343,6 +346,7 @@ export declare class GPUComposer {
         position1: [number, number];
         position2: [number, number];
         thickness: number;
+        useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer;
         endCaps?: boolean;

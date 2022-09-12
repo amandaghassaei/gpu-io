@@ -119,7 +119,6 @@ function main({ gui, glslVersion, contextID }) {
 		}
 		return { positions, heading, numParticles };
 	}
-	
 
 	// The composer orchestrates all of the GPU operations.
 	const composer = new GPUComposer({ canvas, glslVersion, contextID });
@@ -569,7 +568,7 @@ function main({ gui, glslVersion, contextID }) {
 		for (let key in settings) {
 			PARAMS[key] = settings[key];
 		}
-		for (var i in particlesGUI.__controllers) {
+		for (let i in particlesGUI.__controllers) {
 			particlesGUI.__controllers[i].updateDisplay();
 		}
 		reset();
