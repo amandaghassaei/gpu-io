@@ -22,7 +22,7 @@ Here are some results I've gathered testing different combinations of hardware/b
 
 - macOS v10.15.7 + Chrome v105.0.0.0 [readwrite](results/READWRITE_Chrome_v105.0.0.0_macOS_v10.15.7.png) / [read](results/READ_Chrome_v105.0.0.0_macOS_v10.15.7.png)
 - macOS v10.15.7 + Firefox v104.0 [readwrite](results/READWRITE_Firefox_v104.0_macOS_v10.15.7.png) / [read](results/READ_Firefox_v104.0_macOS_v10.15.7.png)
-- macOS v10.15.7 + Safari v14.0.3 (WebGL1 only) [readwrite](results/READWRITE_Safari_v14.0.3_macOS_v10.15.7.png) / [read](results/READ_Safari_v14.0.3_macOS_v10.15.7.png)
+- (WebGL1 only) macOS v10.15.7 + Safari v14.0.3 [readwrite](results/READWRITE_Safari_v14.0.3_macOS_v10.15.7.png) / [read](results/READ_Safari_v14.0.3_macOS_v10.15.7.png)
 
 
 ### Windows
@@ -32,7 +32,7 @@ Here are some results I've gathered testing different combinations of hardware/b
 ### iOS
 
 - iOS v15.5 + Safari v15.5 [readwrite](results/READWRITE_Safari_v15.5_iOS_v15.5.png) / [read](results/READ_Safari_v15.5_iOS_v15.5.png)
-- iOS v14.7.1 + Safari v14.1.2 (WebGL1 only) [readwrite](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) / [read](results/READ_Safari_v14.1.2_iOS_v14.7.1.png)
+- (WebGL1 only) iOS v14.7.1 + Safari v14.1.2  [readwrite](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) / [read](results/READ_Safari_v14.1.2_iOS_v14.7.1.png)
 
 
 ### Android
