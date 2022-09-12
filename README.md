@@ -130,6 +130,8 @@ function loop() {
 loop(); // Start animation loop.
 ```
 
+[Demo this code](https://apps.amandaghassaei.com/gpu-io/examples/demo/) - You should see the noise blur, refresh the page to start it over.
+
 
 ## Examples
 
@@ -185,6 +187,8 @@ const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
 ## API
 
 Full API documentation can be found in the [docs/](https://github.com/amandaghassaei/gpu-io/tree/main/docs)
+
+More information about writing GLSL shaders for gpu-io can be found at [docs/GLSL](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL.md).
 
 
 ## Compatibility with Threejs
