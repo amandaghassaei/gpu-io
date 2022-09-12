@@ -167,7 +167,7 @@ export function isString(value: any){
  * @private
  */
 export function isArray(value: any) {
-	return Array.isArray(value);
+	return Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView));
 }
 
 /**

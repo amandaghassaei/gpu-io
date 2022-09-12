@@ -20,8 +20,8 @@
 		isValidDataType,
 		isValidFilter,
 		isValidWrap,
-		isValidTextureFormat,
-		isValidTextureType,
+		isValidImageFormat,
+		isValidImageType,
 		isValidClearValue,
 		isNumberOfType,
 		isNumber,
@@ -73,23 +73,23 @@
 				assert.equal(isValidWrap('MIRRORED_REPEAT'), false);
 			});
 		});
-		describe('isValidTextureFormat', () => {
-			it('should detect valid texture data types', () => {
+		describe('isValidImageFormat', () => {
+			it('should detect valid image data types', () => {
 				const validTextureFormats = [RGB, RGBA];
 				validTextureFormats.forEach(textureFormat => {
-					assert.equal(isValidTextureFormat(textureFormat), true, `failed on ${textureFormat}`);
+					assert.equal(isValidImageFormat(textureFormat), true, `failed on ${textureFormat}`);
 				});
-				assert.equal(isValidTextureFormat('R'), false);
-				assert.equal(isValidTextureFormat('RG'), false);
+				assert.equal(isValidImageFormat('R'), false);
+				assert.equal(isValidImageFormat('RG'), false);
 			});
 		});
-		describe('isValidTextureType', () => {
-			it('should detect valid texture data types', () => {
-				const validTextureTypes = [UNSIGNED_BYTE];
-				validTextureTypes.forEach(textureType => {
-					assert.equal(isValidTextureType(textureType), true, `failed on ${textureType}`);
+		describe('isValidImageType', () => {
+			it('should detect valid image data types', () => {
+				const validImageTypes = [UNSIGNED_BYTE, FLOAT, HALF_FLOAT];
+				validImageTypes.forEach(textureType => {
+					assert.equal(isValidImageType(textureType), true, `failed on ${textureType}`);
 				});
-				assert.equal(isValidTextureType(FLOAT), false);
+				assert.equal(isValidImageType(INT), false);
 			});
 		});
 		describe('isValidClearValue', () => {

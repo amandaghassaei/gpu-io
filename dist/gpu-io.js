@@ -6513,7 +6513,7 @@ exports.isString = isString;
  * @private
  */
 function isArray(value) {
-    return Array.isArray(value);
+    return Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView));
 }
 exports.isArray = isArray;
 /**

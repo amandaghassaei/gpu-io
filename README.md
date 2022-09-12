@@ -9,7 +9,7 @@
 
 GPGPU (General Purpose GPU) compute in the browser with WebGL.  This is mainly designed for running gpu fragment shader programs that operate on one or more layers of 2D spatially-distributed state (such as 2D physics simulations or cellular automata).  It also includes an interface for performing general purpose computing operations on large arrays of data (via a fragment shader implementation).
 
-gpu-io supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  gpu0io is designed for WebGL 2.0 if available, with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers!
+gpu-io supports rendering directly to the screen.  It also has some built-in utilities for e.g. running a program only on the boundary of the screen or in a specified region (for handling mouse/touch events).  Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on almost any mobile or older browsers!
 
 Update 9/22:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [examples](https://github.com/amandaghassaei/gpu-io#examples) for more info about how to use this framework.
 
