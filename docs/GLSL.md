@@ -2,7 +2,7 @@
 
 ## Fragment Shader Outputs
 
-gpu-io requires that fragment shader output be defined as `out float|int|[u|i]vec(2|3|4) out_FragColor`.  This output will be automatically converted to gl_FragColor and typecast when targeting GLSL1.
+gpu-io requires that the fragment shader output be defined as `out float|int|[u|i]vec(2|3|4) out_FragColor`.  This output will be automatically converted to gl_FragColor and typecast when targeting GLSL1.
 
 ## Fragment Shader Inputs
 
