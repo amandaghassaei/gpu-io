@@ -284,7 +284,7 @@ function main({ gui, contextID, glslVersion}) {
 		#define FADE_TIME 0.1
 
 		in vec2 v_uv;
-		in vec2 v_uv_array;
+		in vec2 v_uv_1d;
 
 		uniform isampler2D u_ages;
 		uniform sampler2D u_velocity;
@@ -292,7 +292,7 @@ function main({ gui, contextID, glslVersion}) {
 		out float out_FragColor;
 
 		void main() {
-			float ageFraction = float(texture(u_ages, v_uv_array).x) / ${PARTICLE_LIFETIME.toFixed(1)};
+			float ageFraction = float(texture(u_ages, v_uv_1d).x) / ${PARTICLE_LIFETIME.toFixed(1)};
 			// Fade first 10% and last 10%.
 			float opacity = mix(0.0, 1.0, min(ageFraction * 10.0, 1.0)) * mix(1.0, 0.0, max(ageFraction * 10.0 - 90.0, 0.0));
 			vec2 velocity = texture(u_velocity, v_uv).xy;
