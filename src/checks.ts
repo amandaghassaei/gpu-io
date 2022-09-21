@@ -127,3 +127,19 @@ export function isNumberOfType(value: any, type: GPULayerType) {
 			throw new Error(`Unknown type ${type}`);
 	}
 }
+
+export function checkValidKeys(keys: string[], validKeys: string[], methodName: string, name?: string) {
+	keys.forEach(key => {
+		if (validKeys.indexOf(key) < 0) {
+			throw new Error(`Invalid params key "${key}" passed to ${methodName}${name ? ` with name "${name}"` : ''}.  Valid keys are ${JSON.stringify(validKeys)}.`);
+		}
+	});
+}
+
+export function checkRequiredKeys(keys: string[], requiredKeys: string[], methodName: string, name?: string) {
+	requiredKeys.forEach(key => {
+		if (keys.indexOf(key) < 0) {
+			throw new Error(`Required params key "${key}" was not passed to ${methodName}${name ? ` with name "${name}"` : ''}.`);
+		}
+	});
+}

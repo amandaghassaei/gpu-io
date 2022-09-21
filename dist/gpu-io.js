@@ -2354,6 +2354,7 @@ var LayerVectorFieldVertexShader_1 = __webpack_require__(634);
 var conversions_1 = __webpack_require__(690);
 var Programs_1 = __webpack_require__(579);
 var type_checks_1 = __webpack_require__(566);
+var checks_1 = __webpack_require__(707);
 var GPUComposer = /** @class */ (function () {
     /**
      * Create a GPUComposer.
@@ -2428,17 +2429,8 @@ var GPUComposer = /** @class */ (function () {
         var validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'verboseLogging', 'errorCallback'];
         var requiredKeys = ['canvas'];
         var keys = Object.keys(params);
-        keys.forEach(function (key) {
-            if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key \"".concat(key, "\" passed to new GPUComposer(params).  Valid keys are ").concat(validKeys.join(', '), "."));
-            }
-        });
-        // Check for required keys.
-        requiredKeys.forEach(function (key) {
-            if (keys.indexOf(key) < 0) {
-                throw new Error("Required params key \"".concat(key, "\" was not passed to new GPUComposer(params)."));
-            }
-        });
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer(params)');
         if (params.verboseLogging !== undefined)
             this.verboseLogging = params.verboseLogging;
         // Save callback in case we run into an error.
@@ -3839,17 +3831,8 @@ var GPULayer = /** @class */ (function () {
         var validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue', 'array'];
         var requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
         var keys = Object.keys(params);
-        keys.forEach(function (key) {
-            if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid params key \"".concat(key, "\" passed to GPULayer(composer, params) with name \"").concat(params.name, "\".  Valid keys are ").concat(JSON.stringify(validKeys), "."));
-            }
-        });
-        // Check for required keys.
-        requiredKeys.forEach(function (key) {
-            if (keys.indexOf(key) < 0) {
-                throw new Error("Required params key \"".concat(key, "\" was not passed to GPULayer(composer, params) with name \"").concat(name, "\"."));
-            }
-        });
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer(composer, params)', params.name);
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPULayer(composer, params)', params.name);
         var dimensions = params.dimensions, type = params.type, numComponents = params.numComponents;
         var gl = composer.gl;
         // Save params.
@@ -3953,20 +3936,19 @@ var GPULayer = /** @class */ (function () {
     GPULayer.initFromImageURL = function (composer, params) {
         // Check params.
         var validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
-        Object.keys(params).forEach(function (key) {
-            if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid key \"".concat(key, "\" passed to GPULayer.initFromImage with name \"").concat(params.name, "\".  Valid keys are ").concat(validKeys.join(', '), "."));
-            }
-        });
+        var requiredKeys = ['name', 'url'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
         var url = params.url, name = params.name, filter = params.filter, wrapS = params.wrapS, wrapT = params.wrapT, type = params.type, format = params.format;
         if (!(0, type_checks_1.isString)(url)) {
-            throw new Error("Expected GPULayer.initFromImage params to have url of type string, got ".concat(url, " of type ").concat(typeof url, "."));
+            throw new Error("Expected GPULayer.initFromImageURL params to have url of type string, got ".concat(url, " of type ").concat(typeof url, "."));
         }
         if (type && !(0, checks_1.isValidImageType)(type)) {
-            throw new Error("Expected GPULayer.initFromImage params to have type of ".concat(JSON.stringify(constants_1.validImageTypes), ", got ").concat(JSON.stringify(type), "."));
+            throw new Error("Expected GPULayer.initFromImageURL params to have type of ".concat(JSON.stringify(constants_1.validImageTypes), ", got ").concat(JSON.stringify(type), "."));
         }
         if (format && !(0, checks_1.isValidImageFormat)(format)) {
-            throw new Error("Expected GPULayer.initFromImage params to have format of ".concat(JSON.stringify(constants_1.validImageFormats), ", got ").concat(JSON.stringify(format), "."));
+            throw new Error("Expected GPULayer.initFromImageURL params to have format of ".concat(JSON.stringify(constants_1.validImageFormats), ", got ").concat(JSON.stringify(format), "."));
         }
         // Init a layer to return, we will fill it when image has loaded.
         var layer = new GPULayer(composer, {
@@ -5544,6 +5526,7 @@ var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var polyfills_1 = __webpack_require__(360);
 var type_checks_1 = __webpack_require__(566);
+var checks_1 = __webpack_require__(707);
 var GPUProgram = /** @class */ (function () {
     /**
      * Create a GPUProgram.
@@ -5585,17 +5568,8 @@ var GPUProgram = /** @class */ (function () {
         var validKeys = ['name', 'fragmentShader', 'uniforms', 'compileTimeConstants'];
         var requiredKeys = ['name', 'fragmentShader'];
         var keys = Object.keys(params);
-        keys.forEach(function (key) {
-            if (validKeys.indexOf(key) < 0) {
-                throw new Error("Invalid params key \"".concat(key, "\" passed to GPUProgram(composer, params) with name \"").concat(name, "\".  Valid keys are ").concat(JSON.stringify(validKeys), "."));
-            }
-        });
-        // Check for required keys.
-        requiredKeys.forEach(function (key) {
-            if (keys.indexOf(key) < 0) {
-                throw new Error("Required params key \"".concat(key, "\" was not passed to GPUProgram(composer, params) with name \"").concat(name, "\"."));
-            }
-        });
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUProgram(composer, params)', params.name);
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUProgram(composer, params)', params.name);
         var fragmentShader = params.fragmentShader, uniforms = params.uniforms, compileTimeConstants = params.compileTimeConstants;
         // Save arguments.
         this._composer = composer;
@@ -6471,7 +6445,7 @@ exports.Vector4 = Vector4;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isNumberOfType = exports.isValidClearValue = exports.isValidImageType = exports.isValidImageFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
+exports.checkRequiredKeys = exports.checkValidKeys = exports.isNumberOfType = exports.isValidClearValue = exports.isValidImageType = exports.isValidImageFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
 var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 /**
@@ -6592,6 +6566,22 @@ function isNumberOfType(value, type) {
     }
 }
 exports.isNumberOfType = isNumberOfType;
+function checkValidKeys(keys, validKeys, methodName, name) {
+    keys.forEach(function (key) {
+        if (validKeys.indexOf(key) < 0) {
+            throw new Error("Invalid params key \"".concat(key, "\" passed to ").concat(methodName).concat(name ? " with name \"".concat(name, "\"") : '', ".  Valid keys are ").concat(JSON.stringify(validKeys), "."));
+        }
+    });
+}
+exports.checkValidKeys = checkValidKeys;
+function checkRequiredKeys(keys, requiredKeys, methodName, name) {
+    requiredKeys.forEach(function (key) {
+        if (keys.indexOf(key) < 0) {
+            throw new Error("Required params key \"".concat(key, "\" was not passed to ").concat(methodName).concat(name ? " with name \"".concat(name, "\"") : '', "."));
+        }
+    });
+}
+exports.checkRequiredKeys = checkRequiredKeys;
 
 
 /***/ }),

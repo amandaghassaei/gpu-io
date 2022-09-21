@@ -4,6 +4,8 @@ import { changeDpiBlob } from 'changedpi';
 import { saveAs } from 'file-saver';
 import { GPUComposer } from './GPUComposer';
 import {
+	checkRequiredKeys,
+	checkValidKeys,
 	isValidClearValue,
 	isValidDataType,
 	isValidFilter,
@@ -200,20 +202,20 @@ export class GPULayer {
 	) {
 		// Check params.
 		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
-		Object.keys(params).forEach(key => {
-			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to GPULayer.initFromImage with name "${params.name}".  Valid keys are ${validKeys.join(', ')}.`);
-			}
-		});
+		const requiredKeys = ['name', 'url'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
+		checkRequiredKeys(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
+
 		const { url, name, filter, wrapS, wrapT, type, format } = params;
 		if (!isString(url)) {
-			throw new Error(`Expected GPULayer.initFromImage params to have url of type string, got ${url} of type ${typeof url}.`)
+			throw new Error(`Expected GPULayer.initFromImageURL params to have url of type string, got ${url} of type ${typeof url}.`)
 		}
 		if (type && !isValidImageType(type)) {
-			throw new Error(`Expected GPULayer.initFromImage params to have type of ${JSON.stringify(validImageTypes)}, got ${JSON.stringify(type)}.`)
+			throw new Error(`Expected GPULayer.initFromImageURL params to have type of ${JSON.stringify(validImageTypes)}, got ${JSON.stringify(type)}.`)
 		}
 		if (format && !isValidImageFormat(format)) {
-			throw new Error(`Expected GPULayer.initFromImage params to have format of ${JSON.stringify(validImageFormats)}, got ${JSON.stringify(format)}.`)
+			throw new Error(`Expected GPULayer.initFromImageURL params to have format of ${JSON.stringify(validImageFormats)}, got ${JSON.stringify(format)}.`)
 		}
 
 		// Init a layer to return, we will fill it when image has loaded.
@@ -291,17 +293,8 @@ export class GPULayer {
 		const validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue', 'array'];
 		const requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
 		const keys = Object.keys(params);
-		keys.forEach(key => {
-			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid params key "${key}" passed to GPULayer(composer, params) with name "${params.name}".  Valid keys are ${JSON.stringify(validKeys)}.`);
-			}
-		});
-		// Check for required keys.
-		requiredKeys.forEach(key => {
-			if (keys.indexOf(key) < 0) {
-				throw new Error(`Required params key "${key}" was not passed to GPULayer(composer, params) with name "${name}".`);
-			}
-		});
+		checkValidKeys(keys, validKeys, 'GPULayer(composer, params)', params.name);
+		checkRequiredKeys(keys, requiredKeys, 'GPULayer(composer, params)', params.name);
 
 		const { dimensions, type, numComponents } = params;
 		const { gl } = composer;

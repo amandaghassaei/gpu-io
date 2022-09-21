@@ -35,3 +35,5 @@ export declare function isValidClearValue(clearValue: number | number[], numComp
  * @private
  */
 export declare function isNumberOfType(value: any, type: GPULayerType): boolean;
+export declare function checkValidKeys(keys: string[], validKeys: string[], methodName: string, name?: string): void;
+export declare function checkRequiredKeys(keys: string[], requiredKeys: string[], methodName: string, name?: string): void;

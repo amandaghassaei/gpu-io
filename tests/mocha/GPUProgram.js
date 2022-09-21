@@ -50,7 +50,7 @@
 				assert.throws(() => { new GPUProgram(composer, 'thing'); },
 					'Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got "thing".');
 				assert.throws(() => { new GPUProgram(composer, {}); },
-					'Required params key "name" was not passed to GPUProgram(composer, params) with name "undefined".');
+					'Required params key "name" was not passed to GPUProgram(composer, params).');
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program' }); },
 					'Required params key "fragmentShader" was not passed to GPUProgram(composer, params) with name "test-program".');
 			});

@@ -69,6 +69,7 @@ import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVect
 import { uniformTypeForType } from './conversions';
 import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
 import { isArray } from '@amandaghassaei/type-checks';
+import { checkRequiredKeys, checkValidKeys } from './checks';
 
 export class GPUComposer {
 	/**
@@ -231,17 +232,8 @@ export class GPUComposer {
 		const validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'verboseLogging', 'errorCallback'];
 		const requiredKeys = ['canvas'];
 		const keys = Object.keys(params);
-		keys.forEach(key => {
-			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid key "${key}" passed to new GPUComposer(params).  Valid keys are ${validKeys.join(', ')}.`);
-			}
-		});
-		// Check for required keys.
-		requiredKeys.forEach(key => {
-			if (keys.indexOf(key) < 0) {
-				throw new Error(`Required params key "${key}" was not passed to new GPUComposer(params).`);
-			}
-		});
+		checkValidKeys(keys, validKeys, 'GPUComposer(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer(params)');
 
 		if (params.verboseLogging !== undefined) this.verboseLogging = params.verboseLogging;
 

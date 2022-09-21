@@ -82,6 +82,8 @@ declare const _testing: {
     isValidImageType(type: string): boolean;
     isValidClearValue(clearValue: number | number[], numComponents: number, type: import("./constants").GPULayerType): boolean;
     isNumberOfType(value: any, type: import("./constants").GPULayerType): boolean;
+    checkValidKeys(keys: string[], validKeys: string[], methodName: string, name?: string | undefined): void;
+    checkRequiredKeys(keys: string[], requiredKeys: string[], methodName: string, name?: string | undefined): void;
     typecastVariable(shaderSource: string, variableName: string, type: string): string;
     glsl1VertexIn(shaderSource: string): string;
     castVaryingToFloat(shaderSource: string): string;

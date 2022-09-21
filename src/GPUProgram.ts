@@ -52,6 +52,7 @@ import {
 	isNonNegativeInteger,
 	isObject, isString,
 } from '@amandaghassaei/type-checks';
+import { checkRequiredKeys, checkValidKeys } from './checks';
 
 export class GPUProgram {
 	// Keep a reference to GPUComposer.
@@ -117,17 +118,8 @@ export class GPUProgram {
 		const validKeys = ['name', 'fragmentShader', 'uniforms', 'compileTimeConstants'];
 		const requiredKeys = ['name', 'fragmentShader'];
 		const keys = Object.keys(params);
-		keys.forEach(key => {
-			if (validKeys.indexOf(key) < 0) {
-				throw new Error(`Invalid params key "${key}" passed to GPUProgram(composer, params) with name "${name}".  Valid keys are ${JSON.stringify(validKeys)}.`);
-			}
-		});
-		// Check for required keys.
-		requiredKeys.forEach(key => {
-			if (keys.indexOf(key) < 0) {
-				throw new Error(`Required params key "${key}" was not passed to GPUProgram(composer, params) with name "${name}".`);
-			}
-		});
+		checkValidKeys(keys, validKeys, 'GPUProgram(composer, params)', params.name);
+		checkRequiredKeys(keys, requiredKeys, 'GPUProgram(composer, params)', params.name);
 
 		const { fragmentShader, uniforms, compileTimeConstants } = params;
 

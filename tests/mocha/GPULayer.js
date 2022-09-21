@@ -54,7 +54,7 @@
 				assert.throws(() => { new GPULayer(composer1, 'thing'); },
 					'Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got "thing".');
 				assert.throws(() => { new GPULayer(composer1, {}); },
-					'Required params key "name" was not passed to GPULayer(composer, params) with name "undefined".');
+					'Required params key "name" was not passed to GPULayer(composer, params).');
 				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer' }); },
 					'Required params key "type" was not passed to GPULayer(composer, params) with name "test-layer".');
 				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: FLOAT }); },
