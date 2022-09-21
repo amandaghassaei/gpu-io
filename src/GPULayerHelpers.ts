@@ -1,8 +1,5 @@
+import { isNumber, isPositiveInteger } from '@amandaghassaei/type-checks';
 import { setFloat16 } from '@petamoriken/float16';
-import {
-	isNumber,
-	isPositiveInteger,
-} from './checks';
 import {
 	BYTE,
 	CLAMP_TO_EDGE,

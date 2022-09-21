@@ -16,7 +16,8 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'dist/*.js',
-      'tests/deps/*.js',
+      'node_modules/@petamoriken/float16/browser/float16.js',
+	  'node_modules/@amandaghassaei/type-checks/dist/type-checks.js',
       'tests/common/*.js',
       'tests/mocha/*.js',
     ],

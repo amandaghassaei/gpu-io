@@ -61,9 +61,6 @@ import {
 	compileShader,
 	indexOfLayerInArray,
 } from './utils';
-import {
-	isArray,
-} from './checks';
 import { DEFAULT_VERT_SHADER_SOURCE } from './glsl/vertex/DefaultVertexShader';
 import { LAYER_LINES_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerLinesVertexShader';
 import { SEGMENT_VERTEX_SHADER_SOURCE } from './glsl/vertex/SegmentVertexShader';
@@ -71,6 +68,7 @@ import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerPointsVert
 import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVectorFieldVertexShader';
 import { uniformTypeForType } from './conversions';
 import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
+import { isArray } from '@amandaghassaei/type-checks';
 
 export class GPUComposer {
 	/**

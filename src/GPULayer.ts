@@ -4,11 +4,6 @@ import { changeDpiBlob } from 'changedpi';
 import { saveAs } from 'file-saver';
 import { GPUComposer } from './GPUComposer';
 import {
-	isArray,
-	isNumber,
-	isObject,
-	isPositiveInteger,
-	isString,
 	isValidClearValue,
 	isValidDataType,
 	isValidFilter,
@@ -56,6 +51,13 @@ import {
 	validateGPULayerArray,
 } from './GPULayerHelpers';
 import { Texture } from 'three';
+import {
+	isArray,
+	isFiniteNumber,
+	isObject,
+	isPositiveInteger,
+	isString,
+} from '@amandaghassaei/type-checks';
 
 export class GPULayer {
 	// Keep a reference to GPUComposer.
@@ -741,7 +743,7 @@ export class GPULayer {
 		if (verboseLogging) console.log(`Clearing GPULayer "${name}".`);
 
 		const value: number[] = [];
-		if (isNumber(clearValue)) {
+		if (isFiniteNumber(clearValue)) {
 			value.push(clearValue as number, clearValue as number, clearValue as number, clearValue as number);
 		} else {
 			value.push(...clearValue as number[]);

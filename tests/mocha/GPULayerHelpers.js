@@ -34,7 +34,6 @@
 		minMaxValuesForType,
 		validateGPULayerArray,
 		initSequentialFloatArray,
-		isArray,
 		isPowerOf2,
 		getExtension,
 		OES_TEXTURE_FLOAT,
@@ -42,6 +41,7 @@
 		isIntType,
 	} = _testing;
 	const { getFloat16 } = float16;
+	const { isArray } = TypeChecks;
 
 	let composer1, composer2, composer3;
 

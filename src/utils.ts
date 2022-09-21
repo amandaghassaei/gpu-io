@@ -1,11 +1,11 @@
 import {
 	isArray,
 	isBoolean,
+	isFiniteNumber,
 	isInteger,
 	isNonNegativeInteger,
-	isNumber,
 	isString,
-} from './checks';
+} from '@amandaghassaei/type-checks';
 import {
 	BOOL,
 	BOOL_1D_UNIFORM,
@@ -677,12 +677,12 @@ export function uniformInternalTypeForValue(
 		// Check that we are dealing with a number.
 		if (isArray(value)) {
 			for (let i = 0; i < (value as number[]).length; i++) {
-				if (!isNumber((value as number[])[i])) {
+				if (!isFiniteNumber((value as number[])[i])) {
 					throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected float or float[] of length 1-4.`);
 				}
 			}
 		} else {
-			if (!isNumber(value)) {
+			if (!isFiniteNumber(value)) {
 				throw new Error(`Invalid value ${JSON.stringify(value)} for uniform "${uniformName}" in program "${programName}", expected float or float[] of length 1-4.`);
 			}
 		}

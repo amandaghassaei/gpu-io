@@ -1,14 +1,5 @@
 import { GPUComposer } from './GPUComposer';
 import {
-	isArray,
-	isBoolean,
-	isInteger,
-	isNonNegativeInteger,
-	isNumber,
-	isObject,
-	isString,
-} from './checks';
-import {
 	FLOAT_1D_UNIFORM,
 	FLOAT_2D_UNIFORM,
 	FLOAT_3D_UNIFORM,
@@ -53,6 +44,14 @@ import {
 	SAMPLER2D_WRAP_X,
 	SAMPLER2D_WRAP_Y,
 } from './polyfills';
+import {
+	isArray,
+	isBoolean,
+	isFiniteNumber,
+	isInteger,
+	isNonNegativeInteger,
+	isObject, isString,
+} from '@amandaghassaei/type-checks';
 
 export class GPUProgram {
 	// Keep a reference to GPUComposer.
@@ -330,7 +329,7 @@ export class GPUProgram {
 				}
 			} else 
 			if (type === FLOAT_1D_UNIFORM || type === FLOAT_2D_UNIFORM || type === FLOAT_3D_UNIFORM || type === FLOAT_4D_UNIFORM) {
-				if (!isNumber(uniform) && uniform.constructor !== Float32Array) {
+				if (!isFiniteNumber(uniform) && uniform.constructor !== Float32Array) {
 					badType = true;
 				}
 			} else if (type === INT_1D_UNIFORM || type === INT_2D_UNIFORM || type === INT_3D_UNIFORM || type === INT_4D_UNIFORM) {

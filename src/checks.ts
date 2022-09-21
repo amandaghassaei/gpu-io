@@ -1,4 +1,10 @@
 import {
+	isArray,
+	isFiniteNumber,
+	isInteger,
+	isNonNegativeInteger,
+} from '@amandaghassaei/type-checks';
+import {
 	validDataTypes,
 	validFilters,
 	validWraps,
@@ -86,7 +92,7 @@ export function isNumberOfType(value: any, type: GPULayerType) {
 	switch (type) {
 		case HALF_FLOAT:
 		case FLOAT:
-			return isNumber(value);
+			return isFiniteNumber(value);
 		case BYTE:
 			// -(2 ** 7)
 			if (value < -128) return false;
@@ -120,68 +126,4 @@ export function isNumberOfType(value: any, type: GPULayerType) {
 		default:
 			throw new Error(`Unknown type ${type}`);
 	}
-}
-
-/**
- * Checks if value is finite number.
- * @private
- */
-export function isNumber(value: any) {
-	return !Number.isNaN(value) && typeof value === 'number' && Number.isFinite(value);
-}
-
-/**
- * Checks if value is finite integer.
- * @private
- */
-export function isInteger(value: any) {
-	return isNumber(value) && (value % 1 === 0);
-}
-
-/**
- * Checks if value is finite positive integer (> 0).
- * @private
- */
-export function isPositiveInteger(value: any) {
-	return isInteger(value) && value > 0;
-}
-
-/**
- * Checks if value is finite non-negative integer (>= 0).
- * @private
- */
-export function isNonNegativeInteger(value: any) {
-	return isInteger(value) &&  value >= 0;
-}
-
-/**
- * Checks if value is string.
- * @private
- */
-export function isString(value: any){
-	return typeof value === 'string';
-}
-
-/**
- * Checks if value is array.
- * @private
- */
-export function isArray(value: any) {
-	return Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView));
-}
-
-/**
- * Checks if value is Javascript object.
- * @private
- */
-export function isObject(value: any) {
-	return typeof value === 'object' && !isArray(value) && value !== null;
-}
-
-/**
- * Checks if value is boolean.
- * @private
- */
-export function isBoolean(value: any) {
-	return typeof value === 'boolean';
 }

@@ -24,22 +24,8 @@
 		isValidImageType,
 		isValidClearValue,
 		isNumberOfType,
-		isNumber,
-		isInteger,
-		isPositiveInteger,
-		isNonNegativeInteger,
-		isString,
-		isArray,
-		isObject,
-		isBoolean,
 	} = _testing;
 
-	const typeChecks = [
-		0, -1, 5.7, 92, true,
-		false, 'test', '14', [4], [3, 5.6, 0],
-		{ thing: 5 }, null, undefined, Infinity, -Infinity,
-		NaN,
-	];
 	const numberChecks = [
 		2.4, 5, 0, -4.6, -56,
 		255, 127, 1000, 1000000, -1469.5,
@@ -218,78 +204,6 @@
 				assert.equal(isNumberOfType(-2147483649, INT), false, `failed on ${-2147483649}`);
 				assert.equal(isNumberOfType(2147483647, INT), true, `failed on ${2147483647}`);
 				assert.equal(isNumberOfType(2147483648, INT), false, `failed on ${2147483648}`);
-			});
-		});
-		describe('isNumber', () => {
-			it('should detect valid numbers', () => {
-				const expected = [true, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isNumber(item), expected[index], `failed on ${item}`);
-				});
-			});
-		});
-		describe('isInteger', () => {
-			it('should detect valid integers', () => {
-				const expected = [true, true, false, true, false, false, false, false, false, false, false, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isInteger(item), expected[index], `failed on ${item}`);
-				});
-			});
-		});
-		describe('isPositiveInteger', () => {
-			it('should detect valid positive integers', () => {
-				const expected = [false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isPositiveInteger(item), expected[index], `failed on ${item}`);
-				});
-			});
-		});
-		describe('isNonNegativeInteger', () => {
-			it('should detect valid non-negative integers', () => {
-				const expected = [true, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isNonNegativeInteger(item), expected[index], `failed on ${item}`);
-				});
-			});
-		});
-		describe('isString', () => {
-			it('should detect valid strings', () => {
-				const expected = [false, false, false, false, false, false, true, true, false, false, false, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isString(item), expected[index], `failed on ${item}`);
-				});
-			});
-		});
-		describe('isArray', () => {
-			it('should detect valid arrays', () => {
-				const expected = [false, false, false, false, false, false, false, false, true, true, false, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isArray(item), expected[index], `failed on ${item}`);
-				});
-			});
-		});
-		describe('isObject', () => {
-			it('should detect valid arrays', () => {
-				const expected = [false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isObject(item), expected[index], `failed on ${item}`);
-				});
-			});
-		});
-		describe('isBoolean', () => {
-			it('should detect valid arrays', () => {
-				const expected = [false, false, false, false, true, true, false, false, false, false, false, false, false, false, false, false];
-				assert.equal(expected.length, typeChecks.length);
-				typeChecks.forEach((item, index) => {
-					assert.equal(isBoolean(item), expected[index], `failed on ${item}`);
-				});
 			});
 		});
 	});

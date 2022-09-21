@@ -22,12 +22,14 @@
 		isWebGL2,
 	} = GPUIO;
 	const {
-		isNumber,
-		isString,
-		isBoolean,
 		isFloatType,
 		isUnsignedIntType,
 	} = _testing;
+	const {
+		isFiniteNumber,
+		isString,
+		isBoolean,
+	} = TypeChecks;
 
 	let composer1;
 
@@ -483,7 +485,7 @@
 				layer1.dispose();
 				// Filter out keys for simple objects (e.g. strings, number, boolean).
 				const keys = Object.keys(layer1).filter(key => {
-					return !isString(layer1[key]) && !isNumber(layer1[key]) && !isBoolean(layer1[key]) && layer1[key] !== undefined;
+					return !isString(layer1[key]) && !isFiniteNumber(layer1[key]) && !isBoolean(layer1[key]) && layer1[key] !== undefined;
 				});
 				assert.equal(keys.length, 0, `remaining keys: ${JSON.stringify(keys)}.`);
 				// We don't really have a way to test if WebGL things were actually deleted.

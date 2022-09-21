@@ -647,6 +647,7 @@ Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
 | :------ | :------ | :------ |
 | `params` | `Object` | Program parameters. |
 | `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the output. |
 | `params.color?` | `number`[] | Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color". |
 | `params.opacity?` | `number` | - |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |

@@ -7,7 +7,7 @@
 [![NPM Downloads](https://img.shields.io/npm/dw/gpu-io)](https://www.npmtrends.com/gpu-io)
 [![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE) -->
 
-GPU-accelerated computing in the browser
+GPU-accelerated computing in the browser.
 
 gpu-io is designed for running GPU shader programs that operate on one or more layers of 2D spatially-distributed state (such as 2D physics simulations or cellular automata).  It supports interactive applications that render directly to the screen and has some built-in utilities that make this easy - e.g. running a program within a specified region for handling mouse/touch events.  gpu-io also allows you to perform general-purpose computing operations on large arrays of data.  See [Examples](#examples) for more details.
 
@@ -53,7 +53,7 @@ document.body.appendChild(canvas);
 // Init a composer.
 const composer = new GPUComposer({ canvas });
 
-// Init a layer of float data filled with noise.
+// Init a GPULayer of float data filled with noise.
 const noise = new Float32Array(canvas.width * canvas.height);
 noise.forEach((el, i) => noise[i] = Math.random());
 const state = new GPULayer(composer, {
@@ -66,13 +66,15 @@ const state = new GPULayer(composer, {
     wrapS: REPEAT, // Wrap boundaries.
     wrapT: REPEAT,
     writable: true,
-    array: noise, // Initial state.
+    array: noise, // Initial value.
 });
 
 // Init a program to diffuse state.
 const diffuseProgram = new GPUProgram(composer, {
     name: 'render',
     fragmentShader: `
+// Don't worry about declaring #version or precision here
+// gpu-io takes care of that for you.
 in vec2 v_uv;
 
 uniform sampler2D u_state;
@@ -91,7 +93,7 @@ void main() {
 }
 `,
     uniforms: [
-        { // Index of sampler2D uniform to assign to value "u_state".
+        { // Index of GPULayer "state" in composer.step() "input" array.
             name: 'u_state',
             value: 0,
             type: INT,
@@ -104,31 +106,31 @@ void main() {
     ],
 });
 
-// Init a program to render state to screen.
-// See docs/README#gpuprogram-helper-functions
-// for more built-in GPUPrograms to use.
+// Init a program to render "state" to screen.
+// See docs/README#gpuprogram-helper-functions for more built-in GPUPrograms.
 const renderProgram = renderAmplitudeProgram({
     name: 'render',
     composer,
     type: state.type,
-    components: 'x',
+    components: 'x', // "state" is a scalar field, only has an x component.
 });
 
 // Simulation/render loop.
 function loop() {
     window.requestAnimationFrame(loop);
 
-    // Diffuse state and write result to state.
+    // Diffuse "state" and write result to "state".
     composer.step({
         program: diffuseProgram,
-        input: state,
-        output: state,
+        input: state, // "input" can be a single GPULayer or an array of GPULayers.
+        output: state, // "output" result to a single GPULayer.
     });
 
-    // If no "output", will draw to screen.
+    // Render state.
     composer.step({
         program: renderProgram,
         input: state,
+        // If no "output", will draw to screen.
     });
 }
 loop(); // Start animation loop.
@@ -139,7 +141,7 @@ loop(); // Start animation loop.
 
 ## Examples
 
-To really understand how gpu-io works, see the following examples.  Many of them show how to easily create touch interactions in your application.
+Check out the following examples to really understand how gpu-io works.  Many of them show how to easily create touch interactions in your application.
 
 Source code for all examples can be found in [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
 
@@ -335,7 +337,7 @@ More info about the difference between GLSL and WebGL versions:
 
 You might notice that gpu-io does not use any transform feedback to e.g. handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](#examples)), but currently all the computation happens in a fragment shader (which I'll admit can be annoying and less efficient).  There are a few reasons for this:
 
-- The main use case for gpu-io is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays and 2D/3D vertex manipulations, but that is a secondary functionality.
+- The main use case for gpu-io is to compute 2D spatially-distributed state stored in textures using fragment shaders.  There is additional support for 1D arrays and 2D/3D vertex manipulations, but that is secondary functionality.
 - Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, it will take some time everyone to update, so for now I'd like to support all functionality in gpu-io in WebGL1.
 - I played around with the idea of using transform feedback if WebGL2 is available, then falling back to a fragment shader implementation if only WebGL1 is available, but the APIs for each path are so different, it was not a workable option.  So, fragment shaders it is!
 
@@ -344,7 +346,7 @@ My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially laun
 
 ### Precision
 
-By default all shaders in gpu-io are inited with highp precision floats and ints, but it falls back to mediump if not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.ts](https://github.com/amandaghassaei/gpu-io/blob/main/src/glsl/common/precision.ts).
+By default all shaders in gpu-io are inited with highp precision floats and ints, but it falls back to mediump if highp is not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.ts](https://github.com/amandaghassaei/gpu-io/blob/main/src/glsl/common/precision.ts).
 
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
 ```js

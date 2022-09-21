@@ -11,6 +11,94 @@
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 566:
+/***/ (function(__unused_webpack_module, exports) {
+
+(function (global, factory) {
+	 true ? factory(exports) :
+	0;
+})(this, (function (exports) { 'use strict';
+
+	/**
+	 * Checks if value is a number (including Infinity).
+	 */
+	function isNumber(value) {
+	    return !Number.isNaN(value) && typeof value === 'number';
+	}
+	/**
+	 * Checks if value is finite number.
+	 */
+	function isFiniteNumber(value) {
+	    return isNumber(value) && Number.isFinite(value);
+	}
+	/**
+	 * Checks if value is finite integer.
+	 */
+	function isInteger(value) {
+	    return isFiniteNumber(value) && (value % 1 === 0);
+	}
+	/**
+	 * Checks if value is finite positive integer (> 0).
+	 */
+	function isPositiveInteger(value) {
+	    return isInteger(value) && value > 0;
+	}
+	/**
+	 * Checks if value is finite non-negative integer (>= 0).
+	 */
+	function isNonNegativeInteger(value) {
+	    return isInteger(value) && value >= 0;
+	}
+	/**
+	 * Checks if value is string.
+	 */
+	function isString(value) {
+	    return typeof value === 'string';
+	}
+	/**
+	 * Checks if value is TypedArray.
+	 */
+	function isTypedArray(value) {
+	    return ArrayBuffer.isView(value) && !(value instanceof DataView);
+	}
+	/**
+	 * Checks if value is Array or TypedArray.
+	 */
+	function isArray(value) {
+	    return Array.isArray(value) || isTypedArray(value);
+	}
+	/**
+	 * Checks if value is Javascript object.
+	 */
+	function isObject(value) {
+	    return typeof value === 'object' && !isArray(value) && value !== null && !(value instanceof ArrayBuffer) && !(value instanceof DataView);
+	}
+	/**
+	 * Checks if value is boolean.
+	 */
+	function isBoolean(value) {
+	    return typeof value === 'boolean';
+	}
+
+	exports.isArray = isArray;
+	exports.isBoolean = isBoolean;
+	exports.isFiniteNumber = isFiniteNumber;
+	exports.isInteger = isInteger;
+	exports.isNonNegativeInteger = isNonNegativeInteger;
+	exports.isNumber = isNumber;
+	exports.isObject = isObject;
+	exports.isPositiveInteger = isPositiveInteger;
+	exports.isString = isString;
+	exports.isTypedArray = isTypedArray;
+
+	Object.defineProperty(exports, '__esModule', { value: true });
+
+}));
+//# sourceMappingURL=type-checks.js.map
+
+
+/***/ }),
+
 /***/ 847:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
@@ -2258,7 +2346,6 @@ var GPULayer_1 = __webpack_require__(355);
 var constants_1 = __webpack_require__(601);
 var ThreejsUtils = __webpack_require__(404);
 var utils_1 = __webpack_require__(593);
-var checks_1 = __webpack_require__(707);
 var DefaultVertexShader_1 = __webpack_require__(651);
 var LayerLinesVertexShader_1 = __webpack_require__(567);
 var SegmentVertexShader_1 = __webpack_require__(946);
@@ -2266,6 +2353,7 @@ var LayerPointsVertexShader_1 = __webpack_require__(929);
 var LayerVectorFieldVertexShader_1 = __webpack_require__(634);
 var conversions_1 = __webpack_require__(690);
 var Programs_1 = __webpack_require__(579);
+var type_checks_1 = __webpack_require__(566);
 var GPUComposer = /** @class */ (function () {
     /**
      * Create a GPUComposer.
@@ -2696,7 +2784,7 @@ var GPUComposer = /** @class */ (function () {
         if (input === undefined) {
             return [layer];
         }
-        if ((0, checks_1.isArray)(input)) {
+        if ((0, type_checks_1.isArray)(input)) {
             // Return input with layer added if needed.
             if ((0, utils_1.indexOfLayerInArray)(layer, input) >= 0) {
                 return input;
@@ -2738,7 +2826,7 @@ var GPUComposer = /** @class */ (function () {
         }
         // Check if output is same as one of input layers.
         if (input && ((input === output || input.layer === output) ||
-            ((0, checks_1.isArray)(input) && (0, utils_1.indexOfLayerInArray)(output, input) >= 0))) {
+            ((0, type_checks_1.isArray)(input) && (0, utils_1.indexOfLayerInArray)(output, input) >= 0))) {
             if (output.numBuffers === 1) {
                 throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
             }
@@ -2881,7 +2969,7 @@ var GPUComposer = /** @class */ (function () {
         this._setBlendMode(params.blendAlpha);
         if (params.edges) {
             var edges = params.edges;
-            if (!(0, checks_1.isArray)(edges))
+            if (!(0, type_checks_1.isArray)(edges))
                 edges = [edges];
             for (var i = 0, numEdges = edges.length; i < numEdges; i++) {
                 // TODO: do this in one draw call.
@@ -3710,6 +3798,7 @@ var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var GPULayerHelpers_1 = __webpack_require__(191);
+var type_checks_1 = __webpack_require__(566);
 var GPULayer = /** @class */ (function () {
     /**
      * Create a GPULayer.
@@ -3743,7 +3832,7 @@ var GPULayer = /** @class */ (function () {
         if (!params) {
             throw new Error('Error initing GPULayer: must pass params to GPULayer(composer, params).');
         }
-        if (!(0, checks_1.isObject)(params)) {
+        if (!(0, type_checks_1.isObject)(params)) {
             throw new Error("Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got ".concat(JSON.stringify(params), "."));
         }
         // Check params keys.
@@ -3767,7 +3856,7 @@ var GPULayer = /** @class */ (function () {
         this._composer = composer;
         this.name = name;
         // numComponents must be between 1 and 4.
-        if (!(0, checks_1.isPositiveInteger)(numComponents) || numComponents > 4) {
+        if (!(0, type_checks_1.isPositiveInteger)(numComponents) || numComponents > 4) {
             throw new Error("Invalid numComponents: ".concat(JSON.stringify(numComponents), " for GPULayer \"").concat(name, "\", must be number in range [1-4]."));
         }
         this.numComponents = numComponents;
@@ -3838,7 +3927,7 @@ var GPULayer = /** @class */ (function () {
         this._glWrapT = gl[this._internalWrapT];
         // Num buffers is the number of states to store for this data.
         var numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
-        if (!(0, checks_1.isPositiveInteger)(numBuffers)) {
+        if (!(0, type_checks_1.isPositiveInteger)(numBuffers)) {
             throw new Error("Invalid numBuffers: ".concat(JSON.stringify(numBuffers), " for GPULayer \"").concat(name, "\", must be positive integer."));
         }
         this.numBuffers = numBuffers;
@@ -3870,7 +3959,7 @@ var GPULayer = /** @class */ (function () {
             }
         });
         var url = params.url, name = params.name, filter = params.filter, wrapS = params.wrapS, wrapT = params.wrapT, type = params.type, format = params.format;
-        if (!(0, checks_1.isString)(url)) {
+        if (!(0, type_checks_1.isString)(url)) {
             throw new Error("Expected GPULayer.initFromImage params to have url of type string, got ".concat(url, " of type ").concat(typeof url, "."));
         }
         if (type && !(0, checks_1.isValidImageType)(type)) {
@@ -4014,7 +4103,7 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype._initBuffers = function (array) {
         var _a = this, name = _a.name, numBuffers = _a.numBuffers, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, _glFilter = _a._glFilter, _glWrapS = _a._glWrapS, _glWrapT = _a._glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
-        var validatedArray = (0, checks_1.isArray)(array) ? (0, GPULayerHelpers_1.validateGPULayerArray)(array, this) : ((array === null || array === void 0 ? void 0 : array.constructor) === HTMLImageElement ? array : undefined);
+        var validatedArray = (0, type_checks_1.isArray)(array) ? (0, GPULayerHelpers_1.validateGPULayerArray)(array, this) : ((array === null || array === void 0 ? void 0 : array.constructor) === HTMLImageElement ? array : undefined);
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
@@ -4204,7 +4293,7 @@ var GPULayer = /** @class */ (function () {
                 throw new Error("Invalid clearValue: ".concat(JSON.stringify(clearValue), " for GPULayer \"").concat(this.name, "\", expected ").concat(type, " or array of ").concat(type, " of length ").concat(numComponents, "."));
             }
             // Make deep copy if needed.
-            this._clearValue = (0, checks_1.isArray)(clearValue) ? clearValue.slice() : clearValue;
+            this._clearValue = (0, type_checks_1.isArray)(clearValue) ? clearValue.slice() : clearValue;
         },
         enumerable: false,
         configurable: true
@@ -4220,7 +4309,7 @@ var GPULayer = /** @class */ (function () {
         if (verboseLogging)
             console.log("Clearing GPULayer \"".concat(name, "\"."));
         var value = [];
-        if ((0, checks_1.isNumber)(clearValue)) {
+        if ((0, type_checks_1.isFiniteNumber)(clearValue)) {
             value.push(clearValue, clearValue, clearValue, clearValue);
         }
         else {
@@ -4540,8 +4629,8 @@ exports.GPULayer = GPULayer;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFilterWrap = exports.testWriteSupport = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+var type_checks_1 = __webpack_require__(566);
 var float16_1 = __webpack_require__(847);
-var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
 var GPULayer_1 = __webpack_require__(355);
@@ -4589,8 +4678,8 @@ exports.initArrayForType = initArrayForType;
  */
 // TODO: should we relax adherence to power of 2?
 function calcGPULayerSize(size, name, verboseLogging) {
-    if ((0, checks_1.isNumber)(size)) {
-        if (!(0, checks_1.isPositiveInteger)(size)) {
+    if ((0, type_checks_1.isNumber)(size)) {
+        if (!(0, type_checks_1.isPositiveInteger)(size)) {
             throw new Error("Invalid length: ".concat(JSON.stringify(size), " for GPULayer \"").concat(name, "\", must be positive integer."));
         }
         var length_1 = size;
@@ -4608,11 +4697,11 @@ function calcGPULayerSize(size, name, verboseLogging) {
         return { width: width_1, height: height_1, length: length_1 };
     }
     var width = size[0];
-    if (!(0, checks_1.isPositiveInteger)(width)) {
+    if (!(0, type_checks_1.isPositiveInteger)(width)) {
         throw new Error("Invalid width: ".concat(JSON.stringify(width), " for GPULayer \"").concat(name, "\", must be positive integer."));
     }
     var height = size[1];
-    if (!(0, checks_1.isPositiveInteger)(height)) {
+    if (!(0, type_checks_1.isPositiveInteger)(height)) {
         throw new Error("Invalid height: ".concat(JSON.stringify(height), " for GPULayer \"").concat(name, "\", must be positive integer."));
     }
     return { width: width, height: height };
@@ -5451,10 +5540,10 @@ var __assign = (this && this.__assign) || function () {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUProgram = void 0;
-var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var polyfills_1 = __webpack_require__(360);
+var type_checks_1 = __webpack_require__(566);
 var GPUProgram = /** @class */ (function () {
     /**
      * Create a GPUProgram.
@@ -5489,7 +5578,7 @@ var GPUProgram = /** @class */ (function () {
         if (!params) {
             throw new Error("Error initing GPUProgram: must pass params to GPUProgram(composer, params).");
         }
-        if (!(0, checks_1.isObject)(params)) {
+        if (!(0, type_checks_1.isObject)(params)) {
             throw new Error("Error initing GPUProgram: must pass valid params object to GPUProgram(composer, params), got ".concat(JSON.stringify(params), "."));
         }
         // Check params keys.
@@ -5512,7 +5601,7 @@ var GPUProgram = /** @class */ (function () {
         this._composer = composer;
         this.name = name;
         // Preprocess fragment shader source.
-        var fragmentShaderSource = (0, checks_1.isString)(fragmentShader) ?
+        var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
         var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms;
@@ -5654,28 +5743,28 @@ var GPUProgram = /** @class */ (function () {
             var uniform = gl.getUniform(program, location);
             var badType = false;
             if (type === constants_1.BOOL_1D_UNIFORM || type === constants_1.BOOL_2D_UNIFORM || type === constants_1.BOOL_3D_UNIFORM || type === constants_1.BOOL_4D_UNIFORM) {
-                if (!(0, checks_1.isBoolean)(uniform) && uniform.constructor !== Array) {
+                if (!(0, type_checks_1.isBoolean)(uniform) && uniform.constructor !== Array) {
                     badType = true;
                 }
             }
             else if (type === constants_1.FLOAT_1D_UNIFORM || type === constants_1.FLOAT_2D_UNIFORM || type === constants_1.FLOAT_3D_UNIFORM || type === constants_1.FLOAT_4D_UNIFORM) {
-                if (!(0, checks_1.isNumber)(uniform) && uniform.constructor !== Float32Array) {
+                if (!(0, type_checks_1.isFiniteNumber)(uniform) && uniform.constructor !== Float32Array) {
                     badType = true;
                 }
             }
             else if (type === constants_1.INT_1D_UNIFORM || type === constants_1.INT_2D_UNIFORM || type === constants_1.INT_3D_UNIFORM || type === constants_1.INT_4D_UNIFORM) {
-                if (!(0, checks_1.isInteger)(uniform) && uniform.constructor !== Int32Array) {
+                if (!(0, type_checks_1.isInteger)(uniform) && uniform.constructor !== Int32Array) {
                     badType = true;
                 }
             }
             else if (type === constants_1.UINT_1D_UNIFORM || type === constants_1.UINT_2D_UNIFORM || type === constants_1.UINT_3D_UNIFORM || type === constants_1.UINT_4D_UNIFORM) {
                 if (!isGLSL3) {
                     // GLSL1 does not have uint type, expect int instead.
-                    if (!(0, checks_1.isNonNegativeInteger)(uniform) && uniform.constructor !== Int32Array) {
+                    if (!(0, type_checks_1.isNonNegativeInteger)(uniform) && uniform.constructor !== Int32Array) {
                         badType = true;
                     }
                 }
-                else if (!(0, checks_1.isNonNegativeInteger)(uniform) && uniform.constructor !== Uint32Array) {
+                else if (!(0, type_checks_1.isNonNegativeInteger)(uniform) && uniform.constructor !== Uint32Array) {
                     badType = true;
                 }
             }
@@ -5766,7 +5855,7 @@ var GPUProgram = /** @class */ (function () {
         var _b = this, _programs = _b._programs, _uniforms = _b._uniforms, _composer = _b._composer, _samplerUniformsIndices = _b._samplerUniformsIndices;
         var verboseLogging = _composer.verboseLogging, gl = _composer.gl;
         // Check that length of value is correct.
-        if ((0, checks_1.isArray)(value)) {
+        if ((0, type_checks_1.isArray)(value)) {
             var length_2 = value.length;
             if (length_2 > 4)
                 throw new Error("Invalid uniform value: [".concat(value.join(', '), "] passed to GPUProgram \"").concat(this.name, ", uniforms must be of type number[] with length <= 4, number, or boolean.\""));
@@ -5793,7 +5882,7 @@ var GPUProgram = /** @class */ (function () {
         }
         else {
             // Deep check if value has changed.
-            if ((0, checks_1.isArray)(value)) {
+            if ((0, type_checks_1.isArray)(value)) {
                 var isChanged = true;
                 for (var i = 0; i < value.length; i++) {
                     if (_uniforms[name].value !== value) {
@@ -5949,7 +6038,7 @@ exports.GPUProgram = GPUProgram;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.zeroProgram = exports.setColorProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
-var checks_1 = __webpack_require__(707);
+var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
 var GPUProgram_1 = __webpack_require__(664);
@@ -6028,7 +6117,7 @@ exports.addLayersProgram = addLayersProgram;
 function addValueProgram(params) {
     var composer = params.composer, type = params.type, value = params.value;
     var precision = params.precision || '';
-    var valueLength = (0, checks_1.isArray)(value) ? value.length : 1;
+    var valueLength = (0, type_checks_1.isArray)(value) ? value.length : 1;
     var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
     var numComponents = valueLength === 1 ? 4 : valueLength;
     var outputType = (0, conversions_1.glslTypeForType)(type, numComponents);
@@ -6066,7 +6155,7 @@ exports.addValueProgram = addValueProgram;
 function multiplyValueProgram(params) {
     var composer = params.composer, type = params.type, value = params.value;
     var precision = params.precision || '';
-    var valueLength = (0, checks_1.isArray)(value) ? value.length : 1;
+    var valueLength = (0, type_checks_1.isArray)(value) ? value.length : 1;
     var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
     var numComponents = valueLength === 1 ? 4 : valueLength;
     var outputType = (0, conversions_1.glslTypeForType)(type, numComponents);
@@ -6104,7 +6193,7 @@ exports.multiplyValueProgram = multiplyValueProgram;
 function setValueProgram(params) {
     var composer = params.composer, type = params.type, value = params.value;
     var precision = params.precision || '';
-    var valueLength = (0, checks_1.isArray)(value) ? value.length : 1;
+    var valueLength = (0, type_checks_1.isArray)(value) ? value.length : 1;
     var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
     var numComponents = valueLength === 1 ? 4 : valueLength;
     var outputType = (0, conversions_1.glslTypeForType)(type, numComponents);
@@ -6382,7 +6471,8 @@ exports.Vector4 = Vector4;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isBoolean = exports.isObject = exports.isArray = exports.isString = exports.isNonNegativeInteger = exports.isPositiveInteger = exports.isInteger = exports.isNumber = exports.isNumberOfType = exports.isValidClearValue = exports.isValidImageType = exports.isValidImageFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
+exports.isNumberOfType = exports.isValidClearValue = exports.isValidImageType = exports.isValidImageFormat = exports.isValidWrap = exports.isValidFilter = exports.isValidDataType = void 0;
+var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 /**
  * Checks if type is valid GPULayer data type.
@@ -6429,7 +6519,7 @@ exports.isValidImageType = isValidImageType;
  * @private
  */
 function isValidClearValue(clearValue, numComponents, type) {
-    if (isArray(clearValue)) {
+    if ((0, type_checks_1.isArray)(clearValue)) {
         // Length of clearValue must match numComponents.
         if (clearValue.length !== numComponents) {
             return false;
@@ -6457,7 +6547,7 @@ function isNumberOfType(value, type) {
     switch (type) {
         case constants_1.HALF_FLOAT:
         case constants_1.FLOAT:
-            return isNumber(value);
+            return (0, type_checks_1.isFiniteNumber)(value);
         case constants_1.BYTE:
             // -(2 ** 7)
             if (value < -128)
@@ -6465,7 +6555,7 @@ function isNumberOfType(value, type) {
             // 2 ** 7 - 1
             if (value > 127)
                 return false;
-            return isInteger(value);
+            return (0, type_checks_1.isInteger)(value);
         case constants_1.SHORT:
             // -(2 ** 15)
             if (value < -32768)
@@ -6473,7 +6563,7 @@ function isNumberOfType(value, type) {
             // 2 ** 15 - 1
             if (value > 32767)
                 return false;
-            return isInteger(value);
+            return (0, type_checks_1.isInteger)(value);
         case constants_1.INT:
             // -(2 ** 31)
             if (value < -2147483648)
@@ -6481,91 +6571,27 @@ function isNumberOfType(value, type) {
             // 2 ** 31 - 1
             if (value > 2147483647)
                 return false;
-            return isInteger(value);
+            return (0, type_checks_1.isInteger)(value);
         case constants_1.UNSIGNED_BYTE:
             // 2 ** 8 - 1
             if (value > 255)
                 return false;
-            return isNonNegativeInteger(value);
+            return (0, type_checks_1.isNonNegativeInteger)(value);
         case constants_1.UNSIGNED_SHORT:
             // 2 ** 16 - 1
             if (value > 65535)
                 return false;
-            return isNonNegativeInteger(value);
+            return (0, type_checks_1.isNonNegativeInteger)(value);
         case constants_1.UNSIGNED_INT:
             // 2 ** 32 - 1
             if (value > 4294967295)
                 return false;
-            return isNonNegativeInteger(value);
+            return (0, type_checks_1.isNonNegativeInteger)(value);
         default:
             throw new Error("Unknown type ".concat(type));
     }
 }
 exports.isNumberOfType = isNumberOfType;
-/**
- * Checks if value is finite number.
- * @private
- */
-function isNumber(value) {
-    return !Number.isNaN(value) && typeof value === 'number' && Number.isFinite(value);
-}
-exports.isNumber = isNumber;
-/**
- * Checks if value is finite integer.
- * @private
- */
-function isInteger(value) {
-    return isNumber(value) && (value % 1 === 0);
-}
-exports.isInteger = isInteger;
-/**
- * Checks if value is finite positive integer (> 0).
- * @private
- */
-function isPositiveInteger(value) {
-    return isInteger(value) && value > 0;
-}
-exports.isPositiveInteger = isPositiveInteger;
-/**
- * Checks if value is finite non-negative integer (>= 0).
- * @private
- */
-function isNonNegativeInteger(value) {
-    return isInteger(value) && value >= 0;
-}
-exports.isNonNegativeInteger = isNonNegativeInteger;
-/**
- * Checks if value is string.
- * @private
- */
-function isString(value) {
-    return typeof value === 'string';
-}
-exports.isString = isString;
-/**
- * Checks if value is array.
- * @private
- */
-function isArray(value) {
-    return Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView));
-}
-exports.isArray = isArray;
-/**
- * Checks if value is Javascript object.
- * @private
- */
-function isObject(value) {
-    return typeof value === 'object' && !isArray(value) && value !== null;
-}
-exports.isObject = isObject;
-/**
- * Checks if value is boolean.
- * @private
- */
-function isBoolean(value) {
-    return typeof value === 'boolean';
-}
-exports.isBoolean = isBoolean;
 
 
 /***/ }),
@@ -7805,7 +7831,7 @@ exports.getSampler2DsInProgram = getSampler2DsInProgram;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.indexOfLayerInArray = exports.uniformInternalTypeForValue = exports.preprocessFragmentShader = exports.preprocessVertexShader = exports.convertFragmentShaderToGLSL1 = exports.initSequentialFloatArray = exports.isPowerOf2 = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.readyToRead = exports.isWebGL2Supported = exports.isWebGL2 = exports.initGLProgram = exports.compileShader = exports.makeShaderHeader = exports.isIntType = exports.isSignedIntType = exports.isUnsignedIntType = exports.isFloatType = void 0;
-var checks_1 = __webpack_require__(707);
+var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
 var precision_1 = __webpack_require__(724);
@@ -7864,7 +7890,7 @@ function convertCompileTimeConstantsToString(compileTimeConstants) {
     for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
         // Check that define is passed in as a string.
-        if (!(0, checks_1.isString)(key) || !(0, checks_1.isString)(compileTimeConstants[key])) {
+        if (!(0, type_checks_1.isString)(key) || !(0, type_checks_1.isString)(compileTimeConstants[key])) {
             throw new Error("GPUProgram compile time constants must be passed in as key value pairs that are both strings, got key value pair of type [".concat(typeof key, " : ").concat(typeof compileTimeConstants[key], "] for key ").concat(key, "."));
         }
         CTCSource += "#define ".concat(key, " ").concat(compileTimeConstants[key], "\n");
@@ -8285,19 +8311,19 @@ exports.preprocessFragmentShader = preprocessFragmentShader;
 function uniformInternalTypeForValue(value, type, uniformName, programName) {
     if (type === constants_1.FLOAT) {
         // Check that we are dealing with a number.
-        if ((0, checks_1.isArray)(value)) {
+        if ((0, type_checks_1.isArray)(value)) {
             for (var i = 0; i < value.length; i++) {
-                if (!(0, checks_1.isNumber)(value[i])) {
+                if (!(0, type_checks_1.isFiniteNumber)(value[i])) {
                     throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected float or float[] of length 1-4."));
                 }
             }
         }
         else {
-            if (!(0, checks_1.isNumber)(value)) {
+            if (!(0, type_checks_1.isFiniteNumber)(value)) {
                 throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected float or float[] of length 1-4."));
             }
         }
-        if (!(0, checks_1.isArray)(value) || value.length === 1) {
+        if (!(0, type_checks_1.isArray)(value) || value.length === 1) {
             return constants_1.FLOAT_1D_UNIFORM;
         }
         if (value.length === 2) {
@@ -8313,19 +8339,19 @@ function uniformInternalTypeForValue(value, type, uniformName, programName) {
     }
     else if (type === constants_1.INT) {
         // Check that we are dealing with an int.
-        if ((0, checks_1.isArray)(value)) {
+        if ((0, type_checks_1.isArray)(value)) {
             for (var i = 0; i < value.length; i++) {
-                if (!(0, checks_1.isInteger)(value[i])) {
+                if (!(0, type_checks_1.isInteger)(value[i])) {
                     throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected int or int[] of length 1-4."));
                 }
             }
         }
         else {
-            if (!(0, checks_1.isInteger)(value)) {
+            if (!(0, type_checks_1.isInteger)(value)) {
                 throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected int or int[] of length 1-4."));
             }
         }
-        if (!(0, checks_1.isArray)(value) || value.length === 1) {
+        if (!(0, type_checks_1.isArray)(value) || value.length === 1) {
             return constants_1.INT_1D_UNIFORM;
         }
         if (value.length === 2) {
@@ -8341,19 +8367,19 @@ function uniformInternalTypeForValue(value, type, uniformName, programName) {
     }
     else if (type === constants_1.UINT) {
         // Check that we are dealing with a uint.
-        if ((0, checks_1.isArray)(value)) {
+        if ((0, type_checks_1.isArray)(value)) {
             for (var i = 0; i < value.length; i++) {
-                if (!(0, checks_1.isNonNegativeInteger)(value[i])) {
+                if (!(0, type_checks_1.isNonNegativeInteger)(value[i])) {
                     throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected uint or uint[] of length 1-4."));
                 }
             }
         }
         else {
-            if (!(0, checks_1.isNonNegativeInteger)(value)) {
+            if (!(0, type_checks_1.isNonNegativeInteger)(value)) {
                 throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected uint or uint[] of length 1-4."));
             }
         }
-        if (!(0, checks_1.isArray)(value) || value.length === 1) {
+        if (!(0, type_checks_1.isArray)(value) || value.length === 1) {
             return constants_1.UINT_1D_UNIFORM;
         }
         if (value.length === 2) {
@@ -8369,19 +8395,19 @@ function uniformInternalTypeForValue(value, type, uniformName, programName) {
     }
     else if (type === constants_1.BOOL) {
         // Check that we are dealing with a boolean.
-        if ((0, checks_1.isArray)(value)) {
+        if ((0, type_checks_1.isArray)(value)) {
             for (var i = 0; i < value.length; i++) {
-                if (!(0, checks_1.isBoolean)(value[i])) {
+                if (!(0, type_checks_1.isBoolean)(value[i])) {
                     throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected bool or bool[] of length 1-4."));
                 }
             }
         }
         else {
-            if (!(0, checks_1.isBoolean)(value)) {
+            if (!(0, type_checks_1.isBoolean)(value)) {
                 throw new Error("Invalid value ".concat(JSON.stringify(value), " for uniform \"").concat(uniformName, "\" in program \"").concat(programName, "\", expected bool or bool[] of length 1-4."));
             }
         }
-        if (!(0, checks_1.isArray)(value) || value.length === 1) {
+        if (!(0, type_checks_1.isArray)(value) || value.length === 1) {
             return constants_1.BOOL_1D_UNIFORM;
         }
         if (value.length === 2) {

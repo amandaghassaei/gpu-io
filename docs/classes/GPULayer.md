@@ -205,7 +205,7 @@ ___
 
 | Name | Type |
 | :------ | :------ |
-| `dimensions` | `number` \| [`number`, `number`] |
+| `dimensions` | `number` \| `number`[] |
 | `array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
 
 #### Returns
@@ -349,7 +349,7 @@ Create a GPULayer.
 | `params.name` | `string` | Name of GPULayer, used for error logging.  * |
 | `params.type` | [`GPULayerType`](../README.md#gpulayertype) | Data type represented by GPULayer. |
 | `params.numComponents` | [`GPULayerNumComponents`](../README.md#gpulayernumcomponents) | Number of RGBA elements represented by each pixel in the GPULayer (1-4). |
-| `params.dimensions` | `number` \| [`number`, `number`] | Dimensions of 1D or 2D GPULayer. |
+| `params.dimensions` | `number` \| `number`[] | Dimensions of 1D or 2D GPULayer. |
 | `params.array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) | Array to initialize GPULayer. |
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST. |
 | `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |

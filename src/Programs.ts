@@ -1,4 +1,4 @@
-import { isArray } from './checks';
+import { isArray } from '@amandaghassaei/type-checks';
 import { FLOAT, GLSLPrecision, GPULayerNumComponents, GPULayerType, INT } from './constants';
 import { glslComponentSelectionForNumComponents, glslPrefixForType, glslTypeForType, uniformTypeForType } from './conversions';
 import { GPUComposer } from './GPUComposer';
