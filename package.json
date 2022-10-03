@@ -21,7 +21,7 @@
   },
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
-    "build": "webpack",
+    "build": "webpack && npm run docs",
     "docs": "typedoc --options ./typedoc.json"
   },
   "author": "Amanda Ghassaei",

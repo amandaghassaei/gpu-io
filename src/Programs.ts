@@ -1,8 +1,18 @@
 import { isArray } from '@amandaghassaei/type-checks';
-import { isValidDataType } from './checks';
-import { FLOAT, GLSLPrecision, GPULayerNumComponents, GPULayerType, INT } from './constants';
-import { glslComponentSelectionForNumComponents, glslPrefixForType, glslTypeForType, uniformTypeForType } from './conversions';
-import { GPUComposer } from './GPUComposer';
+import {
+	FLOAT,
+	GLSLPrecision,
+	GPULayerNumComponents,
+	GPULayerType,
+	INT,
+} from './constants';
+import {
+	glslComponentSelectionForNumComponents,
+	glslPrefixForType,
+	glslTypeForType,
+	uniformTypeForType,
+} from './conversions';
+import type { GPUComposer } from './GPUComposer';
 import { GPUProgram } from './GPUProgram';
 
 /**

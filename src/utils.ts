@@ -53,7 +53,7 @@ import {
 } from './constants';
 import { intForPrecision } from './conversions';
 import { PRECISION_SOURCE } from './glsl/common/precision';
-import { GPULayer } from './GPULayer';
+import type { GPULayer } from './GPULayer';
 import { fragmentShaderPolyfills, GLSL1Polyfills, texturePolyfill } from './polyfills';
 import {
 	checkFragmentShaderForFragColor,

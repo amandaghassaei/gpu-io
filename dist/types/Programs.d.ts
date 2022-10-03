@@ -1,5 +1,5 @@
 import { GLSLPrecision, GPULayerType } from './constants';
-import { GPUComposer } from './GPUComposer';
+import type { GPUComposer } from './GPUComposer';
 import { GPUProgram } from './GPUProgram';
 /**
  * Init GPUProgram to copy contents of one GPULayer to another GPULayer.

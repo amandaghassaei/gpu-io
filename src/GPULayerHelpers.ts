@@ -43,8 +43,8 @@ import {
 	OES_TEXTURE_HALF_FLOAT,
 	OES_TEXTURE_HAlF_FLOAT_LINEAR,
 } from './extensions';
-import { GPUComposer } from './GPUComposer';
-import { GPULayer } from './GPULayer';
+import type { GPUComposer } from './GPUComposer';
+import { GPULayer } from './GPULayer'; // TODO: circular dependency.
 import {
 	compileShader,
 	convertFragmentShaderToGLSL1,

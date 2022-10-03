@@ -1,4 +1,4 @@
-import { GPUComposer } from './GPUComposer';
+import type { GPUComposer } from './GPUComposer';
 export declare const OES_TEXTURE_FLOAT = "OES_texture_float";
 export declare const OES_TEXTURE_HALF_FLOAT = "OES_texture_half_float";
 export declare const OES_TEXTURE_FLOAT_LINEAR = "OES_texture_float_linear";

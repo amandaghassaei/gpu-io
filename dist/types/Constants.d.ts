@@ -1,4 +1,4 @@
-import { GPULayer } from './GPULayer';
+import type { GPULayer } from './GPULayer';
 /**
  * Half float data type.
  */

@@ -1,4 +1,4 @@
-import { GPUComposer } from './GPUComposer';
+import type { GPUComposer } from './GPUComposer';
 import {
 	FLOAT_1D_UNIFORM,
 	FLOAT_2D_UNIFORM,

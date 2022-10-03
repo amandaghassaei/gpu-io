@@ -1,12 +1,10 @@
 // @ts-ignore
 import { changeDpiBlob } from 'changedpi';
+import { isArray } from '@amandaghassaei/type-checks';
 import { GPULayer } from './GPULayer';
 import {
-	GPULayerFilter,
 	GPULayerType,
-	GPULayerWrap,
 	FLOAT,
-	UNSIGNED_BYTE,
 	INT,
 	GLSLVersion,
 	GLSL1,
@@ -23,21 +21,15 @@ import {
 	LAYER_LINES_PROGRAM_NAME,
 	ErrorCallback,
 	DEFAULT_CIRCLE_NUM_SEGMENTS,
-	validFilters,
-	validWraps,
 	UINT,
 	GLSLPrecision,
 	PRECISION_HIGH_P,
 	DEFAULT_ERROR_CALLBACK,
-	BOOL,
 	GPULayerState,
-	GPUIO_VS_UV_ATTRIBUTE,
-	GPUIO_VS_NORMAL_ATTRIBUTE,
 	GPUIO_VS_POSITION_W_ACCUM,
 	GPUIO_VS_WRAP_X,
 	GPUIO_VS_WRAP_Y,
 	MAX_FLOAT_INT,
-	GPUIO_VS_INDEXED_POSITIONS,
 	EXPERIMENTAL_WEBGL2,
 	BoundaryEdge,
 	BOUNDARY_LEFT,
@@ -48,14 +40,13 @@ import {
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
 // Only @types/three is installed as dev dependency.
-import {
+import type {
 	WebGLRenderer,
 	Vector4,
 } from 'three';
 import * as ThreejsUtils from './Vector4';
 import {
 	isWebGL2,
-	isPowerOf2,
 	initSequentialFloatArray,
 	preprocessVertexShader,
 	compileShader,
@@ -68,7 +59,6 @@ import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerPointsVert
 import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVectorFieldVertexShader';
 import { uniformTypeForType } from './conversions';
 import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
-import { isArray } from '@amandaghassaei/type-checks';
 import { checkRequiredKeys, checkValidKeys } from './checks';
 
 export class GPUComposer {

@@ -1,6 +1,6 @@
-// Data types.
+import type { GPULayer } from './GPULayer';
 
-import { GPULayer } from './GPULayer';
+// Data types and constants.
 
 /**
  * Half float data type.

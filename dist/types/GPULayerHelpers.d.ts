@@ -1,5 +1,5 @@
 import { GPULayerFilter, GPULayerType, GPULayerWrap, GPULayerNumComponents, GPULayerArray } from './constants';
-import { GPUComposer } from './GPUComposer';
+import type { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 /**
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.

@@ -56,6 +56,7 @@ const {
 	setValueProgram,
 	setColorProgram,
 } = Programs;
+
 export {
 	GPUComposer,
 	GPULayer,

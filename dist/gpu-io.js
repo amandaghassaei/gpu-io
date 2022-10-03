@@ -2342,6 +2342,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPUComposer = void 0;
 // @ts-ignore
 var changedpi_1 = __webpack_require__(809);
+var type_checks_1 = __webpack_require__(566);
 var GPULayer_1 = __webpack_require__(355);
 var constants_1 = __webpack_require__(601);
 var ThreejsUtils = __webpack_require__(404);
@@ -2353,7 +2354,6 @@ var LayerPointsVertexShader_1 = __webpack_require__(929);
 var LayerVectorFieldVertexShader_1 = __webpack_require__(634);
 var conversions_1 = __webpack_require__(690);
 var Programs_1 = __webpack_require__(579);
-var type_checks_1 = __webpack_require__(566);
 var checks_1 = __webpack_require__(707);
 var GPUComposer = /** @class */ (function () {
     /**
@@ -3783,6 +3783,7 @@ exports.GPUComposer = GPUComposer;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GPULayer = void 0;
 var float16_1 = __webpack_require__(847);
+var type_checks_1 = __webpack_require__(566);
 // @ts-ignore
 var changedpi_1 = __webpack_require__(809);
 var file_saver_1 = __webpack_require__(162);
@@ -3790,7 +3791,6 @@ var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var GPULayerHelpers_1 = __webpack_require__(191);
-var type_checks_1 = __webpack_require__(566);
 var GPULayer = /** @class */ (function () {
     /**
      * Create a GPULayer.
@@ -4615,7 +4615,7 @@ var type_checks_1 = __webpack_require__(566);
 var float16_1 = __webpack_require__(847);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
-var GPULayer_1 = __webpack_require__(355);
+var GPULayer_1 = __webpack_require__(355); // TODO: circular dependency.
 var utils_1 = __webpack_require__(593);
 // Memoize results.
 var results = {
@@ -6591,10 +6591,10 @@ exports.checkRequiredKeys = checkRequiredKeys;
 
 "use strict";
 
-// Data types.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_POINTS_PROGRAM_NAME = exports.SEGMENT_PROGRAM_NAME = exports.DEFAULT_PROGRAM_NAME = exports.BOOL_4D_UNIFORM = exports.BOOL_3D_UNIFORM = exports.BOOL_2D_UNIFORM = exports.BOOL_1D_UNIFORM = exports.UINT_4D_UNIFORM = exports.UINT_3D_UNIFORM = exports.UINT_2D_UNIFORM = exports.UINT_1D_UNIFORM = exports.INT_4D_UNIFORM = exports.INT_3D_UNIFORM = exports.INT_2D_UNIFORM = exports.INT_1D_UNIFORM = exports.FLOAT_4D_UNIFORM = exports.FLOAT_3D_UNIFORM = exports.FLOAT_2D_UNIFORM = exports.FLOAT_1D_UNIFORM = exports.PRECISION_HIGH_P = exports.PRECISION_MEDIUM_P = exports.PRECISION_LOW_P = exports.EXPERIMENTAL_WEBGL2 = exports.EXPERIMENTAL_WEBGL = exports.WEBGL1 = exports.WEBGL2 = exports.GLSL1 = exports.GLSL3 = exports.validImageTypes = exports.validImageFormats = exports.RGBA = exports.RGB = exports.validWraps = exports.validFilters = exports.validDataTypes = exports.validArrayTypes = exports.REPEAT = exports.CLAMP_TO_EDGE = exports.LINEAR = exports.NEAREST = exports.UINT = exports.BOOL = exports.INT = exports.UNSIGNED_INT = exports.SHORT = exports.UNSIGNED_SHORT = exports.BYTE = exports.UNSIGNED_BYTE = exports.FLOAT = exports.HALF_FLOAT = void 0;
 exports.BOUNDARY_RIGHT = exports.BOUNDARY_LEFT = exports.BOUNDARY_BOTTOM = exports.BOUNDARY_TOP = exports.GPUIO_FLOAT_PRECISION = exports.GPUIO_INT_PRECISION = exports.MAX_FLOAT_INT = exports.MIN_FLOAT_INT = exports.MAX_HALF_FLOAT_INT = exports.MIN_HALF_FLOAT_INT = exports.MAX_INT = exports.MIN_INT = exports.MAX_UNSIGNED_INT = exports.MIN_UNSIGNED_INT = exports.MAX_SHORT = exports.MIN_SHORT = exports.MAX_UNSIGNED_SHORT = exports.MIN_UNSIGNED_SHORT = exports.MAX_BYTE = exports.MIN_BYTE = exports.MAX_UNSIGNED_BYTE = exports.MIN_UNSIGNED_BYTE = exports.DEFAULT_CIRCLE_NUM_SEGMENTS = exports.DEFAULT_ERROR_CALLBACK = exports.GPUIO_VS_POSITION_W_ACCUM = exports.GPUIO_VS_NORMAL_ATTRIBUTE = exports.GPUIO_VS_UV_ATTRIBUTE = exports.GPUIO_VS_INDEXED_POSITIONS = exports.GPUIO_VS_WRAP_Y = exports.GPUIO_VS_WRAP_X = exports.LAYER_VECTOR_FIELD_PROGRAM_NAME = exports.LAYER_LINES_PROGRAM_NAME = void 0;
+// Data types and constants.
 /**
  * Half float data type.
  */

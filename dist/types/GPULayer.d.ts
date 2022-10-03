@@ -1,6 +1,6 @@
-import { GPUComposer } from './GPUComposer';
+import type { Texture } from 'three';
+import type { GPUComposer } from './GPUComposer';
 import { GPULayerArray, GPULayerFilter, GPULayerNumComponents, GPULayerType, GPULayerWrap, GPULayerState, ImageFormat, ImageType } from './constants';
-import { Texture } from 'three';
 export declare class GPULayer {
     private readonly _composer;
     /**

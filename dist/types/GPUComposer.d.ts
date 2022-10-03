@@ -1,7 +1,7 @@
 import { GPULayer } from './GPULayer';
 import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
 import { GPUProgram } from './GPUProgram';
-import { WebGLRenderer } from 'three';
+import type { WebGLRenderer } from 'three';
 export declare class GPUComposer {
     /**
      * The canvas element associated with this GPUcomposer.

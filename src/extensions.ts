@@ -1,4 +1,4 @@
-import { GPUComposer } from './GPUComposer';
+import type { GPUComposer } from './GPUComposer';
 
 // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float
 // Float is provided by default in WebGL2 contexts.

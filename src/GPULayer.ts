@@ -1,8 +1,16 @@
 import { setFloat16, getFloat16 } from '@petamoriken/float16';
+import type { Texture } from 'three';
+import {
+	isArray,
+	isFiniteNumber,
+	isObject,
+	isPositiveInteger,
+	isString,
+} from '@amandaghassaei/type-checks';
 // @ts-ignore
 import { changeDpiBlob } from 'changedpi';
 import { saveAs } from 'file-saver';
-import { GPUComposer } from './GPUComposer';
+import type { GPUComposer } from './GPUComposer';
 import {
 	checkRequiredKeys,
 	checkValidKeys,
@@ -52,14 +60,6 @@ import {
 	initArrayForType,
 	validateGPULayerArray,
 } from './GPULayerHelpers';
-import { Texture } from 'three';
-import {
-	isArray,
-	isFiniteNumber,
-	isObject,
-	isPositiveInteger,
-	isString,
-} from '@amandaghassaei/type-checks';
 
 export class GPULayer {
 	// Keep a reference to GPUComposer.

@@ -726,14 +726,14 @@ ___
 
 ### getVertexShaderMediumpPrecision
 
-▸ **getVertexShaderMediumpPrecision**(): ``"mediump"`` \| ``"highp"``
+▸ **getVertexShaderMediumpPrecision**(): ``"highp"`` \| ``"mediump"``
 
 Returns the actual precision of mediump inside vertex shader.
 From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 
 #### Returns
 
-``"mediump"`` \| ``"highp"``
+``"highp"`` \| ``"mediump"``
 
 - Vertex shader mediump precision.
 
@@ -741,13 +741,13 @@ ___
 
 ### getFragmentShaderMediumpPrecision
 
-▸ **getFragmentShaderMediumpPrecision**(): ``"mediump"`` \| ``"highp"``
+▸ **getFragmentShaderMediumpPrecision**(): ``"highp"`` \| ``"mediump"``
 
 Returns the actual precision of mediump inside fragment shader.
 From https://webglfundamentals.org/webgl/lessons/webgl-precision-issues.html
 
 #### Returns
 
-``"mediump"`` \| ``"highp"``
+``"highp"`` \| ``"mediump"``
 
 - Fragment shader supported mediump precision.

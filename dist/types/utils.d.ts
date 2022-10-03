@@ -1,5 +1,5 @@
 import { CompileTimeConstants, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerState, GPULayerType, UniformType, UniformValue } from './constants';
-import { GPULayer } from './GPULayer';
+import type { GPULayer } from './GPULayer';
 /**
  * Test whether a GPULayer type is a float type.
  * @private
