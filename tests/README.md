@@ -12,6 +12,8 @@ npm run test
 
 I've also included a few html pages (in the [tests/browser/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/browser/) directory) for testing various functions of this library in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
 
+Note: The detected OS and browser version may not always be 100% accurate.
+
 
 ## Browser Support
 
@@ -21,19 +23,28 @@ Here are some results I've gathered testing different combinations of hardware/b
 ### Mac
 
 - macOS v11.0 + Chrome v105.0.0.0 [readwrite](results/READWRITE_Chrome_v105.0.0.0_macOS_v11.0.png) / [read](results/READ_Chrome_v105.0.0.0_macOS_v11.0.png)
-- macOS v10.15.7 + Chrome v105.0.0.0 [readwrite](results/READWRITE_Chrome_v105.0.0.0_macOS_v10.15.7.png) / [read](results/READ_Chrome_v105.0.0.0_macOS_v10.15.7.png)
 - macOS v10.15.7 + Firefox v104.0 [readwrite](results/READWRITE_Firefox_v104.0_macOS_v10.15.7.png) / [read](results/READ_Firefox_v104.0_macOS_v10.15.7.png)
-- (WebGL1 only) macOS v10.15.7 + Safari v14.0.3 [readwrite](results/READWRITE_Safari_v14.0.3_macOS_v10.15.7.png) / [read](results/READ_Safari_v14.0.3_macOS_v10.15.7.png)
-
-
-### Windows
-
+- macOS v10.15.7 + Safari v15.6.1 [readwrite](results/READWRITE_Safari_v15.6.1_macOS_v10.15.7.png) / [read](results/READ_Safari_v15.6.1_macOS_v10.15.7.png)
+    - iMac, Macbook Pro, Macbook Air
+    - (WebGL1 only) macOS v10.15.7 + Safari v14.0.3 [readwrite](results/READWRITE_Safari_v14.0.3_macOS_v10.15.7.png) / [read](results/READ_Safari_v14.0.3_macOS_v10.15.7.png)
 
 
 ### iOS
 
-- iOS v15.5 + Safari v15.5 [readwrite](results/READWRITE_Safari_v15.5_iOS_v15.5.png) / [read](results/READ_Safari_v15.5_iOS_v15.5.png)
-- (WebGL1 only) iOS v14.7.1 + Safari v14.1.2  [readwrite](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) / [read](results/READ_Safari_v14.1.2_iOS_v14.7.1.png)
+- iOS v15.6.1 + Safari v15.6.1 [readwrite](results/READWRITE_Safari_v15.6.1_iOS_v15.6.1.png) / [read](results/READ_Safari_v15.6.1_iOS_v15.6.1.png)
+    - iPhones
+    - (WebGL1 only) iOS v14.7.1 + Safari v14.1.2  [readwrite](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png) / [read](results/READ_Safari_v14.1.2_iOS_v14.7.1.png)
+- iPadOS v15.6.1 + Safari v15.6.1 [readwrite](results/READWRITE_Safari_v15.6.1_ipadOS_v15.6.1.png) / [read](results/READ_Safari_v15.6.1_ipadOS_v15.6.1.png)
+    - iPad, iPad Air, iPad Pro, iPad Mini
+    - Note: Linear filtering of FLOAT type does not seem to be natively supported on the iPad or iPad Mini, but is supported by iPad Air and iPad Pro.
+
+
+### Windows
+
+- Windows 11.0 + Edge (Chromium) v105.0.0.0 [readwrite](results/READWRITE_Chrome_v105.0.0.0_Windows_v11.0.png) / [read](results/READ_Chrome_v105.0.0.0_Windows_v11.0.png)
+    - Galaxy Book2 Pro, Galaxy Book Flex2 Alpha
+    - Note: Microsoft Edge is running Chromium internally, which is why it shows up as Chrome.
 
 
 ### Android
+
