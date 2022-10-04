@@ -2,6 +2,7 @@
 import { changeDpiBlob } from 'changedpi';
 import { isArray } from '@amandaghassaei/type-checks';
 import { GPULayer } from './GPULayer';
+import './GPULayerHelpers';
 import {
 	GPULayerType,
 	FLOAT,

@@ -1,9 +1,9 @@
 import * as utils from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
+import * as GPULayerHelpers from './GPULayerHelpers';
 import { GPUProgram } from './GPUProgram';
 import * as checks from './checks';
-import * as GPULayerHelpers from './GPULayerHelpers';
 import * as regex from './regex';
 import * as extensions from './extensions';
 import * as polyfills from './polyfills';

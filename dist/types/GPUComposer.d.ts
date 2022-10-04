@@ -1,4 +1,5 @@
 import { GPULayer } from './GPULayer';
+import './GPULayerHelpers';
 import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
 import { GPUProgram } from './GPUProgram';
 import type { WebGLRenderer } from 'three';

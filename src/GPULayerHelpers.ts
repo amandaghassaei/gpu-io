@@ -44,7 +44,7 @@ import {
 	OES_TEXTURE_HAlF_FLOAT_LINEAR,
 } from './extensions';
 import type { GPUComposer } from './GPUComposer';
-import { GPULayer } from './GPULayer'; // TODO: circular dependency.
+import { GPULayer } from './GPULayer';
 import {
 	compileShader,
 	convertFragmentShaderToGLSL1,
@@ -64,11 +64,11 @@ const results = {
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
  * @private
  */
-export function initArrayForType(
+GPULayer.initArrayForType = (
 	type: GPULayerType,
 	length: number,
 	halfFloatsAsFloats = false,
-) {
+) => {
 	switch (type) {
 		case HALF_FLOAT:
 			if (halfFloatsAsFloats) return new Float32Array(length);
@@ -99,11 +99,11 @@ export function initArrayForType(
  * @private
  */
 // TODO: should we relax adherence to power of 2?
-export function calcGPULayerSize(
+GPULayer.calcGPULayerSize = (
 	size: number | number[],
 	name: string,
 	verboseLogging: boolean,
-) {
+) => {
 	if (isNumber(size as number)) {
 		if (!isPositiveInteger(size)) {
 			throw new Error(`Invalid length: ${JSON.stringify(size)} for GPULayer "${name}", must be positive integer.`);
@@ -136,7 +136,7 @@ export function calcGPULayerSize(
  * Get the GL wrap type to use internally in GPULayer, based on browser support.
  * @private
  */
-export function getGPULayerInternalWrap(
+GPULayer.getGPULayerInternalWrap = (
 	params: {
 		composer: GPUComposer,
 		wrap: GPULayerWrap,
@@ -144,7 +144,7 @@ export function getGPULayerInternalWrap(
 		internalType: GPULayerType,
 		name: string,
 	},
-) {
+) => {
 	const { composer, wrap, internalFilter, internalType } = params;
 
 	// CLAMP_TO_EDGE is always supported.
@@ -172,7 +172,7 @@ export function getGPULayerInternalWrap(
  * Get the GL filter type to use internally in GPULayer, based on browser support.
  * @private
  */
-export function getGPULayerInternalFilter(
+ GPULayer.getGPULayerInternalFilter = (
 	params: {
 		composer: GPUComposer,
 		filter: GPULayerFilter,
@@ -181,7 +181,7 @@ export function getGPULayerInternalFilter(
 		internalType: GPULayerType,
 		name: string,
 	},
-) {
+) => {
 	let { filter } = params;
 	if (filter === NEAREST) {
 		// NEAREST filtering is always supported.
@@ -233,7 +233,7 @@ export function shouldCastIntTypeAsFloat(
  * Returns GLTexture parameters for GPULayer, based on browser support.
  * @private
  */
-export function getGLTextureParameters(
+GPULayer.getGLTextureParameters = (
 	params: {
 		composer: GPUComposer,
 		name: string,
@@ -241,7 +241,7 @@ export function getGLTextureParameters(
 		internalType: GPULayerType,
 		writable: boolean,
 	}
-) {
+) => {
 	const { composer, name, numComponents, internalType, writable } = params;
 	const { gl, glslVersion } = composer;
 	// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
@@ -575,7 +575,7 @@ export function testWriteSupport(
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
-	const { glInternalFormat, glFormat, glType } = getGLTextureParameters({
+	const { glInternalFormat, glFormat, glType } = GPULayer.getGLTextureParameters({
 		composer,
 		name: 'testWriteSupport',
 		numComponents: 1,
@@ -645,7 +645,7 @@ export function testFilterWrap(
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
 
-	const { glInternalFormat, glFormat, glType, glNumChannels } = getGLTextureParameters({
+	const { glInternalFormat, glFormat, glType, glNumChannels } = GPULayer.getGLTextureParameters({
 		composer,
 		name: 'testFilterWrap',
 		numComponents,
@@ -654,7 +654,7 @@ export function testFilterWrap(
 	});
 	// Init texture with values.
 	const values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
-	let valuesTyped = initArrayForType(internalType, values.length * glNumChannels, true);
+	let valuesTyped = GPULayer.initArrayForType(internalType, values.length * glNumChannels, true);
 	for (let i = 0; i < values.length; i++) {
 		valuesTyped[i * glNumChannels] = values[i];
 		values[i] = valuesTyped[i * glNumChannels]; // Cast as int/uint if needed.
@@ -795,14 +795,14 @@ void main() {
  * @private
  * Exported here for testing purposes.
  */
-export function getGPULayerInternalType(
+GPULayer.getGPULayerInternalType = (
 	params: {
 		composer: GPUComposer,
 		type: GPULayerType,
 		writable: boolean,
 		name: string,
 	},
-) {
+) => {
 	const { composer, writable, name } = params;
 	const { gl, _errorCallback } = composer;
 	const { type } = params;
@@ -933,7 +933,7 @@ export function minMaxValuesForType(type: GPULayerType) {
  * Recasts typed array to match GPULayer.internalType.
  * @private
  */
-export function validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer) {
+GPULayer.validateGPULayerArray = (array: GPULayerArray | number[], layer: GPULayer) => {
 	const { numComponents, width, height, name } = layer;
 	const glNumChannels = layer._glNumChannels;
 	const internalType = layer._internalType;
@@ -997,7 +997,7 @@ export function validateGPULayerArray(array: GPULayerArray | number[], layer: GP
 		
 	let validatedArray = array as GPULayerArray;
 	if (shouldTypeCast || shouldResize) {
-		validatedArray = initArrayForType(internalType, arrayLength);
+		validatedArray = GPULayer.initArrayForType(internalType, arrayLength);
 		// Fill new data array with old data.
 		// We have to handle the case of Float16 specially by converting data to Uint16Array.
 		const view = (internalType === HALF_FLOAT && shouldTypeCast) ? new DataView(validatedArray.buffer) : null;

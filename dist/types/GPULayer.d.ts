@@ -246,4 +246,68 @@ export declare class GPULayer {
      * Deallocate GPULayer instance and associated WebGL properties.
      */
     dispose(): void;
+    /**
+     * These methods are defined in GPULayerHelpers.ts
+     */
+    /**
+     * @private
+     */
+    static initArrayForType(type: GPULayerType, length: number, halfFloatsAsFloats?: boolean): GPULayerArray;
+    /**
+     * @private
+     */
+    static calcGPULayerSize(size: number | number[], name: string, verboseLogging: boolean): {
+        width: number;
+        height: number;
+        length?: number;
+    };
+    /**
+     * @private
+     */
+    static getGPULayerInternalWrap(params: {
+        composer: GPUComposer;
+        wrap: GPULayerWrap;
+        internalFilter: GPULayerFilter;
+        internalType: GPULayerType;
+        name: string;
+    }): GPULayerWrap;
+    /**
+     * @private
+     */
+    static getGPULayerInternalFilter(params: {
+        composer: GPUComposer;
+        filter: GPULayerFilter;
+        wrapS: GPULayerWrap;
+        wrapT: GPULayerWrap;
+        internalType: GPULayerType;
+        name: string;
+    }): GPULayerFilter;
+    /**
+     * @private
+     */
+    static getGLTextureParameters(params: {
+        composer: GPUComposer;
+        name: string;
+        numComponents: GPULayerNumComponents;
+        internalType: GPULayerType;
+        writable: boolean;
+    }): {
+        glFormat: number;
+        glInternalFormat: number;
+        glType: number;
+        glNumChannels: number;
+    };
+    /**
+     * @private
+     */
+    static getGPULayerInternalType(params: {
+        composer: GPUComposer;
+        type: GPULayerType;
+        writable: boolean;
+        name: string;
+    }): GPULayerType;
+    /**
+     * @private
+     */
+    static validateGPULayerArray(array: GPULayerArray | number[], layer: GPULayer): GPULayerArray;
 }

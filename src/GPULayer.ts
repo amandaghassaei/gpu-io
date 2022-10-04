@@ -51,15 +51,6 @@ import {
 import {
 	readyToRead,
 } from './utils';
-import {
-	calcGPULayerSize,
-	getGLTextureParameters,
-	getGPULayerInternalFilter,
-	getGPULayerInternalType,
-	getGPULayerInternalWrap,
-	initArrayForType,
-	validateGPULayerArray,
-} from './GPULayerHelpers';
 
 export class GPULayer {
 	// Keep a reference to GPUComposer.
@@ -314,7 +305,7 @@ export class GPULayer {
 		this.writable = writable;
 
 		// Set dimensions, may be 1D or 2D.
-		const { length, width, height } = calcGPULayerSize(dimensions, name, composer.verboseLogging);
+		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, composer.verboseLogging);
 		// We already type checked length, width, and height in calcGPULayerSize.
 		this._length = length;
 		this._width = width;
@@ -350,7 +341,7 @@ export class GPULayer {
 			throw new Error(`Invalid type: ${JSON.stringify(type)} for GPULayer "${name}", must be one of ${JSON.stringify(validDataTypes)}.`);
 		}
 		this.type = type;
-		const internalType = getGPULayerInternalType({
+		const internalType = GPULayer.getGPULayerInternalType({
 			composer,
 			type,
 			writable,
@@ -363,7 +354,7 @@ export class GPULayer {
 			glInternalFormat,
 			glType,
 			glNumChannels,
-		} = getGLTextureParameters({
+		} = GPULayer.getGLTextureParameters({
 			composer,
 			name,
 			numComponents,
@@ -377,12 +368,12 @@ export class GPULayer {
 
 		// Set internal filtering/wrap types.
 		// Make sure that we set filter BEFORE setting wrap.
-		const internalFilter = getGPULayerInternalFilter({ composer, filter, wrapS, wrapT, internalType, name });
+		const internalFilter = GPULayer.getGPULayerInternalFilter({ composer, filter, wrapS, wrapT, internalType, name });
 		this._internalFilter = internalFilter;
 		this._glFilter = gl[internalFilter];
-		this._internalWrapS = getGPULayerInternalWrap({ composer, wrap: wrapS, internalFilter, internalType, name });
+		this._internalWrapS = GPULayer.getGPULayerInternalWrap({ composer, wrap: wrapS, internalFilter, internalType, name });
 		this._glWrapS = gl[this._internalWrapS];
-		this._internalWrapT = getGPULayerInternalWrap({ composer, wrap: wrapT, internalFilter, internalType, name });
+		this._internalWrapT = GPULayer.getGPULayerInternalWrap({ composer, wrap: wrapT, internalFilter, internalType, name });
 		this._glWrapT = gl[this._internalWrapT];
 		
 
@@ -524,7 +515,7 @@ export class GPULayer {
 		} = this;
 		const { gl, _errorCallback } = _composer;
 
-		const validatedArray = isArray(array) ? validateGPULayerArray(array as GPULayerArray | number[], this) : (array?.constructor === HTMLImageElement ? array : undefined);
+		const validatedArray = isArray(array) ? GPULayer.validateGPULayerArray(array as GPULayerArray | number[], this) : (array?.constructor === HTMLImageElement ? array : undefined);
 
 		// Init a texture for each buffer.
 		for (let i = 0; i < numBuffers; i++) {
@@ -665,7 +656,7 @@ export class GPULayer {
 	setFromArray(array: GPULayerArray | number[], applyToAllBuffers = false) {
 		const { _composer, _glInternalFormat, _glFormat, _glType, numBuffers, width, height, bufferIndex } = this;
 		const { gl } = _composer;
-		const validatedArray = validateGPULayerArray(array, this);
+		const validatedArray = GPULayer.validateGPULayerArray(array, this);
 		// TODO: check that this is working.
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
@@ -685,7 +676,7 @@ export class GPULayer {
 		const { name, _composer } = this;
 		const { verboseLogging } = _composer;
 		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
-		const { length, width, height } = calcGPULayerSize(dimensions, name, verboseLogging);
+		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging);
 		this._length = length;
 		this._width = width;
 		this._height = height;
@@ -699,7 +690,7 @@ export class GPULayer {
 		// TODO: check compatible type.
 		const dimensions = [image.width, image.height];
 		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
-		const { length, width, height } = calcGPULayerSize(dimensions, name, verboseLogging);
+		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging);
 		this._length = length;
 		this._width = width;
 		this._height = height;
@@ -765,7 +756,7 @@ export class GPULayer {
 			} = this;
 			const { gl } = _composer;
 			const fillLength = this._length ? this._length : width * height;
-			const array = initArrayForType(_internalType, width * height * _glNumChannels);
+			const array = GPULayer.initArrayForType(_internalType, width * height * _glNumChannels);
 			const float16View = _internalType === HALF_FLOAT ? new DataView(array.buffer) : null;
 			for (let j = 0; j < fillLength; j++) {
 				for (let k = 0; k < _glNumChannels; k++) {
@@ -898,7 +889,7 @@ export class GPULayer {
 			const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
 
 			// We may use a different internal type than the assigned type of the GPULayer.
-			let output: GPULayerArray = _internalType === type ? values : initArrayForType(type, OUTPUT_LENGTH, true);
+			let output: GPULayerArray = _internalType === type ? values : GPULayer.initArrayForType(type, OUTPUT_LENGTH, true);
 
 			// In some cases glNumChannels may be > numComponents.
 			if (view || output !== values || numComponents !== _glNumChannels) {
@@ -1059,4 +1050,91 @@ export class GPULayer {
 		// @ts-ignore
 		delete this._composer;
 	}
+
+	/** 
+	 * These methods are defined in GPULayerHelpers.ts
+	 */
+	/**
+	 * @private
+	 */
+	// @ts-ignore
+	static initArrayForType(
+		type: GPULayerType,
+		length: number,
+		halfFloatsAsFloats?: boolean,
+	): GPULayerArray;
+	/**
+	 * @private
+	 */
+	// @ts-ignore
+	static calcGPULayerSize(
+		size: number | number[],
+		name: string,
+		verboseLogging: boolean,
+	): { width: number, height: number, length?: number };
+	/**
+	 * @private
+	 */
+	// @ts-ignore
+	static getGPULayerInternalWrap(
+		params: {
+			composer: GPUComposer,
+			wrap: GPULayerWrap,
+			internalFilter: GPULayerFilter,
+			internalType: GPULayerType,
+			name: string,
+		},
+	): GPULayerWrap;
+	/**
+	 * @private
+	 */
+	// @ts-ignore
+	static getGPULayerInternalFilter(
+		params: {
+			composer: GPUComposer,
+			filter: GPULayerFilter,
+			wrapS: GPULayerWrap,
+			wrapT: GPULayerWrap,
+			internalType: GPULayerType,
+			name: string,
+		},
+	): GPULayerFilter;
+	/**
+	 * @private
+	 */
+	// @ts-ignore
+	static getGLTextureParameters(
+		params: {
+			composer: GPUComposer,
+			name: string,
+			numComponents: GPULayerNumComponents,
+			internalType: GPULayerType,
+			writable: boolean,
+		}
+	): {
+		glFormat: number,
+		glInternalFormat: number,
+		glType: number,
+		glNumChannels: number,
+	};
+	/**
+	 * @private
+	 */
+	// @ts-ignore
+	static getGPULayerInternalType(
+		params: {
+			composer: GPUComposer,
+			type: GPULayerType,
+			writable: boolean,
+			name: string,
+		},
+	): GPULayerType;
+	/**
+	 * @private
+	 */
+	// @ts-ignore	
+	static validateGPULayerArray(
+		array: GPULayerArray | number[],
+		layer: GPULayer,
+	): GPULayerArray;
 }

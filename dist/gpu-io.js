@@ -2344,6 +2344,7 @@ exports.GPUComposer = void 0;
 var changedpi_1 = __webpack_require__(809);
 var type_checks_1 = __webpack_require__(566);
 var GPULayer_1 = __webpack_require__(355);
+__webpack_require__(191);
 var constants_1 = __webpack_require__(601);
 var ThreejsUtils = __webpack_require__(404);
 var utils_1 = __webpack_require__(593);
@@ -3790,7 +3791,6 @@ var file_saver_1 = __webpack_require__(162);
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
-var GPULayerHelpers_1 = __webpack_require__(191);
 var GPULayer = /** @class */ (function () {
     /**
      * Create a GPULayer.
@@ -3847,7 +3847,7 @@ var GPULayer = /** @class */ (function () {
         var writable = !!params.writable;
         this.writable = writable;
         // Set dimensions, may be 1D or 2D.
-        var _a = (0, GPULayerHelpers_1.calcGPULayerSize)(dimensions, name, composer.verboseLogging), length = _a.length, width = _a.width, height = _a.height;
+        var _a = GPULayer.calcGPULayerSize(dimensions, name, composer.verboseLogging), length = _a.length, width = _a.width, height = _a.height;
         // We already type checked length, width, and height in calcGPULayerSize.
         this._length = length;
         this._width = width;
@@ -3880,7 +3880,7 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Invalid type: ".concat(JSON.stringify(type), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validDataTypes), "."));
         }
         this.type = type;
-        var internalType = (0, GPULayerHelpers_1.getGPULayerInternalType)({
+        var internalType = GPULayer.getGPULayerInternalType({
             composer: composer,
             type: type,
             writable: writable,
@@ -3888,7 +3888,7 @@ var GPULayer = /** @class */ (function () {
         });
         this._internalType = internalType;
         // Set gl texture parameters.
-        var _b = (0, GPULayerHelpers_1.getGLTextureParameters)({
+        var _b = GPULayer.getGLTextureParameters({
             composer: composer,
             name: name,
             numComponents: numComponents,
@@ -3901,12 +3901,12 @@ var GPULayer = /** @class */ (function () {
         this._glNumChannels = glNumChannels;
         // Set internal filtering/wrap types.
         // Make sure that we set filter BEFORE setting wrap.
-        var internalFilter = (0, GPULayerHelpers_1.getGPULayerInternalFilter)({ composer: composer, filter: filter, wrapS: wrapS, wrapT: wrapT, internalType: internalType, name: name });
+        var internalFilter = GPULayer.getGPULayerInternalFilter({ composer: composer, filter: filter, wrapS: wrapS, wrapT: wrapT, internalType: internalType, name: name });
         this._internalFilter = internalFilter;
         this._glFilter = gl[internalFilter];
-        this._internalWrapS = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapS, internalFilter: internalFilter, internalType: internalType, name: name });
+        this._internalWrapS = GPULayer.getGPULayerInternalWrap({ composer: composer, wrap: wrapS, internalFilter: internalFilter, internalType: internalType, name: name });
         this._glWrapS = gl[this._internalWrapS];
-        this._internalWrapT = (0, GPULayerHelpers_1.getGPULayerInternalWrap)({ composer: composer, wrap: wrapT, internalFilter: internalFilter, internalType: internalType, name: name });
+        this._internalWrapT = GPULayer.getGPULayerInternalWrap({ composer: composer, wrap: wrapT, internalFilter: internalFilter, internalType: internalType, name: name });
         this._glWrapT = gl[this._internalWrapT];
         // Num buffers is the number of states to store for this data.
         var numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -4085,7 +4085,7 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype._initBuffers = function (array) {
         var _a = this, name = _a.name, numBuffers = _a.numBuffers, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, _glFilter = _a._glFilter, _glWrapS = _a._glWrapS, _glWrapT = _a._glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
-        var validatedArray = (0, type_checks_1.isArray)(array) ? (0, GPULayerHelpers_1.validateGPULayerArray)(array, this) : ((array === null || array === void 0 ? void 0 : array.constructor) === HTMLImageElement ? array : undefined);
+        var validatedArray = (0, type_checks_1.isArray)(array) ? GPULayer.validateGPULayerArray(array, this) : ((array === null || array === void 0 ? void 0 : array.constructor) === HTMLImageElement ? array : undefined);
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
@@ -4221,7 +4221,7 @@ var GPULayer = /** @class */ (function () {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
         var _a = this, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, numBuffers = _a.numBuffers, width = _a.width, height = _a.height, bufferIndex = _a.bufferIndex;
         var gl = _composer.gl;
-        var validatedArray = (0, GPULayerHelpers_1.validateGPULayerArray)(array, this);
+        var validatedArray = GPULayer.validateGPULayerArray(array, this);
         // TODO: check that this is working.
         var startIndex = applyToAllBuffers ? 0 : bufferIndex;
         var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
@@ -4238,7 +4238,7 @@ var GPULayer = /** @class */ (function () {
         var verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Resizing GPULayer \"".concat(name, "\" to ").concat(JSON.stringify(dimensions), "."));
-        var _b = (0, GPULayerHelpers_1.calcGPULayerSize)(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
+        var _b = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
         this._length = length;
         this._width = width;
         this._height = height;
@@ -4252,7 +4252,7 @@ var GPULayer = /** @class */ (function () {
         var dimensions = [image.width, image.height];
         if (verboseLogging)
             console.log("Resizing GPULayer \"".concat(name, "\" to ").concat(JSON.stringify(dimensions), "."));
-        var _b = (0, GPULayerHelpers_1.calcGPULayerSize)(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
+        var _b = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
         this._length = length;
         this._width = width;
         this._height = height;
@@ -4318,7 +4318,7 @@ var GPULayer = /** @class */ (function () {
             var _b = this, width = _b.width, height = _b.height, _glNumChannels = _b._glNumChannels, _internalType = _b._internalType, _glInternalFormat = _b._glInternalFormat, _glFormat = _b._glFormat, _glType = _b._glType;
             var gl = _composer.gl;
             var fillLength = this._length ? this._length : width * height;
-            var array = (0, GPULayerHelpers_1.initArrayForType)(_internalType, width * height * _glNumChannels);
+            var array = GPULayer.initArrayForType(_internalType, width * height * _glNumChannels);
             var float16View = _internalType === constants_1.HALF_FLOAT ? new DataView(array.buffer) : null;
             for (var j = 0; j < fillLength; j++) {
                 for (var k = 0; k < _glNumChannels; k++) {
@@ -4447,7 +4447,7 @@ var GPULayer = /** @class */ (function () {
             // @ts-ignore
             var view = handleFloat16Conversion ? new DataView(values.buffer) : undefined;
             // We may use a different internal type than the assigned type of the GPULayer.
-            var output = _internalType === type ? values : (0, GPULayerHelpers_1.initArrayForType)(type, OUTPUT_LENGTH, true);
+            var output = _internalType === type ? values : GPULayer.initArrayForType(type, OUTPUT_LENGTH, true);
             // In some cases glNumChannels may be > numComponents.
             if (view || output !== values || numComponents !== _glNumChannels) {
                 for (var i = 0, length_1 = width * height; i < length_1; i++) {
@@ -4610,12 +4610,12 @@ exports.GPULayer = GPULayer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateGPULayerArray = exports.minMaxValuesForType = exports.getGPULayerInternalType = exports.testFilterWrap = exports.testWriteSupport = exports.getGLTextureParameters = exports.shouldCastIntTypeAsFloat = exports.getGPULayerInternalFilter = exports.getGPULayerInternalWrap = exports.calcGPULayerSize = exports.initArrayForType = void 0;
+exports.minMaxValuesForType = exports.testFilterWrap = exports.testWriteSupport = exports.shouldCastIntTypeAsFloat = void 0;
 var type_checks_1 = __webpack_require__(566);
 var float16_1 = __webpack_require__(847);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
-var GPULayer_1 = __webpack_require__(355); // TODO: circular dependency.
+var GPULayer_1 = __webpack_require__(355);
 var utils_1 = __webpack_require__(593);
 // Memoize results.
 var results = {
@@ -4626,7 +4626,7 @@ var results = {
  * Init empty typed array for type, optionally use Float32Array for HALF_FLOAT.
  * @private
  */
-function initArrayForType(type, length, halfFloatsAsFloats) {
+GPULayer_1.GPULayer.initArrayForType = function (type, length, halfFloatsAsFloats) {
     if (halfFloatsAsFloats === void 0) { halfFloatsAsFloats = false; }
     switch (type) {
         case constants_1.HALF_FLOAT:
@@ -4650,8 +4650,7 @@ function initArrayForType(type, length, halfFloatsAsFloats) {
         default:
             throw new Error("Unsupported type: \"".concat(type, "\"."));
     }
-}
-exports.initArrayForType = initArrayForType;
+};
 /**
  * Calc 2D size [width, height] for GPU layer given a 1D or 2D size parameter.
  * If 1D size supplied, nearest power of 2 width/height is generated.
@@ -4659,7 +4658,7 @@ exports.initArrayForType = initArrayForType;
  * @private
  */
 // TODO: should we relax adherence to power of 2?
-function calcGPULayerSize(size, name, verboseLogging) {
+GPULayer_1.GPULayer.calcGPULayerSize = function (size, name, verboseLogging) {
     if ((0, type_checks_1.isNumber)(size)) {
         if (!(0, type_checks_1.isPositiveInteger)(size)) {
             throw new Error("Invalid length: ".concat(JSON.stringify(size), " for GPULayer \"").concat(name, "\", must be positive integer."));
@@ -4687,13 +4686,12 @@ function calcGPULayerSize(size, name, verboseLogging) {
         throw new Error("Invalid height: ".concat(JSON.stringify(height), " for GPULayer \"").concat(name, "\", must be positive integer."));
     }
     return { width: width, height: height };
-}
-exports.calcGPULayerSize = calcGPULayerSize;
+};
 /**
  * Get the GL wrap type to use internally in GPULayer, based on browser support.
  * @private
  */
-function getGPULayerInternalWrap(params) {
+GPULayer_1.GPULayer.getGPULayerInternalWrap = function (params) {
     var composer = params.composer, wrap = params.wrap, internalFilter = params.internalFilter, internalType = params.internalType;
     // CLAMP_TO_EDGE is always supported.
     if (wrap === constants_1.CLAMP_TO_EDGE) {
@@ -4713,13 +4711,12 @@ function getGPULayerInternalWrap(params) {
     // It maybe non-power-of-2 and have incompatible texture filtering or is not
     // 'texture complete', or it is a float/half-float type with linear filtering and
     // without the relevant float/half-float linear extension enabled."
-}
-exports.getGPULayerInternalWrap = getGPULayerInternalWrap;
+};
 /**
  * Get the GL filter type to use internally in GPULayer, based on browser support.
  * @private
  */
-function getGPULayerInternalFilter(params) {
+GPULayer_1.GPULayer.getGPULayerInternalFilter = function (params) {
     var filter = params.filter;
     if (filter === constants_1.NEAREST) {
         // NEAREST filtering is always supported.
@@ -4742,8 +4739,7 @@ function getGPULayerInternalFilter(params) {
         }
     }
     return filter;
-}
-exports.getGPULayerInternalFilter = getGPULayerInternalFilter;
+};
 /**
  * Returns whether to cast int type as floats, as needed by browser.
  * @private
@@ -4768,7 +4764,7 @@ exports.shouldCastIntTypeAsFloat = shouldCastIntTypeAsFloat;
  * Returns GLTexture parameters for GPULayer, based on browser support.
  * @private
  */
-function getGLTextureParameters(params) {
+GPULayer_1.GPULayer.getGLTextureParameters = function (params) {
     var composer = params.composer, name = params.name, numComponents = params.numComponents, internalType = params.internalType, writable = params.writable;
     var gl = composer.gl, glslVersion = composer.glslVersion;
     // https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
@@ -5065,8 +5061,7 @@ function getGLTextureParameters(params) {
         glType: glType,
         glNumChannels: glNumChannels,
     };
-}
-exports.getGLTextureParameters = getGLTextureParameters;
+};
 /**
  * Rigorous method for testing FLOAT and HALF_FLOAT write support by attaching texture to framebuffer.
  * @private
@@ -5095,7 +5090,7 @@ function testWriteSupport(composer, internalType) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-    var _a = getGLTextureParameters({
+    var _a = GPULayer_1.GPULayer.getGLTextureParameters({
         composer: composer,
         name: 'testWriteSupport',
         numComponents: 1,
@@ -5153,7 +5148,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glWrap);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glFilter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glFilter);
-    var _b = getGLTextureParameters({
+    var _b = GPULayer_1.GPULayer.getGLTextureParameters({
         composer: composer,
         name: 'testFilterWrap',
         numComponents: numComponents,
@@ -5162,7 +5157,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     }), glInternalFormat = _b.glInternalFormat, glFormat = _b.glFormat, glType = _b.glType, glNumChannels = _b.glNumChannels;
     // Init texture with values.
     var values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
-    var valuesTyped = initArrayForType(internalType, values.length * glNumChannels, true);
+    var valuesTyped = GPULayer_1.GPULayer.initArrayForType(internalType, values.length * glNumChannels, true);
     for (var i = 0; i < values.length; i++) {
         valuesTyped[i * glNumChannels] = values[i];
         values[i] = valuesTyped[i * glNumChannels]; // Cast as int/uint if needed.
@@ -5274,7 +5269,7 @@ exports.testFilterWrap = testFilterWrap;
  * @private
  * Exported here for testing purposes.
  */
-function getGPULayerInternalType(params) {
+GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
     var composer = params.composer, writable = params.writable, name = params.name;
     var gl = composer.gl, _errorCallback = composer._errorCallback;
     var type = params.type;
@@ -5362,8 +5357,7 @@ function getGPULayerInternalType(params) {
         }
     }
     return internalType;
-}
-exports.getGPULayerInternalType = getGPULayerInternalType;
+};
 /**
  * Min and max values for types.
  * @private
@@ -5408,7 +5402,7 @@ exports.minMaxValuesForType = minMaxValuesForType;
  * Recasts typed array to match GPULayer.internalType.
  * @private
  */
-function validateGPULayerArray(array, layer) {
+GPULayer_1.GPULayer.validateGPULayerArray = function (array, layer) {
     var numComponents = layer.numComponents, width = layer.width, height = layer.height, name = layer.name;
     var glNumChannels = layer._glNumChannels;
     var internalType = layer._internalType;
@@ -5467,7 +5461,7 @@ function validateGPULayerArray(array, layer) {
     var shouldResize = array.length !== arrayLength;
     var validatedArray = array;
     if (shouldTypeCast || shouldResize) {
-        validatedArray = initArrayForType(internalType, arrayLength);
+        validatedArray = GPULayer_1.GPULayer.initArrayForType(internalType, arrayLength);
         // Fill new data array with old data.
         // We have to handle the case of Float16 specially by converting data to Uint16Array.
         var view = (internalType === constants_1.HALF_FLOAT && shouldTypeCast) ? new DataView(validatedArray.buffer) : null;
@@ -5498,8 +5492,7 @@ function validateGPULayerArray(array, layer) {
         }
     }
     return validatedArray;
-}
-exports.validateGPULayerArray = validateGPULayerArray;
+};
 
 
 /***/ }),
@@ -7240,10 +7233,10 @@ var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
 var GPULayer_1 = __webpack_require__(355);
 Object.defineProperty(exports, "GPULayer", ({ enumerable: true, get: function () { return GPULayer_1.GPULayer; } }));
+var GPULayerHelpers = __webpack_require__(191);
 var GPUProgram_1 = __webpack_require__(664);
 Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function () { return GPUProgram_1.GPUProgram; } }));
 var checks = __webpack_require__(707);
-var GPULayerHelpers = __webpack_require__(191);
 var regex = __webpack_require__(126);
 var extensions = __webpack_require__(581);
 var polyfills = __webpack_require__(360);
