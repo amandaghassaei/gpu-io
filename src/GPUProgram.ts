@@ -50,7 +50,8 @@ import {
 	isFiniteNumber,
 	isInteger,
 	isNonNegativeInteger,
-	isObject, isString,
+	isObject,
+	isString,
 } from '@amandaghassaei/type-checks';
 import { checkRequiredKeys, checkValidKeys } from './checks';
 
@@ -158,7 +159,37 @@ export class GPUProgram {
 	}
 
 	/**
-	 * Get fragment shader for GPUProgram, compile new onw if needed.
+	 * Force compilation of GPUProgram with new compileTimeConstants.
+	 * @param compileTimeConstants - Compile time #define constants to include with fragment shader.
+	 */
+	recompile(compileTimeConstants: CompileTimeConstants) {
+		const { _compileTimeConstants, _fragmentShaders, _programs, _programsKeyLookup, _composer } = this;
+		// Check if we have changed the compile-time constants.
+		// compileTimeConstants may be a partial list.
+		let needsRecompile = false;
+		Object.keys(compileTimeConstants).forEach(key => {
+			if (_compileTimeConstants[key] !== compileTimeConstants[key]) {
+				needsRecompile = true;
+				_compileTimeConstants[key] = compileTimeConstants[key];
+			}
+		});
+		if (!needsRecompile) return;
+		const { gl } = _composer;
+		// Delete cached compiled shaders and programs.
+		Object.keys(_programs).forEach(key => {
+			const program = _programs[key];
+			gl.deleteProgram(program);
+			_programsKeyLookup.delete(program);
+			delete _programs[key];
+		});
+		Object.keys(_fragmentShaders).forEach(key => {
+			gl.deleteShader(_fragmentShaders[key]);
+			delete _fragmentShaders[key];
+		});
+	}
+
+	/**
+	 * Get fragment shader for GPUProgram, compile new one if needed.
 	 * Used internally.
 	 * @private
 	 */
@@ -584,15 +615,17 @@ export class GPUProgram {
 			}
 		});
 		Object.keys(_programs).forEach(key => {
-			delete this._programs[key as PROGRAM_NAME_INTERNAL];
+			delete _programs[key as PROGRAM_NAME_INTERNAL];
 		});
 
 		// Delete fragment shaders.
 		Object.values(_fragmentShaders).forEach(shader => {
 			gl.deleteShader(shader);
 		});
-		// @ts-ignore
-		delete this._fragmentShaders;
+		Object.keys(_fragmentShaders).forEach(key => {
+			delete _fragmentShaders[key];
+		});
+		
 		// Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
 
 		// Delete all references.
@@ -610,6 +643,8 @@ export class GPUProgram {
 		delete this._programs;
 		// @ts-ignore
 		delete this._programsKeyLookup;
+		// @ts-ignore
+		delete this._fragmentShaders;
 		// @ts-ignore
 		delete this._samplerUniformsIndices;
 	}

@@ -14,6 +14,7 @@
 
 ### Methods
 
+- [recompile](GPUProgram.md#recompile)
 - [setUniform](GPUProgram.md#setuniform)
 - [dispose](GPUProgram.md#dispose)
 
@@ -45,6 +46,24 @@ Create a GPUProgram.
 | `params.compileTimeConstants?` | [`CompileTimeConstants`](../README.md#compiletimeconstants) | Compile time #define constants to include with fragment shader. |
 
 ## Methods
+
+### recompile
+
+▸ **recompile**(`compileTimeConstants`): `void`
+
+Force compilation of GPUProgram with new compileTimeConstants.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `compileTimeConstants` | [`CompileTimeConstants`](../README.md#compiletimeconstants) | Compile time #define constants to include with fragment shader. |
+
+#### Returns
+
+`void`
+
+___
 
 ### setUniform
 

@@ -5593,7 +5593,37 @@ var GPUProgram = /** @class */ (function () {
         }
     }
     /**
-     * Get fragment shader for GPUProgram, compile new onw if needed.
+     * Force compilation of GPUProgram with new compileTimeConstants.
+     * @param compileTimeConstants - Compile time #define constants to include with fragment shader.
+     */
+    GPUProgram.prototype.recompile = function (compileTimeConstants) {
+        var _a = this, _compileTimeConstants = _a._compileTimeConstants, _fragmentShaders = _a._fragmentShaders, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup, _composer = _a._composer;
+        // Check if we have changed the compile-time constants.
+        // compileTimeConstants may be a partial list.
+        var needsRecompile = false;
+        Object.keys(compileTimeConstants).forEach(function (key) {
+            if (_compileTimeConstants[key] !== compileTimeConstants[key]) {
+                needsRecompile = true;
+                _compileTimeConstants[key] = compileTimeConstants[key];
+            }
+        });
+        if (!needsRecompile)
+            return;
+        var gl = _composer.gl;
+        // Delete cached compiled shaders and programs.
+        Object.keys(_programs).forEach(function (key) {
+            var program = _programs[key];
+            gl.deleteProgram(program);
+            _programsKeyLookup.delete(program);
+            delete _programs[key];
+        });
+        Object.keys(_fragmentShaders).forEach(function (key) {
+            gl.deleteShader(_fragmentShaders[key]);
+            delete _fragmentShaders[key];
+        });
+    };
+    /**
+     * Get fragment shader for GPUProgram, compile new one if needed.
      * Used internally.
      * @private
      */
@@ -5949,7 +5979,6 @@ var GPUProgram = /** @class */ (function () {
      * Deallocate GPUProgram instance and associated WebGL properties.
      */
     GPUProgram.prototype.dispose = function () {
-        var _this = this;
         var _a = this, _composer = _a._composer, _fragmentShaders = _a._fragmentShaders, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup;
         var gl = _composer.gl, verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
@@ -5964,14 +5993,15 @@ var GPUProgram = /** @class */ (function () {
             }
         });
         Object.keys(_programs).forEach(function (key) {
-            delete _this._programs[key];
+            delete _programs[key];
         });
         // Delete fragment shaders.
         Object.values(_fragmentShaders).forEach(function (shader) {
             gl.deleteShader(shader);
         });
-        // @ts-ignore
-        delete this._fragmentShaders;
+        Object.keys(_fragmentShaders).forEach(function (key) {
+            delete _fragmentShaders[key];
+        });
         // Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
         // Delete all references.
         // @ts-ignore
@@ -5988,6 +6018,8 @@ var GPUProgram = /** @class */ (function () {
         delete this._programs;
         // @ts-ignore
         delete this._programsKeyLookup;
+        // @ts-ignore
+        delete this._fragmentShaders;
         // @ts-ignore
         delete this._samplerUniformsIndices;
     };

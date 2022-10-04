@@ -29,7 +29,12 @@ export declare class GPUProgram {
         compileTimeConstants?: CompileTimeConstants;
     });
     /**
-     * Get fragment shader for GPUProgram, compile new onw if needed.
+     * Force compilation of GPUProgram with new compileTimeConstants.
+     * @param compileTimeConstants - Compile time #define constants to include with fragment shader.
+     */
+    recompile(compileTimeConstants: CompileTimeConstants): void;
+    /**
+     * Get fragment shader for GPUProgram, compile new one if needed.
      * Used internally.
      * @private
      */

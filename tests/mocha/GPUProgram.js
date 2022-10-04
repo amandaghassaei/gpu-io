@@ -93,6 +93,35 @@
 				}, `Found "gl_FragColor" declaration in fragment shader for GPUProgram "test-program": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.`);
 			});
 		});
+		describe('recompile', () => {
+			it('should recompile GPUProgram with new compile time variables', () => {
+				let value = 4.4;
+				const setValueProgram = new GPUProgram(composer, {
+					name: 'recompile-test',
+					fragmentShader: setValueWithDefineFragmentShader,
+					compileTimeConstants: { VALUE: `${value}` },
+				});
+				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 1, writable: true, dimensions: [1, 1]});
+				composer.step({
+					program: setValueProgram,
+					output: layer,
+				});
+				let output = layer.getValues();
+				assert.closeTo(output[0], value, 1e-6);
+				value = -5.2;
+				assert.notEqual(Object.keys(setValueProgram._fragmentShaders).length, 0);
+				assert.notEqual(Object.keys(setValueProgram._programs).length, 0);
+				setValueProgram.recompile({ VALUE: `${value}` });
+				assert.equal(Object.keys(setValueProgram._fragmentShaders).length, 0);
+				assert.equal(Object.keys(setValueProgram._programs).length, 0);
+				composer.step({
+					program: setValueProgram,
+					output: layer,
+				});
+				output = layer.getValues();
+				assert.closeTo(output[0], value, 1e-6);
+			});
+		});
 		describe('_getProgramWithName', () => {
 			it('should return valid WebGLProgram', () => {
 				assert.typeOf(program._getProgramWithName(DEFAULT_PROGRAM_NAME, {}, []), 'WebGLProgram');
