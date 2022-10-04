@@ -5597,7 +5597,7 @@ var GPUProgram = /** @class */ (function () {
      * @param compileTimeConstants - Compile time #define constants to include with fragment shader.
      */
     GPUProgram.prototype.recompile = function (compileTimeConstants) {
-        var _a = this, _compileTimeConstants = _a._compileTimeConstants, _fragmentShaders = _a._fragmentShaders, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup, _composer = _a._composer;
+        var _compileTimeConstants = this._compileTimeConstants;
         // Check if we have changed the compile-time constants.
         // compileTimeConstants may be a partial list.
         var needsRecompile = false;
@@ -5609,18 +5609,28 @@ var GPUProgram = /** @class */ (function () {
         });
         if (!needsRecompile)
             return;
+        var _a = this, _fragmentShaders = _a._fragmentShaders, _programs = _a._programs, _programsKeyLookup = _a._programsKeyLookup, _composer = _a._composer, _uniforms = _a._uniforms;
         var gl = _composer.gl;
         // Delete cached compiled shaders and programs.
-        Object.keys(_programs).forEach(function (key) {
+        var programKeys = Object.keys(_programs);
+        for (var i = 0, numPrograms = programKeys.length; i < numPrograms; i++) {
+            var key = programKeys[i];
             var program = _programs[key];
             gl.deleteProgram(program);
             _programsKeyLookup.delete(program);
             delete _programs[key];
-        });
-        Object.keys(_fragmentShaders).forEach(function (key) {
+        }
+        var fragmentShaderKeys = Object.keys(_fragmentShaders);
+        for (var i = 0, numFragmentShaders = fragmentShaderKeys.length; i < numFragmentShaders; i++) {
+            var key = fragmentShaderKeys[i];
             gl.deleteShader(_fragmentShaders[key]);
             delete _fragmentShaders[key];
-        });
+        }
+        // Delete all cached uniform locations.
+        var uniforms = Object.values(_uniforms);
+        for (var i = 0, numUniforms = uniforms.length; i < numUniforms; i++) {
+            uniforms[i].location = {};
+        }
     };
     /**
      * Get fragment shader for GPUProgram, compile new one if needed.

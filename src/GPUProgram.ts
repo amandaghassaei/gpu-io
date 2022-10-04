@@ -163,7 +163,7 @@ export class GPUProgram {
 	 * @param compileTimeConstants - Compile time #define constants to include with fragment shader.
 	 */
 	recompile(compileTimeConstants: CompileTimeConstants) {
-		const { _compileTimeConstants, _fragmentShaders, _programs, _programsKeyLookup, _composer } = this;
+		const { _compileTimeConstants } = this;
 		// Check if we have changed the compile-time constants.
 		// compileTimeConstants may be a partial list.
 		let needsRecompile = false;
@@ -174,18 +174,34 @@ export class GPUProgram {
 			}
 		});
 		if (!needsRecompile) return;
+		const { 
+			_fragmentShaders,
+			_programs,
+			_programsKeyLookup,
+			_composer,
+			_uniforms,
+		} = this;
 		const { gl } = _composer;
 		// Delete cached compiled shaders and programs.
-		Object.keys(_programs).forEach(key => {
+		const programKeys = Object.keys(_programs);
+		for (let i = 0, numPrograms = programKeys.length; i < numPrograms; i++) {
+			const key = programKeys[i];
 			const program = _programs[key];
 			gl.deleteProgram(program);
 			_programsKeyLookup.delete(program);
 			delete _programs[key];
-		});
-		Object.keys(_fragmentShaders).forEach(key => {
+		}
+		const fragmentShaderKeys = Object.keys(_fragmentShaders);
+		for (let i = 0, numFragmentShaders = fragmentShaderKeys.length; i < numFragmentShaders; i++) {
+			const key = fragmentShaderKeys[i];
 			gl.deleteShader(_fragmentShaders[key]);
 			delete _fragmentShaders[key];
-		});
+		}
+		// Delete all cached uniform locations.
+		const uniforms = Object.values(_uniforms);
+		for (let i = 0, numUniforms = uniforms.length; i < numUniforms; i++) {
+			uniforms[i].location = {};
+		}
 	}
 
 	/**

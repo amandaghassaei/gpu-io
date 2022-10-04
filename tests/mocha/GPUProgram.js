@@ -114,6 +114,9 @@
 				setValueProgram.recompile({ VALUE: `${value}` });
 				assert.equal(Object.keys(setValueProgram._fragmentShaders).length, 0);
 				assert.equal(Object.keys(setValueProgram._programs).length, 0);
+				Object.values(setValueProgram._uniforms).forEach(uniform => {
+					assert.equal(Object.keys(uniform.location).length, 0);
+				});
 				composer.step({
 					program: setValueProgram,
 					output: layer,

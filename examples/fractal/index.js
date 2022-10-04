@@ -5,7 +5,6 @@ function main({ gui, contextID, glslVersion}) {
 		GPULayer,
 		GPUProgram,
 		FLOAT,
-		INT,
 		renderAmplitudeProgram,
 	} = GPUIO;
 
@@ -26,7 +25,6 @@ function main({ gui, contextID, glslVersion}) {
 		maxIters: 150,
 		savePNG: savePNG,
 	};
-	const MAX_ITERS_MAX = 500;
 	let needsCompute = true;
 
 	const canvas = document.createElement('canvas');
@@ -47,7 +45,6 @@ function main({ gui, contextID, glslVersion}) {
 
 			uniform vec2 u_boundsMin;
 			uniform vec2 u_boundsMax;
-			uniform int u_maxIters;
 			uniform float u_cReal;
 			uniform float u_cImaginary;
 
@@ -58,17 +55,14 @@ function main({ gui, contextID, glslVersion}) {
 				vec2 z = v_uv * u_boundsMax + (1.0 - v_uv) * u_boundsMin;
 				int value = 0;
 				float radius = (max(u_boundsMax.x - u_boundsMin.x, u_boundsMax.y - u_boundsMin.y)) / 2.0;
-				for (int i = 0; i < ${MAX_ITERS_MAX}; i++) {
-					// We can't use u_maxIters as loop length directly in GLSL1.
-					// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md
-					if (i == u_maxIters) break;
+				for (int i = 0; i < MAX_ITERS; i++) {
 					if (z.x * z.x + z.y * z.y > radius * radius) break;
 					float xTemp = z.x * z.x - z.y * z.y;
 					z.y = 2.0 * z.x * z.y + u_cImaginary;
 					z.x = xTemp + u_cReal;
 					value += 1;
 				}
-				out_FragColor = float(value) / float(u_maxIters);
+				out_FragColor = float(value) / float(MAX_ITERS);
 			}`,
 		uniforms: [
 			{
@@ -82,11 +76,6 @@ function main({ gui, contextID, glslVersion}) {
 				type: FLOAT,
 			},
 			{
-				name: 'u_maxIters',
-				value: PARAMS.maxIters,
-				type: INT,
-			},
-			{
 				name: 'u_cReal',
 				value: PARAMS.cReal,
 				type: FLOAT,
@@ -97,6 +86,9 @@ function main({ gui, contextID, glslVersion}) {
 				type: FLOAT,
 			},
 		],
+		// Use compile-time variables to set loop parameter.
+		// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md#other-glsl1-gotchas
+		compileTimeConstants: { MAX_ITERS: `${PARAMS.maxIters}` },
 	});
 	const fractalRender = renderAmplitudeProgram({
 		name: 'render',
@@ -133,8 +125,10 @@ function main({ gui, contextID, glslVersion}) {
 		fractalCompute.setUniform('u_cImaginary', val);
 		needsCompute = true;
 	}));
-	ui.push(gui.add(PARAMS, 'maxIters', 1, MAX_ITERS_MAX, 1).onChange((val) => {
-		fractalCompute.setUniform('u_maxIters', val);
+	ui.push(gui.add(PARAMS, 'maxIters', 1, 500, 1).onChange((val) => {
+		// Use compile-time variables to set loop parameter.
+		// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md#other-glsl1-gotchas
+		fractalCompute.recompile({ MAX_ITERS: `${val}` });
 		needsCompute = true;
 	}));
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
