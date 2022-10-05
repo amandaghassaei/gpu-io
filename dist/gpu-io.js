@@ -2642,7 +2642,7 @@ var GPUComposer = /** @class */ (function () {
             dimensions = [gpuLayer.width, gpuLayer.height];
         }
         // If read only, get state by reading to GPU.
-        var array = gpuLayer.writable ? undefined : gpuLayer.getValues();
+        var array = gpuLayer.getValues();
         var clone = new GPULayer_1.GPULayer(this, {
             name: name || "".concat(gpuLayer.name, "-clone"),
             dimensions: dimensions,
@@ -3033,8 +3033,8 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, position = params.position, diameter = params.diameter, input = params.input, output = params.output;
         if (_errorState)
             return;
-        var width = output && params.useOutputScale ? output.width : this._width;
-        var height = output && params.useOutputScale ? output.height : this._height;
+        var width = (output && params.useOutputScale) ? output.width : this._width;
+        var height = (output && params.useOutputScale) ? output.height : this._height;
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
@@ -3072,8 +3072,8 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
         if (_errorState)
             return;
-        var width = output && params.useOutputScale ? output.width : this._width;
-        var height = output && params.useOutputScale ? output.height : this._height;
+        var width = (output && params.useOutputScale) ? output.width : this._width;
+        var height = (output && params.useOutputScale) ? output.height : this._height;
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.SEGMENT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
@@ -3893,7 +3893,7 @@ var GPULayer = /** @class */ (function () {
         this._height = height;
         // Set filtering - if we are processing a 1D array, default to NEAREST filtering.
         // Else default to LINEAR (interpolation) filtering for float types and NEAREST for integer types.
-        var defaultFilter = length ? constants_1.NEAREST : ((type === constants_1.FLOAT || type == constants_1.HALF_FLOAT) ? constants_1.LINEAR : constants_1.NEAREST);
+        var defaultFilter = (length === undefined && (type === constants_1.FLOAT || type == constants_1.HALF_FLOAT)) ? constants_1.LINEAR : constants_1.NEAREST;
         var filter = params.filter !== undefined ? params.filter : defaultFilter;
         if (!(0, checks_1.isValidFilter)(filter)) {
             throw new Error("Invalid filter: ".concat(JSON.stringify(filter), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validFilters), "."));
@@ -4130,10 +4130,14 @@ var GPULayer = /** @class */ (function () {
      * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
      * @private
      */
-    GPULayer.prototype._initBuffers = function (array) {
+    GPULayer.prototype._initBuffers = function (arrayOrImage) {
         var _a = this, name = _a.name, numBuffers = _a.numBuffers, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, _glFilter = _a._glFilter, _glWrapS = _a._glWrapS, _glWrapT = _a._glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
-        var validatedArray = (0, type_checks_1.isArray)(array) ? GPULayer.validateGPULayerArray(array, this) : ((array === null || array === void 0 ? void 0 : array.constructor) === HTMLImageElement ? array : undefined);
+        var validatedArrayOrImage = null;
+        if ((0, type_checks_1.isArray)(arrayOrImage))
+            validatedArrayOrImage = GPULayer.validateGPULayerArray(arrayOrImage, this);
+        else if ((arrayOrImage === null || arrayOrImage === void 0 ? void 0 : arrayOrImage.constructor) === HTMLImageElement)
+            validatedArrayOrImage = arrayOrImage;
         // Init a texture for each buffer.
         for (var i = 0; i < numBuffers; i++) {
             var texture = gl.createTexture();
@@ -4147,8 +4151,7 @@ var GPULayer = /** @class */ (function () {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, _glWrapT);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, _glFilter);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, _glFilter);
-            // @ts-ignore
-            gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray ? validatedArray : null);
+            gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArrayOrImage);
             var buffer = {
                 texture: texture,
             };
@@ -4862,9 +4865,9 @@ GPULayer_1.GPULayer.getGLTextureParameters = function (params) {
         // The sized internal format RGBxxx are not color-renderable.
         // If numComponents == 3 for a writable texture, use RGBA instead.
         // Page 5 of https://www.khronos.org/files/webgl20-reference-guide.pdf
-        // Update: Some formats (e.g. RGB) may be emulated:
+        // Update: Some formats (e.g. RGB) may be emulated, causing a performance hit:
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#some_formats_e.g._rgb_may_be_emulated
-        // Prefer to use rgba instead of rgba for all cases (WebGL1 and WebGL2).
+        // Prefer to use rgba instead of rgb for all cases (WebGL1 and WebGL2).
         if (numComponents === 3) {
             glNumChannels = 4;
         }
@@ -5075,7 +5078,9 @@ GPULayer_1.GPULayer.getGLTextureParameters = function (params) {
         if (numComponents < 1 || numComponents > 4) {
             throw new Error("Unsupported numComponents: ".concat(numComponents, " for GPULayer \"").concat(name, "\"."));
         }
-        // Always use 4 channel textures.
+        // Always use 4 channel textures for WebGL1.
+        // Some formats (e.g. RGB) may be emulated, causing a performance hit:
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#some_formats_e.g._rgb_may_be_emulated
         glNumChannels = 4;
         glFormat = gl.RGBA;
         glInternalFormat = gl.RGBA;

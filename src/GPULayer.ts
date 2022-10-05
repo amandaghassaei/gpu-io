@@ -323,7 +323,7 @@ export class GPULayer {
 
 		// Set filtering - if we are processing a 1D array, default to NEAREST filtering.
 		// Else default to LINEAR (interpolation) filtering for float types and NEAREST for integer types.
-		const defaultFilter = length ? NEAREST : ((type === FLOAT || type == HALF_FLOAT) ? LINEAR : NEAREST);
+		const defaultFilter = (length === undefined && (type === FLOAT || type == HALF_FLOAT)) ? LINEAR : NEAREST;
 		const filter = params.filter !== undefined ? params.filter : defaultFilter;
 		if (!isValidFilter(filter)) {
 			throw new Error(`Invalid filter: ${JSON.stringify(filter)} for GPULayer "${name}", must be one of ${JSON.stringify(validFilters)}.`);
@@ -506,7 +506,7 @@ export class GPULayer {
 	 * @private
 	 */
 	private _initBuffers(
-		array?: GPULayerArray | number[] | HTMLImageElement,
+		arrayOrImage?: GPULayerArray | number[] | HTMLImageElement,
 	) {
 		const {
 			name,
@@ -524,7 +524,9 @@ export class GPULayer {
 		} = this;
 		const { gl, _errorCallback } = _composer;
 
-		const validatedArray = isArray(array) ? GPULayer.validateGPULayerArray(array as GPULayerArray | number[], this) : (array?.constructor === HTMLImageElement ? array : undefined);
+		let validatedArrayOrImage: GPULayerArray | HTMLImageElement | null = null;
+		if (isArray(arrayOrImage)) validatedArrayOrImage = GPULayer.validateGPULayerArray(arrayOrImage as GPULayerArray | number[], this);
+		else if (arrayOrImage?.constructor === HTMLImageElement) validatedArrayOrImage = arrayOrImage;
 
 		// Init a texture for each buffer.
 		for (let i = 0; i < numBuffers; i++) {
@@ -541,8 +543,7 @@ export class GPULayer {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, _glFilter);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, _glFilter);
 
-			// @ts-ignore
-			gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray ? validatedArray : null);
+			gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArrayOrImage as any as ArrayBufferView | null);
 			
 			const buffer: GPULayerBuffer = {
 				texture,

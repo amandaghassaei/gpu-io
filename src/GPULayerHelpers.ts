@@ -256,9 +256,9 @@ GPULayer.getGLTextureParameters = (
 		// The sized internal format RGBxxx are not color-renderable.
 		// If numComponents == 3 for a writable texture, use RGBA instead.
 		// Page 5 of https://www.khronos.org/files/webgl20-reference-guide.pdf
-		// Update: Some formats (e.g. RGB) may be emulated:
+		// Update: Some formats (e.g. RGB) may be emulated, causing a performance hit:
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#some_formats_e.g._rgb_may_be_emulated
-		// Prefer to use rgba instead of rgba for all cases (WebGL1 and WebGL2).
+		// Prefer to use rgba instead of rgb for all cases (WebGL1 and WebGL2).
 		if (numComponents === 3) {
 			glNumChannels = 4;
 		}
@@ -466,7 +466,9 @@ GPULayer.getGLTextureParameters = (
 		if (numComponents < 1 || numComponents > 4) {
 			throw new Error(`Unsupported numComponents: ${numComponents} for GPULayer "${name}".`);
 		}
-		// Always use 4 channel textures.
+		// Always use 4 channel textures for WebGL1.
+		// Some formats (e.g. RGB) may be emulated, causing a performance hit:
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#some_formats_e.g._rgb_may_be_emulated
 		glNumChannels = 4;
 		glFormat = gl.RGBA;
 		glInternalFormat = gl.RGBA;

@@ -61,7 +61,6 @@ import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVect
 import { uniformTypeForType } from './conversions';
 import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
 import { checkRequiredKeys, checkValidKeys } from './checks';
-import { getExtension, WEBGL_LOSE_CONTEXT } from './extensions';
 
 export class GPUComposer {
 	/**
@@ -153,7 +152,7 @@ export class GPUComposer {
 	 */
 	readonly _vertexShaders: {[key in PROGRAM_NAME_INTERNAL]: {
 		src: string,
-		compiledShaders: { [key: string] : WebGLShader },
+		compiledShaders: { [key: string]: WebGLShader },
 	}} = {
 		[DEFAULT_PROGRAM_NAME]: {
 			src: DEFAULT_VERT_SHADER_SOURCE,
@@ -467,7 +466,7 @@ export class GPUComposer {
 		}
 
 		// If read only, get state by reading to GPU.
-		const array = gpuLayer.writable ? undefined : gpuLayer.getValues();
+		const array = gpuLayer.getValues();
 
 		const clone = new GPULayer(this, {
 			name: name || `${gpuLayer.name}-clone`,
@@ -950,8 +949,8 @@ export class GPUComposer {
 
 		if (_errorState) return;
 
-		const width = output && params.useOutputScale ? output.width : this._width;
-		const height = output && params.useOutputScale ? output.height : this._height;
+		const width = (output && params.useOutputScale) ? output.width : this._width;
+		const height = (output && params.useOutputScale) ? output.height : this._height;
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
@@ -1007,8 +1006,8 @@ export class GPUComposer {
 
 		if (_errorState) return;
 
-		const width = output && params.useOutputScale ? output.width : this._width;
-		const height = output && params.useOutputScale ? output.height : this._height;
+		const width = (output && params.useOutputScale) ? output.width : this._width;
+		const height = (output && params.useOutputScale) ? output.height : this._height;
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, SEGMENT_PROGRAM_NAME, {}, false, input, output);
