@@ -371,7 +371,6 @@ export type CompileTimeConstants = { [key: string]: string };
  */
 export type GPULayerBuffer = {
 	texture: WebGLTexture,
-	framebuffer?: WebGLFramebuffer,
 }
 
 // Error callback, defaults to throwing an error.

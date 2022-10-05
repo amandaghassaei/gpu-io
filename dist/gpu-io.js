@@ -3830,6 +3830,7 @@ var file_saver_1 = __webpack_require__(162);
 var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
+var framebuffers_1 = __webpack_require__(798);
 var GPULayer = /** @class */ (function () {
     /**
      * Create a GPULayer.
@@ -4155,23 +4156,6 @@ var GPULayer = /** @class */ (function () {
             var buffer = {
                 texture: texture,
             };
-            if (writable) {
-                // Init a framebuffer for this texture so we can write to it.
-                var framebuffer = gl.createFramebuffer();
-                if (!framebuffer) {
-                    _errorCallback("Could not init framebuffer for GPULayer \"".concat(name, "\": ").concat(gl.getError(), "."));
-                    return;
-                }
-                gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-                // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-                var status_1 = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-                if (status_1 !== gl.FRAMEBUFFER_COMPLETE) {
-                    _errorCallback("Invalid status for framebuffer for GPULayer \"".concat(name, "\": ").concat(status_1, "."));
-                }
-                // Add framebuffer.
-                buffer.framebuffer = framebuffer;
-            }
             // Save this buffer to the list.
             this._buffers.push(buffer);
         }
@@ -4244,25 +4228,17 @@ var GPULayer = /** @class */ (function () {
         };
     };
     /**
-     * Binds this GPULayer's current framebuffer as the draw target.
-     */
-    GPULayer.prototype._bindFramebuffer = function () {
-        var gl = this._composer.gl;
-        var framebuffer = this._buffers[this.bufferIndex].framebuffer;
-        if (!framebuffer) {
-            throw new Error("GPULayer \"".concat(this.name, "\" is not writable."));
-        }
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    };
-    /**
      * Increments the buffer index (if needed) and binds next framebuffer as draw target.
      * @private
      */
     GPULayer.prototype._prepareForWrite = function (incrementBufferIndex) {
+        if (!this.writable) {
+            throw new Error("GPULayer \"".concat(this.name, "\" is not writable."));
+        }
         if (incrementBufferIndex) {
             this.incrementBufferIndex();
         }
-        this._bindFramebuffer();
+        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex].texture);
         // We are going to do a data write, if we have overrides enabled, we can remove them.
         if (this._textureOverrides) {
             this._textureOverrides[this.bufferIndex] = undefined;
@@ -4396,7 +4372,7 @@ var GPULayer = /** @class */ (function () {
         var _a = this, width = _a.width, height = _a.height, _composer = _a._composer, writable = _a.writable;
         var gl = _composer.gl;
         // In case GPULayer was not the last output written to.
-        this._bindFramebuffer();
+        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex].texture);
         var _b = this, _glNumChannels = _b._glNumChannels, _glType = _b._glType, _glFormat = _b._glFormat, _internalType = _b._internalType;
         var values;
         switch (_internalType) {
@@ -4647,14 +4623,11 @@ var GPULayer = /** @class */ (function () {
         var _a = this, _composer = _a._composer, _buffers = _a._buffers;
         var gl = _composer.gl;
         _buffers.forEach(function (buffer) {
-            var framebuffer = buffer.framebuffer, texture = buffer.texture;
+            var texture = buffer.texture;
             gl.deleteTexture(texture);
-            if (framebuffer) {
-                gl.deleteFramebuffer(framebuffer);
-            }
+            (0, framebuffers_1.disposeFramebuffers)(gl, texture);
             // @ts-ignore
             delete buffer.texture;
-            delete buffer.framebuffer;
         });
         _buffers.length = 0;
         // These are technically owned by another GPULayer,
@@ -7197,6 +7170,96 @@ function getExtension(composer, extensionName, optional) {
     return extension;
 }
 exports.getExtension = getExtension;
+
+
+/***/ }),
+
+/***/ 798:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.disposeFramebuffers = exports.bindFrameBuffer = void 0;
+// Cache framebuffers to minimize invalidating FPO attachment bindings:
+// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#avoid_invalidating_fbo_attachment_bindings
+var framebufferMap = new WeakMap();
+var allTextureFramebuffersMap = new WeakMap();
+function initFrameBuffer(composer, layer0, texture0, additionalTextures) {
+    var gl = composer.gl, _errorCallback = composer._errorCallback;
+    // Init a framebuffer for this texture so we can write to it.
+    var framebuffer = gl.createFramebuffer();
+    if (!framebuffer) {
+        _errorCallback("Could not init framebuffer for GPULayer \"".concat(layer0.name, "\": ").concat(gl.getError(), "."));
+        return;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture0, 0);
+    if (additionalTextures) {
+        // TODO: check if length additional textures exceeds a max.
+        for (var i = 0, numTextures = additionalTextures.length; i < numTextures; i++) {
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i + 1, gl.TEXTURE_2D, additionalTextures[i], 0);
+        }
+    }
+    var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    if (status !== gl.FRAMEBUFFER_COMPLETE) {
+        _errorCallback("Invalid status for framebuffer for GPULayer \"".concat(layer0.name, "\": ").concat(status, "."));
+    }
+    return framebuffer;
+}
+/**
+ * Bind framebuffer for write operation.
+ * @private
+ */
+function bindFrameBuffer(composer, layer0, texture0, additionalTextures) {
+    var gl = composer.gl;
+    var key = additionalTextures ? __spreadArray([texture0], additionalTextures, true) : texture0;
+    var framebuffer = framebufferMap.get(key);
+    if (!framebuffer) {
+        framebuffer = initFrameBuffer(composer, layer0, texture0, additionalTextures);
+        if (!framebuffer)
+            return;
+        framebufferMap.set(key, framebuffer);
+        var allFramebuffers = allTextureFramebuffersMap.get(texture0) || [];
+        allFramebuffers.push(framebuffer);
+        allTextureFramebuffersMap.set(texture0, allFramebuffers);
+        if (additionalTextures) {
+            for (var i = 0, numTextures = additionalTextures.length; i < numTextures; i++) {
+                var texture = additionalTextures[i];
+                var allFramebuffers_1 = allTextureFramebuffersMap.get(texture) || [];
+                allFramebuffers_1.push(framebuffer);
+                allTextureFramebuffersMap.set(texture, allFramebuffers_1);
+            }
+        }
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+}
+exports.bindFrameBuffer = bindFrameBuffer;
+/**
+ * Delete framebuffers when no longer needed.
+ * @private
+ */
+function disposeFramebuffers(gl, texture) {
+    // Delete all framebuffers associated with this texture.
+    var allFramebuffers = allTextureFramebuffersMap.get(texture);
+    if (allFramebuffers) {
+        for (var i = 0, numFramebuffers = allFramebuffers.length; i < numFramebuffers; i++) {
+            gl.deleteFramebuffer(allFramebuffers[i]);
+        }
+    }
+    allTextureFramebuffersMap.delete(texture);
+}
+exports.disposeFramebuffers = disposeFramebuffers;
 
 
 /***/ }),

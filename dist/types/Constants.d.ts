@@ -323,7 +323,6 @@ export declare type CompileTimeConstants = {
  */
 export declare type GPULayerBuffer = {
     texture: WebGLTexture;
-    framebuffer?: WebGLFramebuffer;
 };
 export declare type ErrorCallback = (message: string) => void;
 /**

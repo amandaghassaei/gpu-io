@@ -320,21 +320,6 @@
 				layer2.dispose();
 			});
 		});
-		describe('_bindFramebuffer', () => {
-			it('should bind GPULayer framebuffer for draw', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3, writable: true});
-				const { gl } = composer1;
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
-				layer1._bindFramebuffer();
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1._buffers[layer1.bufferIndex].framebuffer);
-				layer1.dispose();
-			});
-			it('should throw error for readonly GPULayer', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 1});
-				assert.throws(() => { layer1._bindFramebuffer(); }, 'GPULayer "test-layer" is not writable.');
-				layer1.dispose();
-			});
-		});
 		describe('_prepareForWrite', () => {
 			it('should increment index and bind framebuffer', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3, writable: true});
@@ -343,10 +328,14 @@
 				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
 				layer1._prepareForWrite();
 				assert.equal(layer1.bufferIndex, 0);
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1._buffers[layer1.bufferIndex].framebuffer);
+				assert.notEqual(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
+				assert.equal(gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
+					layer1._buffers[layer1.bufferIndex].texture);
 				layer1._prepareForWrite(true);
 				assert.equal(layer1.bufferIndex, 1);
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), layer1._buffers[layer1.bufferIndex].framebuffer);
+				assert.notEqual(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
+				assert.equal(gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
+					layer1._buffers[layer1.bufferIndex].texture);
 				layer1.dispose();
 			});
 			it('should remove texture overrides at current buffer index', () => {
@@ -435,11 +424,6 @@
 			});
 		});
 		describe('getValues', () => {
-			it('should throw error for non-writable GPULayer', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: false});
-				assert.throws(() => { layer1.getValues(); }, 'GPULayer "test-layer" is not writable.');
-				layer1.dispose();
-			});
 			it('should return TypedArray with correct length and type', () => {
 				[HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
 					const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245, writable: true});
@@ -450,6 +434,18 @@
 					assert.equal(values.length, layer1.length * layer1.numComponents);
 					layer1.dispose();
 				});
+			});
+			it('should work for non-writable GPULayer', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], clearValue: [1, 2, 3], writable: false});
+				layer1.clear();
+				const values = layer1.getValues();
+				assert.equal(values.length, layer1.width * layer1.height * layer1.numComponents);
+				for (let i = 0; i < values.length / 3; i++) {
+					for (let j = 0; j < 3; j++) {
+						assert.equal(values[3 * i + j], layer1.clearValue[j], values);
+					}
+				}
+				layer1.dispose();
 			});
 			it('should return correct values for UNSIGNED_BYTE GPULayer', () => {
 				// This seems to only work after I changed GPULayer to cast UNSIGNED_BYTE types to HALF_FLOAT for GLSL1.
@@ -491,11 +487,6 @@
 		});
 		describe('savePNG', () => {
 			// TODO: this could be more thorough.
-			it('should throw error for non-writable GPULayer', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: false});
-				assert.throws(() => { layer1.savePNG({ filename: 'thing' }); }, 'GPULayer "test-layer" is not writable.');
-				layer1.dispose();
-			});
 			it('should return Blob in callback', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: true});
 				layer1.savePNG({
@@ -504,6 +495,18 @@
 						assert.typeOf(blob, 'Blob');
 						assert.equal(filename, 'thing.png');
 					}
+				});
+				layer1.dispose();
+			});
+			it('should work for non-writable GPULayer', () => {
+				// TODO: actually test this.
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: false});
+				layer1.savePNG({
+					filename: 'thing',
+					callback: (blob, filename) => {
+						assert.typeOf(blob, 'Blob');
+						assert.equal(filename, 'thing.png');
+					},
 				});
 				layer1.dispose();
 			});

@@ -53,6 +53,7 @@ import {
 	readPixelsAsync,
 	readyToRead,
 } from './utils';
+import { disposeFramebuffers, bindFrameBuffer } from './framebuffers';
 
 export class GPULayer {
 	// Keep a reference to GPUComposer.
@@ -548,26 +549,6 @@ export class GPULayer {
 			const buffer: GPULayerBuffer = {
 				texture,
 			};
-
-			if (writable) {
-				// Init a framebuffer for this texture so we can write to it.
-				const framebuffer = gl.createFramebuffer();
-				if (!framebuffer) {
-					_errorCallback(`Could not init framebuffer for GPULayer "${name}": ${gl.getError()}.`);
-					return;
-				}
-				gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-				// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
-				gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
-				const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-				if(status !== gl.FRAMEBUFFER_COMPLETE){
-					_errorCallback(`Invalid status for framebuffer for GPULayer "${name}": ${status}.`);
-				}
-
-				// Add framebuffer.
-				buffer.framebuffer = framebuffer;
-			}
 			
 			// Save this buffer to the list.
 			this._buffers.push(buffer);
@@ -634,28 +615,19 @@ export class GPULayer {
 	}
 
 	/**
-	 * Binds this GPULayer's current framebuffer as the draw target.
-	 */
-	private _bindFramebuffer() {
-		const { gl } = this._composer;
-		const { framebuffer } = this._buffers[this.bufferIndex];
-		if (!framebuffer) {
-			throw new Error(`GPULayer "${this.name}" is not writable.`);
-		}
-		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-	}
-
-	/**
 	 * Increments the buffer index (if needed) and binds next framebuffer as draw target.
 	 * @private
 	 */
 	_prepareForWrite(
 		incrementBufferIndex: boolean,
 	) {
+		if (!this.writable) {
+			throw new Error(`GPULayer "${this.name}" is not writable.`);
+		}
 		if (incrementBufferIndex) {
 			this.incrementBufferIndex();
 		}
-		this._bindFramebuffer();
+		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex].texture);
 
 		// We are going to do a data write, if we have overrides enabled, we can remove them.
 		if (this._textureOverrides) {
@@ -790,11 +762,11 @@ export class GPULayer {
 	}
 
 	private _getValuesSetup() {
-		const { width, height, _composer, writable } = this;
+		const { width, height, _composer } = this;
 		const { gl } = _composer;
 
 		// In case GPULayer was not the last output written to.
-		this._bindFramebuffer();
+		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex].texture);
 
 		let { _glNumChannels, _glType, _glFormat, _internalType } = this;
 		let values;
@@ -927,7 +899,6 @@ export class GPULayer {
 		return output;
 	}
 
-	// TODO: this does not work on non-writable GPULayers, change this?
 	/**
 	 * Returns the current values of the GPULayer as a TypedArray.
 	 * @returns - A TypedArray containing current state of GPULayer.
@@ -959,7 +930,6 @@ export class GPULayer {
 		return this._getValuesPost(values, _glNumChannels, _internalType);
 	}
 
-	// TODO: this does not work on non-writable GPULayers, change this?
 	/**
 	 * Save the current state of this GPULayer to png.
 	 * @param params - PNG parameters.
@@ -1050,14 +1020,11 @@ export class GPULayer {
 		const { _composer, _buffers } = this;
 		const { gl } = _composer;
 		_buffers.forEach(buffer => {
-			const { framebuffer, texture } = buffer;
+			const { texture } = buffer;
 			gl.deleteTexture(texture);
-			if (framebuffer) {
-				gl.deleteFramebuffer(framebuffer);
-			}
+			disposeFramebuffers(gl, texture);
 			// @ts-ignore
 			delete buffer.texture;
-			delete buffer.framebuffer;
 		});
 		_buffers.length = 0;
 

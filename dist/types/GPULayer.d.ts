@@ -183,10 +183,6 @@ export declare class GPULayer {
      */
     getStateAtIndex(index: number): GPULayerState;
     /**
-     * Binds this GPULayer's current framebuffer as the draw target.
-     */
-    private _bindFramebuffer;
-    /**
      * Increments the buffer index (if needed) and binds next framebuffer as draw target.
      * @private
      */
