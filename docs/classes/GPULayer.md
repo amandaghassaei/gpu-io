@@ -22,10 +22,11 @@
 - [incrementBufferIndex](GPULayer.md#incrementbufferindex)
 - [getStateAtIndex](GPULayer.md#getstateatindex)
 - [setFromArray](GPULayer.md#setfromarray)
-- [resize](GPULayer.md#resize)
 - [setFromImage](GPULayer.md#setfromimage)
+- [resize](GPULayer.md#resize)
 - [clear](GPULayer.md#clear)
 - [getValues](GPULayer.md#getvalues)
+- [getValuesAsync](GPULayer.md#getvaluesasync)
 - [savePNG](GPULayer.md#savepng)
 - [attachToThreeTexture](GPULayer.md#attachtothreetexture)
 - [clone](GPULayer.md#clone)
@@ -111,7 +112,7 @@ ___
 
 ### initFromImageURL
 
-▸ `Static` **initFromImageURL**(`composer`, `params`): [`GPULayer`](GPULayer.md)
+▸ `Static` **initFromImageURL**(`composer`, `params`): `Promise`<[`GPULayer`](GPULayer.md)\>
 
 Create a GPULayer from an image url.
 
@@ -128,11 +129,11 @@ Create a GPULayer from an image url.
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST. |
 | `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
 | `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
-| `params.onLoad?` | (`layer`: [`GPULayer`](GPULayer.md)) => `void` | - |
+| `params.writable?` | `boolean` | Sets GPULayer as readonly or readwrite, defaults to false. |
 
 #### Returns
 
-[`GPULayer`](GPULayer.md)
+`Promise`<[`GPULayer`](GPULayer.md)\>
 
 ___
 
@@ -197,6 +198,22 @@ ___
 
 ___
 
+### setFromImage
+
+▸ **setFromImage**(`image`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `image` | `HTMLImageElement` |
+
+#### Returns
+
+`void`
+
+___
+
 ### resize
 
 ▸ **resize**(`dimensions`, `array?`): `void`
@@ -207,22 +224,6 @@ ___
 | :------ | :------ |
 | `dimensions` | `number` \| `number`[] |
 | `array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
-
-#### Returns
-
-`void`
-
-___
-
-### setFromImage
-
-▸ **setFromImage**(`image`): `void`
-
-#### Parameters
-
-| Name | Type |
-| :------ | :------ |
-| `image` | `HTMLImageElement` |
 
 #### Returns
 
@@ -257,6 +258,21 @@ Returns the current values of the GPULayer as a TypedArray.
 #### Returns
 
 [`GPULayerArray`](../README.md#gpulayerarray)
+
+- A TypedArray containing current state of GPULayer.
+
+___
+
+### getValuesAsync
+
+▸ **getValuesAsync**(): `Promise`<[`GPULayerArray`](../README.md#gpulayerarray)\>
+
+Non-blocking function to return the current values of the GPULayer as a TypedArray.
+This only works for WebGL2 contexts, will fall back to getValues() if WebGL1 context.
+
+#### Returns
+
+`Promise`<[`GPULayerArray`](../README.md#gpulayerarray)\>
 
 - A TypedArray containing current state of GPULayer.
 

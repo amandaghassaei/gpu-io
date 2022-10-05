@@ -64,6 +64,7 @@ declare const _testing: {
     WEBGL_DEPTH_TEXTURE: "WEBGL_depth_texture";
     EXT_COLOR_BUFFER_FLOAT: "EXT_color_buffer_float";
     EXT_COLOR_BUFFER_HALF_FLOAT: "EXT_color_buffer_half_float";
+    WEBGL_LOSE_CONTEXT: "WEBGL_lose_context";
     isFloatType: typeof utils.isFloatType;
     isUnsignedIntType: typeof utils.isUnsignedIntType;
     isSignedIntType: typeof utils.isSignedIntType;

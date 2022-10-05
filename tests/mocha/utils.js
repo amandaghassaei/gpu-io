@@ -681,5 +681,10 @@ void main() {
 				// TODO: finish this.
 			});
 		});
+		describe('readPixelsAsync', () => {
+			it('should read pixels async', () => {
+				// TODO: finish this.
+			});
+		});
 	});
 }

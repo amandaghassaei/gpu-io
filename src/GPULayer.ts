@@ -49,6 +49,8 @@ import {
 	validImageTypes,
  } from './constants';
 import {
+	isWebGL2,
+	readPixelsAsync,
 	readyToRead,
 } from './utils';
 
@@ -163,6 +165,7 @@ export class GPULayer {
 	readonly _glWrapT: number;
 	
 	// Optimizations so that "copying" can happen without draw calls.
+	// This functionality is not currently active right now, but will be added back in later.
 	// TODO: take a second look at this.
 	private _textureOverrides?: (WebGLTexture | undefined)[];
 
@@ -177,9 +180,9 @@ export class GPULayer {
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
 	 * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-	 * @param params.onLoad - Callback when image has loaded.
+	 * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
 	 */
-	static initFromImageURL(composer: GPUComposer,
+	static async initFromImageURL(composer: GPUComposer,
 		params: {
 			name: string,
 			url: string,
@@ -188,53 +191,60 @@ export class GPULayer {
 			filter?: GPULayerFilter,
 			wrapS?: GPULayerWrap,
 			wrapT?: GPULayerWrap,
-			onLoad?: (layer: GPULayer) => void,
+			writable?: boolean,
 		},
 	) {
-		// Check params.
-		const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'onLoad'];
-		const requiredKeys = ['name', 'url'];
-		const keys = Object.keys(params);
-		checkValidKeys(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
-		checkRequiredKeys(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
+		return new Promise<GPULayer>((resolve, reject) => {
+			if (!params) {
+				throw new Error('Error initing GPULayer: must pass params to GPULayer.initFromImageURL(composer, params).');
+			}
+			if (!isObject(params)) {
+				throw new Error(`Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got ${JSON.stringify(params)}.`);
+			}
+			// Check params.
+			const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'writable'];
+			const requiredKeys = ['name', 'url'];
+			const keys = Object.keys(params);
+			checkValidKeys(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
+			checkRequiredKeys(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
 
-		const { url, name, filter, wrapS, wrapT, type, format } = params;
-		if (!isString(url)) {
-			throw new Error(`Expected GPULayer.initFromImageURL params to have url of type string, got ${url} of type ${typeof url}.`)
-		}
-		if (type && !isValidImageType(type)) {
-			throw new Error(`Expected GPULayer.initFromImageURL params to have type of ${JSON.stringify(validImageTypes)}, got ${JSON.stringify(type)}.`)
-		}
-		if (format && !isValidImageFormat(format)) {
-			throw new Error(`Expected GPULayer.initFromImageURL params to have format of ${JSON.stringify(validImageFormats)}, got ${JSON.stringify(format)}.`)
-		}
+			const { url, name, filter, wrapS, wrapT, type, format, writable } = params;
+			if (!isString(url)) {
+				throw new Error(`Expected GPULayer.initFromImageURL params to have url of type string, got ${url} of type ${typeof url}.`)
+			}
+			if (type && !isValidImageType(type)) {
+				throw new Error(`Invalid type: "${type}" for GPULayer.initFromImageURL "${name}", must be one of ${JSON.stringify(validImageTypes)}.`)
+			}
+			if (format && !isValidImageFormat(format)) {
+				throw new Error(`Invalid format: "${format}" for GPULayer.initFromImageURL "${name}", must be one of ${JSON.stringify(validImageFormats)}.`)
+			}
 
-		// Init a layer to return, we will fill it when image has loaded.
-		const layer = new GPULayer(composer, {
-			name,
-			type: type || FLOAT,
-			filter,
-			wrapS,
-			wrapT,
-			numComponents: format ? format.length as GPULayerNumComponents : 4,
-			dimensions: [1, 1], // Init as 1 px to start.
-			writable: false,
-			numBuffers: 1,
+			// Init a layer to return, we will fill it when image has loaded.
+			const layer = new GPULayer(composer, {
+				name,
+				type: type || FLOAT,
+				filter,
+				wrapS,
+				wrapT,
+				numComponents: format ? format.length as GPULayerNumComponents : 4,
+				dimensions: [1, 1], // Init as 1 px to start.
+				writable,
+				numBuffers: 1,
+			});
+
+		
+			// Load image.
+			const image = new Image();
+			image.onload = () => {
+				layer.setFromImage(image);
+				// Callback when texture has loaded.
+				resolve(layer);
+			};
+			image.onerror = (e) => {
+				reject(new Error(`Error loading image "${name}": ${e}`));
+			}
+			image.src = url;
 		});
-
-		// Load image.
-		const image = new Image();
-		image.onload = () => {
-			layer.setFromImage(image);
-			// Callback when texture has loaded.
-			if (params.onLoad) params.onLoad(layer);
-		};
-		image.onerror = (e) => {
-			composer._errorCallback(`Error loading image ${name}: ${e}`);
-		}
-		image.src = url;
-
-		return layer;
 	}
 
 	/**
@@ -358,7 +368,6 @@ export class GPULayer {
 			composer,
 			name,
 			numComponents,
-			writable,
 			internalType,
 		});
 		this._glInternalFormat = glInternalFormat;
@@ -669,6 +678,20 @@ export class GPULayer {
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 
+	setFromImage(image: HTMLImageElement) {
+		const { name, _composer } = this;
+		const { verboseLogging } = _composer;
+		// TODO: check compatible type.
+		const dimensions = [image.width, image.height];
+		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
+		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging);
+		this._length = length;
+		this._width = width;
+		this._height = height;
+		this._destroyBuffers();
+		this._initBuffers(image);
+	}
+
 	resize(
 		dimensions: number | number[],
 		array?: GPULayerArray | number[],
@@ -682,20 +705,6 @@ export class GPULayer {
 		this._height = height;
 		this._destroyBuffers();
 		this._initBuffers(array);
-	}
-
-	setFromImage(image: HTMLImageElement) {
-		const { name, _composer } = this;
-		const { verboseLogging } = _composer;
-		// TODO: check compatible type.
-		const dimensions = [image.width, image.height];
-		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
-		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging);
-		this._length = length;
-		this._width = width;
-		this._height = height;
-		this._destroyBuffers();
-		this._initBuffers(image);
 	}
 
 	/**
@@ -779,13 +788,8 @@ export class GPULayer {
 		}
 	}
 
-	// TODO: this does not work on non-writable GPULayers, change this?
-	/**
-	 * Returns the current values of the GPULayer as a TypedArray.
-	 * @returns - A TypedArray containing current state of GPULayer.
-	 */
-	getValues() {
-		const { width, height, _composer, numComponents, type } = this;
+	private _getValuesSetup() {
+		const { width, height, _composer, writable } = this;
 		const { gl } = _composer;
 
 		// In case GPULayer was not the last output written to.
@@ -877,43 +881,81 @@ export class GPULayer {
 			default:
 				throw new Error(`Unsupported internalType ${_internalType} for getValues().`);
 		}
-
 		if (readyToRead(gl)) {
-			// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
-			gl.readPixels(0, 0, width, height, _glFormat, _glType, values);
-			const OUTPUT_LENGTH = (this._length ? this._length : width * height) * numComponents;
-
-			// Convert uint16 to float32 if needed.
-			const handleFloat16Conversion = _internalType === HALF_FLOAT && values.constructor === Uint16Array;
-			// @ts-ignore
-			const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
-
-			// We may use a different internal type than the assigned type of the GPULayer.
-			let output: GPULayerArray = _internalType === type ? values : GPULayer.initArrayForType(type, OUTPUT_LENGTH, true);
-
-			// In some cases glNumChannels may be > numComponents.
-			if (view || output !== values || numComponents !== _glNumChannels) {
-				for (let i = 0, length = width * height; i < length; i++) {
-					const index1 = i * _glNumChannels;
-					const index2 = i * numComponents;
-					if (index2 >= OUTPUT_LENGTH) break;
-					for (let j = 0; j < numComponents; j++) {
-						if (view) {
-							output[index2 + j] = getFloat16(view, 2 * (index1 + j), true);
-						} else {
-							output[index2 + j] = values[index1 + j];
-						}
-					}
-				}
-			}
-
-			if (output.length !== OUTPUT_LENGTH) {
-				output = output.slice(0, OUTPUT_LENGTH);
-			}
-			return output;
+			return { _glFormat, _glType, values, _glNumChannels, _internalType };
 		} else {
 			throw new Error(`Unable to read values from Buffer with status: ${gl.checkFramebufferStatus(gl.FRAMEBUFFER)}.`);
 		}
+	}
+
+	private _getValuesPost(
+		values: Float32Array | Uint16Array | Uint32Array | Int32Array,
+		_glNumChannels: number,
+		_internalType: GPULayerType,
+	) {
+		const { width, height, numComponents, type } = this;
+		const OUTPUT_LENGTH = (this._length ? this._length : width * height) * numComponents;
+
+		// Convert uint16 to float32 if needed.
+		const handleFloat16Conversion = _internalType === HALF_FLOAT && values.constructor === Uint16Array;
+		// @ts-ignore
+		const view = handleFloat16Conversion ? new DataView((values as Uint16Array).buffer) : undefined;
+
+		// We may use a different internal type than the assigned type of the GPULayer.
+		let output: GPULayerArray = _internalType === type ? values : GPULayer.initArrayForType(type, OUTPUT_LENGTH, true);
+
+		// In some cases glNumChannels may be > numComponents.
+		if (view || output !== values || numComponents !== _glNumChannels) {
+			for (let i = 0, length = width * height; i < length; i++) {
+				const index1 = i * _glNumChannels;
+				const index2 = i * numComponents;
+				if (index2 >= OUTPUT_LENGTH) break;
+				for (let j = 0; j < numComponents; j++) {
+					if (view) {
+						output[index2 + j] = getFloat16(view, 2 * (index1 + j), true);
+					} else {
+						output[index2 + j] = values[index1 + j];
+					}
+				}
+			}
+		}
+
+		if (output.length !== OUTPUT_LENGTH) {
+			output = output.slice(0, OUTPUT_LENGTH);
+		}
+		return output;
+	}
+
+	// TODO: this does not work on non-writable GPULayers, change this?
+	/**
+	 * Returns the current values of the GPULayer as a TypedArray.
+	 * @returns - A TypedArray containing current state of GPULayer.
+	 */
+	getValues() {
+		const { width, height, _composer } = this;
+		const { gl } = _composer;
+		const { _glFormat, _glType, values, _glNumChannels, _internalType } = this._getValuesSetup();
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
+		gl.readPixels(0, 0, width, height, _glFormat, _glType, values);
+		return this._getValuesPost(values, _glNumChannels, _internalType);
+	}
+
+	/**
+	 * Non-blocking function to return the current values of the GPULayer as a TypedArray.
+	 * This only works for WebGL2 contexts, will fall back to getValues() if WebGL1 context.
+	 * @returns - A TypedArray containing current state of GPULayer.
+	 */
+	async getValuesAsync() {
+		const { width, height, _composer } = this;
+		const { gl } = _composer;
+		if (!isWebGL2(gl)) {
+			// Async method is not supported for WebGL1.
+			return this.getValues();
+		}
+		const { _glFormat, _glType, values, _glNumChannels, _internalType } = this._getValuesSetup();
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
+		await readPixelsAsync(gl as WebGL2RenderingContext, 0, 0, width, height, _glFormat, _glType, values);
+		return this._getValuesPost(values, _glNumChannels, _internalType);
 	}
 
 	// TODO: this does not work on non-writable GPULayers, change this?
@@ -1109,7 +1151,6 @@ export class GPULayer {
 			name: string,
 			numComponents: GPULayerNumComponents,
 			internalType: GPULayerType,
-			writable: boolean,
 		}
 	): {
 		glFormat: number,

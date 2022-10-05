@@ -25,6 +25,8 @@ export const EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 // that support 16-bit floating point render targets but not 32-bit floating point render targets.
 export const EXT_COLOR_BUFFER_HALF_FLOAT = 'EXT_color_buffer_half_float';
 
+export const WEBGL_LOSE_CONTEXT = 'WEBGL_lose_context';
+
 export function getExtension(
 	composer: GPUComposer,
 	extensionName: string,

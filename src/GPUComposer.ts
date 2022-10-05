@@ -61,6 +61,7 @@ import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVect
 import { uniformTypeForType } from './conversions';
 import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
 import { checkRequiredKeys, checkValidKeys } from './checks';
+import { getExtension, WEBGL_LOSE_CONTEXT } from './extensions';
 
 export class GPUComposer {
 	/**
@@ -100,7 +101,6 @@ export class GPUComposer {
 	 * @private
 	 */
 	readonly _renderer?: WebGLRenderer;
-	private readonly _maxNumTextures!: number;
 	
 	/**
 	 * Precomputed vertex buffers (inited as needed).
@@ -307,9 +307,10 @@ export class GPUComposer {
 		// Canvas setup.
 		this.resize(canvas.clientWidth, canvas.clientHeight);
 
-		// Log number of textures available.
-		this._maxNumTextures = this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
-		if (this.verboseLogging) console.log(`${this._maxNumTextures} textures max.`);
+		if (this.verboseLogging) {
+			// Log number of textures available.
+			console.log(`${this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS)} textures max.`);
+		}
 	}
 
 	/**
@@ -1796,6 +1797,10 @@ export class GPUComposer {
 		});
 		this._wrappedLineColorProgram?.dispose();
 		delete this._wrappedLineColorProgram;
+
+		// This is causing major errors?
+		// const loseContext = getExtension(this, WEBGL_LOSE_CONTEXT, true);
+		// if (loseContext) loseContext.loseContext();
 
 		// @ts-ignore
 		delete this._renderer;

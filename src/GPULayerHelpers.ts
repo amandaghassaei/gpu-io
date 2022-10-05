@@ -239,10 +239,9 @@ GPULayer.getGLTextureParameters = (
 		name: string,
 		numComponents: GPULayerNumComponents,
 		internalType: GPULayerType,
-		writable: boolean,
 	}
 ) => {
-	const { composer, name, numComponents, internalType, writable } = params;
+	const { composer, name, numComponents, internalType } = params;
 	const { gl, glslVersion } = composer;
 	// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 	let glType: number | undefined,
@@ -254,13 +253,18 @@ GPULayer.getGLTextureParameters = (
 		glNumChannels = numComponents;
 		// https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
-		// The sized internal format RGBxxx are not color-renderable for some reason.
+		// The sized internal format RGBxxx are not color-renderable.
 		// If numComponents == 3 for a writable texture, use RGBA instead.
 		// Page 5 of https://www.khronos.org/files/webgl20-reference-guide.pdf
-		if (numComponents === 3 && writable) {
+		// Update: Some formats (e.g. RGB) may be emulated:
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#some_formats_e.g._rgb_may_be_emulated
+		// Prefer to use rgba instead of rgba for all cases (WebGL1 and WebGL2).
+		if (numComponents === 3) {
 			glNumChannels = 4;
 		}
 		if (internalType === FLOAT || internalType === HALF_FLOAT) {
+			// This will be hit in all cases for GLSL1, now that we have cast UNSIGNED_BYTE types to HALF_FLOAT for GLSL1.
+			// See comments in shouldCastIntTypeAsFloat for more information.
 			switch (glNumChannels) {
 				case 1:
 					glFormat = (gl as WebGL2RenderingContext).RED;
@@ -268,38 +272,15 @@ GPULayer.getGLTextureParameters = (
 				case 2:
 					glFormat = (gl as WebGL2RenderingContext).RG;
 					break;
-				case 3:
-					glFormat = gl.RGB;
-					break;
+				// case 3:
+				// 	glFormat = gl.RGB; // We never hit this.
+				// 	break;
 				case 4:
 					glFormat = gl.RGBA;
 					break;
 				default:
 					throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
 			}
-		// The following lines of code are not hit now that we have cast UNSIGNED_BYTE types to HALF_FLOAT.
-		// See comments in shouldCastIntTypeAsFloat for more information.
-		// } else if (glslVersion === GLSL1 && internalType === UNSIGNED_BYTE) {
-		// 	// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
-		// 	if (writable) {
-		// 		// For read only UNSIGNED_BYTE textures in GLSL 1, use RGBA.
-		// 		glNumChannels = 4;
-		// 	}
-		// 	// For read only UNSIGNED_BYTE textures in GLSL 1, use RGB/RGBA.
-		// 	switch (glNumChannels) {
-		// 		case 1:
-		// 		case 2:
-		// 		case 3:
-		// 			glFormat = gl.RGB;
-		// 			glNumChannels = 3;
-		// 			break;
-		// 		case 4:
-		// 			glFormat = gl.RGBA;
-		// 			glNumChannels = 4;
-		// 			break;
-		// 		default:
-		// 			throw new Error(`Unsupported glNumChannels: ${glNumChannels} for GPULayer "${name}".`);
-		// 	}
 		} else {
 			// This case will only be hit by GLSL 3.
 			// Int textures are not supported in GLSL1.
@@ -310,9 +291,9 @@ GPULayer.getGLTextureParameters = (
 				case 2:
 					glFormat = (gl as WebGL2RenderingContext).RG_INTEGER;
 					break;
-				case 3:
-					glFormat = (gl as WebGL2RenderingContext).RGB_INTEGER;
-					break;
+				// case 3:
+				// 	glFormat = (gl as WebGL2RenderingContext).RGB_INTEGER; // We never hit this.
+				// 	break;
 				case 4:
 					glFormat = (gl as WebGL2RenderingContext).RGBA_INTEGER;
 					break;
@@ -330,9 +311,9 @@ GPULayer.getGLTextureParameters = (
 					case 2:
 						glInternalFormat = (gl as WebGL2RenderingContext).RG16F;
 						break;
-					case 3:
-						glInternalFormat = (gl as WebGL2RenderingContext).RGB16F;
-						break;
+					// case 3:
+					// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB16F; // We never hit this.
+					// 	break;
 					case 4:
 						glInternalFormat = (gl as WebGL2RenderingContext).RGBA16F;
 						break;
@@ -349,9 +330,9 @@ GPULayer.getGLTextureParameters = (
 					case 2:
 						glInternalFormat = (gl as WebGL2RenderingContext).RG32F;
 						break;
-					case 3:
-						glInternalFormat = (gl as WebGL2RenderingContext).RGB32F;
-						break;
+					// case 3:
+					// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB32F; // We never hit this.
+					// 	break;
 					case 4:
 						glInternalFormat = (gl as WebGL2RenderingContext).RGBA32F;
 						break;
@@ -371,9 +352,9 @@ GPULayer.getGLTextureParameters = (
 						case 2:
 							glInternalFormat = (gl as WebGL2RenderingContext).RG8UI;
 							break;
-						case 3:
-							glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI;
-							break;
+						// case 3:
+						// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB8UI; // We never hit this.
+						// 	break;
 						case 4:
 							glInternalFormat = (gl as WebGL2RenderingContext).RGBA8UI;
 							break;
@@ -391,9 +372,9 @@ GPULayer.getGLTextureParameters = (
 					case 2:
 						glInternalFormat = (gl as WebGL2RenderingContext).RG8I;
 						break;
-					case 3:
-						glInternalFormat = (gl as WebGL2RenderingContext).RGB8I;
-						break;
+					// case 3:
+					// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB8I; // We never hit this.
+					// 	break;
 					case 4:
 						glInternalFormat = (gl as WebGL2RenderingContext).RGBA8I;
 						break;
@@ -410,9 +391,9 @@ GPULayer.getGLTextureParameters = (
 					case 2:
 						glInternalFormat = (gl as WebGL2RenderingContext).RG16I;
 						break;
-					case 3:
-						glInternalFormat = (gl as WebGL2RenderingContext).RGB16I;
-						break;
+					// case 3:
+					// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB16I; // We never hit this.
+					// 	break;
 					case 4:
 						glInternalFormat = (gl as WebGL2RenderingContext).RGBA16I;
 						break;
@@ -429,9 +410,9 @@ GPULayer.getGLTextureParameters = (
 					case 2:
 						glInternalFormat = (gl as WebGL2RenderingContext).RG16UI;
 						break;
-					case 3:
-						glInternalFormat = (gl as WebGL2RenderingContext).RGB16UI;
-						break;
+					// case 3:
+					// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB16UI; // We never hit this.
+					// 	break;
 					case 4:
 						glInternalFormat = (gl as WebGL2RenderingContext).RGBA16UI;
 						break;
@@ -448,9 +429,9 @@ GPULayer.getGLTextureParameters = (
 					case 2:
 						glInternalFormat = (gl as WebGL2RenderingContext).RG32I;
 						break;
-					case 3:
-						glInternalFormat = (gl as WebGL2RenderingContext).RGB32I;
-						break;
+					// case 3:
+					// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB32I; // We never hit this.
+					// 	break;
 					case 4:
 						glInternalFormat = (gl as WebGL2RenderingContext).RGBA32I;
 						break;
@@ -467,9 +448,9 @@ GPULayer.getGLTextureParameters = (
 					case 2:
 						glInternalFormat = (gl as WebGL2RenderingContext).RG32UI;
 						break;
-					case 3:
-						glInternalFormat = (gl as WebGL2RenderingContext).RGB32UI;
-						break;
+					// case 3:
+					// 	glInternalFormat = (gl as WebGL2RenderingContext).RGB32UI; // We never hit this.
+					// 	break;
 					case 4:
 						glInternalFormat = (gl as WebGL2RenderingContext).RGBA32UI;
 						break;
@@ -481,29 +462,14 @@ GPULayer.getGLTextureParameters = (
 				throw new Error(`Unsupported type: "${internalType}" for GPULayer "${name}".`);
 		}
 	} else {
-		// Don't use gl.ALPHA or gl.LUMINANCE_ALPHA here bc we should expect the values in the R and RG channels.
-		glNumChannels = numComponents;
-		if (writable) {
-			// For writable textures in WebGL 1, use RGBA.
-			glNumChannels = 4;
+		// WebGL1 case.
+		if (numComponents < 1 || numComponents > 4) {
+			throw new Error(`Unsupported numComponents: ${numComponents} for GPULayer "${name}".`);
 		}
-		// For read only textures in WebGL 1, use RGB/RGBA.
-		switch (glNumChannels) {
-			case 1:
-			case 2:
-			case 3:
-				glFormat = gl.RGB;
-				glInternalFormat = gl.RGB;
-				glNumChannels = 3;
-				break;
-			case 4:
-				glFormat = gl.RGBA;
-				glInternalFormat = gl.RGBA;
-				glNumChannels = 4;
-				break;
-			default:
-				throw new Error(`Unsupported numComponents: ${numComponents} for GPULayer "${name}".`);
-		}
+		// Always use 4 channel textures.
+		glNumChannels = 4;
+		glFormat = gl.RGBA;
+		glInternalFormat = gl.RGBA;
 		switch (internalType) {
 			case FLOAT:
 				glType = gl.FLOAT;
@@ -511,9 +477,11 @@ GPULayer.getGLTextureParameters = (
 			case HALF_FLOAT:
 				glType = (gl as WebGL2RenderingContext).HALF_FLOAT || getExtension(composer, OES_TEXTURE_HALF_FLOAT).HALF_FLOAT_OES as number;
 				break;
-			case UNSIGNED_BYTE:
-				glType = gl.UNSIGNED_BYTE;
-				break;
+			// case UNSIGNED_BYTE:
+			// 	// This will never be hit, now that we have cast UNSIGNED_BYTE types to HALF_FLOAT for GLSL1.
+			// 	// See comments in shouldCastIntTypeAsFloat for more information.
+			// 	glType = gl.UNSIGNED_BYTE;
+			// 	break;
 			// No other types are supported in WebGL1.
 			default:
 				throw new Error(`Unsupported type: "${internalType}" in WebGL 1.0 for GPULayer "${name}".`);
@@ -579,7 +547,6 @@ export function testWriteSupport(
 		composer,
 		name: 'testWriteSupport',
 		numComponents: 1,
-		writable: true,
 		internalType,
 	});
 	gl.texImage2D(gl.TEXTURE_2D, 0, glInternalFormat, width, height, 0, glFormat, glType, null);
@@ -650,7 +617,6 @@ export function testFilterWrap(
 		name: 'testFilterWrap',
 		numComponents,
 		internalType,
-		writable: true,
 	});
 	// Init texture with values.
 	const values = [3, 56.5, 834, -53.6, 0.003, 96.2, 23, 90.2, 32];
@@ -828,34 +794,33 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		if (internalType === FLOAT) {
 			// The OES_texture_float extension implicitly enables WEBGL_color_buffer_float extension (for writing).
 			const extension = getExtension(composer, OES_TEXTURE_FLOAT, true);
-			if (!extension) {
-				console.warn(`FLOAT not supported in this browser, falling back to HALF_FLOAT type for GPULayer "${name}".`);
-				internalType = HALF_FLOAT;
-			// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
-			// Rendering to a floating-point texture may not be supported, even if the OES_texture_float extension
-			// is supported. Typically, this fails on mobile hardware. To check if this is supported, you have to
-			// call the WebGL checkFramebufferStatus() function after attempting to attach texture to framebuffer.
-			} else if (writable) {
+			if (extension) {
+				// https://stackoverflow.com/questions/17476632/webgl-extension-support-across-browsers
+				// Rendering to a floating-point texture may not be supported, even if the OES_texture_float extension
+				// is supported. Typically, this fails on mobile hardware. To check if this is supported, you have to
+				// call the WebGL checkFramebufferStatus() function after attempting to attach texture to framebuffer.
 				const valid = testWriteSupport(composer, internalType);
 				if (!valid) {
 					console.warn(`FLOAT not supported for writing operations in this browser, falling back to HALF_FLOAT type for GPULayer "${name}".`);
 					internalType = HALF_FLOAT;
 				}
+			} else {
+				console.warn(`FLOAT not supported in this browser, falling back to HALF_FLOAT type for GPULayer "${name}".`);
+				internalType = HALF_FLOAT;
 			}
 		}
 		// Must support at least half float if using a float type.
 		if (internalType === HALF_FLOAT) {
 			// The OES_texture_half_float extension implicitly enables EXT_color_buffer_half_float extension (for writing).
-			getExtension(composer, OES_TEXTURE_HALF_FLOAT);
+			getExtension(composer, OES_TEXTURE_HALF_FLOAT, true);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
-			if (writable) {
-				const valid = testWriteSupport(composer, internalType);
-				if (!valid) {
-					_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
-				}
+			const valid = testWriteSupport(composer, internalType);
+			// If not writable texture we'll let it pass, but this will affect the ability to call getValues() and savePNG().
+			if (!valid && writable) {
+				_errorCallback(`This browser does not support writing to HALF_FLOAT textures.`);
 			}
 		}
-	} else if (writable) {
+	} else {
 		// For writable webGL2 contexts, load EXT_color_buffer_float/EXT_color_buffer_half_float extension.
 		if (internalType === FLOAT) {
 			const extension = getExtension(composer, EXT_COLOR_BUFFER_FLOAT, true);
@@ -878,12 +843,13 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			if (!halfFloatExt) {
 				// Some versions of Firefox (e.g. Firefox v104 on Mac) do not support EXT_COLOR_BUFFER_HALF_FLOAT,
 				// but EXT_COLOR_BUFFER_FLOAT will work instead.
-				getExtension(composer, EXT_COLOR_BUFFER_FLOAT);
+				getExtension(composer, EXT_COLOR_BUFFER_FLOAT, true);
 			}
 			// Test attaching texture to framebuffer to be sure half float writing is supported.
 			const valid = testWriteSupport(composer, internalType);
-			if (!valid) {
-				_errorCallback(`This browser does not support rendering to HALF_FLOAT textures.`);
+			// If not writable texture we'll let it pass, but this will affect the ability to call getValues() and savePNG().
+			if (!valid && writable) {
+				_errorCallback(`This browser does not support writing to HALF_FLOAT textures.`);
 			}
 		}
 	}

@@ -351,12 +351,6 @@
 							assert.typeOf(validated1, array1.constructor.name);
 							assert.isAtLeast(validated1.length, array1.length);
 
-							// Array2 is correct size and type, should pass through for 2D and 1D power of 2 cases.
-							const array2 = GPULayer.initArrayForType(type, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer._glNumChannels);
-							const validated2 = GPULayer.validateGPULayerArray(array2, layer);
-							if (isArray(dimensions) || isPowerOf2(dimensions)) assert.equal(validated2, array2);
-							else assert.isAtLeast(validated2.length, array2.length);
-
 							// Incorrect type (and possibly length) passed in, should type cast.
 							const array3 = initSequentialFloatArray((isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * numComponents);
 							const validated3 = GPULayer.validateGPULayerArray(array3, layer);
@@ -397,12 +391,6 @@
 						const validated1 = GPULayer.validateGPULayerArray(array1, layer);
 						assert.typeOf(validated1, 'Uint16Array');
 						assert.isAtLeast(validated1.length, array1.length);
-
-						// Array2 is correct size and type, should still type cast.
-						const array2 = GPULayer.initArrayForType(HALF_FLOAT, (isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * layer._glNumChannels, true);
-						assert.typeOf(array2, 'Float32Array');
-						const validated2 = GPULayer.validateGPULayerArray(array2, layer);
-						assert.typeOf(validated2, 'Uint16Array');
 
 						// Incorrect type (and possibly length) passed in, should type cast.
 						const array3 = initSequentialFloatArray((isArray(dimensions) ? dimensions[0] * dimensions[1] : dimensions) * numComponents);

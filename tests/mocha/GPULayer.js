@@ -41,6 +41,70 @@
 			composer1.dispose();
 			composer1 = undefined;
 		});
+		describe('initFromImageURL', () => {
+			it('should error if required params not passed in', async () => {
+				await (GPULayer.initFromImageURL(composer1).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Error initing GPULayer: must pass params to GPULayer.initFromImageURL(composer, params).');
+				}));
+				await (GPULayer.initFromImageURL(composer1, []).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got [].');
+				}));
+				await (GPULayer.initFromImageURL(composer1, 'thing').then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got "thing".');
+				}));
+				await (GPULayer.initFromImageURL(composer1, {}).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Required params key "name" was not passed to GPULayer.initFromImageURL(composer, params).');
+				}));
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Required params key "url" was not passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".');
+				}));
+			});
+			it('should error if unknown params passed in', async () => {
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', otherThing: 4 }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapS","wrapT","format","type","writable"].');
+				}));
+			});
+			it('should error if invalid params passed in', async () => {
+				// Url.
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 56 }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Expected GPULayer.initFromImageURL params to have url of type string, got 56 of type number.');
+				}));
+				// Filter.
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', filter: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid filter: "test" for GPULayer "test-layer", must be one of ["NEAREST","LINEAR"].');
+				}));
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', type: UNSIGNED_BYTE, filter: LINEAR }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'LINEAR filtering is not supported on integer types, please use NEAREST filtering for GPULayer "test-layer" with type: UNSIGNED_BYTE.');
+				}));
+				// Wrap.
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', wrapS: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid wrapS: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
+				}));
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', wrapS: CLAMP_TO_EDGE, wrapT: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid wrapT: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
+				}));
+				// Format.
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', format: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid format: "test" for GPULayer.initFromImageURL "test-layer", must be one of ["RGB","RGBA"].');
+				}));
+				// Type.
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', type: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid type: "test" for GPULayer.initFromImageURL "test-layer", must be one of ["UNSIGNED_BYTE","FLOAT","HALF_FLOAT"].');
+				}));
+			});
+			it('should error if image doesn\'t load', async () => {
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: './common/test_img' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.include(result.message, 'Error loading image "test-layer":');
+				}));
+			});
+			it('should load image', async () => {
+				const layer = await GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png' });
+				assert.equal(layer.width, 2);
+				assert.equal(layer.height, 2);
+				// TODO: query image.
+				// layer.getValues();
+			});
+		});
 		describe('constructor', () => {
 			it('should error if GPUComposer not passed in', () => {
 				assert.throws(() => { new GPULayer(undefined, { name: 'test-layer'}); },
@@ -217,7 +281,7 @@
 				layer2.dispose();
 			});
 		});
-		describe('incrementBufferIndex', () => {
+		describe('get bufferIndex, incrementBufferIndex', () => {
 			it('should increment bufferIndex', () => {
 				const layer = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 4});
 				assert.equal(layer.bufferIndex, 0);
@@ -290,6 +354,11 @@
 			});
 		});
 		describe('setFromArray', () => {
+			it('should set values of GPULayer', () => {
+				// TODO:
+			});
+		});
+		describe('setFromImage', () => {
 			it('should set values of GPULayer', () => {
 				// TODO:
 			});
@@ -414,6 +483,11 @@
 				composer3.dispose();
 			});
 			// This is tested extensively in pipeline.js.
+		});
+		describe('getValuesAsync', () => {
+			it('should ', () => {
+				// TODO:
+			});
 		});
 		describe('savePNG', () => {
 			// TODO: this could be more thorough.

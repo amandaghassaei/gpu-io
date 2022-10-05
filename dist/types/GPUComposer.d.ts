@@ -38,7 +38,6 @@ export declare class GPUComposer {
      * @private
      */
     readonly _renderer?: WebGLRenderer;
-    private readonly _maxNumTextures;
     /**
      * Precomputed vertex buffers (inited as needed).
      */

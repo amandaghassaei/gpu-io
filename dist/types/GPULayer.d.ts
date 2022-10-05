@@ -94,7 +94,7 @@ export declare class GPULayer {
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
      * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.onLoad - Callback when image has loaded.
+     * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      */
     static initFromImageURL(composer: GPUComposer, params: {
         name: string;
@@ -104,8 +104,8 @@ export declare class GPULayer {
         filter?: GPULayerFilter;
         wrapS?: GPULayerWrap;
         wrapT?: GPULayerWrap;
-        onLoad?: (layer: GPULayer) => void;
-    }): GPULayer;
+        writable?: boolean;
+    }): Promise<GPULayer>;
     /**
      * Create a GPULayer.
      * @param composer - The current GPUComposer instance.
@@ -192,8 +192,8 @@ export declare class GPULayer {
      */
     _prepareForWrite(incrementBufferIndex: boolean): void;
     setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
-    resize(dimensions: number | number[], array?: GPULayerArray | number[]): void;
     setFromImage(image: HTMLImageElement): void;
+    resize(dimensions: number | number[], array?: GPULayerArray | number[]): void;
     /**
      * Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
      */
@@ -207,11 +207,19 @@ export declare class GPULayer {
      * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
      */
     clear(applyToAllBuffers?: boolean): void;
+    private _getValuesSetup;
+    private _getValuesPost;
     /**
      * Returns the current values of the GPULayer as a TypedArray.
      * @returns - A TypedArray containing current state of GPULayer.
      */
     getValues(): GPULayerArray;
+    /**
+     * Non-blocking function to return the current values of the GPULayer as a TypedArray.
+     * This only works for WebGL2 contexts, will fall back to getValues() if WebGL1 context.
+     * @returns - A TypedArray containing current state of GPULayer.
+     */
+    getValuesAsync(): Promise<GPULayerArray>;
     /**
      * Save the current state of this GPULayer to png.
      * @param params - PNG parameters.
@@ -290,7 +298,6 @@ export declare class GPULayer {
         name: string;
         numComponents: GPULayerNumComponents;
         internalType: GPULayerType;
-        writable: boolean;
     }): {
         glFormat: number;
         glInternalFormat: number;

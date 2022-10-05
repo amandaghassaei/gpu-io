@@ -790,3 +790,77 @@ export function uniformInternalTypeForValue(
 export function indexOfLayerInArray(layer: GPULayer, array: (GPULayer | GPULayerState)[]) {
 	return array.findIndex(item => item === layer || (item as GPULayerState).layer === layer);
 }
+
+function clientWaitAsync(
+	gl: WebGL2RenderingContext,
+	sync: WebGLSync,
+	flags: number,
+	interval_ms: number,
+) {
+	return new Promise<void>((resolve, reject) => {
+	  function test() {
+		const res = gl.clientWaitSync(sync, flags, 0);
+		if (res === gl.WAIT_FAILED) {
+		  reject();
+		  return;
+		}
+		if (res === gl.TIMEOUT_EXPIRED) {
+		  setTimeout(test, interval_ms);
+		  return;
+		}
+		resolve();
+	  }
+	  test();
+	});
+  }
+  
+ async function getBufferSubDataAsync(
+	gl: WebGL2RenderingContext,
+	target: number,
+	buffer: WebGLBuffer,
+	srcByteOffset: number,
+	dstBuffer: ArrayBufferView,
+) {
+	const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!;
+	gl.flush();
+  
+	await clientWaitAsync(gl, sync, 0, 10);
+	gl.deleteSync(sync);
+  
+	gl.bindBuffer(target, buffer);
+	gl.getBufferSubData(target, srcByteOffset, dstBuffer);
+	gl.bindBuffer(target, null);
+}
+
+/**
+ * Non-blocking version of gl.readPixels for WebGL2 only.
+ * https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#use_non-blocking_async_data_readback
+ * @param gl - WebGL2 Rendering Context
+ * @param x - The first horizontal pixel that is read from the lower left corner of a rectangular block of pixels.
+ * @param y - The first vertical pixel that is read from the lower left corner of a rectangular block of pixels.
+ * @param w - The width of the rectangle.
+ * @param h - The height of the rectangle.
+ * @param format - The GLenum format of the pixel data.
+ * @param type - The GLenum data type of the pixel data.
+ * @param dstBuffer - An object to read data into. The array type must match the type of the type parameter.
+ * @returns 
+ */
+export async function readPixelsAsync(
+	gl: WebGL2RenderingContext,
+	x: number, y: number,
+	w: number, h: number,
+	format: number,
+	type: number,
+	dstBuffer: ArrayBufferView,
+) {
+	const buf = gl.createBuffer()!;
+	gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buf);
+	gl.bufferData(gl.PIXEL_PACK_BUFFER, dstBuffer.byteLength, gl.STREAM_READ);
+	gl.readPixels(x, y, w, h, format, type, 0);
+	gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  
+	await getBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, buf, 0, dstBuffer);
+  
+	gl.deleteBuffer(buf);
+	return dstBuffer;
+  }

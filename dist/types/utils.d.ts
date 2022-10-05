@@ -120,3 +120,17 @@ export declare function uniformInternalTypeForValue(value: UniformValue, type: U
  * @private
  */
 export declare function indexOfLayerInArray(layer: GPULayer, array: (GPULayer | GPULayerState)[]): number;
+/**
+ * Non-blocking version of gl.readPixels for WebGL2 only.
+ * https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#use_non-blocking_async_data_readback
+ * @param gl - WebGL2 Rendering Context
+ * @param x - The first horizontal pixel that is read from the lower left corner of a rectangular block of pixels.
+ * @param y - The first vertical pixel that is read from the lower left corner of a rectangular block of pixels.
+ * @param w - The width of the rectangle.
+ * @param h - The height of the rectangle.
+ * @param format - The GLenum format of the pixel data.
+ * @param type - The GLenum data type of the pixel data.
+ * @param dstBuffer - An object to read data into. The array type must match the type of the type parameter.
+ * @returns
+ */
+export declare function readPixelsAsync(gl: WebGL2RenderingContext, x: number, y: number, w: number, h: number, format: number, type: number, dstBuffer: ArrayBufferView): Promise<ArrayBufferView>;
