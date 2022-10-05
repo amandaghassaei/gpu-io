@@ -10,7 +10,7 @@ npm run test
 
 ## Browser Testing
 
-I've also included a few html pages (in the [tests/browser/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/browser/) directory) for testing various functions of this library in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
+I've also included an html page (at [tests/index.html](https://github.com/amandaghassaei/gpu-io/blob/main/tests/index.html)) for testing various functions of this library in a browser/hardware combo of your choice.  This page is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
 
 Note: The detected OS and browser version may not always be 100% accurate.
 

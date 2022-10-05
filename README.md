@@ -456,7 +456,9 @@ I'm using mocha + karma + chai + headless Chrome to test the components of gpu-i
 npm run test
 ```
 
-I've also included a few html pages (in the [tests/browser/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/browser/) directory) for testing various functions of gpu-io in a browser/hardware combo of your choice.  An index of these tests is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](https://apps.amandaghassaei.com/gpu-io/tests/).
+I've also included an html page (at [tests/index.html](https://github.com/amandaghassaei/gpu-io/blob/main/tests/index.html)) for testing various functions of this library in a browser/hardware combo of your choice.  This page is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
+
+Note: The detected OS and browser version may not always be 100% accurate.
 
 To run these tests locally:
 
@@ -467,6 +469,6 @@ npm install http-server
 node node_modules/http-server/bin/http-server
 ```
 
-In a browser navigate to `http://127.0.0.1:8080/tests/` to view available tests.
+In a browser navigate to `http://127.0.0.1:8080/tests/` to view test page.
 
 See [tests/README#browser-support](./tests/README.md#browser-support) for results of various browser/hardware combos.
