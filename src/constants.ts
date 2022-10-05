@@ -365,14 +365,6 @@ export type PROGRAM_NAME_INTERNAL =
  */
 export type CompileTimeConstants = { [key: string]: string };
 
-// Each buffer in GPULayer contains a WebGLTexture and WebGLFramebuffer.
-/**
- * @private
- */
-export type GPULayerBuffer = {
-	texture: WebGLTexture,
-}
-
 // Error callback, defaults to throwing an error.
 export type ErrorCallback = (message: string) => void;
 /**

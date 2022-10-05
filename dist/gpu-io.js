@@ -4153,11 +4153,8 @@ var GPULayer = /** @class */ (function () {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, _glFilter);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, _glFilter);
             gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArrayOrImage);
-            var buffer = {
-                texture: texture,
-            };
             // Save this buffer to the list.
-            this._buffers.push(buffer);
+            this._buffers.push(texture);
         }
         // Unbind.
         gl.bindTexture(gl.TEXTURE_2D, null);
@@ -4223,7 +4220,7 @@ var GPULayer = /** @class */ (function () {
         }
         // if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
         return {
-            texture: _buffers[index].texture,
+            texture: _buffers[index],
             layer: this,
         };
     };
@@ -4238,7 +4235,7 @@ var GPULayer = /** @class */ (function () {
         if (incrementBufferIndex) {
             this.incrementBufferIndex();
         }
-        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex].texture);
+        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex]);
         // We are going to do a data write, if we have overrides enabled, we can remove them.
         if (this._textureOverrides) {
             this._textureOverrides[this.bufferIndex] = undefined;
@@ -4369,10 +4366,10 @@ var GPULayer = /** @class */ (function () {
         }
     };
     GPULayer.prototype._getValuesSetup = function () {
-        var _a = this, width = _a.width, height = _a.height, _composer = _a._composer, writable = _a.writable;
+        var _a = this, width = _a.width, height = _a.height, _composer = _a._composer;
         var gl = _composer.gl;
         // In case GPULayer was not the last output written to.
-        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex].texture);
+        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex]);
         var _b = this, _glNumChannels = _b._glNumChannels, _glType = _b._glType, _glFormat = _b._glFormat, _internalType = _b._internalType;
         var values;
         switch (_internalType) {
@@ -4498,7 +4495,6 @@ var GPULayer = /** @class */ (function () {
         }
         return output;
     };
-    // TODO: this does not work on non-writable GPULayers, change this?
     /**
      * Returns the current values of the GPULayer as a TypedArray.
      * @returns - A TypedArray containing current state of GPULayer.
@@ -4539,7 +4535,6 @@ var GPULayer = /** @class */ (function () {
             });
         });
     };
-    // TODO: this does not work on non-writable GPULayers, change this?
     /**
      * Save the current state of this GPULayer to png.
      * @param params - PNG parameters.
@@ -4622,12 +4617,9 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype._destroyBuffers = function () {
         var _a = this, _composer = _a._composer, _buffers = _a._buffers;
         var gl = _composer.gl;
-        _buffers.forEach(function (buffer) {
-            var texture = buffer.texture;
+        _buffers.forEach(function (texture) {
             gl.deleteTexture(texture);
             (0, framebuffers_1.disposeFramebuffers)(gl, texture);
-            // @ts-ignore
-            delete buffer.texture;
         });
         _buffers.length = 0;
         // These are technically owned by another GPULayer,
@@ -7175,7 +7167,7 @@ exports.getExtension = getExtension;
 /***/ }),
 
 /***/ 798:
-/***/ (function(__unused_webpack_module, exports) {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -7190,6 +7182,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.disposeFramebuffers = exports.bindFrameBuffer = void 0;
+var utils_1 = __webpack_require__(593);
 // Cache framebuffers to minimize invalidating FPO attachment bindings:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#avoid_invalidating_fbo_attachment_bindings
 var framebufferMap = new WeakMap();
@@ -7206,7 +7199,13 @@ function initFrameBuffer(composer, layer0, texture0, additionalTextures) {
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/framebufferTexture2D
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture0, 0);
     if (additionalTextures) {
-        // TODO: check if length additional textures exceeds a max.
+        // Check if length additional textures exceeds a max.
+        if (!(0, utils_1.isWebGL2)(gl)) {
+            throw new Error('WebGL1 does not support drawing to multiple outputs.');
+        }
+        if (additionalTextures.length > 15) {
+            throw new Error("Can't draw to more than 16 outputs.");
+        }
         for (var i = 0, numTextures = additionalTextures.length; i < numTextures; i++) {
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i + 1, gl.TEXTURE_2D, additionalTextures[i], 0);
         }

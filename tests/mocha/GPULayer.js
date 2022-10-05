@@ -330,12 +330,12 @@
 				assert.equal(layer1.bufferIndex, 0);
 				assert.notEqual(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
 				assert.equal(gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
-					layer1._buffers[layer1.bufferIndex].texture);
+					layer1._buffers[layer1.bufferIndex]);
 				layer1._prepareForWrite(true);
 				assert.equal(layer1.bufferIndex, 1);
 				assert.notEqual(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
 				assert.equal(gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
-					layer1._buffers[layer1.bufferIndex].texture);
+					layer1._buffers[layer1.bufferIndex]);
 				layer1.dispose();
 			});
 			it('should remove texture overrides at current buffer index', () => {

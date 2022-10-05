@@ -318,12 +318,6 @@ export declare type PROGRAM_NAME_INTERNAL = typeof DEFAULT_PROGRAM_NAME | typeof
 export declare type CompileTimeConstants = {
     [key: string]: string;
 };
-/**
- * @private
- */
-export declare type GPULayerBuffer = {
-    texture: WebGLTexture;
-};
 export declare type ErrorCallback = (message: string) => void;
 /**
  * @private

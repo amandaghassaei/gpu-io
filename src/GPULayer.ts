@@ -38,7 +38,6 @@ import {
 	GPULayerNumComponents,
 	GPULayerType,
 	GPULayerWrap,
-	GPULayerBuffer,
 	validFilters,
 	validWraps,
 	validDataTypes,
@@ -95,7 +94,7 @@ export class GPULayer {
 	// e.g [currentState, previousState]
 	private _bufferIndex = 0;
 	readonly numBuffers;
-	private readonly _buffers: GPULayerBuffer[] = [];
+	private readonly _buffers: WebGLTexture[] = [];
 
 	// Texture sizes.
 	private _length?: number; // This is only used for 1D data layers, access with GPULayer.length.
@@ -546,12 +545,8 @@ export class GPULayer {
 
 			gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArrayOrImage as any as ArrayBufferView | null);
 			
-			const buffer: GPULayerBuffer = {
-				texture,
-			};
-			
 			// Save this buffer to the list.
-			this._buffers.push(buffer);
+			this._buffers.push(texture);
 		}
 		// Unbind.
 		gl.bindTexture(gl.TEXTURE_2D, null);
@@ -609,7 +604,7 @@ export class GPULayer {
 		}
 		// if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
 		return {
-			texture: _buffers[index].texture,
+			texture: _buffers[index],
 			layer: this,
 		};
 	}
@@ -627,7 +622,7 @@ export class GPULayer {
 		if (incrementBufferIndex) {
 			this.incrementBufferIndex();
 		}
-		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex].texture);
+		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex]);
 
 		// We are going to do a data write, if we have overrides enabled, we can remove them.
 		if (this._textureOverrides) {
@@ -766,7 +761,7 @@ export class GPULayer {
 		const { gl } = _composer;
 
 		// In case GPULayer was not the last output written to.
-		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex].texture);
+		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex]);
 
 		let { _glNumChannels, _glType, _glFormat, _internalType } = this;
 		let values;
@@ -1019,12 +1014,9 @@ export class GPULayer {
 	private _destroyBuffers() {
 		const { _composer, _buffers } = this;
 		const { gl } = _composer;
-		_buffers.forEach(buffer => {
-			const { texture } = buffer;
+		_buffers.forEach(texture => {
 			gl.deleteTexture(texture);
 			disposeFramebuffers(gl, texture);
-			// @ts-ignore
-			delete buffer.texture;
 		});
 		_buffers.length = 0;
 
