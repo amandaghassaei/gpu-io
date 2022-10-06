@@ -5268,7 +5268,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
     var programName = 'testFilterWrap-program';
     var fragmentShaderSource = "\nin vec2 v_uv;\nuniform vec2 u_offset;\n#ifdef GPUIO_INT\n\tuniform isampler2D u_input;\n\tout int out_FragColor;\n#endif\n#ifdef GPUIO_UINT\n\tuniform usampler2D u_input;\n\tout uint out_FragColor;\n#endif\n#ifdef GPUIO_FLOAT\n\tuniform sampler2D u_input;\n\tout float out_FragColor;\n#endif\nvoid main() {\n\tout_FragColor = texture(u_input, v_uv + offset).x;\n}";
     if (glslVersion !== constants_1.GLSL3) {
-        fragmentShaderSource = (0, utils_1.convertFragmentShaderToGLSL1)(fragmentShaderSource, programName);
+        fragmentShaderSource = (0, utils_1.convertFragmentShaderToGLSL1)(fragmentShaderSource, programName)[0];
     }
     var fragmentShader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, fragmentShaderSource, gl.FRAGMENT_SHADER, programName, _errorCallback, (_a = {
             offset: "vec2(".concat(offset / width, ", ").concat(offset / height, ")")
@@ -5651,7 +5651,8 @@ var GPUProgram = /** @class */ (function () {
         var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
-        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms;
+        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
+        // TODO: additionalSources
         this._fragmentShaderSource = shaderSource;
         samplerUniforms.forEach(function (name, i) {
             _this._samplerUniformsIndices.push({
@@ -7698,7 +7699,7 @@ exports.fragmentShaderPolyfills = fragmentShaderPolyfills;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getSampler2DsInProgram = exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.highpToMediump = exports.glsl1Uint = exports.glsl1Sampler2D = exports.glsl1Texture = exports.checkFragmentShaderForFragColor = exports.glsl1FragmentOut = exports.getFragmentOutType = exports.glsl1FragmentIn = exports.glsl1VertexOut = exports.castVaryingToFloat = exports.glsl1VertexIn = exports.typecastVariable = void 0;
+exports.getSampler2DsInProgram = exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.highpToMediump = exports.glsl1Uint = exports.glsl1Sampler2D = exports.glsl1Texture = exports.checkFragmentShaderForFragColor = exports.glsl1FragmentOut = exports.getFragmentOuts = exports.glsl1FragmentIn = exports.glsl1VertexOut = exports.castVaryingToFloat = exports.glsl1VertexIn = exports.typecastVariable = void 0;
 var constants_1 = __webpack_require__(601);
 /**
  * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
@@ -7815,13 +7816,6 @@ function glsl1FragmentIn(shaderSource) {
 }
 exports.glsl1FragmentIn = glsl1FragmentIn;
 /**
- * Contains out_FragColor.
- * @private
- */
-function containsOutFragColor(shaderSource) {
-    return !!shaderSource.match(/\bout_FragColor\b/);
-}
-/**
  * Contains gl_FragColor.
  * @private
  */
@@ -7829,43 +7823,105 @@ function containsGLFragColor(shaderSource) {
     return !!shaderSource.match(/\bgl_FragColor\b/);
 }
 /**
- * Get type (int, float, vec3, etc) of fragment out.
+ * Get variable name, type, and layout number for out variables.
  * Only exported for testing.
  * @private
  */
-function getFragmentOutType(shaderSource, name) {
-    // Do this without lookbehind to support older browsers.
-    // const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_FragColor;)/);
-    var type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_FragColor;/);
-    if (!type || !type[3]) {
-        throw new Error("No type found in out_FragColor declaration for GPUProgram \"".concat(name, "\"."));
+function getFragmentOuts(shaderSource, programName) {
+    var outs = {};
+    var maxLocation = 0;
+    while (true) {
+        // Do this without lookbehind to support older browsers.
+        var match = shaderSource.match(/\b(layout\s*\(\s*location\s*=\s*([0-9]+)\s*\)\s*)?out\s+((lowp|mediump|highp)\s+)?((float|int|uint|([iu]?vec[234]))\s+)?([_$a-zA-Z0-9]+)\s*;/);
+        if (!match) {
+            if (Object.keys(outs).length === 0) {
+                return [];
+            }
+            // Sort by location.
+            var variableNames = Object.keys(outs);
+            var numVariables = variableNames.length;
+            var outsSorted = new Array(maxLocation).fill(undefined);
+            for (var i = 0; i < numVariables; i++) {
+                var name_1 = variableNames[i];
+                var _a = outs[name_1], location_1 = _a.location, type_1 = _a.type;
+                if (outsSorted[location_1] !== undefined) {
+                    throw new Error("Must be exactly one out declaration per layout location in GPUProgram \"".concat(programName, "\", conflicting declarations found at location ").concat(location_1, "."));
+                }
+                outsSorted[location_1] = { name: name_1, type: type_1 };
+            }
+            if (variableNames.length !== maxLocation + 1) {
+                throw new Error("Must be exactly one out declaration per layout location in GPUProgram \"".concat(programName, "\", layout locations must be sequential (no missing location numbers) starting from 0."));
+            }
+            for (var i = 0; i <= maxLocation; i++) {
+                if (outsSorted[i] === undefined) {
+                    throw new Error("Missing out declaration at location ".concat(i, " in GPUProgram \"").concat(programName, "\", layout locations must be sequential (no missing location numbers) starting from 0."));
+                }
+            }
+            return outsSorted;
+        }
+        // Save out parameters.
+        var name_2 = match[8];
+        var location_2 = parseInt(match[2] || '0');
+        var type = match[6];
+        if (!type) {
+            throw new Error("No type found for out declaration \"".concat(match[0], "\" for GPUProgram \"").concat(programName, "\"."));
+        }
+        if (!name_2) {
+            throw new Error("No variable name found for out declaration \"".concat(match[0], "\" for GPUProgram \"").concat(programName, "\"."));
+        }
+        if (outs[name_2]) {
+            if (outs[name_2].location !== location_2) {
+                throw new Error("All out declarations for variable \"".concat(name_2, "\" must have same location in GPUProgram \"").concat(programName, "\"."));
+            }
+        }
+        else {
+            if (location_2 > maxLocation)
+                maxLocation = location_2;
+            outs[name_2] = {
+                location: location_2,
+                type: type,
+            };
+        }
+        // Remove out definition so we can match to the next one.
+        shaderSource = shaderSource.replace(match[0], '');
     }
-    return type[3];
 }
-exports.getFragmentOutType = getFragmentOutType;
+exports.getFragmentOuts = getFragmentOuts;
 /**
  * Convert out variables to gl_FragColor.
  * @private
  */
-function glsl1FragmentOut(shaderSource, name) {
-    if (containsOutFragColor(shaderSource)) {
-        var type = getFragmentOutType(shaderSource, name);
-        // Remove out_FragColor declaration.
-        shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_FragColor\s*;/g, '');
+function glsl1FragmentOut(shaderSource, programName) {
+    var outs = getFragmentOuts(shaderSource, programName);
+    if (outs.length === 0) {
+        return [shaderSource];
+    }
+    // Remove layout declarations.
+    shaderSource = shaderSource.replace(/\blayout\s*\(\s*location\s*=\s*([0-9]+)\s*\)\s*/g, '');
+    // If we detect multiple out declarations, we need to split the shader source.
+    var shaderSources = [];
+    for (var i = 0, numOuts = outs.length; i < numOuts; i++) {
+        var _a = outs[i], type = _a.type, name_3 = _a.name;
+        // Remove out declaration for this variable.
+        var outRegex = new RegExp("\\bout\\s+((lowp|mediump|highp)\\s+)?(float|int|uint|([iu]?vec[234]))\\s+".concat(name_3, "\\s*;"), 'g');
+        var outShaderSource = shaderSource.replace(outRegex, '');
+        // Remove any other out declarations.
+        outShaderSource = outShaderSource.replace(/\bout\b/g, '');
         var assignmentFound = false;
-        // Replace each instance of out_FragColor = with gl_FragColor = and cast to vec4.
+        // Replace each instance of "name =" with gl_FragColor = and cast to vec4.
         // Do this without lookbehind to support older browsers.
-        // const output = shaderSource.match(/(?<=\bout_FragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+        // const output = outShaderSource.match(/(?<=\b${name}\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
         // ? puts this in lazy mode (match shortest strings).
-        var regex = new RegExp(/\bout_FragColor\s*=\s*(\S.*?);/s);
+        var regex = new RegExp("\\b".concat(name_3, "\\s*=\\s*(\\S.*?);"), 's'); // 's' makes this work for multiline.
         while (true) {
-            var output = shaderSource.match(regex); // /s makes this work for multiline.
+            var output = outShaderSource.match(regex);
             if (output && output[1]) {
                 assignmentFound = true;
                 var filler = '';
                 switch (type) {
                     case 'float':
                     case 'int':
+                    case 'uint':
                         filler = ', 0, 0, 0';
                         break;
                     case 'vec2':
@@ -7879,17 +7935,17 @@ function glsl1FragmentOut(shaderSource, name) {
                         filler = ', 0';
                         break;
                 }
-                // ? puts this in lazy mode (match shortest strings).
-                shaderSource = shaderSource.replace(regex, "gl_FragColor = vec4(".concat(output[1]).concat(filler, ");"));
+                outShaderSource = outShaderSource.replace(regex, "gl_FragColor = vec4(".concat(output[1]).concat(filler, ");"));
             }
             else {
                 if (!assignmentFound)
-                    throw new Error("No assignment found for out_FragColor in GPUProgram \"".concat(name, "\"."));
+                    throw new Error("No assignment found for out_FragColor in GPUProgram \"".concat(programName, "\"."));
                 break;
             }
         }
+        shaderSources.push(outShaderSource);
     }
-    return shaderSource;
+    return shaderSources;
 }
 exports.glsl1FragmentOut = glsl1FragmentOut;
 /**
@@ -7978,7 +8034,7 @@ exports.stripPrecision = stripPrecision;
  * @private
  */
 function stripComments(shaderSource) {
-    shaderSource = shaderSource.replace(/\s?\/\/.*\n/g, ''); // Remove single-line comments.
+    shaderSource = shaderSource.replace(/[\t ]*\/\/.*\n/g, ''); // Remove single-line comments.
     // ? puts this in lazy mode (match shortest strings).
     shaderSource = shaderSource.replace(/\/\*.*?\*\//gs, ''); /* Remove multi-line comments */
     return shaderSource;
@@ -7992,7 +8048,7 @@ function getSampler2DsInProgram(shaderSource) {
     // Do this without lookbehind to support older browsers.
     // const samplers = shaderSource.match(/(?<=\buniform\s+(((highp)|(mediump)|(lowp))\s+)?(i|u)?sampler2D\s+)\w+(?=\s?;)/g);
     var samplersNoDuplicates = {};
-    var regex = '\\buniform\\s+(((highp)|(mediump)|(lowp))\\s+)?(i|u)?sampler2D\\s+(\\w+)\\s?;';
+    var regex = '\\buniform\\s+(((highp)|(mediump)|(lowp))\\s+)?(i|u)?sampler2D\\s+(\\w+)\\s*;';
     var samplers = shaderSource.match(new RegExp(regex, 'g'));
     if (!samplers || samplers.length === 0)
         return [];
@@ -8479,8 +8535,7 @@ function convertFragmentShaderToGLSL1(shaderSource, name) {
     // Convert in to varying.
     shaderSource = (0, regex_1.glsl1FragmentIn)(shaderSource);
     // Convert out to gl_FragColor.
-    shaderSource = (0, regex_1.glsl1FragmentOut)(shaderSource, name);
-    return shaderSource;
+    return (0, regex_1.glsl1FragmentOut)(shaderSource, name);
 }
 exports.convertFragmentShaderToGLSL1 = convertFragmentShaderToGLSL1;
 /**
@@ -8523,9 +8578,16 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
     var samplerUniforms;
     (_a = (0, polyfills_1.texturePolyfill)(shaderSource), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms);
     if (glslVersion !== constants_1.GLSL3) {
-        shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
-        // Add glsl1 specific polyfills.
-        shaderSource = (0, polyfills_1.GLSL1Polyfills)() + shaderSource;
+        var sources = convertFragmentShaderToGLSL1(shaderSource, name);
+        // If this shader has multiple outputs, it is split into multiple sources.
+        for (var i = 0, numSources = sources.length; i < numSources; i++) {
+            // Add glsl1 specific polyfills.
+            sources[i] = (0, polyfills_1.GLSL1Polyfills)() + sources[i];
+        }
+        shaderSource = sources.shift();
+        if (sources.length) {
+            return { shaderSource: shaderSource, samplerUniforms: samplerUniforms, additionalSources: sources };
+        }
     }
     return { shaderSource: shaderSource, samplerUniforms: samplerUniforms };
 }

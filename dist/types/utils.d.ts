@@ -93,7 +93,7 @@ export declare function initSequentialFloatArray(length: number): Float32Array;
  * This is called once on initialization, so doesn't need to be extremely efficient.
  * @private
  */
-export declare function convertFragmentShaderToGLSL1(shaderSource: string, name: string): string;
+export declare function convertFragmentShaderToGLSL1(shaderSource: string, name: string): string[];
 /**
  * Preprocess vertex shader for glslVersion and browser capabilities.
  * This is called once on initialization, so doesn't need to be extremely efficient.
@@ -108,6 +108,11 @@ export declare function preprocessVertexShader(shaderSource: string, glslVersion
 export declare function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string): {
     shaderSource: string;
     samplerUniforms: string[];
+    additionalSources: string[];
+} | {
+    shaderSource: string;
+    samplerUniforms: string[];
+    additionalSources?: undefined;
 };
 /**
  * Check uniforms and return internal WebGL type (e.g. [1234][u]?[if])

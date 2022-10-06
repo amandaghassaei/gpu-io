@@ -45,8 +45,11 @@ declare const _testing: {
     castVaryingToFloat(shaderSource: string): string;
     glsl1VertexOut(shaderSource: string): string;
     glsl1FragmentIn(shaderSource: string): string;
-    getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
-    glsl1FragmentOut(shaderSource: string, name: string): string;
+    getFragmentOuts(shaderSource: string, programName: string): {
+        name: string;
+        type: "float" | "uint" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
+    }[];
+    glsl1FragmentOut(shaderSource: string, programName: string): string[];
     checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): void;
     glsl1Texture(shaderSource: string): string;
     glsl1Sampler2D(shaderSource: string): string;

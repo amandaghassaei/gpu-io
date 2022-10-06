@@ -30,17 +30,21 @@ export declare function glsl1VertexOut(shaderSource: string): string;
  * @private
  */
 export declare function glsl1FragmentIn(shaderSource: string): string;
+declare type GLSLType = 'float' | 'int' | 'uint' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 /**
- * Get type (int, float, vec3, etc) of fragment out.
+ * Get variable name, type, and layout number for out variables.
  * Only exported for testing.
  * @private
  */
-export declare function getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
+export declare function getFragmentOuts(shaderSource: string, programName: string): {
+    name: string;
+    type: GLSLType;
+}[];
 /**
  * Convert out variables to gl_FragColor.
  * @private
  */
-export declare function glsl1FragmentOut(shaderSource: string, name: string): string;
+export declare function glsl1FragmentOut(shaderSource: string, programName: string): string[];
 /**
  * Check for presence of gl_FragColor in fragment shader source.
  * @private
@@ -87,3 +91,4 @@ export declare function stripComments(shaderSource: string): string;
  * @private
  */
 export declare function getSampler2DsInProgram(shaderSource: string): string[];
+export {};

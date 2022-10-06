@@ -673,7 +673,7 @@ void main() {
 	out_FragColor = texture(u_input, v_uv + offset).x;
 }`;
 	if (glslVersion !== GLSL3) {
-		fragmentShaderSource = convertFragmentShaderToGLSL1(fragmentShaderSource, programName);
+		fragmentShaderSource = convertFragmentShaderToGLSL1(fragmentShaderSource, programName)[0];
 	}
 	const fragmentShader = compileShader(
 		gl,

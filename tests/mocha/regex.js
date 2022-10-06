@@ -9,7 +9,7 @@
 		castVaryingToFloat,
 		glsl1VertexOut,
 		glsl1FragmentIn,
-		getFragmentOutType,
+		getFragmentOuts,
 		glsl1FragmentOut,
 		checkFragmentShaderForFragColor,
 		glsl1Texture,
@@ -99,40 +99,64 @@ void main() {
 				assert.equal(glsl1FragmentIn('in  mediump vec2 a_internal_normal;'), 'varying  mediump vec2 a_internal_normal;');
 			});
 		});
-		describe('getFragmentOutType', () => {
+		describe('getFragmentOuts', () => {
+			it('should throw error for bad out declarations', () => {
+				// Handle case where no out_FragColor present.
+				assert.equal(getFragmentOuts(glsl1FragmentShader, 'test').length, 0);
+				assert.equal(getFragmentOuts('', 'test').length, 0);
+				assert.equal(getFragmentOuts('out_FragColor = ', 'test').length, 0);
+				assert.throws(() => { getFragmentOuts('out out_FragColor;', 'test'); }, 'No type found for out declaration "out out_FragColor;" for GPUProgram "test".');
+			});
 			it('should get type for fragment out declaration', () => {
-				assert.throws(() => { getFragmentOutType('', 'test'); }, 'No type found in out_FragColor declaration for GPUProgram "test".');
-				assert.throws(() => { getFragmentOutType('out_FragColor = ', 'test'); }, 'No type found in out_FragColor declaration for GPUProgram "test".');
 				// Handle whitespace.
-				assert.equal(getFragmentOutType('out vec4 out_FragColor;'), 'vec4');
-				assert.equal(getFragmentOutType('out    vec4  out_FragColor;'), 'vec4');
+				assert.equal(getFragmentOuts('out vec4 out_FragColor;')[0].type, 'vec4');
+				assert.equal(getFragmentOuts('out vec4 out_FragColor;')[0].name, 'out_FragColor');
+				assert.equal(getFragmentOuts('out    vec4  testVar;')[0].type, 'vec4');
+				assert.equal(getFragmentOuts('out    vec4  testVar;')[0].name, 'testVar');
 				// Test all types.
-				assert.equal(getFragmentOutType('out float out_FragColor;'), 'float');
-				assert.equal(getFragmentOutType('out vec2 out_FragColor;'), 'vec2');
-				assert.equal(getFragmentOutType('out vec3 out_FragColor;'), 'vec3');
-				assert.equal(getFragmentOutType('out vec4 out_FragColor;'), 'vec4');
-				assert.equal(getFragmentOutType('out int out_FragColor;'), 'int');
-				assert.equal(getFragmentOutType('out ivec2 out_FragColor;'), 'ivec2');
-				assert.equal(getFragmentOutType('out ivec3 out_FragColor;'), 'ivec3');
-				assert.equal(getFragmentOutType('out ivec4 out_FragColor;'), 'ivec4');
-				assert.equal(getFragmentOutType('out uvec2 out_FragColor;'), 'uvec2');
-				assert.equal(getFragmentOutType('out uvec3 out_FragColor;'), 'uvec3');
-				assert.equal(getFragmentOutType('out uvec4 out_FragColor;'), 'uvec4');
+				assert.equal(getFragmentOuts('out float out_FragColor;')[0].type, 'float');
+				assert.equal(getFragmentOuts('out vec2 out_FragColor;')[0].type, 'vec2');
+				assert.equal(getFragmentOuts('out vec3 out_FragColor;')[0].type, 'vec3');
+				assert.equal(getFragmentOuts('out vec4 out_FragColor;')[0].type, 'vec4');
+				assert.equal(getFragmentOuts('out int out_FragColor;')[0].type, 'int');
+				assert.equal(getFragmentOuts('out ivec2 out_FragColor;')[0].type, 'ivec2');
+				assert.equal(getFragmentOuts('out ivec3 out_FragColor;')[0].type, 'ivec3');
+				assert.equal(getFragmentOuts('out ivec4 out_FragColor;')[0].type, 'ivec4');
+				assert.equal(getFragmentOuts('out uvec2 out_FragColor;')[0].type, 'uvec2');
+				assert.equal(getFragmentOuts('out uvec3 out_FragColor;')[0].type, 'uvec3');
+				assert.equal(getFragmentOuts('out uvec4 out_FragColor;')[0].type, 'uvec4');
 				// Handle lowp, mediump, highp.
-				assert.equal(getFragmentOutType('out  lowp  vec4  out_FragColor;'), 'vec4');
-				assert.equal(getFragmentOutType('out   mediump ivec2  out_FragColor;'), 'ivec2');
-				assert.equal(getFragmentOutType('out highp  float  out_FragColor;'), 'float');
+				assert.equal(getFragmentOuts('out  lowp  vec4  out_FragColor;')[0].type, 'vec4');
+				assert.equal(getFragmentOuts('out   mediump ivec2  out_FragColor;')[0].type, 'ivec2');
+				assert.equal(getFragmentOuts('out highp  float  out_FragColor;')[0].type, 'float');
+			});
+			it('should get location for fragment out declaration', () => {
+				// Get location
+				assert.equal(getFragmentOuts('out  lowp  vec4  out_FragColor;')[0].name, 'out_FragColor');
+				assert.equal(getFragmentOuts('layout(location=0)out ivec2  out_FragColor;')[0].name, 'out_FragColor');
+				assert.equal(getFragmentOuts('  layout (  location   = 0 ) out ivec2  out_FragColor;')[0].name, 'out_FragColor');
+				assert.equal(getFragmentOuts('layout(location=1) out ivec2  out_FragColor2;\nlayout(location=0) out uvec2 out_FragColor1;').length, 2);
+				assert.equal(getFragmentOuts('layout(location=1) out ivec2  out_FragColor2;\nlayout(location=0) out uvec2 out_FragColor1;')[0].name, 'out_FragColor1');
+				assert.equal(getFragmentOuts('layout(location=1) out ivec2  out_FragColor2;\nlayout(location=0) out uvec2 out_FragColor1;')[1].name, 'out_FragColor2');
+				assert.equal(Object.keys(getFragmentOuts('layout(location=1) out ivec2  out_FragColor2;\nlayout(location=0) out uvec2 out_FragColor1;')).length, 2);
+			});
+			it('should throw error for overlapping variable names/locations', () => {
+				assert.equal(Object.keys(getFragmentOuts('out ivec2  out_FragColor2;\nout uvec2 out_FragColor2;')).length, 1);
+				assert.equal(Object.keys(getFragmentOuts('layout(location=0) out ivec2  out_FragColor2;\nlayout(location=0) out uvec2 out_FragColor2;')).length, 1);
+				assert.throws(() => { getFragmentOuts('layout(location=1)out ivec2  out_FragColor;'); }, 'Must be exactly one out declaration per layout location in GPUProgram "undefined", layout locations must be sequential (no missing location numbers) starting from 0.');
+				assert.throws(() => { getFragmentOuts('layout(location=1) out ivec2  out_FragColor2;\nlayout(location=1) out uvec2 out_FragColor1;'); }, 'Must be exactly one out declaration per layout location in GPUProgram "undefined", conflicting declarations found at location 1.');
+				assert.throws(() => { getFragmentOuts('layout(location=1) out ivec2  out_FragColor1;\nlayout(location=0) out uvec2 out_FragColor1;'); }, 'All out declarations for variable "out_FragColor1" must have same location in GPUProgram "undefined"');
 			});
 		});
 		describe('glsl1FragmentOut', () => {
-			it('should remove out declaration and convert out_FragColor to gl_FragColor', () => {
-				assert.equal(glsl1FragmentOut('out vec4 out_FragColor;\noutVariable;\nout_FragColor = vec4(0);'), '\noutVariable;\ngl_FragColor = vec4(vec4(0));');
-				// Handle lowp, mediump, highp.
-				assert.equal(glsl1FragmentOut('out  lowp  vec4  out_FragColor;out_FragColor = vec4(0);'), 'gl_FragColor = vec4(vec4(0));');
-				assert.equal(glsl1FragmentOut('out   mediump ivec2  out_FragColor;out_FragColor = ivec2(0);'), 'gl_FragColor = vec4(ivec2(0), 0, 0);');
-				assert.equal(glsl1FragmentOut('out highp  float  out_FragColor;out_FragColor = 0.0;'), 'gl_FragColor = vec4(0.0, 0, 0, 0);');
+			it('should remove out declaration and convert to gl_FragColor', () => {
 				// Handle case where no out_FragColor present.
-				assert.equal(glsl1FragmentOut(glsl1FragmentShader), glsl1FragmentShader);
+				assert.equal(glsl1FragmentOut(glsl1FragmentShader, 'test')[0], glsl1FragmentShader);
+				assert.equal(glsl1FragmentOut('out vec4 out_FragColor;\noutVariable;\nout_FragColor = vec4(0);')[0], '\noutVariable;\ngl_FragColor = vec4(vec4(0));');
+				// Handle lowp, mediump, highp.
+				assert.equal(glsl1FragmentOut('out  lowp  vec4  out_FragColor;out_FragColor = vec4(0);')[0], 'gl_FragColor = vec4(vec4(0));');
+				assert.equal(glsl1FragmentOut('out   mediump ivec2  out_FragColor;out_FragColor = ivec2(0);')[0], 'gl_FragColor = vec4(ivec2(0), 0, 0);');
+				assert.equal(glsl1FragmentOut('out highp  float  out_FragColor;out_FragColor = 0.0;')[0], 'gl_FragColor = vec4(0.0, 0, 0, 0);');
 				// Throw error if no assignment.
 				assert.throws(() => { glsl1FragmentOut('out vec4 out_FragColor;', 'test'); }, 'No assignment found for out_FragColor in GPUProgram "test".');
 			});
@@ -149,7 +173,7 @@ void main() {
 						return;
 					}
 					out_FragColor = texture(u_initialPositions, v_uv);
-				}`), `
+				}`)[0], `
 				in vec2 v_uv;
 				uniform sampler2D u_initialPositions;
 				
@@ -160,6 +184,87 @@ void main() {
 						return;
 					}
 					gl_FragColor = vec4(texture(u_initialPositions, v_uv));
+				}`);
+			});
+			it('should handle multiple outputs', () => {
+				const sources = glsl1FragmentOut(`
+				in vec2 v_uv;
+				uniform sampler2D u_initialPositions;
+				out vec4 out1;
+				layout (location=1) out vec4 out2;
+				void main() {
+					int age = 0;
+					out1 = vec4(0);
+					if (age < 1) {
+						out1 = texture(u_initialPositions, v_uv);
+					}
+					out2 = texture(u_initialPositions, v_uv);
+				}`);
+				assert.equal(sources.length, 2);
+				assert.equal(sources[0], `
+				in vec2 v_uv;
+				uniform sampler2D u_initialPositions;
+\t\t\t\t
+				 vec4 out2;
+				void main() {
+					int age = 0;
+					gl_FragColor = vec4(vec4(0));
+					if (age < 1) {
+						gl_FragColor = vec4(texture(u_initialPositions, v_uv));
+					}
+					out2 = texture(u_initialPositions, v_uv);
+				}`);
+				assert.equal(sources[1], `
+				in vec2 v_uv;
+				uniform sampler2D u_initialPositions;
+				 vec4 out1;
+\t\t\t\t
+				void main() {
+					int age = 0;
+					out1 = vec4(0);
+					if (age < 1) {
+						out1 = texture(u_initialPositions, v_uv);
+					}
+					gl_FragColor = vec4(texture(u_initialPositions, v_uv));
+				}`);
+			});
+			it('should handle cases of unknown type', () => {
+				const sources = glsl1FragmentOut(`
+				in vec2 v_uv;
+				uniform vec2 u_offset;
+				#ifdef GPUIO_INT
+					uniform isampler2D u_input;
+					out int out_FragColor;
+				#endif
+				#ifdef GPUIO_UINT
+					uniform usampler2D u_input;
+					out uint out_FragColor;
+				#endif
+				#ifdef GPUIO_FLOAT
+					uniform sampler2D u_input;
+					out float out_FragColor;
+				#endif
+				void main() {
+					out_FragColor = texture(u_input, v_uv + offset).x;
+				}`);
+				assert.equal(sources.length, 1);
+				assert.equal(sources[0], `
+				in vec2 v_uv;
+				uniform vec2 u_offset;
+				#ifdef GPUIO_INT
+					uniform isampler2D u_input;
+\t\t\t\t\t
+				#endif
+				#ifdef GPUIO_UINT
+					uniform usampler2D u_input;
+\t\t\t\t\t
+				#endif
+				#ifdef GPUIO_FLOAT
+					uniform sampler2D u_input;
+\t\t\t\t\t
+				#endif
+				void main() {
+					gl_FragColor = vec4(texture(u_input, v_uv + offset).x, 0, 0, 0);
 				}`);
 			});
 		});
@@ -219,6 +324,7 @@ void main() {
 		});
 		describe('stripComments', () => {
 			it('should strip out comments', () => {
+				assert.equal(stripComments('// comment\n int a = 40;  // comment\n float b = 5.0;\n'), ' int a = 40; float b = 5.0;\n');
 				assert.equal(stripComments('// comment\n int a = 40;// comment\n float b = 5.0;\n'), ' int a = 40; float b = 5.0;\n');
 				assert.equal(stripComments('/*\nmultiline\n comment\n*/\nint a = 40;/*another *comment*/\nfloat b = 5.0;// comment\n'), '\nint a = 40;\nfloat b = 5.0;');
 			});

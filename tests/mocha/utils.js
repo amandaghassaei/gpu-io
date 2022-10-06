@@ -54,7 +54,6 @@
 		preprocessVertexShader,
 		preprocessFragmentShader,
 		uniformInternalTypeForValue,
-		indexOfLayerInArray,
 		SAMPLER2D_FILTER,
 		SAMPLER2D_WRAP_X,
 		SAMPLER2D_WRAP_Y,

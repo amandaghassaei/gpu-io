@@ -132,9 +132,10 @@ export class GPUProgram {
 		const fragmentShaderSource = isString(fragmentShader) ?
 			fragmentShader as string :
 			(fragmentShader as string[]).join('\n');
-		const { shaderSource, samplerUniforms } = preprocessFragmentShader(
+		const { shaderSource, samplerUniforms, additionalSources } = preprocessFragmentShader(
 			fragmentShaderSource, composer.glslVersion, name,
 		);
+		// TODO: additionalSources
 		this._fragmentShaderSource = shaderSource;
 		samplerUniforms.forEach((name, i) => {
 			this._samplerUniformsIndices.push({

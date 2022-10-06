@@ -115,14 +115,6 @@ export function glsl1FragmentIn(shaderSource: string) {
 }
 
 /**
- * Contains out_FragColor.
- * @private
- */
-function containsOutFragColor(shaderSource: string) {
-	return !!shaderSource.match(/\bout_FragColor\b/);
-}
-
-/**
  * Contains gl_FragColor.
  * @private
  */
@@ -130,44 +122,115 @@ function containsGLFragColor(shaderSource: string) {
 	return !!shaderSource.match(/\bgl_FragColor\b/);
 }
 
+type GLSLType = 'float' | 'int' | 'uint' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 /**
- * Get type (int, float, vec3, etc) of fragment out.
+ * Get variable name, type, and layout number for out variables.
  * Only exported for testing.
  * @private
  */
-export function getFragmentOutType(shaderSource: string, name: string) {
-	// Do this without lookbehind to support older browsers.
-	// const type = shaderSource.match(/(?<=\bout\s+((lowp|mediump|highp)\s+)?)(float|int|((i|u)?vec(2|3|4)))(?=\s+out_FragColor;)/);
-	const type = shaderSource.match(/\bout\s+((lowp|mediump|highp)\s+)?((float|int|((i|u)?vec(2|3|4))))\s+out_FragColor;/);
-	if (!type || !type[3]) {
-		throw new Error(`No type found in out_FragColor declaration for GPUProgram "${name}".`);
+export function getFragmentOuts(shaderSource: string, programName: string) {
+	const outs: { [key: string]: {
+		location: number,
+		type: GLSLType,
+	}} = {};
+	let maxLocation = 0;
+	while (true) {
+		// Do this without lookbehind to support older browsers.
+		const match = shaderSource.match(/\b(layout\s*\(\s*location\s*=\s*([0-9]+)\s*\)\s*)?out\s+((lowp|mediump|highp)\s+)?((float|int|uint|([iu]?vec[234]))\s+)?([_$a-zA-Z0-9]+)\s*;/);
+		if (!match) {
+			if (Object.keys(outs).length === 0) {
+				return [];
+			}
+			// Sort by location.
+			const variableNames = Object.keys(outs);
+			const numVariables = variableNames.length;
+			const outsSorted: {
+				name: string,
+				type: GLSLType,
+			}[] = new Array(maxLocation).fill(undefined);
+			
+			for (let i = 0; i < numVariables; i++) {
+				const name = variableNames[i];
+				const { location, type } = outs[name];
+				if (outsSorted[location] !== undefined) {
+					throw new Error(`Must be exactly one out declaration per layout location in GPUProgram "${programName}", conflicting declarations found at location ${location}.`);
+				}
+				outsSorted[location] =  { name, type };
+			}
+			if (variableNames.length !== maxLocation + 1) {
+				throw new Error(`Must be exactly one out declaration per layout location in GPUProgram "${programName}", layout locations must be sequential (no missing location numbers) starting from 0.`);
+			}
+			for (let i = 0; i <= maxLocation; i++) {
+				if (outsSorted[i] === undefined) {
+					throw new Error(`Missing out declaration at location ${i} in GPUProgram "${programName}", layout locations must be sequential (no missing location numbers) starting from 0.`);
+				}
+			}
+			return outsSorted;
+		}
+		// Save out parameters.
+		const name = match[8];
+		const location = parseInt(match[2] || '0');
+		const type = match[6] as GLSLType;
+		if (!type) {
+			throw new Error(`No type found for out declaration "${match[0]}" for GPUProgram "${programName}".`);
+		}
+		if (!name) {
+			throw new Error(`No variable name found for out declaration "${match[0]}" for GPUProgram "${programName}".`);
+		}
+		if (outs[name]) {
+			if (outs[name].location !== location) {
+				throw new Error(`All out declarations for variable "${name}" must have same location in GPUProgram "${programName}".`);
+			}
+		} else {
+			if (location > maxLocation) maxLocation = location;
+			outs[name] = {
+				location,
+				type,
+			};
+		}
+		// Remove out definition so we can match to the next one.
+		shaderSource = shaderSource.replace(match[0], '');
 	}
-	return type[3] as 'float' | 'int' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 }
 
 /**
  * Convert out variables to gl_FragColor.
  * @private
  */
-export function glsl1FragmentOut(shaderSource: string, name: string) {
-	if (containsOutFragColor(shaderSource)) {
-		const type = getFragmentOutType(shaderSource, name);
-		// Remove out_FragColor declaration.
-		shaderSource = shaderSource.replace(/\bout\s+((lowp|mediump|highp)\s+)?\w+\s+out_FragColor\s*;/g, '');
+export function glsl1FragmentOut(shaderSource: string, programName: string) {
+	const outs = getFragmentOuts(shaderSource, programName);
+	if (outs.length === 0) {
+		return [shaderSource];
+	}
+	// Remove layout declarations.
+	shaderSource = shaderSource.replace(/\blayout\s*\(\s*location\s*=\s*([0-9]+)\s*\)\s*/g, '');
+	// If we detect multiple out declarations, we need to split the shader source.
+
+	const shaderSources: string[] = [];
+	for (let i = 0, numOuts = outs.length; i < numOuts; i++) {
+		const { type, name } = outs[i];
+
+		// Remove out declaration for this variable.
+		const outRegex = new RegExp(`\\bout\\s+((lowp|mediump|highp)\\s+)?(float|int|uint|([iu]?vec[234]))\\s+${name}\\s*;`, 'g');
+		let outShaderSource = shaderSource.replace(outRegex, '');
+		// Remove any other out declarations.
+		outShaderSource = outShaderSource.replace(/\bout\b/g, '');
+
 		let assignmentFound = false;
-		// Replace each instance of out_FragColor = with gl_FragColor = and cast to vec4.
+		// Replace each instance of "name =" with gl_FragColor = and cast to vec4.
 		// Do this without lookbehind to support older browsers.
-		// const output = shaderSource.match(/(?<=\bout_FragColor\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
+		// const output = outShaderSource.match(/(?<=\b${name}\s*=\s*)\S.*(?=;)/s); // /s makes this work for multiline.
 		// ? puts this in lazy mode (match shortest strings).
-		const regex = new RegExp(/\bout_FragColor\s*=\s*(\S.*?);/s);
+		const regex = new RegExp(`\\b${name}\\s*=\\s*(\\S.*?);`, 's'); // 's' makes this work for multiline.
 		while (true) {
-			const output = shaderSource.match(regex); // /s makes this work for multiline.
+			const output = outShaderSource.match(regex);
 			if (output && output[1]) {
 				assignmentFound = true;
 				let filler = '';
 				switch (type) {
 					case 'float':
 					case 'int':
+					case 'uint':
 						filler = ', 0, 0, 0';
 						break;
 					case 'vec2':
@@ -181,15 +244,15 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 						filler = ', 0';
 						break;
 				}
-				// ? puts this in lazy mode (match shortest strings).
-				shaderSource = shaderSource.replace(regex, `gl_FragColor = vec4(${output[1]}${filler});`);
+				outShaderSource = outShaderSource.replace(regex, `gl_FragColor = vec4(${output[1]}${filler});`);
 			} else {
-				if (!assignmentFound) throw new Error(`No assignment found for out_FragColor in GPUProgram "${name}".`);
+				if (!assignmentFound) throw new Error(`No assignment found for out_FragColor in GPUProgram "${programName}".`);
 				break;
 			}
 		}
+		shaderSources.push(outShaderSource);
 	}
-	return shaderSource;
+	return shaderSources;
 }
 
 /**
@@ -278,7 +341,7 @@ export function stripPrecision(shaderSource: string) {
  * @private
  */
 export function stripComments(shaderSource: string) {
-	shaderSource = shaderSource.replace(/\s?\/\/.*\n/g, ''); // Remove single-line comments.
+	shaderSource = shaderSource.replace(/[\t ]*\/\/.*\n/g, ''); // Remove single-line comments.
 	// ? puts this in lazy mode (match shortest strings).
 	shaderSource = shaderSource.replace(/\/\*.*?\*\//gs, ''); /* Remove multi-line comments */
 	return shaderSource;
@@ -292,7 +355,7 @@ export function getSampler2DsInProgram(shaderSource: string) {
 	// Do this without lookbehind to support older browsers.
 	// const samplers = shaderSource.match(/(?<=\buniform\s+(((highp)|(mediump)|(lowp))\s+)?(i|u)?sampler2D\s+)\w+(?=\s?;)/g);
 	const samplersNoDuplicates: {[key: string]: boolean} = {};
-	const regex = '\\buniform\\s+(((highp)|(mediump)|(lowp))\\s+)?(i|u)?sampler2D\\s+(\\w+)\\s?;';
+	const regex = '\\buniform\\s+(((highp)|(mediump)|(lowp))\\s+)?(i|u)?sampler2D\\s+(\\w+)\\s*;';
 	const samplers = shaderSource.match(new RegExp(regex, 'g'));
 	if (!samplers || samplers.length === 0) return [];
 	// We need to be a bit careful as same sampler could be declared multiple times if compile time conditionals are used.
