@@ -233,6 +233,7 @@ export declare class GPUComposer {
      * @private
      */
     private _setUVAttribute;
+    private _widthHeightForOutput;
     /**
      * Step GPUProgram entire fullscreen quad.
      * @param params - Step parameters.
@@ -245,7 +246,7 @@ export declare class GPUComposer {
     step(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         blendAlpha?: boolean;
     }): void;
     /**
@@ -261,7 +262,7 @@ export declare class GPUComposer {
     stepBoundary(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         edges?: BoundaryEdge | BoundaryEdge[];
         blendAlpha?: boolean;
     }): void;
@@ -277,7 +278,7 @@ export declare class GPUComposer {
     stepNonBoundary(params: {
         program: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         blendAlpha?: boolean;
     }): void;
     /**
@@ -299,7 +300,7 @@ export declare class GPUComposer {
         diameter: number;
         useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         numSegments?: number;
         blendAlpha?: boolean;
     }): void;
@@ -326,7 +327,7 @@ export declare class GPUComposer {
         thickness: number;
         useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         endCaps?: boolean;
         numCapSegments?: number;
         blendAlpha?: boolean;
@@ -350,7 +351,7 @@ export declare class GPUComposer {
         thickness: number;
         useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         endCaps?: boolean;
         numCapSegments?: number;
         blendAlpha?: boolean;
@@ -374,7 +375,7 @@ export declare class GPUComposer {
         layer: GPULayer;
         program?: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         pointSize?: number;
         count?: number;
         color?: number[];
@@ -399,7 +400,7 @@ export declare class GPUComposer {
         layer: GPULayer;
         program?: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
-        output?: GPULayer;
+        output?: GPULayer | GPULayer[];
         vectorSpacing?: number;
         vectorScale?: number;
         color?: number[];

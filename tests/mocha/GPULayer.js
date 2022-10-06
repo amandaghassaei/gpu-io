@@ -321,21 +321,14 @@
 			});
 		});
 		describe('_prepareForWrite', () => {
-			it('should increment index and bind framebuffer', () => {
+			it('should increment index', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3, writable: true});
 				const { gl } = composer1;
 				assert.equal(layer1.bufferIndex, 0);
-				assert.equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
 				layer1._prepareForWrite();
 				assert.equal(layer1.bufferIndex, 0);
-				assert.notEqual(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
-				assert.equal(gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
-					layer1._buffers[layer1.bufferIndex]);
 				layer1._prepareForWrite(true);
 				assert.equal(layer1.bufferIndex, 1);
-				assert.notEqual(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
-				assert.equal(gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME),
-					layer1._buffers[layer1.bufferIndex]);
 				layer1.dispose();
 			});
 			it('should remove texture overrides at current buffer index', () => {

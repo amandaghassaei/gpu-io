@@ -171,7 +171,7 @@ Step GPUProgram entire fullscreen quad.
 | `params` | `Object` | Step parameters. |
 | `params.program` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
 #### Returns
@@ -193,7 +193,7 @@ Step GPUProgram only for a 1px strip of pixels along the boundary.
 | `params` | `Object` | Step parameters. |
 | `params.program` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.edges?` | [`BoundaryEdge`](../README.md#boundaryedge) \| [`BoundaryEdge`](../README.md#boundaryedge)[] | Specify which edges to step, defaults to stepping entire boundary. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
@@ -216,7 +216,7 @@ Step GPUProgram for all but a 1px strip of pixels along the boundary.
 | `params` | `Object` | Step parameters. |
 | `params.program` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
 #### Returns
@@ -241,7 +241,7 @@ Step GPUProgram inside a circular spot.  This is useful for touch interactions.
 | `params.diameter` | `number` | Circle diameter in pixels. |
 | `params.useOutputScale?` | `boolean` | If true position and diameter are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.numSegments?` | `number` | Number of segments in circle, defaults to 18. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
@@ -269,7 +269,7 @@ This is useful for touch interactions during pointermove.
 | `params.thickness` | `number` | Thickness in pixels. |
 | `params.useOutputScale?` | `boolean` | If true position and thickness are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.endCaps?` | `boolean` | Flag to draw with rounded end caps, defaults to false. |
 | `params.numCapSegments?` | `number` | Number of segments in rounded end caps, defaults to 9, must be divisible by 3. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
@@ -297,7 +297,7 @@ Step GPUProgram inside a rectangle.
 | `params.thickness` | `number` | - |
 | `params.useOutputScale?` | `boolean` | If true position and size are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.endCaps?` | `boolean` | - |
 | `params.numCapSegments?` | `number` | - |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
@@ -322,7 +322,7 @@ Draw the contents of a GPULayer as points.  This assumes the components of the G
 | `params.layer` | [`GPULayer`](GPULayer.md) | GPULayer containing position data. |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run, defaults to drawing points in red. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.pointSize?` | `number` | Pixel size of points. |
 | `params.count?` | `number` | How many points to draw, defaults to positions.length. |
 | `params.color?` | `number`[] | (If no program passed in) RGB color in range [0, 1] to draw points. |
@@ -350,7 +350,7 @@ Draw the contents of a 2 component GPULayer as a vector field.
 | `params.layer` | [`GPULayer`](GPULayer.md) | - |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run, defaults to drawing vector lines in red. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
-| `params.output?` | [`GPULayer`](GPULayer.md) | Output GPULayer, will draw to screen if undefined. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.vectorSpacing?` | `number` | Spacing between vectors, defaults to drawing a vector every 10 pixels. |
 | `params.vectorScale?` | `number` | Scale factor to apply to vector lengths. |
 | `params.color?` | `number`[] | (If no program passed in) RGB color in range [0, 1] to draw points. |

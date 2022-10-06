@@ -43,6 +43,7 @@ import {
 	OES_TEXTURE_HALF_FLOAT,
 	OES_TEXTURE_HAlF_FLOAT_LINEAR,
 } from './extensions';
+import { bindFrameBuffer } from './framebuffers';
 import type { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import {
@@ -701,6 +702,7 @@ void main() {
 		if (program) {
 			// Draw setup.
 			output._prepareForWrite(false);
+			bindFrameBuffer(composer, output, output._currentTexture);
 			gl.viewport(0, 0, width, height);
 			gl.useProgram(program);
 			// Bind texture.

@@ -2356,6 +2356,7 @@ var LayerVectorFieldVertexShader_1 = __webpack_require__(634);
 var conversions_1 = __webpack_require__(690);
 var Programs_1 = __webpack_require__(579);
 var checks_1 = __webpack_require__(707);
+var framebuffers_1 = __webpack_require__(798);
 var GPUComposer = /** @class */ (function () {
     /**
      * Create a GPUComposer.
@@ -2738,7 +2739,7 @@ var GPUComposer = /** @class */ (function () {
         var program = gpuProgram._getProgramWithName(programName, vertexCompileConstants, inputTextures);
         // Set output framebuffer.
         // This may modify WebGL internal state.
-        this._setOutputLayer(fullscreenRender, input, output);
+        this._setOutputLayer(gpuProgram.name, fullscreenRender, input, output);
         // Set current program.
         // Must do this before calling gpuProgram._setInternalFragmentUniforms(program, inputTextures);
         gl.useProgram(program);
@@ -2801,7 +2802,7 @@ var GPUComposer = /** @class */ (function () {
      * Set output for draw command.
      * @private
      */
-    GPUComposer.prototype._setOutputLayer = function (fullscreenRender, input, output) {
+    GPUComposer.prototype._setOutputLayer = function (programName, fullscreenRender, input, output) {
         var gl = this.gl;
         // Render to screen.
         if (!output) {
@@ -2811,40 +2812,47 @@ var GPUComposer = /** @class */ (function () {
             gl.viewport(0, 0, _width, _height);
             return;
         }
-        // Check if output is same as one of input layers.
-        if (input && ((input === output || input.layer === output) ||
-            ((0, type_checks_1.isArray)(input) && (0, utils_1.indexOfLayerInArray)(output, input) >= 0))) {
-            if (output.numBuffers === 1) {
-                throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
-            }
-            if (fullscreenRender) {
-                // Render and increment buffer so we are rendering to a different target
-                // than the input texture.
-                output._prepareForWrite(true);
-            }
-            else {
-                // Pass input texture through to output.
-                this._passThroughLayerDataFromInputToOutput(output);
-                // Render to output without incrementing buffer.
-                output._prepareForWrite(false);
-            }
-        }
-        else {
-            if (fullscreenRender) {
-                // Render to current buffer.
-                output._prepareForWrite(false);
-            }
-            else {
-                // If we are doing a sneaky thing with a swapped texture and are
-                // only rendering part of the screen, we may need to add a copy operation.
-                if (output._usingTextureOverrideForCurrentBuffer()) {
-                    this._passThroughLayerDataFromInputToOutput(output);
+        var outputArray = ((0, type_checks_1.isArray)(output) ? output : [output]);
+        for (var i = 0, numOutputs = outputArray.length; i < numOutputs; i++) {
+            var outputLayer = outputArray[i];
+            // Check if output is same as one of input layers.
+            if (input && ((input === output || input.layer === output) ||
+                ((0, type_checks_1.isArray)(input) && (0, utils_1.indexOfLayerInArray)(outputLayer, input) >= 0))) {
+                if (outputLayer.numBuffers === 1) {
+                    throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
                 }
-                output._prepareForWrite(false);
+                if (fullscreenRender) {
+                    // Render and increment buffer so we are rendering to a different target
+                    // than the input texture.
+                    outputLayer._prepareForWrite(true);
+                }
+                else {
+                    // Pass input texture through to output.
+                    this._passThroughLayerDataFromInputToOutput(outputLayer);
+                    // Render to output without incrementing buffer.
+                    outputLayer._prepareForWrite(false);
+                }
+            }
+            else {
+                if (fullscreenRender) {
+                    // Render to current buffer.
+                    outputLayer._prepareForWrite(false);
+                }
+                else {
+                    // If we are doing a sneaky thing with a swapped texture and are
+                    // only rendering part of the screen, we may need to add a copy operation.
+                    if (outputLayer._usingTextureOverrideForCurrentBuffer()) {
+                        this._passThroughLayerDataFromInputToOutput(outputLayer);
+                    }
+                    outputLayer._prepareForWrite(false);
+                }
             }
         }
+        // Bind framebuffer.
+        var layer0 = outputArray.shift();
+        (0, framebuffers_1.bindFrameBuffer)(this, layer0, layer0._currentTexture, outputArray.length ? outputArray : undefined);
         // Resize viewport.
-        var width = output.width, height = output.height;
+        var _b = this._widthHeightForOutput(programName, output), width = _b.width, height = _b.height;
         gl.viewport(0, 0, width, height);
     };
     ;
@@ -2900,6 +2908,24 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype._setUVAttribute = function (program, programName) {
         this._setVertexAttribute(program, 'a_gpuio_uv', 2, programName);
     };
+    GPUComposer.prototype._widthHeightForOutput = function (programName, output) {
+        if ((0, type_checks_1.isArray)(output)) {
+            // Check that all outputs have the same size.
+            var firstOutput = output[0];
+            var width_1 = firstOutput ? firstOutput.width : this._width;
+            var height_1 = firstOutput ? firstOutput.height : this._height;
+            for (var i = 1, numOutputs = output.length; i < numOutputs; i++) {
+                var nextOutput = output[i];
+                if (nextOutput.width !== width_1 || nextOutput.height !== width_1) {
+                    throw new Error("Output GPULayers must have the same dimensions, got dimensions [".concat(width_1, ", ").concat(height_1, "] and [").concat(nextOutput.width, ", ").concat(nextOutput.height, "] for program \"").concat(programName, "\"."));
+                }
+            }
+            return { width: width_1, height: height_1 };
+        }
+        var width = output ? output.width : this._width;
+        var height = output ? output.height : this._height;
+        return { width: width, height: height };
+    };
     /**
      * Step GPUProgram entire fullscreen quad.
      * @param params - Step parameters.
@@ -2941,8 +2967,7 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, input = params.input, output = params.output;
         if (_errorState)
             return;
-        var width = output ? output.width : this._width;
-        var height = output ? output.height : this._height;
+        var _b = this._widthHeightForOutput(program.name, output), width = _b.width, height = _b.height;
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
@@ -2994,8 +3019,7 @@ var GPUComposer = /** @class */ (function () {
         var program = params.program, input = params.input, output = params.output;
         if (_errorState)
             return;
-        var width = output ? output.width : this._width;
-        var height = output ? output.height : this._height;
+        var _b = this._widthHeightForOutput(program.name, output), width = _b.width, height = _b.height;
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
@@ -3023,12 +3047,16 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepCircle = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState;
+        var _a;
+        var _b = this, gl = _b.gl, _errorState = _b._errorState;
         var program = params.program, position = params.position, diameter = params.diameter, input = params.input, output = params.output;
         if (_errorState)
             return;
-        var width = (output && params.useOutputScale) ? output.width : this._width;
-        var height = (output && params.useOutputScale) ? output.height : this._height;
+        var width = this._width;
+        var height = this._height;
+        if (params.useOutputScale) {
+            (_a = this._widthHeightForOutput(program.name, output), width = _a.width, height = _a.height);
+        }
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.DEFAULT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
@@ -3062,12 +3090,16 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepSegment = function (params) {
-        var _a = this, gl = _a.gl, _errorState = _a._errorState;
+        var _a;
+        var _b = this, gl = _b.gl, _errorState = _b._errorState;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
         if (_errorState)
             return;
-        var width = (output && params.useOutputScale) ? output.width : this._width;
-        var height = (output && params.useOutputScale) ? output.height : this._height;
+        var width = this._width;
+        var height = this._height;
+        if (params.useOutputScale) {
+            (_a = this._widthHeightForOutput(program.name, output), width = _a.width, height = _a.height);
+        }
         // Do setup - this must come first.
         var glProgram = this._drawSetup(program, constants_1.SEGMENT_PROGRAM_NAME, {}, false, input, output);
         // Update uniforms and buffers.
@@ -3140,7 +3172,7 @@ var GPUComposer = /** @class */ (function () {
     // 		positions: number[][],
     // 		thickness: number, // Thickness of line is in units of pixels.
     // 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-    // 		output?: GPULayer, // Undefined renders to screen.
+    // 		output?: GPULayer | GPULayer[], // Undefined renders to screen.
     // 		closeLoop?: boolean,
     // 		includeUVs?: boolean,
     // 		includeNormals?: boolean,
@@ -3314,7 +3346,7 @@ var GPUComposer = /** @class */ (function () {
     // 		normals?: Float32Array,
     // 		uvs?: Float32Array,
     // 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-    // 		output?: GPULayer, // Undefined renders to screen.
+    // 		output?: GPULayer | GPULayer[], // Undefined renders to screen.
     // 		count?: number,
     // 		blendAlpha?: boolean,
     // 	},
@@ -3356,7 +3388,7 @@ var GPUComposer = /** @class */ (function () {
     // 	normals?: Float32Array,
     // 	uvs?: Float32Array,
     // 	input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-    // 	output?: GPULayer, // Undefined renders to screen.
+    // 	output?: GPULayer | GPULayer[], // Undefined renders to screen.
     // 	count?: number,
     // 	closeLoop?: boolean,
     // 	blendAlpha?: boolean,
@@ -3496,7 +3528,7 @@ var GPUComposer = /** @class */ (function () {
     // 		indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
     // 		program?: GPUProgram,
     // 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-    // 		output?: GPULayer,
+    // 		output?: GPULayer | GPULayer[],
     // 		count?: number,
     // 		color?: number[]
     // 		wrapX?: boolean,
@@ -4126,7 +4158,7 @@ var GPULayer = /** @class */ (function () {
      * @private
      */
     GPULayer.prototype._initBuffers = function (arrayOrImage) {
-        var _a = this, name = _a.name, numBuffers = _a.numBuffers, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, _glFilter = _a._glFilter, _glWrapS = _a._glWrapS, _glWrapT = _a._glWrapT, writable = _a.writable, width = _a.width, height = _a.height;
+        var _a = this, name = _a.name, numBuffers = _a.numBuffers, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, _glFilter = _a._glFilter, _glWrapS = _a._glWrapS, _glWrapT = _a._glWrapT, width = _a.width, height = _a.height;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback;
         var validatedArrayOrImage = null;
         if ((0, type_checks_1.isArray)(arrayOrImage))
@@ -4181,6 +4213,19 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(GPULayer.prototype, "_currentTexture", {
+        /**
+         * Get the current state as a WebGLTexture.
+         * Used internally.
+         * @private
+         */
+        get: function () {
+            // tODO: check texture overrides.
+            return this._buffers[this._bufferIndex];
+        },
+        enumerable: false,
+        configurable: true
+    });
     Object.defineProperty(GPULayer.prototype, "lastState", {
         /**
          * Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
@@ -4219,7 +4264,7 @@ var GPULayer = /** @class */ (function () {
         };
     };
     /**
-     * Increments the buffer index (if needed) and binds next framebuffer as draw target.
+     * Increments the buffer index (if needed).
      * @private
      */
     GPULayer.prototype._prepareForWrite = function (incrementBufferIndex) {
@@ -4229,7 +4274,6 @@ var GPULayer = /** @class */ (function () {
         if (incrementBufferIndex) {
             this.incrementBufferIndex();
         }
-        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex]);
         // We are going to do a data write, if we have overrides enabled, we can remove them.
         if (this._textureOverrides) {
             this._textureOverrides[this.bufferIndex] = undefined;
@@ -4663,6 +4707,7 @@ var type_checks_1 = __webpack_require__(566);
 var float16_1 = __webpack_require__(847);
 var constants_1 = __webpack_require__(601);
 var extensions_1 = __webpack_require__(581);
+var framebuffers_1 = __webpack_require__(798);
 var GPULayer_1 = __webpack_require__(355);
 var utils_1 = __webpack_require__(593);
 // Memoize results.
@@ -4793,7 +4838,7 @@ GPULayer_1.GPULayer.getGPULayerInternalFilter = function (params) {
  * @private
  */
 function shouldCastIntTypeAsFloat(composer, type) {
-    var gl = composer.gl, glslVersion = composer.glslVersion, isWebGL2 = composer.isWebGL2;
+    var glslVersion = composer.glslVersion, isWebGL2 = composer.isWebGL2;
     // All types are supported by WebGL2 + glsl3.
     if (glslVersion === constants_1.GLSL3 && isWebGL2)
         return false;
@@ -5224,6 +5269,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
         if (program) {
             // Draw setup.
             output._prepareForWrite(false);
+            (0, framebuffers_1.bindFrameBuffer)(composer, output, output._currentTexture);
             gl.viewport(0, 0, width, height);
             gl.useProgram(program);
             // Bind texture.
@@ -5288,7 +5334,7 @@ exports.testFilterWrap = testFilterWrap;
  */
 GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
     var composer = params.composer, writable = params.writable, name = params.name;
-    var gl = composer.gl, _errorCallback = composer._errorCallback, isWebGL2 = composer.isWebGL2;
+    var _errorCallback = composer._errorCallback, isWebGL2 = composer.isWebGL2;
     var type = params.type;
     var internalType = type;
     // Check if int types are supported.

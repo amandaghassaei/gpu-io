@@ -517,7 +517,6 @@ export class GPULayer {
 			_glFilter,
 			_glWrapS,
 			_glWrapT,
-			writable,
 			width,
 			height,
 		} = this;
@@ -575,6 +574,16 @@ export class GPULayer {
 	}
 
 	/**
+	 * Get the current state as a WebGLTexture.
+	 * Used internally.
+	 * @private
+	 */
+	get _currentTexture() {
+		// tODO: check texture overrides.
+		return this._buffers[this._bufferIndex];
+	}
+
+	/**
 	 * Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
 	 */
 	get lastState() {
@@ -609,7 +618,7 @@ export class GPULayer {
 	}
 
 	/**
-	 * Increments the buffer index (if needed) and binds next framebuffer as draw target.
+	 * Increments the buffer index (if needed).
 	 * @private
 	 */
 	_prepareForWrite(
@@ -621,7 +630,6 @@ export class GPULayer {
 		if (incrementBufferIndex) {
 			this.incrementBufferIndex();
 		}
-		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex]);
 
 		// We are going to do a data write, if we have overrides enabled, we can remove them.
 		if (this._textureOverrides) {

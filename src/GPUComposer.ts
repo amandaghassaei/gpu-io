@@ -61,6 +61,7 @@ import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVect
 import { uniformTypeForType } from './conversions';
 import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
 import { checkRequiredKeys, checkValidKeys } from './checks';
+import { bindFrameBuffer } from './framebuffers';
 
 export class GPUComposer {
 	/**
@@ -576,7 +577,7 @@ export class GPUComposer {
 		vertexCompileConstants: CompileTimeConstants,
 		fullscreenRender: boolean,
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-		output?: GPULayer,
+		output?: GPULayer | GPULayer[],
 	) {
 		const { gl } = this;
 
@@ -602,7 +603,7 @@ export class GPUComposer {
 
 		// Set output framebuffer.
 		// This may modify WebGL internal state.
-		this._setOutputLayer(fullscreenRender, input, output);
+		this._setOutputLayer(gpuProgram.name, fullscreenRender, input, output);
 
 		// Set current program.
 		// Must do this before calling gpuProgram._setInternalFragmentUniforms(program, inputTextures);
@@ -671,9 +672,10 @@ export class GPUComposer {
 	 * @private
 	 */
 	private _setOutputLayer(
+		programName: string,
 		fullscreenRender: boolean,
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-		output?: GPULayer, // Undefined renders to screen.
+		output?: GPULayer | GPULayer[], // Undefined renders to screen.
 	) {
 		const { gl } = this;
 
@@ -686,38 +688,47 @@ export class GPUComposer {
 			return;
 		}
 
-		// Check if output is same as one of input layers.
-		if (input && ((input === output || (input as GPULayerState).layer === output) ||
-			(isArray(input) && indexOfLayerInArray(output, input as (GPULayer | GPULayerState)[]) >= 0))) {
-			if (output.numBuffers === 1) {
-				throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
-			}
-			if (fullscreenRender) {
-				// Render and increment buffer so we are rendering to a different target
-				// than the input texture.
-				output._prepareForWrite(true);
-			} else {
-				// Pass input texture through to output.
-				this._passThroughLayerDataFromInputToOutput(output);
-				// Render to output without incrementing buffer.
-				output._prepareForWrite(false);
-			}
-		} else {
-			if (fullscreenRender) {
-				// Render to current buffer.
-				output._prepareForWrite(false);
-			} else {
-				// If we are doing a sneaky thing with a swapped texture and are
-				// only rendering part of the screen, we may need to add a copy operation.
-				if (output._usingTextureOverrideForCurrentBuffer()) {
-					this._passThroughLayerDataFromInputToOutput(output);
+		const outputArray = (isArray(output) ? output : [output]) as GPULayer[];
+
+		for (let i = 0, numOutputs = outputArray.length; i < numOutputs; i++) {
+			const outputLayer = outputArray[i];
+			// Check if output is same as one of input layers.
+			if (input && ((input === output || (input as GPULayerState).layer === output) ||
+				(isArray(input) && indexOfLayerInArray(outputLayer, input as (GPULayer | GPULayerState)[]) >= 0))) {
+				if (outputLayer.numBuffers === 1) {
+					throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
 				}
-				output._prepareForWrite(false);
+				if (fullscreenRender) {
+					// Render and increment buffer so we are rendering to a different target
+					// than the input texture.
+					outputLayer._prepareForWrite(true);
+				} else {
+					// Pass input texture through to output.
+					this._passThroughLayerDataFromInputToOutput(outputLayer);
+					// Render to output without incrementing buffer.
+					outputLayer._prepareForWrite(false);
+				}
+			} else {
+				if (fullscreenRender) {
+					// Render to current buffer.
+					outputLayer._prepareForWrite(false);
+				} else {
+					// If we are doing a sneaky thing with a swapped texture and are
+					// only rendering part of the screen, we may need to add a copy operation.
+					if (outputLayer._usingTextureOverrideForCurrentBuffer()) {
+						this._passThroughLayerDataFromInputToOutput(outputLayer);
+					}
+					outputLayer._prepareForWrite(false);
+				}
 			}
 		}
+
+		// Bind framebuffer.
+		const layer0 = outputArray.shift() as GPULayer;
+		bindFrameBuffer(this, layer0, layer0._currentTexture, outputArray.length ? outputArray : undefined);
 		
 		// Resize viewport.
-		const { width, height } = output;
+		const { width, height } = this._widthHeightForOutput(programName, output);
 		gl.viewport(0, 0, width, height);
 	};
 	/**
@@ -773,6 +784,25 @@ export class GPUComposer {
 		this._setVertexAttribute(program, 'a_gpuio_uv', 2, programName);
 	}
 
+	private _widthHeightForOutput(programName: string, output?: GPULayer | GPULayer[]) {
+		if (isArray(output)) {
+			// Check that all outputs have the same size.
+			const firstOutput = (output as GPULayer[])[0];
+			const width = firstOutput ? firstOutput.width : this._width;
+			const height = firstOutput ? firstOutput.height : this._height;
+			for (let i = 1, numOutputs = (output as GPULayer[]).length; i < numOutputs; i++) {
+				const nextOutput = (output as GPULayer[])[i];
+				if (nextOutput.width !== width || nextOutput.height !== width) {
+					throw new Error(`Output GPULayers must have the same dimensions, got dimensions [${width}, ${height}] and [${nextOutput.width}, ${nextOutput.height}] for program "${programName}".`);
+				}
+			}
+			return { width, height };
+		}
+		const width = output ? (output as GPULayer).width : this._width;
+		const height = output ? (output as GPULayer).height : this._height;
+		return { width, height};
+	}
+
 	/**
 	 * Step GPUProgram entire fullscreen quad.
 	 * @param params - Step parameters.
@@ -786,7 +816,7 @@ export class GPUComposer {
 		params: {
 			program: GPUProgram,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer, // Undefined renders to screen.
+			output?: GPULayer | GPULayer[], // Undefined renders to screen.
 			blendAlpha?: boolean,
 		},
 	) {
@@ -824,7 +854,7 @@ export class GPUComposer {
 		params: {
 			program: GPUProgram,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer, // Undefined renders to screen.
+			output?: GPULayer | GPULayer[], // Undefined renders to screen.
 			edges?: BoundaryEdge | BoundaryEdge[];
 			blendAlpha?: boolean,
 		},
@@ -834,8 +864,7 @@ export class GPUComposer {
 
 		if (_errorState) return;
 
-		const width = output ? output.width : this._width;
-		const height = output ? output.height : this._height;
+		const { width, height } = this._widthHeightForOutput(program.name, output);
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
@@ -888,7 +917,7 @@ export class GPUComposer {
 		params: {
 			program: GPUProgram,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer, // Undefined renders to screen.
+			output?: GPULayer | GPULayer[], // Undefined renders to screen.
 			blendAlpha?: boolean,
 		},
 	) {
@@ -897,8 +926,7 @@ export class GPUComposer {
 
 		if (_errorState) return;
 
-		const width = output ? output.width : this._width;
-		const height = output ? output.height : this._height;
+		const { width, height } = this._widthHeightForOutput(program.name, output);
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
@@ -936,7 +964,7 @@ export class GPUComposer {
 			diameter: number, // Diameter is in units of pixels.
 			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer, // Undefined renders to screen.
+			output?: GPULayer | GPULayer[], // Undefined renders to screen.
 			numSegments?: number,
 			blendAlpha?: boolean,
 		},
@@ -946,8 +974,11 @@ export class GPUComposer {
 
 		if (_errorState) return;
 
-		const width = (output && params.useOutputScale) ? output.width : this._width;
-		const height = (output && params.useOutputScale) ? output.height : this._height;
+		let width = this._width;
+		let height = this._height;
+		if (params.useOutputScale) {
+			({ width, height } = this._widthHeightForOutput(program.name, output));
+		}
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, DEFAULT_PROGRAM_NAME, {}, false, input, output);
@@ -992,7 +1023,7 @@ export class GPUComposer {
 			thickness: number,
 			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer,
+			output?: GPULayer | GPULayer[],
 			endCaps?: boolean,
 			numCapSegments?: number,
 			blendAlpha?: boolean,
@@ -1003,8 +1034,11 @@ export class GPUComposer {
 
 		if (_errorState) return;
 
-		const width = (output && params.useOutputScale) ? output.width : this._width;
-		const height = (output && params.useOutputScale) ? output.height : this._height;
+		let width = this._width;
+		let height = this._height;
+		if (params.useOutputScale) {
+			({ width, height } = this._widthHeightForOutput(program.name, output));
+		}
 
 		// Do setup - this must come first.
 		const glProgram = this._drawSetup(program, SEGMENT_PROGRAM_NAME, {}, false, input, output);
@@ -1067,7 +1101,7 @@ export class GPUComposer {
 			thickness: number,
 			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer,
+			output?: GPULayer | GPULayer[],
 			endCaps?: boolean,
 			numCapSegments?: number,
 			blendAlpha?: boolean,
@@ -1094,7 +1128,7 @@ export class GPUComposer {
 	// 		positions: number[][],
 	// 		thickness: number, // Thickness of line is in units of pixels.
 	// 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-	// 		output?: GPULayer, // Undefined renders to screen.
+	// 		output?: GPULayer | GPULayer[], // Undefined renders to screen.
 	// 		closeLoop?: boolean,
 	// 		includeUVs?: boolean,
 	// 		includeNormals?: boolean,
@@ -1284,7 +1318,7 @@ export class GPUComposer {
 	// 		normals?: Float32Array,
 	// 		uvs?: Float32Array,
 	// 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-	// 		output?: GPULayer, // Undefined renders to screen.
+	// 		output?: GPULayer | GPULayer[], // Undefined renders to screen.
 	// 		count?: number,
 	// 		blendAlpha?: boolean,
 	// 	},
@@ -1333,7 +1367,7 @@ export class GPUComposer {
 	// 	normals?: Float32Array,
 	// 	uvs?: Float32Array,
 	// 	input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-	// 	output?: GPULayer, // Undefined renders to screen.
+	// 	output?: GPULayer | GPULayer[], // Undefined renders to screen.
 	// 	count?: number,
 	// 	closeLoop?: boolean,
 	// 	blendAlpha?: boolean,
@@ -1418,7 +1452,7 @@ export class GPUComposer {
 			layer: GPULayer, // Positions in units of pixels.
 			program?: GPUProgram,
 			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer,
+			output?: GPULayer | GPULayer[],
 			pointSize?: number,
 			count?: number,
 			color?: number[],
@@ -1498,7 +1532,7 @@ export class GPUComposer {
 	// 		indices?: Float32Array | Uint16Array | Uint32Array | Int16Array | Int32Array,
 	// 		program?: GPUProgram,
 	// 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-	// 		output?: GPULayer,
+	// 		output?: GPULayer | GPULayer[],
 	// 		count?: number,
 	// 		color?: number[]
 	// 		wrapX?: boolean,
@@ -1608,7 +1642,7 @@ export class GPUComposer {
 			layer: GPULayer,
 			program?: GPUProgram,
 			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
-			output?: GPULayer,
+			output?: GPULayer | GPULayer[],
 			vectorSpacing?: number,
 			vectorScale?: number,
 			color?: number[],

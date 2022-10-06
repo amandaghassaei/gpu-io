@@ -175,6 +175,12 @@ export declare class GPULayer {
      */
     get currentState(): GPULayerState;
     /**
+     * Get the current state as a WebGLTexture.
+     * Used internally.
+     * @private
+     */
+    get _currentTexture(): WebGLTexture;
+    /**
      * Get the previous state as a GPULayerState object (only available for GPULayers with numBuffers > 1).
      */
     get lastState(): GPULayerState;
@@ -183,7 +189,7 @@ export declare class GPULayer {
      */
     getStateAtIndex(index: number): GPULayerState;
     /**
-     * Increments the buffer index (if needed) and binds next framebuffer as draw target.
+     * Increments the buffer index (if needed).
      * @private
      */
     _prepareForWrite(incrementBufferIndex: boolean): void;
