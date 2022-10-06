@@ -5609,6 +5609,21 @@ GPULayer_1.GPULayer.validateGPULayerArray = function (array, layer) {
 
 "use strict";
 
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -5637,7 +5652,7 @@ var GPUProgram = /** @class */ (function () {
      * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform().
      * @param params.compileTimeConstants - Compile time #define constants to include with fragment shader.
      */
-    function GPUProgram(composer, params, _gpuio_child_params) {
+    function GPUProgram(composer, params) {
         var _this = this;
         // Compiled fragment shaders (we hang onto different versions depending on compile time constants).
         this._fragmentShaders = {};
@@ -5675,37 +5690,25 @@ var GPUProgram = /** @class */ (function () {
         this._composer = composer;
         this.name = name;
         // Preprocess fragment shader source.
-        if (_gpuio_child_params !== undefined) { // This is a child program.
-            var samplerUniforms = _gpuio_child_params.samplerUniforms;
-            // fragmentShader has already been pre-processed.
-            this._fragmentShaderSource = fragmentShader;
-            samplerUniforms.forEach(function (name, i) {
-                _this._samplerUniformsIndices.push({
-                    name: name,
-                    inputIndex: 0,
-                    shaderIndex: i,
-                });
+        var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
+            fragmentShader :
+            fragmentShader.join('\n');
+        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
+        this._fragmentShaderSource = shaderSource;
+        samplerUniforms.forEach(function (name, i) {
+            _this._samplerUniformsIndices.push({
+                name: name,
+                inputIndex: 0,
+                shaderIndex: i,
             });
-        }
-        else {
-            var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
-                fragmentShader :
-                fragmentShader.join('\n');
-            var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
-            this._fragmentShaderSource = shaderSource;
+        });
+        if (this.constructor === GPUProgram) { // This is not a child program.
             if (additionalSources) {
                 this._childPrograms = [];
                 for (var i = 0, numChildren = additionalSources.length; i < numChildren; i++) {
-                    this._childPrograms.push(new GPUProgram(composer, __assign(__assign({}, params), { fragmentShader: additionalSources[i] }), { samplerUniforms: samplerUniforms }));
+                    this._childPrograms.push(new GPUProgramChild(composer, params, { fragmentShaderSource: additionalSources[i] }));
                 }
             }
-            samplerUniforms.forEach(function (name, i) {
-                _this._samplerUniformsIndices.push({
-                    name: name,
-                    inputIndex: 0,
-                    shaderIndex: i,
-                });
-            });
         }
         // Save compile time constants.
         if (compileTimeConstants) {
@@ -6180,6 +6183,17 @@ var GPUProgram = /** @class */ (function () {
     return GPUProgram;
 }());
 exports.GPUProgram = GPUProgram;
+var GPUProgramChild = /** @class */ (function (_super) {
+    __extends(GPUProgramChild, _super);
+    function GPUProgramChild(composer, params, _gpuio_child_params) {
+        var _this = _super.call(this, composer, params) || this;
+        var fragmentShaderSource = _gpuio_child_params.fragmentShaderSource;
+        // fragmentShader has already been pre-processed.
+        _this._fragmentShaderSource = fragmentShaderSource;
+        return _this;
+    }
+    return GPUProgramChild;
+}(GPUProgram));
 
 
 /***/ }),

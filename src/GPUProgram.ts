@@ -68,7 +68,7 @@ export class GPUProgram {
 	private _fragmentShaders: {[key: string]: WebGLShader} = {};
 	// Source code for fragment shader.
 	// Hold onto this in case we need to recompile with different #defines.
-	private readonly _fragmentShaderSource: string;
+	protected _fragmentShaderSource!: string;
 	// #define variables for fragment shader program.
 	private readonly _compileTimeConstants: CompileTimeConstants = {};
 	// Uniform locations, values, and types.
@@ -82,13 +82,13 @@ export class GPUProgram {
 	private readonly _programsKeyLookup = new WeakMap<WebGLProgram, string>();
 
 	// Store the index of input sampler2D in input array.
-	private readonly _samplerUniformsIndices: { name: string, inputIndex: number, shaderIndex: number }[] = [];
+	protected readonly _samplerUniformsIndices: { name: string, inputIndex: number, shaderIndex: number }[] = [];
 
 	/**
 	 * This is only used in cases where GLSL1 program has multiple outputs.
 	 * @private
 	 */
-	_childPrograms?: GPUProgram[];
+	_childPrograms?: GPUProgramChild[];
 
 	/**
      * Create a GPUProgram.
@@ -108,9 +108,6 @@ export class GPUProgram {
 			uniforms?: UniformParams[],
 			// We'll allow some compile time constants to be passed in as #define to the preprocessor for the fragment shader.
 			compileTimeConstants?: CompileTimeConstants,
-		},
-		_gpuio_child_params?: {
-			samplerUniforms: string[],
 		},
 	) {
 		// Check constructor parameters.
@@ -138,38 +135,27 @@ export class GPUProgram {
 		this.name = name;
 
 		// Preprocess fragment shader source.
-		if (_gpuio_child_params !== undefined) { // This is a child program.
-			const { samplerUniforms } = _gpuio_child_params;
-			// fragmentShader has already been pre-processed.
-			this._fragmentShaderSource = fragmentShader as string;
-			samplerUniforms.forEach((name, i) => {
-				this._samplerUniformsIndices.push({
-					name,
-					inputIndex: 0, // All uniforms default to 0.
-					shaderIndex: i,
-				});
-			});
-		} else {
-			const fragmentShaderSource = isString(fragmentShader) ?
+		const fragmentShaderSource = isString(fragmentShader) ?
 				fragmentShader as string :
 				(fragmentShader as string[]).join('\n');
-			const { shaderSource, samplerUniforms, additionalSources } = preprocessFragmentShader(
-				fragmentShaderSource, composer.glslVersion, name,
-			);
-			this._fragmentShaderSource = shaderSource;
+		const { shaderSource, samplerUniforms, additionalSources } = preprocessFragmentShader(
+			fragmentShaderSource, composer.glslVersion, name,
+		);
+		this._fragmentShaderSource = shaderSource;
+		samplerUniforms.forEach((name, i) => {
+			this._samplerUniformsIndices.push({
+				name,
+				inputIndex: 0, // All uniforms default to 0.
+				shaderIndex: i,
+			});
+		});
+		if (this.constructor === GPUProgram) { // This is not a child program.
 			if (additionalSources) {
 				this._childPrograms = [];
 				for (let i = 0, numChildren = additionalSources.length; i < numChildren; i++) {
-					this._childPrograms.push(new GPUProgram(composer, {...params, fragmentShader: additionalSources[i]}, { samplerUniforms }));
+					this._childPrograms.push(new GPUProgramChild(composer, params, { fragmentShaderSource: additionalSources[i] }));
 				}
 			}
-			samplerUniforms.forEach((name, i) => {
-				this._samplerUniformsIndices.push({
-					name,
-					inputIndex: 0, // All uniforms default to 0.
-					shaderIndex: i,
-				});
-			});
 		}
 
 		// Save compile time constants.
@@ -711,5 +697,28 @@ export class GPUProgram {
 		delete this._fragmentShaders;
 		// @ts-ignore
 		delete this._samplerUniformsIndices;
+	}
+}
+
+class GPUProgramChild extends GPUProgram {
+	constructor(
+		composer: GPUComposer,
+		params: {
+			name: string,
+			// We may want to pass in an array of shader string sources, if split across several files.
+			fragmentShader: string | string[],
+			uniforms?: UniformParams[],
+			// We'll allow some compile time constants to be passed in as #define to the preprocessor for the fragment shader.
+			compileTimeConstants?: CompileTimeConstants,
+		},
+		_gpuio_child_params: {
+			fragmentShaderSource: string,
+		},
+	) {
+		super(composer, params);
+
+		const { fragmentShaderSource } = _gpuio_child_params;
+		// fragmentShader has already been pre-processed.
+		this._fragmentShaderSource = fragmentShaderSource;
 	}
 }

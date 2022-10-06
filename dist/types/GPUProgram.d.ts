@@ -7,17 +7,21 @@ export declare class GPUProgram {
      */
     readonly name: string;
     private _fragmentShaders;
-    private readonly _fragmentShaderSource;
+    protected _fragmentShaderSource: string;
     private readonly _compileTimeConstants;
     private readonly _uniforms;
     private readonly _programs;
     private readonly _programsKeyLookup;
-    private readonly _samplerUniformsIndices;
+    protected readonly _samplerUniformsIndices: {
+        name: string;
+        inputIndex: number;
+        shaderIndex: number;
+    }[];
     /**
      * This is only used in cases where GLSL1 program has multiple outputs.
      * @private
      */
-    _childPrograms?: GPUProgram[];
+    _childPrograms?: GPUProgramChild[];
     /**
      * Create a GPUProgram.
      * @param composer - The current GPUComposer instance.
@@ -32,8 +36,6 @@ export declare class GPUProgram {
         fragmentShader: string | string[];
         uniforms?: UniformParams[];
         compileTimeConstants?: CompileTimeConstants;
-    }, _gpuio_child_params?: {
-        samplerUniforms: string[];
     });
     /**
      * Force compilation of GPUProgram with new compileTimeConstants.
@@ -78,3 +80,14 @@ export declare class GPUProgram {
      */
     dispose(): void;
 }
+declare class GPUProgramChild extends GPUProgram {
+    constructor(composer: GPUComposer, params: {
+        name: string;
+        fragmentShader: string | string[];
+        uniforms?: UniformParams[];
+        compileTimeConstants?: CompileTimeConstants;
+    }, _gpuio_child_params: {
+        fragmentShaderSource: string;
+    });
+}
+export {};

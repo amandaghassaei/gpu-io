@@ -7,6 +7,8 @@
 ### Properties
 
 - [name](GPUProgram.md#name)
+- [\_fragmentShaderSource](GPUProgram.md#_fragmentshadersource)
+- [\_samplerUniformsIndices](GPUProgram.md#_sampleruniformsindices)
 
 ### Constructors
 
@@ -26,11 +28,23 @@
 
 Name of GPUProgram, used for error logging.
 
+___
+
+### \_fragmentShaderSource
+
+• `Protected` **\_fragmentShaderSource**: `string`
+
+___
+
+### \_samplerUniformsIndices
+
+• `Protected` `Readonly` **\_samplerUniformsIndices**: { `name`: `string` ; `inputIndex`: `number` ; `shaderIndex`: `number`  }[] = `[]`
+
 ## Constructors
 
 ### constructor
 
-• **new GPUProgram**(`composer`, `params`, `_gpuio_child_params?`)
+• **new GPUProgram**(`composer`, `params`)
 
 Create a GPUProgram.
 
@@ -44,8 +58,6 @@ Create a GPUProgram.
 | `params.fragmentShader` | `string` \| `string`[] | Fragment shader source or array of sources to be joined. |
 | `params.uniforms?` | [`UniformParams`](../README.md#uniformparams)[] | Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform(). |
 | `params.compileTimeConstants?` | [`CompileTimeConstants`](../README.md#compiletimeconstants) | Compile time #define constants to include with fragment shader. |
-| `_gpuio_child_params?` | `Object` | - |
-| `_gpuio_child_params.samplerUniforms` | `string`[] | - |
 
 ## Methods
 
