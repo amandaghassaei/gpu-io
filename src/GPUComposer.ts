@@ -813,6 +813,25 @@ export class GPUComposer {
 	}
 
 	/**
+	 * Call stepping/drawing function once for each output.
+	 * This is required when attempting to draw to multiple outputs using GLSL1.
+	 */
+	private iterateOverOutputsIfNeeded(params: any, methodName: string) {
+		if (params.output && isArray(params.output) && this.glslVersion === GLSL1) {
+			for (let i = 0, numOutputs = (params.output as GPULayer[]).length; i < numOutputs; i++) {
+				// @ts-ignore
+				this[methodName]({
+					...params,
+					program: i === 0 ? params.program : params.program._childPrograms![i - 1],
+					output: (params.output as GPULayer[])[i],
+				});
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Step GPUProgram entire fullscreen quad.
 	 * @param params - Step parameters.
 	 * @param params.program - GPUProgram to run.
@@ -829,6 +848,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'step')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 
@@ -868,6 +888,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'stepBoundary')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 
@@ -930,6 +951,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'stepNonBoundary')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 
@@ -978,6 +1000,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'stepCircle')) return;
 		const { gl, _errorState } = this;
 		const { program, position, diameter, input, output } = params;
 
@@ -1038,6 +1061,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'stepSegment')) return;
 		const { gl, _errorState } = this;
 		const { program, position1, position2, thickness, input, output } = params;
 
@@ -1116,6 +1140,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'stepRect')) return;
 		const position1 = [params.position[0], params.position[1] + params.size[1] / 2];
 		const position2 = [params.position[0], position1[1]];
 		this.stepSegment({
@@ -1144,6 +1169,7 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
+	// 	if (this.iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
 	// 	const { gl, _width, _height, _errorState } = this;
 	// 	const { program, input, output } = params;
 
@@ -1332,6 +1358,7 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
+	// 	if (this.iterateOverOutputsIfNeeded(params, 'stepTriangleStrip')) return;
 	// 	const { gl, _width, _height, _errorState } = this;
 	// 	const { program, input, output, positions, uvs, normals } = params;
 
@@ -1470,6 +1497,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints')) return;
 		const { gl, _pointIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { layer, output } = params;
 
@@ -1550,6 +1578,7 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
+	// 	if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
 	// 	const { gl, _width, _height, glslVersion, _errorState } = this;
 	// 	const { positions, output } = params;
 
@@ -1658,6 +1687,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField')) return;
 		const { gl, _vectorFieldIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { layer, output } = params;
 

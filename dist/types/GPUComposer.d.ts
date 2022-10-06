@@ -235,6 +235,11 @@ export declare class GPUComposer {
     private _setUVAttribute;
     private _widthHeightForOutput;
     /**
+     * Call stepping/drawing function once for each output.
+     * This is required when attempting to draw to multiple outputs using GLSL1.
+     */
+    private iterateOverOutputsIfNeeded;
+    /**
      * Step GPUProgram entire fullscreen quad.
      * @param params - Step parameters.
      * @param params.program - GPUProgram to run.

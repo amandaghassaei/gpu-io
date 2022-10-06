@@ -85,6 +85,12 @@ export class GPUProgram {
 	private readonly _samplerUniformsIndices: { name: string, inputIndex: number, shaderIndex: number }[] = [];
 
 	/**
+	 * This is only used in cases where GLSL1 program has multiple outputs.
+	 * @private
+	 */
+	_childPrograms?: GPUProgram[];
+
+	/**
      * Create a GPUProgram.
      * @param composer - The current GPUComposer instance.
      * @param params - GPUProgram parameters.
@@ -102,6 +108,9 @@ export class GPUProgram {
 			uniforms?: UniformParams[],
 			// We'll allow some compile time constants to be passed in as #define to the preprocessor for the fragment shader.
 			compileTimeConstants?: CompileTimeConstants,
+		},
+		_gpuio_child_params?: {
+			samplerUniforms: string[],
 		},
 	) {
 		// Check constructor parameters.
@@ -129,21 +138,39 @@ export class GPUProgram {
 		this.name = name;
 
 		// Preprocess fragment shader source.
-		const fragmentShaderSource = isString(fragmentShader) ?
-			fragmentShader as string :
-			(fragmentShader as string[]).join('\n');
-		const { shaderSource, samplerUniforms, additionalSources } = preprocessFragmentShader(
-			fragmentShaderSource, composer.glslVersion, name,
-		);
-		// TODO: additionalSources
-		this._fragmentShaderSource = shaderSource;
-		samplerUniforms.forEach((name, i) => {
-			this._samplerUniformsIndices.push({
-				name,
-				inputIndex: 0, // All uniforms default to 0.
-				shaderIndex: i,
+		if (_gpuio_child_params !== undefined) { // This is a child program.
+			const { samplerUniforms } = _gpuio_child_params;
+			// fragmentShader has already been pre-processed.
+			this._fragmentShaderSource = fragmentShader as string;
+			samplerUniforms.forEach((name, i) => {
+				this._samplerUniformsIndices.push({
+					name,
+					inputIndex: 0, // All uniforms default to 0.
+					shaderIndex: i,
+				});
 			});
-		});
+		} else {
+			const fragmentShaderSource = isString(fragmentShader) ?
+				fragmentShader as string :
+				(fragmentShader as string[]).join('\n');
+			const { shaderSource, samplerUniforms, additionalSources } = preprocessFragmentShader(
+				fragmentShaderSource, composer.glslVersion, name,
+			);
+			this._fragmentShaderSource = shaderSource;
+			if (additionalSources) {
+				this._childPrograms = [];
+				for (let i = 0, numChildren = additionalSources.length; i < numChildren; i++) {
+					this._childPrograms.push(new GPUProgram(composer, {...params, fragmentShader: additionalSources[i]}, { samplerUniforms }));
+				}
+			}
+			samplerUniforms.forEach((name, i) => {
+				this._samplerUniformsIndices.push({
+					name,
+					inputIndex: 0, // All uniforms default to 0.
+					shaderIndex: i,
+				});
+			});
+		}
 
 		// Save compile time constants.
 		if (compileTimeConstants) {
@@ -202,6 +229,12 @@ export class GPUProgram {
 		const uniforms = Object.values(_uniforms);
 		for (let i = 0, numUniforms = uniforms.length; i < numUniforms; i++) {
 			uniforms[i].location = {};
+		}
+
+		if (this._childPrograms) {
+			for (let i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
+				this._childPrograms[i].recompile(compileTimeConstants);
+			}
 		}
 	}
 
@@ -522,12 +555,18 @@ export class GPUProgram {
 
 		// Update any active programs.
 		const keys = Object.keys(_programs);
-		for (let i = 0; i < keys.length; i++) {
+		for (let i = 0, numKeys = keys.length; i < numKeys; i++) {
 			const programName = keys[i];
 			// Set active program.
 			const program = _programs[programName]!;
 			gl.useProgram(program);
 			this._setProgramUniform(program, programName, name, value, currentType);
+		}
+
+		if (this._childPrograms) {
+			for (let i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
+				this._childPrograms[i].setUniform(name, value, type);
+			}
 		}
 	};
 
@@ -642,6 +681,14 @@ export class GPUProgram {
 		Object.keys(_fragmentShaders).forEach(key => {
 			delete _fragmentShaders[key];
 		});
+
+		if (this._childPrograms) {
+			for (let i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
+				this._childPrograms[i].dispose();
+			}
+			this._childPrograms.length;
+		}
+		delete this._childPrograms;
 		
 		// Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
 

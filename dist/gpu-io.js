@@ -2938,6 +2938,20 @@ var GPUComposer = /** @class */ (function () {
         return { width: width, height: height };
     };
     /**
+     * Call stepping/drawing function once for each output.
+     * This is required when attempting to draw to multiple outputs using GLSL1.
+     */
+    GPUComposer.prototype.iterateOverOutputsIfNeeded = function (params, methodName) {
+        if (params.output && (0, type_checks_1.isArray)(params.output) && this.glslVersion === constants_1.GLSL1) {
+            for (var i = 0, numOutputs = params.output.length; i < numOutputs; i++) {
+                // @ts-ignore
+                this[methodName](__assign(__assign({}, params), { program: i === 0 ? params.program : params.program._childPrograms[i - 1], output: params.output[i] }));
+            }
+            return true;
+        }
+        return false;
+    };
+    /**
      * Step GPUProgram entire fullscreen quad.
      * @param params - Step parameters.
      * @param params.program - GPUProgram to run.
@@ -2947,6 +2961,8 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.step = function (params) {
+        if (this.iterateOverOutputsIfNeeded(params, 'step'))
+            return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
         if (_errorState)
@@ -2974,6 +2990,8 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepBoundary = function (params) {
+        if (this.iterateOverOutputsIfNeeded(params, 'stepBoundary'))
+            return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
         if (_errorState)
@@ -3026,6 +3044,8 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepNonBoundary = function (params) {
+        if (this.iterateOverOutputsIfNeeded(params, 'stepNonBoundary'))
+            return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
         if (_errorState)
@@ -3059,6 +3079,8 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.stepCircle = function (params) {
         var _a;
+        if (this.iterateOverOutputsIfNeeded(params, 'stepCircle'))
+            return;
         var _b = this, gl = _b.gl, _errorState = _b._errorState;
         var program = params.program, position = params.position, diameter = params.diameter, input = params.input, output = params.output;
         if (_errorState)
@@ -3102,6 +3124,8 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.stepSegment = function (params) {
         var _a;
+        if (this.iterateOverOutputsIfNeeded(params, 'stepSegment'))
+            return;
         var _b = this, gl = _b.gl, _errorState = _b._errorState;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
         if (_errorState)
@@ -3163,6 +3187,8 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepRect = function (params) {
+        if (this.iterateOverOutputsIfNeeded(params, 'stepRect'))
+            return;
         var position1 = [params.position[0], params.position[1] + params.size[1] / 2];
         var position2 = [params.position[0], position1[1]];
         this.stepSegment({
@@ -3190,6 +3216,7 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
+    // 	if (this.iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
     // 	const { gl, _width, _height, _errorState } = this;
     // 	const { program, input, output } = params;
     // 	if (_errorState) return;
@@ -3362,6 +3389,7 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
+    // 	if (this.iterateOverOutputsIfNeeded(params, 'stepTriangleStrip')) return;
     // 	const { gl, _width, _height, _errorState } = this;
     // 	const { program, input, output, positions, uvs, normals } = params;
     // 	if (_errorState) return;
@@ -3472,6 +3500,8 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
+        if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints'))
+            return;
         var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
         var layer = params.layer, output = params.output;
         if (_errorState)
@@ -3548,6 +3578,7 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
+    // 	if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
     // 	const { gl, _width, _height, glslVersion, _errorState } = this;
     // 	const { positions, output } = params;
     // 	if (_errorState) return;
@@ -3635,6 +3666,8 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.drawLayerAsVectorField = function (params) {
+        if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField'))
+            return;
         var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
         var layer = params.layer, output = params.output;
         if (_errorState)
@@ -5604,7 +5637,7 @@ var GPUProgram = /** @class */ (function () {
      * @param params.uniforms - Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform().
      * @param params.compileTimeConstants - Compile time #define constants to include with fragment shader.
      */
-    function GPUProgram(composer, params) {
+    function GPUProgram(composer, params, _gpuio_child_params) {
         var _this = this;
         // Compiled fragment shaders (we hang onto different versions depending on compile time constants).
         this._fragmentShaders = {};
@@ -5642,19 +5675,38 @@ var GPUProgram = /** @class */ (function () {
         this._composer = composer;
         this.name = name;
         // Preprocess fragment shader source.
-        var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
-            fragmentShader :
-            fragmentShader.join('\n');
-        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
-        // TODO: additionalSources
-        this._fragmentShaderSource = shaderSource;
-        samplerUniforms.forEach(function (name, i) {
-            _this._samplerUniformsIndices.push({
-                name: name,
-                inputIndex: 0,
-                shaderIndex: i,
+        if (_gpuio_child_params !== undefined) { // This is a child program.
+            var samplerUniforms = _gpuio_child_params.samplerUniforms;
+            // fragmentShader has already been pre-processed.
+            this._fragmentShaderSource = fragmentShader;
+            samplerUniforms.forEach(function (name, i) {
+                _this._samplerUniformsIndices.push({
+                    name: name,
+                    inputIndex: 0,
+                    shaderIndex: i,
+                });
             });
-        });
+        }
+        else {
+            var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
+                fragmentShader :
+                fragmentShader.join('\n');
+            var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
+            this._fragmentShaderSource = shaderSource;
+            if (additionalSources) {
+                this._childPrograms = [];
+                for (var i = 0, numChildren = additionalSources.length; i < numChildren; i++) {
+                    this._childPrograms.push(new GPUProgram(composer, __assign(__assign({}, params), { fragmentShader: additionalSources[i] }), { samplerUniforms: samplerUniforms }));
+                }
+            }
+            samplerUniforms.forEach(function (name, i) {
+                _this._samplerUniformsIndices.push({
+                    name: name,
+                    inputIndex: 0,
+                    shaderIndex: i,
+                });
+            });
+        }
         // Save compile time constants.
         if (compileTimeConstants) {
             this._compileTimeConstants = __assign({}, compileTimeConstants);
@@ -5705,6 +5757,11 @@ var GPUProgram = /** @class */ (function () {
         var uniforms = Object.values(_uniforms);
         for (var i = 0, numUniforms = uniforms.length; i < numUniforms; i++) {
             uniforms[i].location = {};
+        }
+        if (this._childPrograms) {
+            for (var i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
+                this._childPrograms[i].recompile(compileTimeConstants);
+            }
         }
     };
     /**
@@ -5989,12 +6046,17 @@ var GPUProgram = /** @class */ (function () {
             console.log("Setting uniform \"".concat(name, "\" for program \"").concat(this.name, "\" to value ").concat(JSON.stringify(value), " with type ").concat(currentType, "."));
         // Update any active programs.
         var keys = Object.keys(_programs);
-        for (var i = 0; i < keys.length; i++) {
+        for (var i = 0, numKeys = keys.length; i < numKeys; i++) {
             var programName = keys[i];
             // Set active program.
             var program = _programs[programName];
             gl.useProgram(program);
             this._setProgramUniform(program, programName, name, value, currentType);
+        }
+        if (this._childPrograms) {
+            for (var i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
+                this._childPrograms[i].setUniform(name, value, type);
+            }
         }
     };
     ;
@@ -6087,6 +6149,13 @@ var GPUProgram = /** @class */ (function () {
         Object.keys(_fragmentShaders).forEach(function (key) {
             delete _fragmentShaders[key];
         });
+        if (this._childPrograms) {
+            for (var i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
+                this._childPrograms[i].dispose();
+            }
+            this._childPrograms.length;
+        }
+        delete this._childPrograms;
         // Vertex shaders are owned by GPUComposer and shared across many GPUPrograms.
         // Delete all references.
         // @ts-ignore

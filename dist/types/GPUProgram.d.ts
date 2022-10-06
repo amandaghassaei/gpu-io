@@ -14,6 +14,11 @@ export declare class GPUProgram {
     private readonly _programsKeyLookup;
     private readonly _samplerUniformsIndices;
     /**
+     * This is only used in cases where GLSL1 program has multiple outputs.
+     * @private
+     */
+    _childPrograms?: GPUProgram[];
+    /**
      * Create a GPUProgram.
      * @param composer - The current GPUComposer instance.
      * @param params - GPUProgram parameters.
@@ -27,6 +32,8 @@ export declare class GPUProgram {
         fragmentShader: string | string[];
         uniforms?: UniformParams[];
         compileTimeConstants?: CompileTimeConstants;
+    }, _gpuio_child_params?: {
+        samplerUniforms: string[];
     });
     /**
      * Force compilation of GPUProgram with new compileTimeConstants.
