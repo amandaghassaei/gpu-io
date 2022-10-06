@@ -125,10 +125,6 @@ function main({ gui, glslVersion, contextID }) {
 	
 	/**
 	 * Init particles state and programs.
-	 * Note: it would be slightly more efficient to store particlesHeading and particlesPositions
-	 * in the same GPULayer and update both at the same time in one GPUProgram (i.e. one GL.draw pass).
-	 * They have been separated here for code clarity, but in general you want to minimize
-	 * the number of times you call composer.step() in your render loop.
 	 */
 	const { positions, heading, numParticles } = initParticlesArrays();
 	// Init particles position data on GPU.
@@ -151,9 +147,9 @@ function main({ gui, glslVersion, contextID }) {
 		writable: true,
 		array: heading,
 	});
-	// Fragment shader program for updating particles heading.
-	const rotateParticles = new GPUProgram(composer, {
-		name: 'rotateParticles',
+	// Fragment shader program for updating particles position and heading.
+	const updateParticles = new GPUProgram(composer, {
+		name: 'updateParticles',
 		fragmentShader: `
 			in vec2 v_uv;
 
@@ -167,8 +163,10 @@ function main({ gui, glslVersion, contextID }) {
 			uniform float u_sensorDistance;
 			uniform float u_rotationAngle;
 			uniform bool u_randomDir;
+			uniform float u_stepSize;
 
-			out float out_FragColor;
+			layout (location = 0) out float out_heading;
+			layout (location = 1) out vec4 out_position;
 
 			float sense(vec2 position, float angle) {
 				vec2 sensePosition = position + u_sensorDistance * vec2(cos(angle), sin(angle));
@@ -180,7 +178,10 @@ function main({ gui, glslVersion, contextID }) {
 
 				// Add absolute position plus displacement to get position.
 				vec4 positionInfo = texture(u_particlesPositions, v_uv);
-				vec2 position = positionInfo.xy + positionInfo.zw;
+				// Add absolute position plus displacement to get position.
+				vec2 absolute = positionInfo.xy;
+				vec2 displacement = positionInfo.zw;
+				vec2 position = absolute + displacement;
 				// Get location of particle in trail state (different that v_uv, which is UV coordinate in particles arrays).
 				vec2 trailUV = position / u_dimensions;
 
@@ -211,8 +212,37 @@ function main({ gui, glslVersion, contextID }) {
 
 				// Wrap heading around 2PI.
 				heading = mod(heading + TWO_PI, TWO_PI);
+				out_heading = heading;
 
-				out_FragColor = heading;
+				// Move in direction of heading.
+				vec2 move = u_stepSize * vec2(cos(heading), sin(heading));
+				vec2 nextDisplacement = displacement + move;
+				
+				// If displacement is large enough, merge with abs position.
+				// This method reduces floating point error in position.
+				// Using some tricks here to remove conditionals (they cause significant slowdowns).
+				// Leaving the old code here for clarity, replaced by the lines below.
+				// if (dot(nextDisplacement, nextDisplacement) > 30.0) {
+				// 	absolute += nextDisplacement;
+				// 	nextDisplacement = vec2(0);
+				// 	// Also check if we've wrapped.
+				// 	if (absolute.x < 0.0) {
+				// 		absolute.x = absolute.x + u_dimensions.x;
+				// 	} else if (absolute.x >= u_dimensions.x) {
+				// 		absolute.x = absolute.x - u_dimensions.x;
+				// 	}
+				// 	if (absolute.y < 0.0) {
+				// 		absolute.y = absolute.y + u_dimensions.y;
+				// 	} else if (absolute.y >= u_dimensions.y) {
+				// 		absolute.y = absolute.y - u_dimensions.y;
+				// 	}
+				// }
+				// The following lines give the same result without conditionals.
+				float shouldMerge = step(30.0, dot(nextDisplacement, nextDisplacement));
+				absolute = mod(absolute + shouldMerge * nextDisplacement + u_dimensions, u_dimensions);
+				nextDisplacement *= (1.0 - shouldMerge);
+
+				out_position = vec4(absolute, nextDisplacement);
 			}`,
 		uniforms: [
 			{
@@ -254,75 +284,6 @@ function main({ gui, glslVersion, contextID }) {
 				name: 'u_randomDir',
 				value: false,
 				type: BOOL,
-			}
-		],
-	});
-	// Fragment shader program for updating particles positions.
-	const moveParticles = new GPUProgram(composer, {
-		name: 'moveParticles',
-		fragmentShader: `
-			in vec2 v_uv;
-
-			uniform sampler2D u_particlesPositions;
-			uniform sampler2D u_particlesHeading;
-			uniform vec2 u_dimensions;
-			uniform float u_stepSize;
-
-			out vec4 out_FragColor;
-
-			void main() {
-				// Add absolute position plus displacement to get position.
-				vec4 positionInfo = texture(u_particlesPositions, v_uv);
-				vec2 absolute = positionInfo.xy;
-				vec2 displacement = positionInfo.zw;
-				vec2 position = absolute + displacement;
-
-				// Move in direction of heading.
-				float heading = texture(u_particlesHeading, v_uv).r;
-				vec2 move = u_stepSize * vec2(cos(heading), sin(heading));
-				vec2 nextDisplacement = displacement + move;
-				
-				// If displacement is large enough, merge with abs position.
-				// This method reduces floating point error in position.
-				// Using some tricks here to remove conditionals (they cause significant slowdowns).
-				// Leaving the old code here for clarity, replaced by the lines below.
-				// if (dot(nextDisplacement, nextDisplacement) > 30.0) {
-				// 	absolute += nextDisplacement;
-				// 	nextDisplacement = vec2(0);
-				// 	// Also check if we've wrapped.
-				// 	if (absolute.x < 0.0) {
-				// 		absolute.x = absolute.x + u_dimensions.x;
-				// 	} else if (absolute.x >= u_dimensions.x) {
-				// 		absolute.x = absolute.x - u_dimensions.x;
-				// 	}
-				// 	if (absolute.y < 0.0) {
-				// 		absolute.y = absolute.y + u_dimensions.y;
-				// 	} else if (absolute.y >= u_dimensions.y) {
-				// 		absolute.y = absolute.y - u_dimensions.y;
-				// 	}
-				// }
-				// The following lines give the same result without conditionals.
-				float shouldMerge = step(30.0, dot(nextDisplacement, nextDisplacement));
-				absolute = mod(absolute + shouldMerge * nextDisplacement + u_dimensions, u_dimensions);
-				nextDisplacement *= (1.0 - shouldMerge);
-
-				out_FragColor = vec4(absolute, nextDisplacement);
-			}`,
-		uniforms: [
-			{
-				name: 'u_particlesPositions',
-				value: 0,
-				type: INT,
-			},
-			{
-				name: 'u_particlesHeading',
-				value: 1,
-				type: INT,
-			},
-			{
-				name: 'u_dimensions',
-				value: [canvas.width, canvas.height],
-				type: FLOAT,
 			},
 			{
 				name: 'u_stepSize',
@@ -365,7 +326,7 @@ function main({ gui, glslVersion, contextID }) {
 			uniform vec2 u_pxSize;
 			uniform int u_numParticles;
 
-			out float out_FragColor;
+			out float out_state;
 
 			void main() {
 				vec2 halfPx = u_pxSize / 2.0;
@@ -380,7 +341,7 @@ function main({ gui, glslVersion, contextID }) {
 				float prevStateSE = texture(u_trail, v_uv + vec2(halfPx.x, -halfPx.y)).x;
 				float prevStateSW = texture(u_trail, v_uv - halfPx).x;
 				float diffusedState = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
-				out_FragColor = u_decayFactor * diffusedState;
+				out_state = u_decayFactor * diffusedState;
 			}`,
 		uniforms: [
 			{
@@ -417,19 +378,12 @@ function main({ gui, glslVersion, contextID }) {
 		// in the system, which is a bit of an oversimplification, but seems to work fine.
 		// Would be more realistic to pick randomDir within each fragment shader kernel,
 		// but this is easier + faster.
-		rotateParticles.setUniform('u_randomDir', Math.random() < 0.5);
-		// Update each particle's heading.
+		updateParticles.setUniform('u_randomDir', Math.random() < 0.5);
+		// Update each particle's heading and position.
 		composer.step({
-			program: rotateParticles,
+			program: updateParticles,
 			input: [particlesHeading, particlesPositions, trail],
-			output: particlesHeading,
-		});
-
-		// Move each particle.
-		composer.step({
-			program: moveParticles,
-			input: [particlesPositions, particlesHeading],
-			output: particlesPositions,
+			output: [particlesHeading, particlesPositions],
 		});
 
 		// Render particles' positions on top of trail layer to apply chemical
@@ -533,16 +487,16 @@ function main({ gui, glslVersion, contextID }) {
 		particlesGUI.name = getParticlesFolderTitle();
 	}).name('Particle Density');
 	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).onChange((value) => {
-		rotateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
+		updateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
 	}).name('Sensor Angle');
 	particlesGUI.add(PARAMS, 'sensorDistance', 1, 30, 0.01).onChange((value) => {
-		rotateParticles.setUniform('u_sensorDistance', value);
+		updateParticles.setUniform('u_sensorDistance', value);
 	}).name('Sensor Distance');
 	particlesGUI.add(PARAMS, 'rotationAngle', -90, 90, 0.01).onChange((value) => {
-		rotateParticles.setUniform('u_rotationAngle', value * Math.PI / 180);
+		updateParticles.setUniform('u_rotationAngle', value * Math.PI / 180);
 	}).name('Rotation Angle');
 	particlesGUI.add(PARAMS, 'stepSize', 0.01, 3, 0.01).onChange((value) => {
-		moveParticles.setUniform('u_stepSize', value);
+		updateParticles.setUniform('u_stepSize', value);
 	}).name('Step Size');
 	particlesGUI.open();
 	const trailsGUI = gui.addFolder('Trails');
@@ -596,17 +550,16 @@ function main({ gui, glslVersion, contextID }) {
 
 		// Update px size and dimensions uniforms.
 		diffuseAndDecay.setUniform('u_pxSize', [1 / width, 1 / height]);
-		moveParticles.setUniform('u_dimensions', [width, height]);
-		rotateParticles.setUniform('u_dimensions', [width, height]);
+		updateParticles.setUniform('u_dimensions', [width, height]);
 	}
 	onResize();
 
 	// Reset the system.
 	function reset() {
-		rotateParticles.setUniform('u_sensorAngle', PARAMS.sensorAngle * Math.PI / 180);
-		rotateParticles.setUniform('u_sensorDistance', PARAMS.sensorDistance);
-		rotateParticles.setUniform('u_rotationAngle', PARAMS.rotationAngle * Math.PI / 180);
-		moveParticles.setUniform('u_stepSize', PARAMS.stepSize);
+		updateParticles.setUniform('u_sensorAngle', PARAMS.sensorAngle * Math.PI / 180);
+		updateParticles.setUniform('u_sensorDistance', PARAMS.sensorDistance);
+		updateParticles.setUniform('u_rotationAngle', PARAMS.rotationAngle * Math.PI / 180);
+		updateParticles.setUniform('u_stepSize', PARAMS.stepSize);
 		deposit.setUniform('u_value', PARAMS.depositAmount);
 		diffuseAndDecay.setUniform('u_decayFactor', PARAMS.decayFactor);
 		render.setUniform('u_scale', PARAMS.renderAmplitude);
@@ -626,8 +579,7 @@ function main({ gui, glslVersion, contextID }) {
 		canvas.removeEventListener('pointercancel', onPointerStop);
 		particlesPositions.dispose();
 		particlesHeading.dispose();
-		rotateParticles.dispose();
-		moveParticles.dispose();
+		updateParticles.dispose();
 		trail.dispose();
 		deposit.dispose();
 		diffuseAndDecay.dispose();

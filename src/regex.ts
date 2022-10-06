@@ -204,10 +204,6 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 		if (gl_FragColor) {
 			throw new Error(`Found "gl_FragColor" declaration in fragment shader for GPUProgram "${name}": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.`);
 		}
-		// Check that fragment shader source DOES contain out_FragColor.
-		if (!out_FragColor) {
-			throw new Error(`Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
-		}
 	} else {
 		// Check that fragment shader source DOES contain either gl_FragColor or out_FragColor.
 		if (!gl_FragColor && !out_FragColor) {

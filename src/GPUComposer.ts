@@ -677,11 +677,15 @@ export class GPUComposer {
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer | GPULayer[], // Undefined renders to screen.
 	) {
-		const { gl } = this;
+		const { gl, isWebGL2 } = this;
 
 		// Render to screen.
 		if (!output) {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			if (isWebGL2) {
+				// TODO: Not sure if this is necessary?
+				(gl as WebGL2RenderingContext).drawBuffers([gl.COLOR_ATTACHMENT0]);
+			}
 			// Resize viewport.
 			const { _width, _height } = this;
 			gl.viewport(0, 0, _width, _height);
@@ -724,9 +728,21 @@ export class GPUComposer {
 		}
 
 		// Bind framebuffer.
-		const layer0 = outputArray.shift() as GPULayer;
-		bindFrameBuffer(this, layer0, layer0._currentTexture, outputArray.length ? outputArray : undefined);
-		
+		const layer0 = outputArray[0];
+		let additionalTextures: WebGLTexture[] | undefined = undefined;
+		const drawBuffers = [gl.COLOR_ATTACHMENT0];
+		if (outputArray.length > 1) {
+			additionalTextures = [];
+			for (let i = 1, numOutputs = outputArray.length; i < numOutputs; i++) {
+				additionalTextures.push(outputArray[i]._currentTexture);
+				drawBuffers.push(gl.COLOR_ATTACHMENT0 + i);
+			}
+		}
+		bindFrameBuffer(this, layer0, layer0._currentTexture, additionalTextures);
+		// Tell WebGL to draw to output textures.
+		if (isWebGL2) {
+			(gl as WebGL2RenderingContext).drawBuffers(drawBuffers);
+		}
 		// Resize viewport.
 		const { width, height } = this._widthHeightForOutput(programName, output);
 		gl.viewport(0, 0, width, height);
@@ -792,7 +808,7 @@ export class GPUComposer {
 			const height = firstOutput ? firstOutput.height : this._height;
 			for (let i = 1, numOutputs = (output as GPULayer[]).length; i < numOutputs; i++) {
 				const nextOutput = (output as GPULayer[])[i];
-				if (nextOutput.width !== width || nextOutput.height !== width) {
+				if (nextOutput.width !== width || nextOutput.height !== height) {
 					throw new Error(`Output GPULayers must have the same dimensions, got dimensions [${width}, ${height}] and [${nextOutput.width}, ${nextOutput.height}] for program "${programName}".`);
 				}
 			}

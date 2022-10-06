@@ -2803,12 +2803,12 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._setOutputLayer = function (programName, fullscreenRender, input, output) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, isWebGL2 = _a.isWebGL2;
         // Render to screen.
         if (!output) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             // Resize viewport.
-            var _a = this, _width = _a._width, _height = _a._height;
+            var _b = this, _width = _b._width, _height = _b._height;
             gl.viewport(0, 0, _width, _height);
             return;
         }
@@ -2849,10 +2849,23 @@ var GPUComposer = /** @class */ (function () {
             }
         }
         // Bind framebuffer.
-        var layer0 = outputArray.shift();
-        (0, framebuffers_1.bindFrameBuffer)(this, layer0, layer0._currentTexture, outputArray.length ? outputArray : undefined);
+        var layer0 = outputArray[0];
+        var additionalTextures = undefined;
+        var drawBuffers = [gl.COLOR_ATTACHMENT0];
+        if (outputArray.length > 1) {
+            additionalTextures = [];
+            for (var i = 1, numOutputs = outputArray.length; i < numOutputs; i++) {
+                additionalTextures.push(outputArray[i]._currentTexture);
+                drawBuffers.push(gl.COLOR_ATTACHMENT0 + i);
+            }
+        }
+        (0, framebuffers_1.bindFrameBuffer)(this, layer0, layer0._currentTexture, additionalTextures);
+        // Tell WebGL to draw to output textures.
+        if (isWebGL2) {
+            gl.drawBuffers(drawBuffers);
+        }
         // Resize viewport.
-        var _b = this._widthHeightForOutput(programName, output), width = _b.width, height = _b.height;
+        var _c = this._widthHeightForOutput(programName, output), width = _c.width, height = _c.height;
         gl.viewport(0, 0, width, height);
     };
     ;
@@ -2916,7 +2929,7 @@ var GPUComposer = /** @class */ (function () {
             var height_1 = firstOutput ? firstOutput.height : this._height;
             for (var i = 1, numOutputs = output.length; i < numOutputs; i++) {
                 var nextOutput = output[i];
-                if (nextOutput.width !== width_1 || nextOutput.height !== width_1) {
+                if (nextOutput.width !== width_1 || nextOutput.height !== height_1) {
                     throw new Error("Output GPULayers must have the same dimensions, got dimensions [".concat(width_1, ", ").concat(height_1, "] and [").concat(nextOutput.width, ", ").concat(nextOutput.height, "] for program \"").concat(programName, "\"."));
                 }
             }
@@ -7886,10 +7899,6 @@ function checkFragmentShaderForFragColor(shaderSource, glslVersion, name) {
         // Check that fragment shader source DOES NOT contain gl_FragColor
         if (gl_FragColor) {
             throw new Error("Found \"gl_FragColor\" declaration in fragment shader for GPUProgram \"".concat(name, "\": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader."));
-        }
-        // Check that fragment shader source DOES contain out_FragColor.
-        if (!out_FragColor) {
-            throw new Error("Found no \"out_FragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
         }
     }
     else {
