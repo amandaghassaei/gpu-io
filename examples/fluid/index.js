@@ -10,7 +10,6 @@ function main({ gui, contextID, glslVersion}) {
 		REPEAT,
 		NEAREST,
 		LINEAR,
-		copyProgram,
 		renderSignedAmplitudeProgram,
 		renderAmplitudeProgram,
 	} = GPUIO;
@@ -23,7 +22,7 @@ function main({ gui, contextID, glslVersion}) {
 		savePNG: savePNG,
 	};
 	// Scaling factor for touch interactions.
-	const TOUCH_FORCE_SCALE = 1;
+	const TOUCH_FORCE_SCALE = 2;
 	// Approx avg num particles per px.
 	const PARTICLE_DENSITY = 0.1;
 	const MAX_NUM_PARTICLES = 100000;
@@ -40,7 +39,7 @@ function main({ gui, contextID, glslVersion}) {
 	// Compute the velocity at a lower resolution to increase efficiency.
 	const VELOCITY_SCALE_FACTOR = 8;
 	// Put a speed limit on velocity, otherwise touch interactions get out of control.
-	const MAX_VELOCITY = 10;
+	const MAX_VELOCITY = 30;
 	// We are storing abs position (2 components) and displacements (2 components) in this buffer.
 	// This decreases error when rendering to half float.
 	const POSITION_NUM_COMPONENTS = 4;

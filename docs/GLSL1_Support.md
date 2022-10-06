@@ -31,7 +31,7 @@ In 2022 WebGL2 was finally rolled out to all major platforms (including iOS, the
 
 - All unsigned integer types (`uint`, `uvec2`, `uvec3`, `uvec4`, `usampler2D`) are automatically converted to signed integer types (`int`, `ivec2`, `ivec3`, `ivec4`, `isampler2D`) when targeting GLSL1.
 - The only texture lookup function officially supported by gpu-io is `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)`.  Currently, the bias parameter is not supported.  Other built-in GLSL1 texture lookup functions may also work, but have not been tested.
-- `out float|int|[u|i]vec(2|3|4) out_FragColor` is required for all GLSL3 fragment shader programs.  This output will be automatically converted to gl_FragColor when targeting GLSL1; additionally it will be typecast and padded with extra zeros in the case where `out_FragColor` is not a `vec4` type.
+- `out float|int|[u|i]vec(2|3|4)` declarations are automatically converted to `gl_FragColor` when targeting GLSL1; these variables will be typecast and padded with extra zeros if needed to convert them to a `vec4` type.  Additionally, gpu-io interprets the `layout` and `location` declarations for shader programs with multiple outputs so that they will work as expected in GLSL1 using a WebGL1-compatible fallback.
 
 More information about the implementation can be found in [regex.ts](../src/regex.ts) and [polyfills.ts](../src/polyfills.ts).  Pull requests welcome, I'm sure there are ways to speed some of these functions up.  The [bitwise logical operators](#operators) are particularly in need of help, as they include branching conditional statements.
 
@@ -56,7 +56,6 @@ The following type substitutions are made automatically when targeting GLSL1:
 ## Operators
 
 Because operator overloading does not seem to be supported through GLSL1, I've created operator functions that will work in both GLSL3 and GLSL1.
-
 
 - `%` replaced by:
 	- `T|TI|TU mod(T|TI|TU x, T|TI|TU y)`
@@ -83,8 +82,6 @@ Because operator overloading does not seem to be supported through GLSL1, I've c
 	- `int|uint bitwiseNot8(int|uint x)` for up to 8 bit NOT
 	- `int|uint bitwiseNot16(int|uint x)` for up to 16 bit NOT
 	- `int|uint bitwiseNot(int|uint x)` for up to 32 bit NOT
-
-Eventually, operator overloading could be handled in JavaScript by preprocessing the shader source code, but this will require a more sophisticated approach to ensure robustness (currently using simple [string substitution with regex](../src/regex.ts)).
 
 
 ## Built-In Functions
@@ -164,7 +161,7 @@ The following types are currently NOT supported in GLSL1:
 
 ## Unsupported Operators
 
-Until I'm able to handle operator overloads through a JavaScript preprocessor, the following assignment operators are NOT currently supported in GLSL1.  See [Operators](#operators) for info about how to get around this using operator polyfill functions.
+The following assignment operators are NOT currently supported in GLSL1.  See [Operators](#operators) for info about how to get around this using operator polyfill functions.
 
 - `%=`
 - `<<=`
