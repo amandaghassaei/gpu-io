@@ -165,8 +165,8 @@ function main({ gui, glslVersion, contextID }) {
 			uniform bool u_randomDir;
 			uniform float u_stepSize;
 
-			layout (location = 0) out float out_heading;
-			layout (location = 1) out vec4 out_position;
+			layout (location = 0) out float out_heading; // Output at index 0.
+			layout (location = 1) out vec4 out_position; // Output at index 1.
 
 			float sense(vec2 position, float angle) {
 				vec2 sensePosition = position + u_sensorDistance * vec2(cos(angle), sin(angle));

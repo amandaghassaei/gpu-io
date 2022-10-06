@@ -48,7 +48,7 @@ function main({ gui, contextID, glslVersion}) {
 			uniform float u_cReal;
 			uniform float u_cImaginary;
 
-			out float out_FragColor;
+			out float out_value;
 
 			void main() {
 				// https://en.wikipedia.org/wiki/Julia_set#Pseudocode
@@ -62,7 +62,7 @@ function main({ gui, contextID, glslVersion}) {
 					z.x = xTemp + u_cReal;
 					value += 1;
 				}
-				out_FragColor = float(value) / float(MAX_ITERS);
+				out_value = float(value) / float(MAX_ITERS);
 			}`,
 		uniforms: [
 			{

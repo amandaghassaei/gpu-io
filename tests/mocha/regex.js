@@ -158,7 +158,7 @@ void main() {
 				assert.equal(glsl1FragmentOut('out   mediump ivec2  out_FragColor;out_FragColor = ivec2(0);')[0], 'gl_FragColor = vec4(ivec2(0), 0, 0);');
 				assert.equal(glsl1FragmentOut('out highp  float  out_FragColor;out_FragColor = 0.0;')[0], 'gl_FragColor = vec4(0.0, 0, 0, 0);');
 				// Throw error if no assignment.
-				assert.throws(() => { glsl1FragmentOut('out vec4 out_FragColor;', 'test'); }, 'No assignment found for out_FragColor in GPUProgram "test".');
+				assert.throws(() => { glsl1FragmentOut('out vec4 out_FragColor;', 'test'); }, 'No assignment found for out declaration in GPUProgram "test".');
 			});
 			it('should handle edge cases', () => {
 				// Make sure regex is lazy.

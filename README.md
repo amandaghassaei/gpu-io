@@ -60,7 +60,7 @@ const state = new GPULayer(composer, {
     name: 'state',
     dimensions: [canvas.width, canvas.height],
     numComponents: 1, // Scalar field.
-    type: FLOAT,
+    type: FLOAT, // Float data type.
     filter: LINEAR, // Linear interpolation.
     numBuffers: 2, // Toggle read/write from one buffer to the other.
     wrapS: REPEAT, // Wrap boundaries.
@@ -80,7 +80,7 @@ in vec2 v_uv;
 uniform sampler2D u_state;
 uniform vec2 u_halfPx;
 
-out float out_FragColor;
+out float out_result;
 
 void main() {
     // Average this pixel with neighbors.
@@ -89,7 +89,7 @@ void main() {
     float prevStateNW = texture(u_state, v_uv + vec2(-u_halfPx.x, u_halfPx.y)).x;
     float prevStateSE = texture(u_state, v_uv + vec2(u_halfPx.x, -u_halfPx.y)).x;
     float prevStateSW = texture(u_state, v_uv - u_halfPx).x;
-    out_FragColor = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
+    out_result = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
 }
 `,
     uniforms: [
@@ -123,7 +123,7 @@ function loop() {
     composer.step({
         program: diffuseProgram,
         input: state, // "input" can be a single GPULayer or an array of GPULayers.
-        output: state, // "output" result to a single GPULayer.
+        output: state, // "output" can be a single GPULayer or an array of GPULayers.
     });
 
     // Render state.
@@ -274,7 +274,7 @@ varying vec2 v_uv;
 uniform sampler2D u_sampler1;
 uniform sampler2D u_sampler2;
 
-out vec4 out_FragColor;
+out vec4 out_result;
 
 vec4 lookupSampler2(vec2 uv) {
     // This is good, it passes u_sampler2 directly to texture().
@@ -372,7 +372,7 @@ in vec2 v_uv;
 // u_state is a BYTE array, so we can set its precision to lowp.
 uniform lowp isampler2D u_state;
 
-out vec4 out_FragColor;
+out vec4 out_result;
 
 void main() {
     lowp int state = texture(u_state, v_uv).r;

@@ -482,23 +482,20 @@ export class GPUComposer {
 
 		// TODO: check this.
 		// If writable, copy current state with a draw call.
-		if (gpuLayer.writable) {
-			for (let i = 0; i < gpuLayer.numBuffers - 1; i++) {
-				this.step({
-					program: this._copyProgramForType(gpuLayer.type),
-					input: gpuLayer.getStateAtIndex((gpuLayer.bufferIndex + i + 1) % gpuLayer.numBuffers),
-					output: clone,
-				});
-			}
+		for (let i = 0; i < gpuLayer.numBuffers - 1; i++) {
 			this.step({
 				program: this._copyProgramForType(gpuLayer.type),
-				input: gpuLayer.currentState,
+				input: gpuLayer.getStateAtIndex((gpuLayer.bufferIndex + i + 1) % gpuLayer.numBuffers),
 				output: clone,
 			});
 		}
+		this.step({
+			program: this._copyProgramForType(gpuLayer.type),
+			input: gpuLayer.currentState,
+			output: clone,
+		});
 
 		// TODO: Increment clone's buffer index until it is identical to the original layer.
-
 		return clone;
 	}
 
@@ -682,10 +679,6 @@ export class GPUComposer {
 		// Render to screen.
 		if (!output) {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-			if (isWebGL2) {
-				// TODO: Not sure if this is necessary?
-				(gl as WebGL2RenderingContext).drawBuffers([gl.COLOR_ATTACHMENT0]);
-			}
 			// Resize viewport.
 			const { _width, _height } = this;
 			gl.viewport(0, 0, _width, _height);

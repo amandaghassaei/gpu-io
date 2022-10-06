@@ -246,7 +246,7 @@ export function glsl1FragmentOut(shaderSource: string, programName: string) {
 				}
 				outShaderSource = outShaderSource.replace(regex, `gl_FragColor = vec4(${output[1]}${filler});`);
 			} else {
-				if (!assignmentFound) throw new Error(`No assignment found for out_FragColor in GPUProgram "${programName}".`);
+				if (!assignmentFound) throw new Error(`No assignment found for out declaration in GPUProgram "${programName}".`);
 				break;
 			}
 		}
