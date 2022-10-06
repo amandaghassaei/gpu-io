@@ -17,6 +17,10 @@ export declare class GPUComposer {
      */
     readonly glslVersion: GLSLVersion;
     /**
+     * Flag for WebGL version.
+     */
+    readonly isWebGL2: boolean;
+    /**
      * The global integer precision to apply to shader programs.
      */
     readonly intPrecision: GLSLPrecision;
@@ -134,11 +138,6 @@ export declare class GPUComposer {
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     }): GPUComposer;
-    /**
-     * Test whether this GPUComposer is using WebGL2 (may depend on browser support).
-     * @returns
-     */
-    isWebGL2(): boolean;
     /**
      * Gets (and caches) generic set value programs for several input types.
      * Used for GPULayer.clear(), among other things.

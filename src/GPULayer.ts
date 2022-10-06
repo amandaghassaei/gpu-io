@@ -48,7 +48,6 @@ import {
 	validImageTypes,
  } from './constants';
 import {
-	isWebGL2,
 	readPixelsAsync,
 	readyToRead,
 } from './utils';
@@ -914,8 +913,8 @@ export class GPULayer {
 	 */
 	async getValuesAsync() {
 		const { width, height, _composer } = this;
-		const { gl } = _composer;
-		if (!isWebGL2(gl)) {
+		const { gl, isWebGL2 } = _composer;
+		if (!isWebGL2) {
 			// Async method is not supported for WebGL1.
 			return this.getValues();
 		}

@@ -9,6 +9,7 @@
 - [canvas](GPUComposer.md#canvas)
 - [gl](GPUComposer.md#gl)
 - [glslVersion](GPUComposer.md#glslversion)
+- [isWebGL2](GPUComposer.md#iswebgl2)
 - [intPrecision](GPUComposer.md#intprecision)
 - [floatPrecision](GPUComposer.md#floatprecision)
 - [verboseLogging](GPUComposer.md#verboselogging)
@@ -20,7 +21,6 @@
 ### Methods
 
 - [initWithThreeRenderer](GPUComposer.md#initwiththreerenderer)
-- [isWebGL2](GPUComposer.md#iswebgl2)
 - [resize](GPUComposer.md#resize)
 - [step](GPUComposer.md#step)
 - [stepBoundary](GPUComposer.md#stepboundary)
@@ -58,6 +58,14 @@ ___
 • `Readonly` **glslVersion**: [`GLSLVersion`](../README.md#glslversion)
 
 The GLSL version being used by the GPUComposer.
+
+___
+
+### isWebGL2
+
+• `Readonly` **isWebGL2**: `boolean`
+
+Flag for WebGL version.
 
 ___
 
@@ -128,18 +136,6 @@ Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single W
 #### Returns
 
 [`GPUComposer`](GPUComposer.md)
-
-___
-
-### isWebGL2
-
-▸ **isWebGL2**(): `boolean`
-
-Test whether this GPUComposer is using WebGL2 (may depend on browser support).
-
-#### Returns
-
-`boolean`
 
 ___
 

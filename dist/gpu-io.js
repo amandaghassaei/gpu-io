@@ -2472,7 +2472,8 @@ var GPUComposer = /** @class */ (function () {
                 return;
             }
         }
-        if ((0, utils_1.isWebGL2)(gl)) {
+        this.isWebGL2 = (0, utils_1.isWebGL2)(gl);
+        if (this.isWebGL2) {
             if (this.verboseLogging)
                 console.log('Using WebGL 2.0 context.');
         }
@@ -2482,8 +2483,8 @@ var GPUComposer = /** @class */ (function () {
         }
         this.gl = gl;
         // Save glsl version, default to 3 if using webgl2 context.
-        var glslVersion = params.glslVersion || ((0, utils_1.isWebGL2)(gl) ? constants_1.GLSL3 : constants_1.GLSL1);
-        if (!(0, utils_1.isWebGL2)(gl) && glslVersion === constants_1.GLSL3) {
+        var glslVersion = params.glslVersion || (this.isWebGL2 ? constants_1.GLSL3 : constants_1.GLSL1);
+        if (!this.isWebGL2 && glslVersion === constants_1.GLSL3) {
             console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
             glslVersion = constants_1.GLSL1; // Fall back to GLSL1 in these cases.
         }
@@ -2530,13 +2531,6 @@ var GPUComposer = /** @class */ (function () {
         // @ts-ignore
         composer.renderer = renderer;
         return composer;
-    };
-    /**
-     * Test whether this GPUComposer is using WebGL2 (may depend on browser support).
-     * @returns
-     */
-    GPUComposer.prototype.isWebGL2 = function () {
-        return (0, utils_1.isWebGL2)(this.gl);
     };
     /**
      * Gets (and caches) generic set value programs for several input types.
@@ -4514,13 +4508,13 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.getValuesAsync = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, width, height, _composer, gl, _b, _glFormat, _glType, values, _glNumChannels, _internalType;
+            var _a, width, height, _composer, gl, isWebGL2, _b, _glFormat, _glType, values, _glNumChannels, _internalType;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
                         _a = this, width = _a.width, height = _a.height, _composer = _a._composer;
-                        gl = _composer.gl;
-                        if (!(0, utils_1.isWebGL2)(gl)) {
+                        gl = _composer.gl, isWebGL2 = _composer.isWebGL2;
+                        if (!isWebGL2) {
                             // Async method is not supported for WebGL1.
                             return [2 /*return*/, this.getValues()];
                         }
@@ -4799,9 +4793,9 @@ GPULayer_1.GPULayer.getGPULayerInternalFilter = function (params) {
  * @private
  */
 function shouldCastIntTypeAsFloat(composer, type) {
-    var gl = composer.gl, glslVersion = composer.glslVersion;
+    var gl = composer.gl, glslVersion = composer.glslVersion, isWebGL2 = composer.isWebGL2;
     // All types are supported by WebGL2 + glsl3.
-    if (glslVersion === constants_1.GLSL3 && (0, utils_1.isWebGL2)(gl))
+    if (glslVersion === constants_1.GLSL3 && isWebGL2)
         return false;
     // Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
     // https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
@@ -4820,10 +4814,10 @@ exports.shouldCastIntTypeAsFloat = shouldCastIntTypeAsFloat;
  */
 GPULayer_1.GPULayer.getGLTextureParameters = function (params) {
     var composer = params.composer, name = params.name, numComponents = params.numComponents, internalType = params.internalType;
-    var gl = composer.gl, glslVersion = composer.glslVersion;
+    var gl = composer.gl, glslVersion = composer.glslVersion, isWebGL2 = composer.isWebGL2;
     // https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
     var glType, glFormat, glInternalFormat, glNumChannels;
-    if ((0, utils_1.isWebGL2)(gl)) {
+    if (isWebGL2) {
         glNumChannels = numComponents;
         // https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
@@ -5092,9 +5086,9 @@ GPULayer_1.GPULayer.getGLTextureParameters = function (params) {
  * @private
  */
 function testWriteSupport(composer, internalType) {
-    var gl = composer.gl, glslVersion = composer.glslVersion;
+    var gl = composer.gl, glslVersion = composer.glslVersion, isWebGL2 = composer.isWebGL2;
     // Memoize results for a given set of inputs.
-    var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
+    var key = "".concat(isWebGL2, ",").concat(internalType, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
     if (results.writeSupport[key] !== undefined) {
         return results.writeSupport[key];
     }
@@ -5150,9 +5144,9 @@ exports.testWriteSupport = testWriteSupport;
  */
 function testFilterWrap(composer, internalType, filter, wrap) {
     var _a;
-    var gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision, _errorCallback = composer._errorCallback;
+    var gl = composer.gl, glslVersion = composer.glslVersion, intPrecision = composer.intPrecision, floatPrecision = composer.floatPrecision, _errorCallback = composer._errorCallback, isWebGL2 = composer.isWebGL2;
     // Memoize results for a given set of inputs.
-    var key = "".concat((0, utils_1.isWebGL2)(gl), ",").concat(internalType, ",").concat(filter, ",").concat(wrap, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
+    var key = "".concat(isWebGL2, ",").concat(internalType, ",").concat(filter, ",").concat(wrap, ",").concat(glslVersion === constants_1.GLSL3 ? '3' : '1');
     if (results.filterWrapSupport[key] !== undefined) {
         return results.filterWrapSupport[key];
     }
@@ -5294,7 +5288,7 @@ exports.testFilterWrap = testFilterWrap;
  */
 GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
     var composer = params.composer, writable = params.writable, name = params.name;
-    var gl = composer.gl, _errorCallback = composer._errorCallback;
+    var gl = composer.gl, _errorCallback = composer._errorCallback, isWebGL2 = composer.isWebGL2;
     var type = params.type;
     var internalType = type;
     // Check if int types are supported.
@@ -5313,7 +5307,7 @@ GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
         }
     }
     // Check if float textures supported.
-    if (!(0, utils_1.isWebGL2)(gl)) {
+    if (!isWebGL2) {
         if (internalType === constants_1.FLOAT) {
             // The OES_texture_float extension implicitly enables WEBGL_color_buffer_float extension (for writing).
             var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT, true);
@@ -7167,7 +7161,7 @@ exports.getExtension = getExtension;
 /***/ }),
 
 /***/ 798:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports) {
 
 "use strict";
 
@@ -7182,13 +7176,12 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.disposeFramebuffers = exports.bindFrameBuffer = void 0;
-var utils_1 = __webpack_require__(593);
 // Cache framebuffers to minimize invalidating FPO attachment bindings:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#avoid_invalidating_fbo_attachment_bindings
 var framebufferMap = new WeakMap();
 var allTextureFramebuffersMap = new WeakMap();
 function initFrameBuffer(composer, layer0, texture0, additionalTextures) {
-    var gl = composer.gl, _errorCallback = composer._errorCallback;
+    var gl = composer.gl, _errorCallback = composer._errorCallback, isWebGL2 = composer.isWebGL2;
     // Init a framebuffer for this texture so we can write to it.
     var framebuffer = gl.createFramebuffer();
     if (!framebuffer) {
@@ -7200,7 +7193,7 @@ function initFrameBuffer(composer, layer0, texture0, additionalTextures) {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture0, 0);
     if (additionalTextures) {
         // Check if length additional textures exceeds a max.
-        if (!(0, utils_1.isWebGL2)(gl)) {
+        if (!isWebGL2) {
             throw new Error('WebGL1 does not support drawing to multiple outputs.');
         }
         if (additionalTextures.length > 15) {

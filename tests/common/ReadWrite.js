@@ -146,7 +146,7 @@ const testLayerWrites = (() => {
 				glslVersion: GLSL_VERSION,
 			});
 			// Set WebGL version to actual version.
-			config.webgl_version = composer.isWebGL2() ? 'webgl 2' : 'webgl 1';
+			config.webgl_version = composer.isWebGL2 ? 'webgl 2' : 'webgl 1';
 
 			let input;
 			let NUM_EXTREMA = 0;

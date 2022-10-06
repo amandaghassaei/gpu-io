@@ -76,6 +76,10 @@ export class GPUComposer {
 	 */
 	readonly glslVersion!: GLSLVersion;
 	/**
+	 * Flag for WebGL version.
+	 */
+	readonly isWebGL2!: boolean;
+	/**
 	 * The global integer precision to apply to shader programs.
 	 */
 	readonly intPrecision!: GLSLPrecision;
@@ -266,7 +270,8 @@ export class GPUComposer {
 				return;
 			}
 		}
-		if (isWebGL2(gl)) {
+		this.isWebGL2 = isWebGL2(gl);
+		if (this.isWebGL2) {
 			if (this.verboseLogging) console.log('Using WebGL 2.0 context.');
 		} else {
 			if (this.verboseLogging) console.log('Using WebGL 1.0 context.');
@@ -274,8 +279,8 @@ export class GPUComposer {
 		this.gl = gl;
 
 		// Save glsl version, default to 3 if using webgl2 context.
-		let glslVersion = params.glslVersion || (isWebGL2(gl) ? GLSL3 : GLSL1);
-		if (!isWebGL2(gl) && glslVersion === GLSL3) {
+		let glslVersion = params.glslVersion || (this.isWebGL2 ? GLSL3 : GLSL1);
+		if (!this.isWebGL2 && glslVersion === GLSL3) {
 			console.warn('GLSL3.x is incompatible with WebGL1.0 contexts, falling back to GLSL1.');
 			glslVersion = GLSL1; // Fall back to GLSL1 in these cases.
 		}
@@ -345,14 +350,6 @@ export class GPUComposer {
 		// @ts-ignore
 		composer.renderer = renderer;
 		return composer;
-	}
-
-	/**
-	 * Test whether this GPUComposer is using WebGL2 (may depend on browser support).
-	 * @returns 
-	 */
-	isWebGL2() {
-		return isWebGL2(this.gl);
 	}
 
 	/**

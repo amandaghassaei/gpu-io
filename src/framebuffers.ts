@@ -1,6 +1,5 @@
 import type { GPUComposer } from './GPUComposer';
 import type { GPULayer } from './GPULayer';
-import { isWebGL2 } from './utils';
 
 // Cache framebuffers to minimize invalidating FPO attachment bindings:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#avoid_invalidating_fbo_attachment_bindings
@@ -13,7 +12,7 @@ function initFrameBuffer(
 	texture0: WebGLTexture,
 	additionalTextures?: WebGLTexture[],
 ) {
-	const { gl, _errorCallback } = composer;
+	const { gl, _errorCallback, isWebGL2 } = composer;
 	// Init a framebuffer for this texture so we can write to it.
 	const framebuffer = gl.createFramebuffer();
 	if (!framebuffer) {
@@ -25,7 +24,7 @@ function initFrameBuffer(
 	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture0, 0);
 	if (additionalTextures) {
 		// Check if length additional textures exceeds a max.
-		if (!isWebGL2(gl)) {
+		if (!isWebGL2) {
 			throw new Error('WebGL1 does not support drawing to multiple outputs.');
 		}
 		if (additionalTextures.length > 15) {

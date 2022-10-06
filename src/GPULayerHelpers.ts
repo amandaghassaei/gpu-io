@@ -51,7 +51,6 @@ import {
 	initGLProgram,
 	isIntType,
 	isUnsignedIntType,
-	isWebGL2,
 } from './utils';
 
 // Memoize results.
@@ -215,9 +214,9 @@ export function shouldCastIntTypeAsFloat(
 	composer: GPUComposer,
 	type: GPULayerType,
 ) {
-	const { gl, glslVersion } = composer;
+	const { glslVersion, isWebGL2 } = composer;
 	// All types are supported by WebGL2 + glsl3.
-	if (glslVersion === GLSL3 && isWebGL2(gl)) return false;
+	if (glslVersion === GLSL3 && isWebGL2) return false;
 	// Int textures (other than UNSIGNED_BYTE) are not supported by WebGL1.0 or glsl1.x.
 	// https://stackoverflow.com/questions/55803017/how-to-select-webgl-glsl-sampler-type-from-texture-format-properties
 	// Use HALF_FLOAT/FLOAT instead.
@@ -242,14 +241,14 @@ GPULayer.getGLTextureParameters = (
 	}
 ) => {
 	const { composer, name, numComponents, internalType } = params;
-	const { gl, glslVersion } = composer;
+	const { gl, glslVersion, isWebGL2 } = composer;
 	// https://www.khronos.org/registry/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
 	let glType: number | undefined,
 		glFormat: number | undefined,
 		glInternalFormat: number | undefined,
 		glNumChannels: number | undefined;
 
-	if (isWebGL2(gl)) {
+	if (isWebGL2) {
 		glNumChannels = numComponents;
 		// https://www.khronos.org/registry/webgl/extensions/EXT_color_buffer_float/
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
@@ -518,10 +517,10 @@ export function testWriteSupport(
 	composer: GPUComposer,
 	internalType: GPULayerType,
 ) {
-	const { gl, glslVersion } = composer;
+	const { gl, glslVersion, isWebGL2 } = composer;
 
 	// Memoize results for a given set of inputs.
-	const key = `${isWebGL2(gl)},${internalType},${glslVersion === GLSL3 ? '3' : '1'}`;
+	const key = `${isWebGL2},${internalType},${glslVersion === GLSL3 ? '3' : '1'}`;
 	if (results.writeSupport[key] !== undefined) {
 		return results.writeSupport[key];
 	}
@@ -588,10 +587,10 @@ export function testFilterWrap(
 	filter: GPULayerFilter,
 	wrap: GPULayerWrap,
 ) {
-	const { gl, glslVersion, intPrecision, floatPrecision, _errorCallback } = composer;
+	const { gl, glslVersion, intPrecision, floatPrecision, _errorCallback, isWebGL2 } = composer;
 
 	// Memoize results for a given set of inputs.
-	const key = `${isWebGL2(gl)},${internalType},${filter},${wrap},${glslVersion === GLSL3 ? '3' : '1'}`;
+	const key = `${isWebGL2},${internalType},${filter},${wrap},${glslVersion === GLSL3 ? '3' : '1'}`;
 	if (results.filterWrapSupport[key] !== undefined) {
 		return results.filterWrapSupport[key];
 	}
@@ -772,7 +771,7 @@ GPULayer.getGPULayerInternalType = (
 	},
 ) => {
 	const { composer, writable, name } = params;
-	const { gl, _errorCallback } = composer;
+	const { _errorCallback, isWebGL2 } = composer;
 	const { type } = params;
 	let internalType = type;
 	// Check if int types are supported.
@@ -792,7 +791,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 	}
 
 	// Check if float textures supported.
-	if (!isWebGL2(gl)) {
+	if (!isWebGL2) {
 		if (internalType === FLOAT) {
 			// The OES_texture_float extension implicitly enables WEBGL_color_buffer_float extension (for writing).
 			const extension = getExtension(composer, OES_TEXTURE_FLOAT, true);
