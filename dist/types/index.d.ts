@@ -47,7 +47,7 @@ declare const _testing: {
     glsl1FragmentIn(shaderSource: string): string;
     getFragmentOutType(shaderSource: string, name: string): "float" | "int" | "vec2" | "vec3" | "vec4" | "ivec2" | "ivec3" | "ivec4" | "uvec2" | "uvec3" | "uvec4";
     glsl1FragmentOut(shaderSource: string, name: string): string;
-    checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): boolean;
+    checkFragmentShaderForFragColor(shaderSource: string, glslVersion: import("./constants").GLSLVersion, name: string): void;
     glsl1Texture(shaderSource: string): string;
     glsl1Sampler2D(shaderSource: string): string;
     glsl1Uint(shaderSource: string): string;

@@ -164,16 +164,8 @@ void main() {
 			});
 		});
 		describe('checkFragmentShaderForFragColor', () => {
-			it('should check for out_FragColor in fragment source', () => {
-				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL3, 'test'); },
-					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
-				assert.throws(() => { checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL3, 'test'); },
-					'Found "gl_FragColor" declaration in fragment shader for GPUProgram "test": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.');
-				assert.throws(() => { checkFragmentShaderForFragColor('', GLSL1, 'test'); },
-					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test".');
-			});
 			it('should allow gl_FragColor in GLSL1', () => {
-				assert.equal(checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL1, 'test'), true);
+				assert.equal(checkFragmentShaderForFragColor(glsl1FragmentShader, GLSL1, 'test'), undefined);
 			});
 		});
 		describe('glsl1Texture', () => {

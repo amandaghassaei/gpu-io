@@ -610,7 +610,7 @@ export function convertFragmentShaderToGLSL1(shaderSource: string, name: string)
 	shaderSource = convertShaderToGLSL1(shaderSource);
 	// Convert in to varying.
 	shaderSource = glsl1FragmentIn(shaderSource);
-	// Convert out_FragColor to gl_FragColor.
+	// Convert out to gl_FragColor.
 	shaderSource = glsl1FragmentOut(shaderSource, name);
 	return shaderSource;
 }
@@ -652,12 +652,12 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 	}
 	// Add function/operator polyfills.
 	shaderSource = fragmentShaderPolyfills() + shaderSource;
-	// Add texture() polyfills if needed.
+	// Add texture() polyfills.
 	let samplerUniforms: string[];
 	({ shaderSource, samplerUniforms } = texturePolyfill(shaderSource));
 	if (glslVersion !== GLSL3) {
 		shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
-		// add glsl1 specific polyfills.
+		// Add glsl1 specific polyfills.
 		shaderSource = GLSL1Polyfills() + shaderSource;
 	}
 	return { shaderSource, samplerUniforms };

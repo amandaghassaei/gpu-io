@@ -58,14 +58,6 @@
 				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "", otherThing: 2 }); },
 					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","compileTimeConstants"].');
 			});
-			it('should throw errors for bad fragment source code', () => {
-				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "" }); },
-					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
-			});
-			it('should throw errors for missing out_FragColor or gl_FragColor in fragment source code', () => {
-				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: badOutputFragmentShader }); },
-					'Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "test-program".');
-			});
 			it('should set parameters', () => {
 				const program = new GPUProgram(composer, { name: 'test-program', fragmentShader: setValueFragmentShader });
 				assert.equal(program.name, 'test-program');

@@ -146,7 +146,7 @@ export function getFragmentOutType(shaderSource: string, name: string) {
 }
 
 /**
- * Convert out_FragColor to gl_FragColor.
+ * Convert out variables to gl_FragColor.
  * @private
  */
 export function glsl1FragmentOut(shaderSource: string, name: string) {
@@ -193,24 +193,17 @@ export function glsl1FragmentOut(shaderSource: string, name: string) {
 }
 
 /**
- * Check that out_FragColor or gl_FragColor is present in fragment shader source.
+ * Check for presence of gl_FragColor in fragment shader source.
  * @private 
  */
  export function checkFragmentShaderForFragColor(shaderSource: string, glslVersion: GLSLVersion, name: string) {
 	const gl_FragColor = containsGLFragColor(shaderSource);
-	const out_FragColor = containsOutFragColor(shaderSource);
 	if (glslVersion === GLSL3) {
 		// Check that fragment shader source DOES NOT contain gl_FragColor
 		if (gl_FragColor) {
 			throw new Error(`Found "gl_FragColor" declaration in fragment shader for GPUProgram "${name}": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader.`);
 		}
-	} else {
-		// Check that fragment shader source DOES contain either gl_FragColor or out_FragColor.
-		if (!gl_FragColor && !out_FragColor) {
-			throw new Error(`Found no "out_FragColor" (GLSL3) or "gl_FragColor" (GLSL1) declarations or  in fragment shader for GPUProgram "${name}".`);
-		}
 	}
-	return true;
 }
 
 /**

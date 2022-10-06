@@ -2807,6 +2807,10 @@ var GPUComposer = /** @class */ (function () {
         // Render to screen.
         if (!output) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            if (isWebGL2) {
+                // TODO: Not sure if this is necessary?
+                gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+            }
             // Resize viewport.
             var _b = this, _width = _b._width, _height = _b._height;
             gl.viewport(0, 0, _width, _height);
@@ -7840,7 +7844,7 @@ function getFragmentOutType(shaderSource, name) {
 }
 exports.getFragmentOutType = getFragmentOutType;
 /**
- * Convert out_FragColor to gl_FragColor.
+ * Convert out variables to gl_FragColor.
  * @private
  */
 function glsl1FragmentOut(shaderSource, name) {
@@ -7889,25 +7893,17 @@ function glsl1FragmentOut(shaderSource, name) {
 }
 exports.glsl1FragmentOut = glsl1FragmentOut;
 /**
- * Check that out_FragColor or gl_FragColor is present in fragment shader source.
+ * Check for presence of gl_FragColor in fragment shader source.
  * @private
  */
 function checkFragmentShaderForFragColor(shaderSource, glslVersion, name) {
     var gl_FragColor = containsGLFragColor(shaderSource);
-    var out_FragColor = containsOutFragColor(shaderSource);
     if (glslVersion === constants_1.GLSL3) {
         // Check that fragment shader source DOES NOT contain gl_FragColor
         if (gl_FragColor) {
             throw new Error("Found \"gl_FragColor\" declaration in fragment shader for GPUProgram \"".concat(name, "\": either init GPUComposer with glslVersion = GLSL1 or use GLSL3 syntax in your fragment shader."));
         }
     }
-    else {
-        // Check that fragment shader source DOES contain either gl_FragColor or out_FragColor.
-        if (!gl_FragColor && !out_FragColor) {
-            throw new Error("Found no \"out_FragColor\" (GLSL3) or \"gl_FragColor\" (GLSL1) declarations or  in fragment shader for GPUProgram \"".concat(name, "\"."));
-        }
-    }
-    return true;
 }
 exports.checkFragmentShaderForFragColor = checkFragmentShaderForFragColor;
 /**
@@ -8482,7 +8478,7 @@ function convertFragmentShaderToGLSL1(shaderSource, name) {
     shaderSource = convertShaderToGLSL1(shaderSource);
     // Convert in to varying.
     shaderSource = (0, regex_1.glsl1FragmentIn)(shaderSource);
-    // Convert out_FragColor to gl_FragColor.
+    // Convert out to gl_FragColor.
     shaderSource = (0, regex_1.glsl1FragmentOut)(shaderSource, name);
     return shaderSource;
 }
@@ -8523,12 +8519,12 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
     }
     // Add function/operator polyfills.
     shaderSource = (0, polyfills_1.fragmentShaderPolyfills)() + shaderSource;
-    // Add texture() polyfills if needed.
+    // Add texture() polyfills.
     var samplerUniforms;
     (_a = (0, polyfills_1.texturePolyfill)(shaderSource), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms);
     if (glslVersion !== constants_1.GLSL3) {
         shaderSource = convertFragmentShaderToGLSL1(shaderSource, name);
-        // add glsl1 specific polyfills.
+        // Add glsl1 specific polyfills.
         shaderSource = (0, polyfills_1.GLSL1Polyfills)() + shaderSource;
     }
     return { shaderSource: shaderSource, samplerUniforms: samplerUniforms };
