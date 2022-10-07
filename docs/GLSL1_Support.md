@@ -2,16 +2,19 @@
 
 OpenGL Shading Language (GLSL) is the language used for writing vertex and fragment shader code in WebGL.  WebGL2 supports a newer version of GLSL called GLSL3, whereas WebGL1 only supports GLSL1.  GLSL3 provides new types, operators, and functions that were not previously supported by GLSL1 and has a slightly different syntax for importing/exporting data from shader programs.
 
+More info about the difference between GLSL and WebGL versions:
+
+- [GLSL Versions](https://github.com/mattdesl/lwjgl-basics/wiki/GLSL-Versions) by Matt DesLauriers
+- [WebGL1 Reference Card](https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) by Khronos
+- [WebGL2 Reference Card](https://www.khronos.org/files/webgl20-reference-guide.pdf) by Khronos
+- [WebGL2 from WebGL1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html) by [webgl2fundamentals.org](https://webgl2fundamentals.org/)
+- [WebGL Report](https://webglreport.com/?v=2) by Cesium
+
 When necessary, gpu-io will attempt to automatically convert GLSL3 shaders to GLSL1 so that they can be run in browsers that only support WebGL1.  This simplifies the process of developing an application by removing the burden of managing multiple sets of shaders targeting different GLSL versions.  All of the [Examples](https://github.com/amandaghassaei/gpu-io#examples) in this repository run in both WebGL2 and WebGL1; you can test this for yourself using the WebGL controls menu:
 
 ![WebGL setting controls](./imgs/WebGLControls.png)
 
-By comparing the GLSL3 vs GLSL1 spec, you'll notice that many GLSL3 types, operators, and functions are not supported by GLSL1:
-
-- [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf)
-- [WebGL2 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl20-reference-guide.pdf)
-
-When running on a WebGL1 device, gpu-io preprocesses your GLSL3 shader code to convert it into GLSL1.  Additionally, gpu-io provides several polyfills to extend the built-in functionality of GLSL1 to more closely match GLSL3, giving you more functionality than bare-bones GLSL1.  This page gives detailed info about the GLSL3 functionality that has been added to GLSL1 by gpu-io and a list of functions/types/operators that are not currently supported (and should be avoided if you want your application to support WebGL1).
+When running in a WebGL1-only browser, gpu-io preprocesses your GLSL3 shader code to convert it into GLSL1.  Additionally, gpu-io provides several polyfills to extend the built-in functionality of GLSL1 to more closely match GLSL3, giving you more functionality than bare-bones GLSL1.  This page gives detailed info about the GLSL3 functionality that has been added to GLSL1 by gpu-io and a list of functions/types/operators that are not currently supported (and should be avoided if you want your application to support WebGL1).
 
 In general, I recommend writing your application for WebGL2 with GLSL3 shaders and allowing gpu-io to convert your GLSL3 to GLSL1 when needed, rather than running GLSL1 shaders in WebGL2.  To test out how your application performs in WebGL1, initialize your GPUComposer to force it to target WebGL1:
 
