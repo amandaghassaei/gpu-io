@@ -28,10 +28,16 @@
 	document.body.append(overlay);
 
 	const webGLSettings = {
-		webGL2: isWebGL2Supported(),
-		useGLSL3: isWebGL2Supported(),
+		webGLVersion: isWebGL2Supported() ? 'WebGL 2' : 'WebGL 1',
+		GLSLVersion: isWebGL2Supported() ? 'GLSL 3' : 'GLSL 1',
 	};
-
+	const availableWebGLVersions = ['WebGL 1'];
+	const availableGLSLVersions = ['GLSL 1'];
+	if (isWebGL2Supported()) {
+		availableWebGLVersions.unshift('WebGL 2');
+		availableGLSLVersions.unshift('GLSL 3');
+	}
+	
 	// Global variables to get from example app.
 	let loop, dispose, composer, canvas;
 	// Other global ui variables.
@@ -48,29 +54,25 @@
 				canvas.addEventListener('gestureend', disableZoom);
 			}
 		}
+		if (webGLSettings.webGLVersion === 'WebGL 1') webGLSettings.GLSLVersion = 'GLSL 1';
 		if (dispose) dispose();
 		({ loop, composer, dispose, canvas } = main({
 			gui,
-			contextID: webGLSettings.webGL2 ? WEBGL2 : WEBGL1,
-			glslVersion: webGLSettings.useGLSL3 ? GLSL3 : GLSL1,
+			contextID: webGLSettings.webGLVersion === 'WebGL 2' ? WEBGL2 : WEBGL1,
+			glslVersion: webGLSettings.GLSLVersion === 'GLSL 3' ? GLSL3 : GLSL1,
 		}));
 		canvas.addEventListener('gesturestart', disableZoom);
 		canvas.addEventListener('gesturechange', disableZoom); 
 		canvas.addEventListener('gestureend', disableZoom);
-		if (webGLSettings.webGL2) {
-			useGLSL3Toggle = settings.add(webGLSettings, 'useGLSL3').name('Use GLSL 300').onChange(reloadExampleWithNewParams);
-		}
-		title = `WebGL ${webGLSettings.webGL2 ? '2' : '1'}`;
+		
+		useGLSL3Toggle = settings.add(webGLSettings, 'GLSLVersion', webGLSettings.webGLVersion === 'WebGL 2' ? availableGLSLVersions : ['GLSL 1']).name('GLSL Version').onChange(reloadExampleWithNewParams);
+		title = `${webGLSettings.webGLVersion}`;
 		settings.name = title;
 	}
 
 	// Add some settings to gui.
 	const settings = gui.addFolder(title);
-	if (isWebGL2Supported()) settings.add(webGLSettings, 'webGL2').name('Use WebGL 2').onChange(reloadExampleWithNewParams);
-	else {
-		// If webGL2 is not supported, hide open folder icon.
-		settings.domElement.children[0].children[0].style.backgroundImage = "none";
-	}
+	settings.add(webGLSettings, 'webGLVersion', availableWebGLVersions).name('WebGL Version').onChange(reloadExampleWithNewParams);
 
 	// Add info modal.
 	const modalOptions = { showModal: () => {

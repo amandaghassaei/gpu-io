@@ -9,7 +9,7 @@
 
 **Compose cross-browser, GPU-accelerated simulations and graphics applications**
 
-gpu-io is a WebGL shader library that helps you easily compose complex, interactive shader programs that operate on many layers of spatially-distributed state.  This library can be used for a variety of applications, but it is especially helpful for implementing 2D physics simulations or cellular automata, where state is stored in scalar/vector fields and updated by fragment shader programs.  It supports rendering directly to the WebGL canvas and has some built-in utilities that make interactivity easy.  gpu-io contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](#examples) for more details.
+gpu-io is a WebGL library that helps you easily compose interactive shader programs that operate on one or more layers of spatially-distributed state.  This library can be used for a variety of applications, but it is especially helpful for implementing 2D physics simulations or cellular automata, where state is stored in scalar/vector fields and updated by fragment shader programs.  It supports rendering directly to the WebGL canvas and has some built-in utilities that make interactivity easy.  gpu-io contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](#examples) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  
 WebGPU support is planned in the future.
@@ -148,8 +148,9 @@ Source code for all examples can be found in [examples/](https://github.com/aman
 
 - [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
 - [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
-- [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
 - [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
+- [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
+
 
 Please let me kow if you have something that you would like to add to this list!
 
