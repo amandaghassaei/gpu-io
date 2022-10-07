@@ -9,7 +9,7 @@
 
 **A GPU-accelerated computing library for physics simulations, cellular automata, and general-purpose calculations**
 
-gpu-io is a WebGL library that helps you easily compose interactive shader programs that operate on one or more layers of spatially-distributed state.  This library can be used for a variety of applications, but it is especially helpful for 2D physics simulations or cellular automata, where state is stored in scalar/vector fields and updated by fragment shader programs.  It supports rendering directly to the WebGL canvas and has some built-in utilities that make interactivity easy.  gpu-io contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](#examples) for more details.
+gpu-io is a WebGL library that helps you easily compose interactive shader programs.  This library can be used for a variety of applications, but it is especially helpful for 2D physics simulations or cellular automata, where state is stored in scalar/vector fields and updated by fragment shader programs.  It supports rendering directly to the WebGL canvas and has some built-in utilities that make interactivity easy.  gpu-io contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](#examples) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  
 WebGPU support is planned in the future.
