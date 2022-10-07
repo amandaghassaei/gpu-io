@@ -472,8 +472,8 @@ export class GPUComposer {
 			type: gpuLayer.type,
 			numComponents: gpuLayer.numComponents,
 			filter: gpuLayer.filter,
-			wrapS: gpuLayer.wrapS,
-			wrapT: gpuLayer.wrapT,
+			wrapX: gpuLayer.wrapX,
+			wrapY: gpuLayer.wrapY,
 			writable: true, // Set writable initially.
 			numBuffers: gpuLayer.numBuffers,
 			clearValue: gpuLayer.clearValue,
@@ -481,7 +481,7 @@ export class GPUComposer {
 		});
 
 		// TODO: check this.
-		// If writable, copy current state with a draw call.
+		// Copy current state with a draw call.
 		for (let i = 0; i < gpuLayer.numBuffers - 1; i++) {
 			this.step({
 				program: this._copyProgramForType(gpuLayer.type),

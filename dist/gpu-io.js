@@ -2644,15 +2644,15 @@ var GPUComposer = /** @class */ (function () {
             type: gpuLayer.type,
             numComponents: gpuLayer.numComponents,
             filter: gpuLayer.filter,
-            wrapS: gpuLayer.wrapS,
-            wrapT: gpuLayer.wrapT,
+            wrapX: gpuLayer.wrapX,
+            wrapY: gpuLayer.wrapY,
             writable: true,
             numBuffers: gpuLayer.numBuffers,
             clearValue: gpuLayer.clearValue,
             array: array,
         });
         // TODO: check this.
-        // If writable, copy current state with a draw call.
+        // Copy current state with a draw call.
         for (var i = 0; i < gpuLayer.numBuffers - 1; i++) {
             this.step({
                 program: this._copyProgramForType(gpuLayer.type),
@@ -3912,8 +3912,8 @@ var GPULayer = /** @class */ (function () {
      * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
      * @param params.dimensions - Dimensions of 1D or 2D GPULayer.
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
-     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
      * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
@@ -3943,7 +3943,7 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got ".concat(JSON.stringify(params), "."));
         }
         // Check params keys.
-        var validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue', 'array'];
+        var validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapX', 'wrapY', 'writable', 'numBuffers', 'clearValue', 'array'];
         var requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
         var keys = Object.keys(params);
         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer(composer, params)', params.name);
@@ -3980,16 +3980,16 @@ var GPULayer = /** @class */ (function () {
         }
         this.filter = filter;
         // Get wrap types, default to clamp to edge.
-        var wrapS = params.wrapS !== undefined ? params.wrapS : constants_1.CLAMP_TO_EDGE;
-        if (!(0, checks_1.isValidWrap)(wrapS)) {
-            throw new Error("Invalid wrapS: ".concat(JSON.stringify(wrapS), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validWraps), "."));
+        var wrapX = params.wrapX !== undefined ? params.wrapX : constants_1.CLAMP_TO_EDGE;
+        if (!(0, checks_1.isValidWrap)(wrapX)) {
+            throw new Error("Invalid wrapX: ".concat(JSON.stringify(wrapX), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validWraps), "."));
         }
-        this.wrapS = wrapS;
-        var wrapT = params.wrapT !== undefined ? params.wrapT : constants_1.CLAMP_TO_EDGE;
-        if (!(0, checks_1.isValidWrap)(wrapT)) {
-            throw new Error("Invalid wrapT: ".concat(JSON.stringify(wrapT), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validWraps), "."));
+        this.wrapX = wrapX;
+        var wrapY = params.wrapY !== undefined ? params.wrapY : constants_1.CLAMP_TO_EDGE;
+        if (!(0, checks_1.isValidWrap)(wrapY)) {
+            throw new Error("Invalid wrapY: ".concat(JSON.stringify(wrapY), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validWraps), "."));
         }
-        this.wrapT = wrapT;
+        this.wrapY = wrapY;
         // Set data type.
         if (!(0, checks_1.isValidDataType)(type)) {
             throw new Error("Invalid type: ".concat(JSON.stringify(type), " for GPULayer \"").concat(name, "\", must be one of ").concat(JSON.stringify(constants_1.validDataTypes), "."));
@@ -4015,13 +4015,13 @@ var GPULayer = /** @class */ (function () {
         this._glNumChannels = glNumChannels;
         // Set internal filtering/wrap types.
         // Make sure that we set filter BEFORE setting wrap.
-        var internalFilter = GPULayer.getGPULayerInternalFilter({ composer: composer, filter: filter, wrapS: wrapS, wrapT: wrapT, internalType: internalType, name: name });
+        var internalFilter = GPULayer.getGPULayerInternalFilter({ composer: composer, filter: filter, wrapX: wrapX, wrapY: wrapY, internalType: internalType, name: name });
         this._internalFilter = internalFilter;
         this._glFilter = gl[internalFilter];
-        this._internalWrapS = GPULayer.getGPULayerInternalWrap({ composer: composer, wrap: wrapS, internalFilter: internalFilter, internalType: internalType, name: name });
-        this._glWrapS = gl[this._internalWrapS];
-        this._internalWrapT = GPULayer.getGPULayerInternalWrap({ composer: composer, wrap: wrapT, internalFilter: internalFilter, internalType: internalType, name: name });
-        this._glWrapT = gl[this._internalWrapT];
+        this._internalWrapX = GPULayer.getGPULayerInternalWrap({ composer: composer, wrap: wrapX, internalFilter: internalFilter, internalType: internalType, name: name });
+        this._glWrapS = gl[this._internalWrapX];
+        this._internalWrapY = GPULayer.getGPULayerInternalWrap({ composer: composer, wrap: wrapY, internalFilter: internalFilter, internalType: internalType, name: name });
+        this._glWrapT = gl[this._internalWrapY];
         // Num buffers is the number of states to store for this data.
         var numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
         if (!(0, type_checks_1.isPositiveInteger)(numBuffers)) {
@@ -4043,8 +4043,8 @@ var GPULayer = /** @class */ (function () {
      * @param params.type - Data type represented by GPULayer.
      * @param params.format - Image format, either RGB or RGBA.
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
-     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      */
     GPULayer.initFromImageURL = function (composer, params) {
@@ -4058,12 +4058,12 @@ var GPULayer = /** @class */ (function () {
                             throw new Error("Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got ".concat(JSON.stringify(params), "."));
                         }
                         // Check params.
-                        var validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'writable'];
+                        var validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type', 'writable'];
                         var requiredKeys = ['name', 'url'];
                         var keys = Object.keys(params);
                         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
                         (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
-                        var url = params.url, name = params.name, filter = params.filter, wrapS = params.wrapS, wrapT = params.wrapT, type = params.type, format = params.format, writable = params.writable;
+                        var url = params.url, name = params.name, filter = params.filter, wrapX = params.wrapX, wrapY = params.wrapY, type = params.type, format = params.format, writable = params.writable;
                         if (!(0, type_checks_1.isString)(url)) {
                             throw new Error("Expected GPULayer.initFromImageURL params to have url of type string, got ".concat(url, " of type ").concat(typeof url, "."));
                         }
@@ -4078,8 +4078,8 @@ var GPULayer = /** @class */ (function () {
                             name: name,
                             type: type || constants_1.FLOAT,
                             filter: filter,
-                            wrapS: wrapS,
-                            wrapT: wrapT,
+                            wrapX: wrapX,
+                            wrapY: wrapY,
                             numComponents: format ? format.length : 4,
                             dimensions: [1, 1],
                             writable: writable,
@@ -4847,19 +4847,19 @@ GPULayer_1.GPULayer.getGPULayerInternalFilter = function (params) {
         // NEAREST filtering is always supported.
         return filter;
     }
-    var composer = params.composer, internalType = params.internalType, wrapS = params.wrapS, wrapT = params.wrapT, name = params.name;
+    var composer = params.composer, internalType = params.internalType, wrapX = params.wrapX, wrapY = params.wrapY, name = params.name;
     if (internalType === constants_1.HALF_FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
             || (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
-            console.warn("This browser does not support ".concat(filter, " filtering for type ").concat(internalType, " and wrap [").concat(wrapS, ", ").concat(wrapT, "].  Falling back to NEAREST filter for GPULayer \"").concat(name, "\" with ").concat(filter, " polyfill in fragment shader."));
+        if (!extension || !testFilterWrap(composer, internalType, filter, wrapX) || !testFilterWrap(composer, internalType, filter, wrapY)) {
+            console.warn("This browser does not support ".concat(filter, " filtering for type ").concat(internalType, " and wrap [").concat(wrapX, ", ").concat(wrapY, "].  Falling back to NEAREST filter for GPULayer \"").concat(name, "\" with ").concat(filter, " polyfill in fragment shader."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
     if (internalType === constants_1.FLOAT) {
         var extension = (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_FLOAT_LINEAR, true);
-        if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
-            console.warn("This browser does not support ".concat(filter, " filtering for type ").concat(internalType, " and wrap [").concat(wrapS, ", ").concat(wrapT, "].  Falling back to NEAREST filter for GPULayer \"").concat(name, "\" with ").concat(filter, " polyfill in fragment shader."));
+        if (!extension || !testFilterWrap(composer, internalType, filter, wrapX) || !testFilterWrap(composer, internalType, filter, wrapY)) {
+            console.warn("This browser does not support ".concat(filter, " filtering for type ").concat(internalType, " and wrap [").concat(wrapX, ", ").concat(wrapY, "].  Falling back to NEAREST filter for GPULayer \"").concat(name, "\" with ").concat(filter, " polyfill in fragment shader."));
             filter = constants_1.NEAREST; // Polyfill in fragment shader.
         }
     }
@@ -5273,8 +5273,8 @@ function testFilterWrap(composer, internalType, filter, wrap) {
         type: internalType,
         numComponents: numComponents,
         dimensions: [width, height],
-        wrapS: constants_1.CLAMP_TO_EDGE,
-        wrapT: constants_1.CLAMP_TO_EDGE,
+        wrapX: constants_1.CLAMP_TO_EDGE,
+        wrapY: constants_1.CLAMP_TO_EDGE,
         filter: constants_1.NEAREST,
         writable: true,
     });
@@ -5795,9 +5795,9 @@ var GPUProgram = /** @class */ (function () {
         for (var i = 0, length_1 = _samplerUniformsIndices.length; i < length_1; i++) {
             var inputIndex = _samplerUniformsIndices[i].inputIndex;
             var layer = input[inputIndex].layer;
-            var filter = layer.filter, wrapS = layer.wrapS, wrapT = layer.wrapT, type = layer.type, _internalFilter = layer._internalFilter, _internalWrapS = layer._internalWrapS, _internalWrapT = layer._internalWrapT;
-            var wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === constants_1.REPEAT ? 1 : 0);
-            var wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === constants_1.REPEAT ? 1 : 0);
+            var filter = layer.filter, wrapX = layer.wrapX, wrapY = layer.wrapY, type = layer.type, _internalFilter = layer._internalFilter, _internalWrapX = layer._internalWrapX, _internalWrapY = layer._internalWrapY;
+            var wrapXVal = wrapX === _internalWrapX ? 0 : (wrapX === constants_1.REPEAT ? 1 : 0);
+            var wrapYVal = wrapY === _internalWrapY ? 0 : (wrapY === constants_1.REPEAT ? 1 : 0);
             var filterVal = filter === _internalFilter ? 0 : (filter === constants_1.LINEAR ? 1 : 0);
             fragmentID += "_IN".concat(i, "_").concat(wrapXVal, "_").concat(wrapYVal, "_").concat(filterVal);
             fragmentCompileConstants["".concat(polyfills_1.SAMPLER2D_WRAP_X).concat(i)] = "".concat(wrapXVal);
@@ -6083,9 +6083,9 @@ var GPUProgram = /** @class */ (function () {
             var index = indexLookup[i];
             if (index < 0)
                 continue;
-            var filter = layer.filter, wrapS = layer.wrapS, wrapT = layer.wrapT, _internalFilter = layer._internalFilter, _internalWrapS = layer._internalWrapS, _internalWrapT = layer._internalWrapT;
+            var filter = layer.filter, wrapX = layer.wrapX, wrapY = layer.wrapY, _internalFilter = layer._internalFilter, _internalWrapX = layer._internalWrapX, _internalWrapY = layer._internalWrapY;
             var filterMismatch = filter !== _internalFilter;
-            if (filterMismatch || wrapS !== _internalWrapS || wrapT !== _internalWrapT) {
+            if (filterMismatch || wrapX !== _internalWrapX || wrapY !== _internalWrapY) {
                 var halfPxSize = [0.5 / width, 0.5 / height];
                 var halfPxUniform = "".concat(polyfills_1.SAMPLER2D_HALF_PX_UNIFORM).concat(index);
                 this._setProgramUniform(program, programName, halfPxUniform, halfPxSize, constants_1.FLOAT_2D_UNIFORM);
@@ -7764,20 +7764,22 @@ exports.fragmentShaderPolyfills = fragmentShaderPolyfills;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getSampler2DsInProgram = exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.highpToMediump = exports.glsl1Uint = exports.glsl1Sampler2D = exports.glsl1Texture = exports.checkFragmentShaderForFragColor = exports.glsl1FragmentOut = exports.getFragmentOuts = exports.glsl1FragmentIn = exports.glsl1VertexOut = exports.castVaryingToFloat = exports.glsl1VertexIn = exports.typecastVariable = void 0;
+exports.getSampler2DsInProgram = exports.stripComments = exports.stripPrecision = exports.stripVersion = exports.highpToMediump = exports.glsl1Uint = exports.glsl1Sampler2D = exports.glsl1Texture = exports.checkFragmentShaderForFragColor = exports.glsl1FragmentOut = exports.getFragmentOuts = exports.glsl1FragmentIn = exports.glsl1VertexOut = exports.castVaryingToFloat = exports.glsl1VertexIn = void 0;
 var constants_1 = __webpack_require__(601);
 /**
- * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
- * Note: there is no positive lookbehind support in some browsers, use capturing parens instead.
- * https://stackoverflow.com/questions/3569104/positive-look-behind-in-javascript-regular-expression/3569116#3569116
+ * Convert vertex shader "in" to "attribute".
+ * @private
  */
+function glsl1VertexIn(shaderSource) {
+    return shaderSource.replace(/\bin\b/g, 'attribute');
+}
+exports.glsl1VertexIn = glsl1VertexIn;
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 /**
  * Typecast variable assignment.
  * This is used in cases when e.g. varyings have to be converted to float in GLSL1.
- * @private
  */
 function typecastVariable(shaderSource, variableName, type) {
     // "s" makes this work for multiline values.
@@ -7804,15 +7806,6 @@ function typecastVariable(shaderSource, variableName, type) {
     }
     return shaderSource;
 }
-exports.typecastVariable = typecastVariable;
-/**
- * Convert vertex shader "in" to "attribute".
- * @private
- */
-function glsl1VertexIn(shaderSource) {
-    return shaderSource.replace(/\bin\b/g, 'attribute');
-}
-exports.glsl1VertexIn = glsl1VertexIn;
 /**
  * Convert int varyings to float types.
  * Also update any variable assignments so that they are cast to float.
@@ -7880,13 +7873,6 @@ function glsl1FragmentIn(shaderSource) {
     return shaderSource;
 }
 exports.glsl1FragmentIn = glsl1FragmentIn;
-/**
- * Contains gl_FragColor.
- * @private
- */
-function containsGLFragColor(shaderSource) {
-    return !!shaderSource.match(/\bgl_FragColor\b/);
-}
 /**
  * Get variable name, type, and layout number for out variables.
  * Only exported for testing.
@@ -8013,6 +7999,13 @@ function glsl1FragmentOut(shaderSource, programName) {
     return shaderSources;
 }
 exports.glsl1FragmentOut = glsl1FragmentOut;
+/**
+ * Contains gl_FragColor.
+ * @private
+ */
+function containsGLFragColor(shaderSource) {
+    return !!shaderSource.match(/\bgl_FragColor\b/);
+}
 /**
  * Check for presence of gl_FragColor in fragment shader source.
  * @private

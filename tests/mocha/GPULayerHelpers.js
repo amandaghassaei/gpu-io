@@ -131,18 +131,18 @@
 				getExtension(composer1, OES_TEXTURE_FLOAT, true);
 				getExtension(composer1, OES_TEXTURE_HALF_FLOAT, true);
 				[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
-					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer1, filter: NEAREST, wrapS: CLAMP_TO_EDGE, wrapT: CLAMP_TO_EDGE, internalType: type, name: 'test' }), NEAREST);
-					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer2, filter: NEAREST, wrapS: CLAMP_TO_EDGE, wrapT: CLAMP_TO_EDGE, internalType: type, name: 'test' }), NEAREST);
-					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer3, filter: NEAREST, wrapS: CLAMP_TO_EDGE, wrapT: CLAMP_TO_EDGE, internalType: type, name: 'test' }), NEAREST);
+					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer1, filter: NEAREST, wrapX: CLAMP_TO_EDGE, wrapY: CLAMP_TO_EDGE, internalType: type, name: 'test' }), NEAREST);
+					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer2, filter: NEAREST, wrapX: CLAMP_TO_EDGE, wrapY: CLAMP_TO_EDGE, internalType: type, name: 'test' }), NEAREST);
+					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer3, filter: NEAREST, wrapX: CLAMP_TO_EDGE, wrapY: CLAMP_TO_EDGE, internalType: type, name: 'test' }), NEAREST);
 				});
 			});
 			it('should support LINEAR float filtering with extensions', () => {
 				getExtension(composer1, OES_TEXTURE_FLOAT, true);
 				getExtension(composer1, OES_TEXTURE_HALF_FLOAT, true);
 				[FLOAT, HALF_FLOAT].forEach(type => {
-					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer1, filter: LINEAR, wrapS: CLAMP_TO_EDGE, wrapT: CLAMP_TO_EDGE, internalType: type, name: 'test' }), LINEAR);
-					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer2, filter: LINEAR, wrapS: CLAMP_TO_EDGE, wrapT: CLAMP_TO_EDGE, internalType: type, name: 'test' }), LINEAR);
-					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer3, filter: LINEAR, wrapS: CLAMP_TO_EDGE, wrapT: CLAMP_TO_EDGE, internalType: type, name: 'test' }), LINEAR);
+					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer1, filter: LINEAR, wrapX: CLAMP_TO_EDGE, wrapY: CLAMP_TO_EDGE, internalType: type, name: 'test' }), LINEAR);
+					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer2, filter: LINEAR, wrapX: CLAMP_TO_EDGE, wrapY: CLAMP_TO_EDGE, internalType: type, name: 'test' }), LINEAR);
+					assert.equal(GPULayer.getGPULayerInternalFilter({ composer: composer3, filter: LINEAR, wrapX: CLAMP_TO_EDGE, wrapY: CLAMP_TO_EDGE, internalType: type, name: 'test' }), LINEAR);
 				});
 			});
 		});
@@ -272,7 +272,7 @@
 										writable,
 										name: 'testFilterWrap',
 									});
-									const internalFilter = GPULayer.getGPULayerInternalFilter({ composer, filter, internalType, wrapS: wrap, wrapT: wrap, name: 'testFilterWrap', });
+									const internalFilter = GPULayer.getGPULayerInternalFilter({ composer, filter, internalType, wrapX: wrap, wrapY: wrap, name: 'testFilterWrap', });
 									let expected = true;
 									// We do not expect this to succeed for WebGL1 + REPEAT + FLOAT/HALF_FLOAT
 									if (composer === composer1 && wrap === REPEAT && !isIntType(internalType)) expected = false;

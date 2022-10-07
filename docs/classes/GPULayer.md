@@ -10,8 +10,8 @@
 - [type](GPULayer.md#type)
 - [numComponents](GPULayer.md#numcomponents)
 - [filter](GPULayer.md#filter)
-- [wrapS](GPULayer.md#wraps)
-- [wrapT](GPULayer.md#wrapt)
+- [wrapX](GPULayer.md#wrapx)
+- [wrapY](GPULayer.md#wrapy)
 - [\_writable](GPULayer.md#_writable)
 - [numBuffers](GPULayer.md#numbuffers)
 
@@ -81,17 +81,17 @@ Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GP
 
 ___
 
-### wrapS
+### wrapX
 
-• `Readonly` **wrapS**: [`GPULayerWrap`](../README.md#gpulayerwrap)
+• `Readonly` **wrapX**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
 Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 
 ___
 
-### wrapT
+### wrapY
 
-• `Readonly` **wrapT**: [`GPULayerWrap`](../README.md#gpulayerwrap)
+• `Readonly` **wrapY**: [`GPULayerWrap`](../README.md#gpulayerwrap)
 
 Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 
@@ -128,8 +128,8 @@ Create a GPULayer from an image url.
 | `params.type?` | [`ImageType`](../README.md#imagetype) | Data type represented by GPULayer. |
 | `params.format?` | [`ImageFormat`](../README.md#imageformat) | Image format, either RGB or RGBA. |
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST. |
-| `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
-| `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.wrapX?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.wrapY?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
 | `params.writable?` | `boolean` | Sets GPULayer as readonly or readwrite, defaults to false. |
 
 #### Returns
@@ -369,8 +369,8 @@ Create a GPULayer.
 | `params.dimensions` | `number` \| `number`[] | Dimensions of 1D or 2D GPULayer. |
 | `params.array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) | Array to initialize GPULayer. |
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST. |
-| `params.wrapS?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
-| `params.wrapT?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.wrapX?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
+| `params.wrapY?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
 | `params.writable?` | `boolean` | Sets GPULayer as readonly or readwrite, defaults to false. |
 | `params.numBuffers?` | `number` | How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers. |
 | `params.clearValue?` | `number` \| `number`[] | Value to write to GPULayer when GPULayer.clear() is called. |

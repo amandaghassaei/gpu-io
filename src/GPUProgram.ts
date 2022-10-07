@@ -287,11 +287,11 @@ export class GPUProgram {
 			const { inputIndex } = _samplerUniformsIndices[i];
 			const { layer } = input[inputIndex];
 			const {
-				filter, wrapS, wrapT, type,
-				_internalFilter, _internalWrapS, _internalWrapT,
+				filter, wrapX, wrapY, type,
+				_internalFilter, _internalWrapX, _internalWrapY,
 			} = layer;
-			const wrapXVal = wrapS === _internalWrapS ? 0 : (wrapS === REPEAT ? 1 : 0);
-			const wrapYVal = wrapT === _internalWrapT ? 0 : (wrapT === REPEAT ? 1 : 0);
+			const wrapXVal = wrapX === _internalWrapX ? 0 : (wrapX === REPEAT ? 1 : 0);
+			const wrapYVal = wrapY === _internalWrapY ? 0 : (wrapY === REPEAT ? 1 : 0);
 			const filterVal = filter === _internalFilter ? 0 : (filter === LINEAR ? 1 : 0);
 			fragmentID += `_IN${i}_${wrapXVal}_${wrapYVal}_${filterVal}`;
 			fragmentCompileConstants[`${SAMPLER2D_WRAP_X}${i}`] = `${wrapXVal}`;
@@ -590,9 +590,9 @@ export class GPUProgram {
 			const { width, height } = layer;
 			const index = indexLookup[i];
 			if (index < 0) continue;
-			const { filter, wrapS, wrapT, _internalFilter, _internalWrapS, _internalWrapT } = layer;
+			const { filter, wrapX, wrapY, _internalFilter, _internalWrapX, _internalWrapY } = layer;
 			const filterMismatch = filter !== _internalFilter;
-			if (filterMismatch || wrapS !== _internalWrapS || wrapT !== _internalWrapT) {
+			if (filterMismatch || wrapX !== _internalWrapX || wrapY !== _internalWrapY) {
 				const halfPxSize = [0.5 / width, 0.5 / height];
 				const halfPxUniform = `${SAMPLER2D_HALF_PX_UNIFORM}${index}`;
 				this._setProgramUniform(

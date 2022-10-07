@@ -40,7 +40,6 @@ declare const _testing: {
     isNumberOfType(value: any, type: import("./constants").GPULayerType): boolean;
     checkValidKeys(keys: string[], validKeys: string[], methodName: string, name?: string | undefined): void;
     checkRequiredKeys(keys: string[], requiredKeys: string[], methodName: string, name?: string | undefined): void;
-    typecastVariable(shaderSource: string, variableName: string, type: string): string;
     glsl1VertexIn(shaderSource: string): string;
     castVaryingToFloat(shaderSource: string): string;
     glsl1VertexOut(shaderSource: string): string;

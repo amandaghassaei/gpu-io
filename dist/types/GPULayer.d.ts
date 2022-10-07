@@ -22,11 +22,11 @@ export declare class GPULayer {
     /**
      * Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      */
-    readonly wrapS: GPULayerWrap;
+    readonly wrapX: GPULayerWrap;
     /**
      * Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      */
-    readonly wrapT: GPULayerWrap;
+    readonly wrapY: GPULayerWrap;
     /**
      * Sets GPULayer as readonly or readwrite, defaults to false.
      */
@@ -47,6 +47,7 @@ export declare class GPULayer {
      */
     readonly _glFormat: number;
     /**
+     * GPULayer._internalType corresponds to GPULayer.glType, but may be different from GPULayer.type.
      * @private
      */
     readonly _internalType: GPULayerType;
@@ -55,10 +56,13 @@ export declare class GPULayer {
      */
     readonly _glType: number;
     /**
+     * Internally, GPULayer._glNumChannels may represent a larger number of channels than GPULayer.numComponents.
+     * For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
      * @private
      */
     readonly _glNumChannels: number;
     /**
+     * GPULayer._internalFilter corresponds to GPULayer.glFilter, may be different from GPULayer.filter.
      * @private
      */
     readonly _internalFilter: GPULayerFilter;
@@ -67,17 +71,19 @@ export declare class GPULayer {
      */
     readonly _glFilter: number;
     /**
+     * GPULayer._internalWrapX corresponds to GPULayer.glWrapX, but may be different from GPULayer.wrapX.
      * @private
      */
-    readonly _internalWrapS: GPULayerWrap;
+    readonly _internalWrapX: GPULayerWrap;
     /**
      * @private
      */
     readonly _glWrapS: number;
     /**
+     * GPULayer._internalWrapY corresponds to GPULayer.glWrapY, but may be different from GPULayer.wrapY.
      * @private
      */
-    readonly _internalWrapT: GPULayerWrap;
+    readonly _internalWrapY: GPULayerWrap;
     /**
      * @private
      */
@@ -92,8 +98,8 @@ export declare class GPULayer {
      * @param params.type - Data type represented by GPULayer.
      * @param params.format - Image format, either RGB or RGBA.
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
-     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      */
     static initFromImageURL(composer: GPUComposer, params: {
@@ -102,8 +108,8 @@ export declare class GPULayer {
         type?: ImageType;
         format?: ImageFormat;
         filter?: GPULayerFilter;
-        wrapS?: GPULayerWrap;
-        wrapT?: GPULayerWrap;
+        wrapX?: GPULayerWrap;
+        wrapY?: GPULayerWrap;
         writable?: boolean;
     }): Promise<GPULayer>;
     /**
@@ -115,8 +121,8 @@ export declare class GPULayer {
      * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
      * @param params.dimensions - Dimensions of 1D or 2D GPULayer.
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
-     * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
      * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
@@ -129,8 +135,8 @@ export declare class GPULayer {
         dimensions: number | number[];
         array?: GPULayerArray | number[];
         filter?: GPULayerFilter;
-        wrapS?: GPULayerWrap;
-        wrapT?: GPULayerWrap;
+        wrapX?: GPULayerWrap;
+        wrapY?: GPULayerWrap;
         writable?: boolean;
         numBuffers?: number;
         clearValue?: number | number[];
@@ -291,8 +297,8 @@ export declare class GPULayer {
     static getGPULayerInternalFilter(params: {
         composer: GPUComposer;
         filter: GPULayerFilter;
-        wrapS: GPULayerWrap;
-        wrapT: GPULayerWrap;
+        wrapX: GPULayerWrap;
+        wrapY: GPULayerWrap;
         internalType: GPULayerType;
         name: string;
     }): GPULayerFilter;

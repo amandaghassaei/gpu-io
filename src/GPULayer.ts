@@ -76,11 +76,11 @@ export class GPULayer {
 	/**
 	 * Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 */
-	readonly wrapS: GPULayerWrap;
+	readonly wrapX: GPULayerWrap;
 	/**
 	 * Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 */
-	readonly wrapT: GPULayerWrap;
+	readonly wrapY: GPULayerWrap;
 	/**
 	 * Sets GPULayer as readonly or readwrite, defaults to false.
 	 */
@@ -116,8 +116,8 @@ export class GPULayer {
 	 */
 	readonly _glFormat: number;
 
-	// GPULayer.internalType corresponds to GPULayer.glType, may be different from GPULayer.type.
 	/**
+	 * GPULayer._internalType corresponds to GPULayer.glType, but may be different from GPULayer.type.
 	 * @private
 	 */
 	readonly _internalType: GPULayerType;
@@ -126,15 +126,15 @@ export class GPULayer {
 	 */
 	readonly _glType: number;
 
-	// Internally, GPULayer.glNumChannels may represent a larger number of channels than GPULayer.numComponents.
-	// For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
 	/**
+	 * Internally, GPULayer._glNumChannels may represent a larger number of channels than GPULayer.numComponents.
+	 * For example, writable RGB textures are not supported in WebGL2, must use RGBA instead.
 	 * @private
 	 */
 	readonly _glNumChannels: number;
 
-	// GPULayer.internalFilter corresponds to GPULayer.glFilter, may be different from GPULayer.filter.
 	/**
+	 * GPULayer._internalFilter corresponds to GPULayer.glFilter, may be different from GPULayer.filter.
 	 * @private
 	 */
 	readonly _internalFilter: GPULayerFilter;
@@ -143,21 +143,21 @@ export class GPULayer {
 	 */
 	readonly _glFilter: number;
 
-	// GPULayer.internalWrapS corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapS.
 	/**
+	 * GPULayer._internalWrapX corresponds to GPULayer.glWrapX, but may be different from GPULayer.wrapX.
 	 * @private
 	 */
-	readonly _internalWrapS: GPULayerWrap;
+	readonly _internalWrapX: GPULayerWrap;
 	/**
 	 * @private
 	 */
 	readonly _glWrapS: number;
 
-	// GPULayer.internalWrapT corresponds to GPULayer.glWrapS, may be different from GPULayer.wrapT.
 	/**
+	 * GPULayer._internalWrapY corresponds to GPULayer.glWrapY, but may be different from GPULayer.wrapY.
 	 * @private
 	 */
-	readonly _internalWrapT: GPULayerWrap;
+	readonly _internalWrapY: GPULayerWrap;
 	/**
 	 * @private
 	 */
@@ -177,8 +177,8 @@ export class GPULayer {
  	 * @param params.type - Data type represented by GPULayer.
 	 * @param params.format - Image format, either RGB or RGBA.
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
-	 * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-	 * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
 	 */
 	static async initFromImageURL(composer: GPUComposer,
@@ -188,8 +188,8 @@ export class GPULayer {
 			type?: ImageType,
 			format?: ImageFormat,
 			filter?: GPULayerFilter,
-			wrapS?: GPULayerWrap,
-			wrapT?: GPULayerWrap,
+			wrapX?: GPULayerWrap,
+			wrapY?: GPULayerWrap,
 			writable?: boolean,
 		},
 	) {
@@ -201,13 +201,13 @@ export class GPULayer {
 				throw new Error(`Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got ${JSON.stringify(params)}.`);
 			}
 			// Check params.
-			const validKeys = ['name', 'url', 'filter', 'wrapS', 'wrapT', 'format', 'type', 'writable'];
+			const validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type', 'writable'];
 			const requiredKeys = ['name', 'url'];
 			const keys = Object.keys(params);
 			checkValidKeys(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
 			checkRequiredKeys(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
 
-			const { url, name, filter, wrapS, wrapT, type, format, writable } = params;
+			const { url, name, filter, wrapX, wrapY, type, format, writable } = params;
 			if (!isString(url)) {
 				throw new Error(`Expected GPULayer.initFromImageURL params to have url of type string, got ${url} of type ${typeof url}.`)
 			}
@@ -223,8 +223,8 @@ export class GPULayer {
 				name,
 				type: type || FLOAT,
 				filter,
-				wrapS,
-				wrapT,
+				wrapX,
+				wrapY,
 				numComponents: format ? format.length as GPULayerNumComponents : 4,
 				dimensions: [1, 1], // Init as 1 px to start.
 				writable,
@@ -255,8 +255,8 @@ export class GPULayer {
 	 * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
 	 * @param params.dimensions - Dimensions of 1D or 2D GPULayer.
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
-	 * @param params.wrapS - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-	 * @param params.wrapT - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
 	 * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
 	 * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
@@ -271,8 +271,8 @@ export class GPULayer {
 			dimensions: number | number[],
 			array?: GPULayerArray | number[],
 			filter?: GPULayerFilter,
-			wrapS?: GPULayerWrap,
-			wrapT?: GPULayerWrap,
+			wrapX?: GPULayerWrap,
+			wrapY?: GPULayerWrap,
 			writable?: boolean,
 			numBuffers?: number,
 			clearValue?: number | number[],
@@ -290,7 +290,7 @@ export class GPULayer {
 			throw new Error(`Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got ${JSON.stringify(params)}.`);
 		}
 		// Check params keys.
-		const validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapS', 'wrapT', 'writable', 'numBuffers', 'clearValue', 'array'];
+		const validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapX', 'wrapY', 'writable', 'numBuffers', 'clearValue', 'array'];
 		const requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
 		const keys = Object.keys(params);
 		checkValidKeys(keys, validKeys, 'GPULayer(composer, params)', params.name);
@@ -334,16 +334,16 @@ export class GPULayer {
 		this.filter = filter;
 
 		// Get wrap types, default to clamp to edge.
-		const wrapS = params.wrapS !== undefined ? params.wrapS : CLAMP_TO_EDGE;
-		if (!isValidWrap(wrapS)) {
-			throw new Error(`Invalid wrapS: ${JSON.stringify(wrapS)} for GPULayer "${name}", must be one of ${JSON.stringify(validWraps)}.`);
+		const wrapX = params.wrapX !== undefined ? params.wrapX : CLAMP_TO_EDGE;
+		if (!isValidWrap(wrapX)) {
+			throw new Error(`Invalid wrapX: ${JSON.stringify(wrapX)} for GPULayer "${name}", must be one of ${JSON.stringify(validWraps)}.`);
 		}
-		this.wrapS = wrapS;
-		const wrapT = params.wrapT !== undefined ? params.wrapT : CLAMP_TO_EDGE;
-		if (!isValidWrap(wrapT)) {
-			throw new Error(`Invalid wrapT: ${JSON.stringify(wrapT)} for GPULayer "${name}", must be one of ${JSON.stringify(validWraps)}.`);
+		this.wrapX = wrapX;
+		const wrapY = params.wrapY !== undefined ? params.wrapY : CLAMP_TO_EDGE;
+		if (!isValidWrap(wrapY)) {
+			throw new Error(`Invalid wrapY: ${JSON.stringify(wrapY)} for GPULayer "${name}", must be one of ${JSON.stringify(validWraps)}.`);
 		}
-		this.wrapT = wrapT;
+		this.wrapY = wrapY;
 
 		// Set data type.
 		if (!isValidDataType(type)) {
@@ -376,13 +376,13 @@ export class GPULayer {
 
 		// Set internal filtering/wrap types.
 		// Make sure that we set filter BEFORE setting wrap.
-		const internalFilter = GPULayer.getGPULayerInternalFilter({ composer, filter, wrapS, wrapT, internalType, name });
+		const internalFilter = GPULayer.getGPULayerInternalFilter({ composer, filter, wrapX, wrapY, internalType, name });
 		this._internalFilter = internalFilter;
 		this._glFilter = gl[internalFilter];
-		this._internalWrapS = GPULayer.getGPULayerInternalWrap({ composer, wrap: wrapS, internalFilter, internalType, name });
-		this._glWrapS = gl[this._internalWrapS];
-		this._internalWrapT = GPULayer.getGPULayerInternalWrap({ composer, wrap: wrapT, internalFilter, internalType, name });
-		this._glWrapT = gl[this._internalWrapT];
+		this._internalWrapX = GPULayer.getGPULayerInternalWrap({ composer, wrap: wrapX, internalFilter, internalType, name });
+		this._glWrapS = gl[this._internalWrapX];
+		this._internalWrapY = GPULayer.getGPULayerInternalWrap({ composer, wrap: wrapY, internalFilter, internalType, name });
+		this._glWrapT = gl[this._internalWrapY];
 
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -1080,8 +1080,8 @@ export class GPULayer {
 		params: {
 			composer: GPUComposer,
 			filter: GPULayerFilter,
-			wrapS: GPULayerWrap,
-			wrapT: GPULayerWrap,
+			wrapX: GPULayerWrap,
+			wrapY: GPULayerWrap,
 			internalType: GPULayerType,
 			name: string,
 		},

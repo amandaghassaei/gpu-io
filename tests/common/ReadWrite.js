@@ -377,8 +377,8 @@ const testLayerWrites = (() => {
 				numComponents: NUM_ELEMENTS,
 				array: input,
 				filter: FILTER,
-				wrapS: WRAP,
-				wrapT: WRAP,
+				wrapX: WRAP,
+				wrapY: WRAP,
 				writable: true,
 				numBuffers: 2,
 			});

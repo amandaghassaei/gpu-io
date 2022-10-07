@@ -176,8 +176,8 @@ GPULayer.getGPULayerInternalWrap = (
 	params: {
 		composer: GPUComposer,
 		filter: GPULayerFilter,
-		wrapS: GPULayerWrap,
-		wrapT: GPULayerWrap,
+		wrapX: GPULayerWrap,
+		wrapY: GPULayerWrap,
 		internalType: GPULayerType,
 		name: string,
 	},
@@ -188,19 +188,19 @@ GPULayer.getGPULayerInternalWrap = (
 		return filter;
 	}
 
-	const { composer, internalType, wrapS, wrapT, name } = params;
+	const { composer, internalType, wrapX, wrapY, name } = params;
 
 	if (internalType === HALF_FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_HAlF_FLOAT_LINEAR, true)
 			|| getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
-			console.warn(`This browser does not support ${filter} filtering for type ${internalType} and wrap [${wrapS}, ${wrapT}].  Falling back to NEAREST filter for GPULayer "${name}" with ${filter} polyfill in fragment shader.`);
+		if (!extension || !testFilterWrap(composer, internalType, filter, wrapX) || !testFilterWrap(composer, internalType, filter, wrapY)) {
+			console.warn(`This browser does not support ${filter} filtering for type ${internalType} and wrap [${wrapX}, ${wrapY}].  Falling back to NEAREST filter for GPULayer "${name}" with ${filter} polyfill in fragment shader.`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	} if (internalType === FLOAT) {
 		const extension = getExtension(composer, OES_TEXTURE_FLOAT_LINEAR, true);
-		if (!extension || !testFilterWrap(composer, internalType, filter, wrapS) || !testFilterWrap(composer, internalType, filter, wrapT)) {
-			console.warn(`This browser does not support ${filter} filtering for type ${internalType} and wrap [${wrapS}, ${wrapT}].  Falling back to NEAREST filter for GPULayer "${name}" with ${filter} polyfill in fragment shader.`);
+		if (!extension || !testFilterWrap(composer, internalType, filter, wrapX) || !testFilterWrap(composer, internalType, filter, wrapY)) {
+			console.warn(`This browser does not support ${filter} filtering for type ${internalType} and wrap [${wrapX}, ${wrapY}].  Falling back to NEAREST filter for GPULayer "${name}" with ${filter} polyfill in fragment shader.`);
 			filter = NEAREST; // Polyfill in fragment shader.
 		}
 	}
@@ -645,8 +645,8 @@ export function testFilterWrap(
 		type: internalType,
 		numComponents,
 		dimensions: [width, height],
-		wrapS: CLAMP_TO_EDGE,
-		wrapT: CLAMP_TO_EDGE,
+		wrapX: CLAMP_TO_EDGE,
+		wrapY: CLAMP_TO_EDGE,
 		filter: NEAREST,
 		writable: true,
 	});

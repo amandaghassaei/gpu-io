@@ -1,10 +1,10 @@
 import { GLSLVersion } from './constants';
 /**
- * Typecast variable assignment.
- * This is used in cases when e.g. varyings have to be converted to float in GLSL1.
- * @private
+ * Helper functions for converting GLSL3 to GLSL1 and checking for valid shader code.
+ * Note: there is no positive lookbehind support in some browsers, use capturing parens instead.
+ * https://stackoverflow.com/questions/3569104/positive-look-behind-in-javascript-regular-expression/3569116#3569116
  */
-export declare function typecastVariable(shaderSource: string, variableName: string, type: string): string;
+declare type GLSLType = 'float' | 'int' | 'uint' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 /**
  * Convert vertex shader "in" to "attribute".
  * @private
@@ -30,7 +30,6 @@ export declare function glsl1VertexOut(shaderSource: string): string;
  * @private
  */
 export declare function glsl1FragmentIn(shaderSource: string): string;
-declare type GLSLType = 'float' | 'int' | 'uint' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 /**
  * Get variable name, type, and layout number for out variables.
  * Only exported for testing.

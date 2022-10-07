@@ -61,7 +61,7 @@
 			});
 			it('should error if unknown params passed in', async () => {
 				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', otherThing: 4 }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
-					assert.equal(result.message, 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapS","wrapT","format","type","writable"].');
+					assert.equal(result.message, 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapX","wrapY","format","type","writable"].');
 				}));
 			});
 			it('should error if invalid params passed in', async () => {
@@ -77,11 +77,11 @@
 					assert.equal(result.message, 'LINEAR filtering is not supported on integer types, please use NEAREST filtering for GPULayer "test-layer" with type: UNSIGNED_BYTE.');
 				}));
 				// Wrap.
-				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', wrapS: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
-					assert.equal(result.message, 'Invalid wrapS: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', wrapX: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid wrapX: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
 				}));
-				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', wrapS: CLAMP_TO_EDGE, wrapT: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
-					assert.equal(result.message, 'Invalid wrapT: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
+				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', wrapX: CLAMP_TO_EDGE, wrapY: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
+					assert.equal(result.message, 'Invalid wrapY: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
 				}));
 				// Format.
 				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', format: 'test' }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
@@ -128,7 +128,7 @@
 			});
 			it('should error if unknown params passed in', () => {
 				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], otherThing: 3 }); },
-					'Invalid params key "otherThing" passed to GPULayer(composer, params) with name "test-layer".  Valid keys are ["name","type","numComponents","dimensions","filter","wrapS","wrapT","writable","numBuffers","clearValue","array"].');
+					'Invalid params key "otherThing" passed to GPULayer(composer, params) with name "test-layer".  Valid keys are ["name","type","numComponents","dimensions","filter","wrapX","wrapY","writable","numBuffers","clearValue","array"].');
 			});
 			it('should error if invalid params passed in', () => {
 				// Num components.
@@ -155,10 +155,10 @@
 				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: INT, numComponents: 3, dimensions: [34, 56], filter: LINEAR }); },
 					'LINEAR filtering is not supported on integer types, please use NEAREST filtering for GPULayer "test-layer" with type: INT.');
 				// Wrap.
-				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: INT, numComponents: 3, dimensions: [34, 56], wrapS: 'test' }); },
-					'Invalid wrapS: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
-				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: INT, numComponents: 3, dimensions: [34, 56], wrapS: CLAMP_TO_EDGE, wrapT: 'test' }); },
-					'Invalid wrapT: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
+				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: INT, numComponents: 3, dimensions: [34, 56], wrapX: 'test' }); },
+					'Invalid wrapX: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
+				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: INT, numComponents: 3, dimensions: [34, 56], wrapX: CLAMP_TO_EDGE, wrapY: 'test' }); },
+					'Invalid wrapY: "test" for GPULayer "test-layer", must be one of ["CLAMP_TO_EDGE","REPEAT"].');
 				// Data type.
 				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: 'test', numComponents: 3, dimensions: [34, 56] }); },
 					'Invalid type: "test" for GPULayer "test-layer", must be one of ["HALF_FLOAT","FLOAT","UNSIGNED_BYTE","BYTE","UNSIGNED_SHORT","SHORT","UNSIGNED_INT","INT"].');
@@ -178,8 +178,8 @@
 					numComponents: 3,
 					dimensions: [34, 56],
 					filter: LINEAR,
-					wrapS: REPEAT,
-					wrapT: REPEAT,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
 					writable: true,
 					numBuffers: 5,
 					clearValue,
@@ -191,8 +191,8 @@
 				assert.equal(layer.width, 34);
 				assert.equal(layer.height, 56);
 				assert.equal(layer.filter, LINEAR);
-				assert.equal(layer.wrapS, REPEAT);
-				assert.equal(layer.wrapT, REPEAT);
+				assert.equal(layer.wrapX, REPEAT);
+				assert.equal(layer.wrapY, REPEAT);
 				assert.equal(layer.writable, true);
 				assert.equal(layer.numBuffers, 5);
 				assert.deepEqual(layer.clearValue, clearValue.slice());
@@ -213,8 +213,8 @@
 				assert.equal(layerFloat.type, FLOAT);
 				assert.equal(layerFloat._internalType, FLOAT);
 				assert.equal(layerFloat.filter, NEAREST);
-				assert.equal(layerFloat.wrapS, CLAMP_TO_EDGE);
-				assert.equal(layerFloat.wrapT, CLAMP_TO_EDGE);
+				assert.equal(layerFloat.wrapX, CLAMP_TO_EDGE);
+				assert.equal(layerFloat.wrapY, CLAMP_TO_EDGE);
 				layerFloat.dispose();
 				const layerHalfFloat = new GPULayer(composer1, {
 					name: 'test-layer',
@@ -225,8 +225,8 @@
 				assert.equal(layerHalfFloat.type, HALF_FLOAT);
 				assert.equal(layerHalfFloat._internalType, HALF_FLOAT);
 				assert.equal(layerHalfFloat.filter, NEAREST);
-				assert.equal(layerHalfFloat.wrapS, CLAMP_TO_EDGE);
-				assert.equal(layerHalfFloat.wrapT, CLAMP_TO_EDGE);
+				assert.equal(layerHalfFloat.wrapX, CLAMP_TO_EDGE);
+				assert.equal(layerHalfFloat.wrapY, CLAMP_TO_EDGE);
 				layerHalfFloat.dispose();
 			});
 			it('should init 2D FLOAT and HALF_FLOAT GPULayers with LINEAR filtering and CLAMP_TO_EDGE wrapping', () => {
@@ -239,8 +239,8 @@
 				assert.equal(layerFloat.type, FLOAT);
 				assert.equal(layerFloat._internalType, FLOAT);
 				assert.equal(layerFloat.filter, LINEAR);
-				assert.equal(layerFloat.wrapS, CLAMP_TO_EDGE);
-				assert.equal(layerFloat.wrapT, CLAMP_TO_EDGE);
+				assert.equal(layerFloat.wrapX, CLAMP_TO_EDGE);
+				assert.equal(layerFloat.wrapY, CLAMP_TO_EDGE);
 				layerFloat.dispose();
 				const layerHalfFloat = new GPULayer(composer1, {
 					name: 'test-layer',
@@ -251,8 +251,8 @@
 				assert.equal(layerHalfFloat.type, HALF_FLOAT);
 				assert.equal(layerHalfFloat._internalType, HALF_FLOAT);
 				assert.equal(layerHalfFloat.filter, LINEAR);
-				assert.equal(layerHalfFloat.wrapS, CLAMP_TO_EDGE);
-				assert.equal(layerHalfFloat.wrapT, CLAMP_TO_EDGE);
+				assert.equal(layerHalfFloat.wrapX, CLAMP_TO_EDGE);
+				assert.equal(layerHalfFloat.wrapY, CLAMP_TO_EDGE);
 				layerHalfFloat.dispose();
 			});
 		});
@@ -518,8 +518,8 @@
 					numComponents: 3,
 					dimensions: [34, 56],
 					filter: LINEAR,
-					wrapS: REPEAT,
-					wrapT: REPEAT,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
 					writable: true,
 					numBuffers: 5,
 					clearValue,
@@ -533,8 +533,8 @@
 				assert.equal(clone.width, 34);
 				assert.equal(clone.height, 56);
 				assert.equal(clone.filter, LINEAR);
-				assert.equal(clone.wrapS, REPEAT);
-				assert.equal(clone.wrapT, REPEAT);
+				assert.equal(clone.wrapX, REPEAT);
+				assert.equal(clone.wrapY, REPEAT);
 				assert.equal(clone.writable, true);
 				assert.equal(clone.numBuffers, 5);
 				assert.deepEqual(clone.clearValue, clearValue.slice());
