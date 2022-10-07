@@ -1,6 +1,8 @@
 {
 	const {
 		_testing,
+		GPUComposer,
+		GPULayer,
 		FLOAT,
 		HALF_FLOAT,
 		UNSIGNED_BYTE,
@@ -54,6 +56,8 @@
 		preprocessVertexShader,
 		preprocessFragmentShader,
 		uniformInternalTypeForValue,
+		indexOfLayerInArray,
+		readPixelsAsync,
 		SAMPLER2D_FILTER,
 		SAMPLER2D_WRAP_X,
 		SAMPLER2D_WRAP_Y,
@@ -276,13 +280,27 @@
 					(message) => {console.log(message)},
 					{ GPUIO_INT: '1' },
 				), 'WebGLShader');
-				// TODO: test variations on gl_fragOut (non vector 4).
 				assert.typeOf(compileShader(
 					webgl1,
 					GLSL1,
 					PRECISION_HIGH_P,
 					PRECISION_HIGH_P,
 					preprocessFragmentShader(setUintValueFragmentShader, GLSL1),
+					webgl1.FRAGMENT_SHADER,
+					'fragment-shader-test',
+					(message) => {console.log(message)},
+					{ GPUIO_INT: '1' },
+				), 'WebGLShader');
+				assert.typeOf(compileShader(
+					webgl1,
+					GLSL1,
+					PRECISION_HIGH_P,
+					PRECISION_HIGH_P,
+					preprocessFragmentShader(`uniform uvec4 u_value;
+					out uint out_FragColor;
+					void main() {
+						out_FragColor = u_value;
+					}`, GLSL1),
 					webgl1.FRAGMENT_SHADER,
 					'fragment-shader-test',
 					(message) => {console.log(message)},
@@ -438,16 +456,16 @@
 				assert.equal(isWebGL2(null), false);
 			});
 		});
+		describe('isWebGL2Supported', () => {
+			it('should return that Chrome supports WebGL 2', () => {
+				assert.equal(isWebGL2Supported(), true);
+			});
+		});
 		describe('readyToRead', () => {
 			it('should determine if framebuffer is ready to read', () => {
 				const context = document.createElement('canvas').getContext(WEBGL2);
 				const framebuffer = context.createFramebuffer();
 				assert.equal(readyToRead(context), true);
-			});
-		});
-		describe('isWebGL2Supported', () => {
-			it('should return that Chrome supports WebGL 2', () => {
-				assert.equal(isWebGL2Supported(), true);
 			});
 		});
 		describe('isHighpSupportedInVertexShader', () => {
@@ -677,12 +695,48 @@ void main() {
 		});
 		describe('indexOfLayerInArray', () => {
 			it('should return index of layer in array', () => {
-				// TODO: finish this.
+				const composer = new GPUComposer({ canvas: document.createElement('canvas') });
+				const layer1 = new GPULayer(composer, {
+					name: 'test',
+					type: FLOAT,
+					numComponents: 2,
+					dimensions: 12,
+				});
+				const layer2 = layer1.clone();
+				const layer3 = layer1.clone();
+				const layer4 = layer1.clone();
+				const array = [layer1, layer2, { layer: layer3 }];
+				assert.equal(indexOfLayerInArray(layer1, array), 0);
+				assert.equal(indexOfLayerInArray(layer2, array), 1);
+				assert.equal(indexOfLayerInArray(layer3, array), 2)
+				assert.equal(indexOfLayerInArray(layer4, array), -1);
+				layer1.dispose();
+				layer2.dispose();
+				layer3.dispose();
+				layer4.dispose();
+				composer.dispose();
 			});
 		});
 		describe('readPixelsAsync', () => {
-			it('should read pixels async', () => {
-				// TODO: finish this.
+			it('should read pixels async', async () => {
+				const composer = new GPUComposer({ canvas: document.createElement('canvas') });
+				const layer1 = new GPULayer(composer, {
+					name: 'test',
+					type: FLOAT,
+					numComponents: 4,
+					dimensions: [1,1],
+					clearValue: 3,
+				});
+				layer1.clear();
+				const array = new Float32Array(4);
+				const { gl } = composer;
+				await readPixelsAsync(gl, 0, 0, 1, 1, gl.RGBA, gl.FLOAT, array);
+				assert.equal(array[0], 3);
+				assert.equal(array[1], 3);
+				assert.equal(array[2], 3);
+				assert.equal(array[3], 3);
+				layer1.dispose();
+				composer.dispose();
 			});
 		});
 	});

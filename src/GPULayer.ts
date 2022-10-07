@@ -84,7 +84,7 @@ export class GPULayer {
 	/**
 	 * Sets GPULayer as readonly or readwrite, defaults to false.
 	 */
-	readonly writable: boolean;
+	_writable: boolean = false;
 	// Value to set when clear() is called, defaults to zero.
 	// Access with GPULayer.clearValue.
 	private _clearValue: number | number[] = 0;
@@ -311,7 +311,7 @@ export class GPULayer {
 
 		// Writable defaults to false.
 		const writable = !!params.writable;
-		this.writable = writable;
+		this._writable = writable;
 
 		// Set dimensions, may be 1D or 2D.
 		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, composer.verboseLogging);
@@ -383,7 +383,6 @@ export class GPULayer {
 		this._glWrapS = gl[this._internalWrapS];
 		this._internalWrapT = GPULayer.getGPULayerInternalWrap({ composer, wrap: wrapT, internalFilter, internalType, name });
 		this._glWrapT = gl[this._internalWrapT];
-		
 
 		// Num buffers is the number of states to store for this data.
 		const numBuffers = params.numBuffers !== undefined ? params.numBuffers : 1;
@@ -422,6 +421,13 @@ export class GPULayer {
 			throw new Error(`Cannot access length on 2D GPULayer "${this.name}".`);
 		}
 		return this._length;
+	}
+
+	/**
+	 * Flags GPULayer as readonly or readwrite, defaults to false.
+	 */
+	get writable() {
+		return this._writable;
 	}
 
 	/**
@@ -624,7 +630,7 @@ export class GPULayer {
 	_prepareForWrite(
 		incrementBufferIndex: boolean,
 	) {
-		if (!this.writable) {
+		if (!this._writable) {
 			throw new Error(`GPULayer "${this.name}" is not writable.`);
 		}
 		if (incrementBufferIndex) {
@@ -706,7 +712,7 @@ export class GPULayer {
 	 * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
 	 */
 	clear(applyToAllBuffers = false) {
-		const { name, _composer, clearValue, numBuffers, bufferIndex, type } = this;
+		const { name, _composer, clearValue, numBuffers, bufferIndex, type, _writable } = this;
 		const { verboseLogging } = _composer;
 		if (verboseLogging) console.log(`Clearing GPULayer "${name}".`);
 
@@ -722,45 +728,17 @@ export class GPULayer {
 	
 		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
-		if (this.writable) {
-			const program = _composer._setValueProgramForType(type);
-			program.setUniform('u_value', value);
-			for (let i = startIndex; i < endIndex; i++) {
-				// Write clear value to buffers.
-				_composer.step({
-					program,
-					output: this,
-				});
-			}
-		} else {
-			// Init a typed array containing clearValue and pass to buffers.
-			const {
-				width, height, _glNumChannels, _internalType,
-				_glInternalFormat, _glFormat, _glType,
-			} = this;
-			const { gl } = _composer;
-			const fillLength = this._length ? this._length : width * height;
-			const array = GPULayer.initArrayForType(_internalType, width * height * _glNumChannels);
-			const float16View = _internalType === HALF_FLOAT ? new DataView(array.buffer) : null;
-			for (let j = 0; j < fillLength; j++) {
-				for (let k = 0; k < _glNumChannels; k++) {
-					const index = j * _glNumChannels + k;
-					if (_internalType === HALF_FLOAT) {
-						// Float16 needs to be handled separately.
-						setFloat16(float16View!, 2 * index, value[k], true);
-					} else {
-						array[index] = value[k];
-					}
-				}
-			}
-			for (let i = startIndex; i < endIndex; i++) {
-				const { texture } = this.getStateAtIndex(i);
-				gl.bindTexture(gl.TEXTURE_2D, texture);
-				gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, array);
-			}
-			// Unbind texture.
-			gl.bindTexture(gl.TEXTURE_2D, null);
+		const program = _composer._setValueProgramForType(type);
+		program.setUniform('u_value', value);
+		this._writable = true; // Temporarily make writable.
+		for (let i = startIndex; i < endIndex; i++) {
+			// Write clear value to buffers.
+			_composer.step({
+				program,
+				output: this,
+			});
 		}
+		this._writable = _writable;
 	}
 
 	private _getValuesSetup() {

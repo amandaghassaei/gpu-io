@@ -6,6 +6,16 @@ import { GLSLVersion, GLSL3 } from './constants';
  * https://stackoverflow.com/questions/3569104/positive-look-behind-in-javascript-regular-expression/3569116#3569116
  */
 
+type GLSLType = 'float' | 'int' | 'uint' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
+
+/**
+ * Convert vertex shader "in" to "attribute".
+ * @private
+ */
+export function glsl1VertexIn(shaderSource: string) {
+	return shaderSource.replace(/\bin\b/g, 'attribute');
+}
+
 function escapeRegExp(string: string){
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
@@ -13,9 +23,8 @@ function escapeRegExp(string: string){
 /**
  * Typecast variable assignment.
  * This is used in cases when e.g. varyings have to be converted to float in GLSL1.
- * @private
  */
-export function typecastVariable(shaderSource: string, variableName: string, type: string) {
+function typecastVariable(shaderSource: string, variableName: string, type: string) {
 	// "s" makes this work for multiline values.
 	// Do this without lookbehind to support older browsers.
 	// const regexMatch = new RegExp(`(?<=\\b${escapeRegExp(variableName)}\\s*=\\s*)\\S[^;]*(?=;)`, 'sg');
@@ -37,14 +46,6 @@ export function typecastVariable(shaderSource: string, variableName: string, typ
 		console.warn(`No assignment found for shader variable ${variableName}.`);
 	}
 	return shaderSource;
-}
-
-/**
- * Convert vertex shader "in" to "attribute".
- * @private
- */
-export function glsl1VertexIn(shaderSource: string) {
-	return shaderSource.replace(/\bin\b/g, 'attribute');
 }
 
 /**
@@ -114,15 +115,6 @@ export function glsl1FragmentIn(shaderSource: string) {
 	return shaderSource;
 }
 
-/**
- * Contains gl_FragColor.
- * @private
- */
-function containsGLFragColor(shaderSource: string) {
-	return !!shaderSource.match(/\bgl_FragColor\b/);
-}
-
-type GLSLType = 'float' | 'int' | 'uint' | 'vec2' | 'vec3' | 'vec4' | 'ivec2' | 'ivec3' | 'ivec4' | 'uvec2' | 'uvec3' | 'uvec4';
 /**
  * Get variable name, type, and layout number for out variables.
  * Only exported for testing.
@@ -253,6 +245,14 @@ export function glsl1FragmentOut(shaderSource: string, programName: string) {
 		shaderSources.push(outShaderSource);
 	}
 	return shaderSources;
+}
+
+/**
+ * Contains gl_FragColor.
+ * @private
+ */
+ function containsGLFragColor(shaderSource: string) {
+	return !!shaderSource.match(/\bgl_FragColor\b/);
 }
 
 /**

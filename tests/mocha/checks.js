@@ -24,6 +24,8 @@
 		isValidImageType,
 		isValidClearValue,
 		isNumberOfType,
+		checkValidKeys,
+		checkRequiredKeys,
 	} = _testing;
 
 	const numberChecks = [
@@ -204,6 +206,20 @@
 				assert.equal(isNumberOfType(-2147483649, INT), false, `failed on ${-2147483649}`);
 				assert.equal(isNumberOfType(2147483647, INT), true, `failed on ${2147483647}`);
 				assert.equal(isNumberOfType(2147483648, INT), false, `failed on ${2147483648}`);
+			});
+		});
+		describe('checkValidKeys', () => {
+			it('should check for valid keys', () => {
+				assert.throws(() => { checkValidKeys(['1', '2', '3'], ['1', '2'], 'test'); },
+					'Invalid params key "3" passed to test.  Valid keys are ["1","2"].');
+				assert.equal(checkValidKeys(['1', '2', '3'], ['1', '2', '3', '4'], 'test'), undefined);
+			});
+		});
+		describe('checkRequiredKeys', () => {
+			it('should check for required keys', () => {
+				assert.throws(() => { checkRequiredKeys(['1', '2', '3'], ['1', '4'], 'test'); },
+					'Required params key "4" was not passed to test.');
+				assert.equal(checkRequiredKeys(['1', '2', '3', '4'], ['1', '2', '3'], 'test'), undefined);
 			});
 		});
 	});

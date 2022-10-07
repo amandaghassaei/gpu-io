@@ -2646,7 +2646,7 @@ var GPUComposer = /** @class */ (function () {
             filter: gpuLayer.filter,
             wrapS: gpuLayer.wrapS,
             wrapT: gpuLayer.wrapT,
-            writable: gpuLayer.writable,
+            writable: true,
             numBuffers: gpuLayer.numBuffers,
             clearValue: gpuLayer.clearValue,
             array: array,
@@ -2665,6 +2665,7 @@ var GPUComposer = /** @class */ (function () {
             input: gpuLayer.currentState,
             output: clone,
         });
+        clone._writable = gpuLayer.writable;
         // TODO: Increment clone's buffer index until it is identical to the original layer.
         return clone;
     };
@@ -3919,6 +3920,10 @@ var GPULayer = /** @class */ (function () {
      * @param params.array - Array to initialize GPULayer.
      */
     function GPULayer(composer, params) {
+        /**
+         * Sets GPULayer as readonly or readwrite, defaults to false.
+         */
+        this._writable = false;
         // Value to set when clear() is called, defaults to zero.
         // Access with GPULayer.clearValue.
         this._clearValue = 0;
@@ -3955,7 +3960,7 @@ var GPULayer = /** @class */ (function () {
         this.numComponents = numComponents;
         // Writable defaults to false.
         var writable = !!params.writable;
-        this.writable = writable;
+        this._writable = writable;
         // Set dimensions, may be 1D or 2D.
         var _a = GPULayer.calcGPULayerSize(dimensions, name, composer.verboseLogging), length = _a.length, width = _a.width, height = _a.height;
         // We already type checked length, width, and height in calcGPULayerSize.
@@ -4124,6 +4129,16 @@ var GPULayer = /** @class */ (function () {
                 throw new Error("Cannot access length on 2D GPULayer \"".concat(this.name, "\"."));
             }
             return this._length;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GPULayer.prototype, "writable", {
+        /**
+         * Flags GPULayer as readonly or readwrite, defaults to false.
+         */
+        get: function () {
+            return this._writable;
         },
         enumerable: false,
         configurable: true
@@ -4312,7 +4327,7 @@ var GPULayer = /** @class */ (function () {
      * @private
      */
     GPULayer.prototype._prepareForWrite = function (incrementBufferIndex) {
-        if (!this.writable) {
+        if (!this._writable) {
             throw new Error("GPULayer \"".concat(this.name, "\" is not writable."));
         }
         if (incrementBufferIndex) {
@@ -4392,7 +4407,7 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.clear = function (applyToAllBuffers) {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
-        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type;
+        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type, _writable = _a._writable;
         var verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Clearing GPULayer \"".concat(name, "\"."));
@@ -4408,44 +4423,17 @@ var GPULayer = /** @class */ (function () {
         }
         var startIndex = applyToAllBuffers ? 0 : bufferIndex;
         var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
-        if (this.writable) {
-            var program = _composer._setValueProgramForType(type);
-            program.setUniform('u_value', value);
-            for (var i = startIndex; i < endIndex; i++) {
-                // Write clear value to buffers.
-                _composer.step({
-                    program: program,
-                    output: this,
-                });
-            }
+        var program = _composer._setValueProgramForType(type);
+        program.setUniform('u_value', value);
+        this._writable = true; // Temporarily make writable.
+        for (var i = startIndex; i < endIndex; i++) {
+            // Write clear value to buffers.
+            _composer.step({
+                program: program,
+                output: this,
+            });
         }
-        else {
-            // Init a typed array containing clearValue and pass to buffers.
-            var _b = this, width = _b.width, height = _b.height, _glNumChannels = _b._glNumChannels, _internalType = _b._internalType, _glInternalFormat = _b._glInternalFormat, _glFormat = _b._glFormat, _glType = _b._glType;
-            var gl = _composer.gl;
-            var fillLength = this._length ? this._length : width * height;
-            var array = GPULayer.initArrayForType(_internalType, width * height * _glNumChannels);
-            var float16View = _internalType === constants_1.HALF_FLOAT ? new DataView(array.buffer) : null;
-            for (var j = 0; j < fillLength; j++) {
-                for (var k = 0; k < _glNumChannels; k++) {
-                    var index = j * _glNumChannels + k;
-                    if (_internalType === constants_1.HALF_FLOAT) {
-                        // Float16 needs to be handled separately.
-                        (0, float16_1.setFloat16)(float16View, 2 * index, value[k], true);
-                    }
-                    else {
-                        array[index] = value[k];
-                    }
-                }
-            }
-            for (var i = startIndex; i < endIndex; i++) {
-                var texture = this.getStateAtIndex(i).texture;
-                gl.bindTexture(gl.TEXTURE_2D, texture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, array);
-            }
-            // Unbind texture.
-            gl.bindTexture(gl.TEXTURE_2D, null);
-        }
+        this._writable = _writable;
     };
     GPULayer.prototype._getValuesSetup = function () {
         var _a = this, width = _a.width, height = _a.height, _composer = _a._composer;
@@ -7543,7 +7531,7 @@ var Programs = __webpack_require__(579);
 /**
  * @private
  */
-var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue, indexOfLayerInArray: utils.indexOfLayerInArray }, extensions), regex), checks), GPULayerHelpers), polyfills), conversions);
+var _testing = __assign(__assign(__assign(__assign(__assign(__assign({ isFloatType: utils.isFloatType, isUnsignedIntType: utils.isUnsignedIntType, isSignedIntType: utils.isSignedIntType, isIntType: utils.isIntType, makeShaderHeader: utils.makeShaderHeader, compileShader: utils.compileShader, initGLProgram: utils.initGLProgram, readyToRead: utils.readyToRead, preprocessVertexShader: utils.preprocessVertexShader, preprocessFragmentShader: utils.preprocessFragmentShader, isPowerOf2: utils.isPowerOf2, initSequentialFloatArray: utils.initSequentialFloatArray, uniformInternalTypeForValue: utils.uniformInternalTypeForValue, indexOfLayerInArray: utils.indexOfLayerInArray, readPixelsAsync: utils.readPixelsAsync }, extensions), regex), checks), GPULayerHelpers), polyfills), conversions);
 exports._testing = _testing;
 // Named exports.
 var isWebGL2 = utils.isWebGL2, isWebGL2Supported = utils.isWebGL2Supported, isHighpSupportedInVertexShader = utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader = utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision = utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision = utils.getFragmentShaderMediumpPrecision;

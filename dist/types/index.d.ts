@@ -82,6 +82,7 @@ declare const _testing: {
     initSequentialFloatArray: typeof utils.initSequentialFloatArray;
     uniformInternalTypeForValue: typeof utils.uniformInternalTypeForValue;
     indexOfLayerInArray: typeof utils.indexOfLayerInArray;
+    readPixelsAsync: typeof utils.readPixelsAsync;
 };
 declare const isWebGL2: typeof utils.isWebGL2, isWebGL2Supported: typeof utils.isWebGL2Supported, isHighpSupportedInVertexShader: typeof utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader: typeof utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision: typeof utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision: typeof utils.getFragmentShaderMediumpPrecision;
 declare const copyProgram: typeof Programs.copyProgram, addLayersProgram: typeof Programs.addLayersProgram, addValueProgram: typeof Programs.addValueProgram, multiplyValueProgram: typeof Programs.multiplyValueProgram, renderAmplitudeProgram: typeof Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram: typeof Programs.renderSignedAmplitudeProgram, setValueProgram: typeof Programs.setValueProgram, setColorProgram: typeof Programs.setColorProgram;

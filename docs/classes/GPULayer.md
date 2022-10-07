@@ -12,7 +12,7 @@
 - [filter](GPULayer.md#filter)
 - [wrapS](GPULayer.md#wraps)
 - [wrapT](GPULayer.md#wrapt)
-- [writable](GPULayer.md#writable)
+- [\_writable](GPULayer.md#_writable)
 - [numBuffers](GPULayer.md#numbuffers)
 
 ### Methods
@@ -41,6 +41,7 @@
 - [width](GPULayer.md#width)
 - [height](GPULayer.md#height)
 - [length](GPULayer.md#length)
+- [writable](GPULayer.md#writable)
 - [bufferIndex](GPULayer.md#bufferindex)
 - [currentState](GPULayer.md#currentstate)
 - [lastState](GPULayer.md#laststate)
@@ -96,9 +97,9 @@ Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 
 ___
 
-### writable
+### \_writable
 
-• `Readonly` **writable**: `boolean`
+• **\_writable**: `boolean` = `false`
 
 Sets GPULayer as readonly or readwrite, defaults to false.
 
@@ -409,6 +410,18 @@ The length of the GPULayer array (only available to 1D GPULayers).
 #### Returns
 
 `number`
+
+___
+
+### writable
+
+• `get` **writable**(): `boolean`
+
+Flags GPULayer as readonly or readwrite, defaults to false.
+
+#### Returns
+
+`boolean`
 
 ___
 

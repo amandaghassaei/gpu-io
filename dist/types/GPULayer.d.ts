@@ -30,7 +30,7 @@ export declare class GPULayer {
     /**
      * Sets GPULayer as readonly or readwrite, defaults to false.
      */
-    readonly writable: boolean;
+    _writable: boolean;
     private _clearValue;
     private _bufferIndex;
     readonly numBuffers: number;
@@ -147,6 +147,10 @@ export declare class GPULayer {
      * The length of the GPULayer array (only available to 1D GPULayers).
      */
     get length(): number;
+    /**
+     * Flags GPULayer as readonly or readwrite, defaults to false.
+     */
+    get writable(): boolean;
     /**
      * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
      * @returns - true if GPULayer is 1D, else false.

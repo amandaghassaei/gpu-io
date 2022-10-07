@@ -29,6 +29,7 @@ const _testing = {
 	initSequentialFloatArray: utils.initSequentialFloatArray,
 	uniformInternalTypeForValue: utils.uniformInternalTypeForValue,
 	indexOfLayerInArray: utils.indexOfLayerInArray,
+	readPixelsAsync: utils.readPixelsAsync,
 	...extensions,
 	...regex,
 	...checks,
