@@ -17,7 +17,7 @@ function main({ gui, contextID, glslVersion}) {
 	const PARAMS = {
 		showPressureField: false,
 		showVelocityField: false,
-		trailLength: 20,
+		trailLength: 10,
 		reset: onResize,
 		savePNG: savePNG,
 	};
