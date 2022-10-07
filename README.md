@@ -63,8 +63,8 @@ const state = new GPULayer(composer, {
     type: FLOAT, // Float data type.
     filter: LINEAR, // Linear interpolation.
     numBuffers: 2, // Toggle read/write from one buffer to the other.
-    wrapS: REPEAT, // Wrap boundaries.
-    wrapT: REPEAT,
+    wrapX: REPEAT, // Wrap boundaries.
+    wrapY: REPEAT,
     writable: true,
     array: noise, // Initial value.
 });
@@ -226,8 +226,8 @@ const layer1 = new GPUIO.GPULayer({
     dimensions: [100, 100],
     type: GPUIO.UNSIGNED_BYTE,
     numComponents: 1,
-    wrapS: GPUIO.CLAMP_TO_EDGE,
-    wrapT: GPUIO.CLAMP_TO_EDGE,
+    wrapX: GPUIO.CLAMP_TO_EDGE,
+    wrapY: GPUIO.CLAMP_TO_EDGE,
     filter: GPUIO.NEAREST,
     writable: true,
     numBuffers: 1,

@@ -48,8 +48,8 @@ function main({ gui, contextID, glslVersion}) {
 		numComponents: 1,
 		type: BYTE,
 		numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
-		wrapS: REPEAT,
-		wrapT: REPEAT,
+		wrapX: REPEAT,
+		wrapY: REPEAT,
 		writable: true,
 	});
 	const golRules = new GPUProgram(composer, {
@@ -148,8 +148,8 @@ function main({ gui, contextID, glslVersion}) {
 		numComponents: 1,
 		type: BYTE,
 		numBuffers: 1,
-		wrapS: REPEAT,
-		wrapT: REPEAT,
+		wrapX: REPEAT,
+		wrapY: REPEAT,
 		writable: false,
 	});
 	// During touch, copy data from noise over to state.

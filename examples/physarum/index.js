@@ -304,8 +304,8 @@ function main({ gui, glslVersion, contextID }) {
 		type: FLOAT,
 		filter: LINEAR,
 		numBuffers: 2,
-		wrapS: REPEAT,
-		wrapT: REPEAT,
+		wrapX: REPEAT,
+		wrapY: REPEAT,
 		writable: true,
 	});
 	// Fragment shader program for adding chemical attractant from particles to trail layer.

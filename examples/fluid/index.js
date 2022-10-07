@@ -65,8 +65,8 @@ function main({ gui, contextID, glslVersion}) {
 		type: FLOAT,
 		filter: LINEAR,
 		numComponents: 2,
-		wrapS: REPEAT,
-		wrapT: REPEAT,
+		wrapX: REPEAT,
+		wrapY: REPEAT,
 		writable: true,
 		numBuffers: 2,
 	});
@@ -76,8 +76,8 @@ function main({ gui, contextID, glslVersion}) {
 		type: FLOAT,
 		filter: NEAREST,
 		numComponents: 1,
-		wrapS: REPEAT,
-		wrapT: REPEAT,
+		wrapX: REPEAT,
+		wrapY: REPEAT,
 		writable: true,
 	});
 	const pressureState = new GPULayer(composer, {
@@ -86,8 +86,8 @@ function main({ gui, contextID, glslVersion}) {
 		type: FLOAT,
 		filter: NEAREST,
 		numComponents: 1,
-		wrapS: REPEAT,
-		wrapT: REPEAT,
+		wrapX: REPEAT,
+		wrapY: REPEAT,
 		writable: true,
 		numBuffers: 2,
 	});

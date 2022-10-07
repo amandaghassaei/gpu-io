@@ -43,8 +43,8 @@ const state = new GPULayer(composer, {
     type: FLOAT,
     filter: LINEAR,
     numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
-    wrapS: REPEAT,
-    wrapT: REPEAT,
+    wrapX: REPEAT,
+    wrapY: REPEAT,
     writable: true,
     array: noise,
 });
