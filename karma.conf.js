@@ -18,6 +18,7 @@ module.exports = function(config) {
       'dist/*.js',
       'node_modules/@petamoriken/float16/browser/float16.js',
 	  'node_modules/@amandaghassaei/type-checks/dist/type-checks.js',
+	  'node_modules/three/build/three.js',
       'tests/common/*.js',
 	  {pattern: "tests/common/*.png", watched: false, included: false, served: true},
 	  {pattern: "tests/common/*.jpg", watched: false, included: false, served: true},

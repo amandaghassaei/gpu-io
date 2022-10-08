@@ -427,8 +427,8 @@ const testLayerWrites = (() => {
 			if (typeMismatch) {
 				log.push(`Unsupported type ${TYPE} for the current configuration, using type ${layer._internalType} internally.`);
 			}
-			if (WRAP !== layer._internalWrapS || WRAP !== layer._internalWrapT) {
-				polyfill.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap ${layer._internalWrapS} internally and patching with fragment shader polyfill.`);
+			if (WRAP !== layer._internalWrapX || WRAP !== layer._internalWrapY) {
+				polyfill.push(`Unsupported boundary wrap ${WRAP} for the current configuration, using wrap ${layer._internalWrapX} internally and patching with fragment shader polyfill.`);
 			}
 			if (composer.gl[FILTER] !== layer._glFilter) {
 				const filter = layer._glFilter === composer.gl[NEAREST] ? NEAREST : LINEAR;

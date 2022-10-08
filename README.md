@@ -149,6 +149,10 @@ Source code for all examples can be found in [examples/](https://github.com/aman
 - [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
 - [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
 - [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
+<!-- 
+TODO:
+- texture synthesis
+- threejs -->
 
 
 Please let me kow if you have something that you would like to add to this list!

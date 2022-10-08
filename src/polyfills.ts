@@ -405,7 +405,7 @@ float atanh(float x) {
 
 let FRAGMENT_SHADER_POLYFILLS: string;
 /**
- * Polyfills to be make available for both GLSL1 and GLSL3fragment shaders.
+ * Polyfills to be make available for both GLSL1 and GLSL3 fragment shaders.
  * @private
  */
 export function fragmentShaderPolyfills() {

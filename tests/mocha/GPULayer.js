@@ -311,7 +311,7 @@
 				layer2.dispose();
 			});
 		});
-		describe('get bufferIndex, incrementBufferIndex', () => {
+		describe('get bufferIndex, incrementBufferIndex, decrementBufferIndex', () => {
 			it('should increment bufferIndex', () => {
 				const layer = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 4});
 				assert.equal(layer.bufferIndex, 0);
@@ -322,6 +322,14 @@
 				layer.incrementBufferIndex();
 				assert.equal(layer.bufferIndex, 3);
 				layer.incrementBufferIndex();
+				assert.equal(layer.bufferIndex, 0);
+				layer.decrementBufferIndex();
+				assert.equal(layer.bufferIndex, 3);
+				layer.decrementBufferIndex();
+				assert.equal(layer.bufferIndex, 2);
+				layer.decrementBufferIndex();
+				assert.equal(layer.bufferIndex, 1);
+				layer.decrementBufferIndex();
 				assert.equal(layer.bufferIndex, 0);
 				layer.dispose();
 			});
@@ -353,7 +361,6 @@
 		describe('_prepareForWrite', () => {
 			it('should increment index', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3});
-				const { gl } = composer1;
 				assert.equal(layer1.bufferIndex, 0);
 				layer1._prepareForWrite();
 				assert.equal(layer1.bufferIndex, 0);
@@ -367,17 +374,85 @@
 		});
 		describe('setFromArray', () => {
 			it('should set values of GPULayer', () => {
-				// TODO:
-			});
-		});
-		describe('setFromImage', () => {
-			it('should set values of GPULayer', () => {
-				// TODO:
+				const layer = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [34, 56],
+					filter: LINEAR,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
+					numBuffers: 5,
+				});
+				layer.setFromArray((new Float32Array(34 * 56 * 3)).fill(-5));
+				let values = layer.getValues();
+				for (let i = 0; i < values.length; i++) {
+					assert.equal(values[i], -5);
+				}
+				layer.setFromArray((new Array(34 * 56 * 3)).fill(43));
+				values = layer.getValues();
+				for (let i = 0; i < values.length; i++) {
+					assert.equal(values[i], 43);
+				}
+				// Wrong dimensions.
+				assert.throws(() => { layer.setFromArray((new Float32Array(34 * 50 * 3)).fill(-5)); },
+					'Invalid data length: 5100 for GPULayer "test-layer" of dimensions: [34, 56] and numComponents: 3.');
+				layer.dispose();
 			});
 		});
 		describe('resize', () => {
-			it('should ', () => {
-				// TODO:
+			it('should resize GPULayer and set data if provided', () => {
+				const layer = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [34, 56],
+					filter: LINEAR,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
+					numBuffers: 5,
+				});
+				assert.equal(layer.width, 34);
+				assert.equal(layer.height, 56);
+				layer.resize([23, 5]);
+				assert.equal(layer.width, 23);
+				assert.equal(layer.height, 5);
+				layer.resize([34, 56], (new Float32Array(34 * 56 * 3)).fill(-5));
+				assert.equal(layer.width, 34);
+				assert.equal(layer.height, 56);
+				let values = layer.getValues();
+				for (let i = 0; i < values.length; i++) {
+					assert.equal(values[i], -5);
+				}
+				layer.dispose();
+			});
+			it('should resize 1D GPULayers', () => {
+				const layer = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: 100,
+					filter: LINEAR,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
+					numBuffers: 5,
+				});
+				assert.equal(layer.width, 10);
+				assert.equal(layer.height, 10);
+				assert.equal(layer.length, 100);
+				assert.equal(layer.is1D(), true);
+				layer.resize([23, 5]);
+				assert.equal(layer.is1D(), false);
+				assert.equal(layer.width, 23);
+				assert.equal(layer.height, 5);
+				layer.resize([34, 56], (new Float32Array(34 * 56 * 3)).fill(-5));
+				assert.equal(layer.width, 34);
+				assert.equal(layer.height, 56);
+				let values = layer.getValues();
+				for (let i = 0; i < values.length; i++) {
+					assert.equal(values[i], -5);
+				}
+				layer.dispose();
 			});
 		});
 		describe('set clearValue, get clearValue, clear', () => {
@@ -386,12 +461,14 @@
 				assert.equal(layer1.clearValue, 0);
 				layer1.clearValue = 10.4;
 				assert.equal(layer1.clearValue, 10.4);
+				assert.equal(layer1.bufferIndex, 0);
 				layer1.clear();
+				assert.equal(layer1.bufferIndex, 0);
 				const values1 = layer1.getValues();
 				for (let i = 0; i < values1.length; i++) {
 					assert.closeTo(values1[i], 10.4, 1e-6); // There is some float precision delta with this value.
 				}
-				const vec = [-45, 0, 10.75];
+				let vec = [-45, 0, 10.75];
 				layer1.clearValue = vec;
 				assert.deepEqual(layer1.clearValue, vec.slice());
 				assert.notEqual(layer1.clearValue, vec); // Check that it makes a copy.
@@ -411,18 +488,18 @@
 					}
 				}
 				// Test clear all layers.
+				vec = [-6, 39, 4];
+				layer1.clearValue = vec;
+				assert.equal(layer1.bufferIndex, 1);
 				layer1.clear(true);
-				const values4 = layer1.getValues();
-				for (let i = 0; i < values4.length / vec.length; i++) {
-					for (let j = 0; j < vec.length; j++) {
-						assert.equal(values4[i * vec.length + j], vec[j]);
-					}
-				}
-				layer1.incrementBufferIndex();
-				const values5 = layer1.getValues();
-				for (let i = 0; i < values5.length / vec.length; i++) {
-					for (let j = 0; j < vec.length; j++) {
-						assert.equal(values5[i * vec.length + j], vec[j]);
+				assert.equal(layer1.bufferIndex, 1);
+				for (let a = 0; a < layer1.numBuffers; a ++) {
+					layer1.incrementBufferIndex();
+					const values4 = layer1.getValues();
+					for (let i = 0; i < values4.length / vec.length; i++) {
+						for (let j = 0; j < vec.length; j++) {
+							assert.equal(values4[i * vec.length + j], vec[j]);
+						}
 					}
 				}
 				layer1.dispose();
@@ -492,12 +569,19 @@
 			// This is tested extensively in pipeline.js.
 		});
 		describe('getValuesAsync', () => {
-			it('should ', () => {
-				// TODO:
+			it('should return TypedArray with correct length and type', async () => {
+				[HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(async (type) => {
+					const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245});
+					assert.notEqual(layer1.length, layer1.width * layer1.height);
+					const values = await layer1.getValuesAsync();
+					// Due to some annoying browser things, this is currently returning one of Float32Array, Int32Array, or Uint32Array.
+					assert.typeOf(values, isFloatType(type) ? 'Float32Array' : (isUnsignedIntType(type) ? 'UInt32Array' : 'Int32Array'));
+					assert.equal(values.length, layer1.length * layer1.numComponents);
+					layer1.dispose();
+				});
 			});
 		});
 		describe('savePNG', () => {
-			// TODO: this could be more thorough.
 			it('should return Blob in callback', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67]});
 				layer1.savePNG({
@@ -526,12 +610,12 @@
 					filter: LINEAR,
 					wrapX: REPEAT,
 					wrapY: REPEAT,
-					
 					numBuffers: 5,
 					clearValue,
 					array: (new Float32Array(34 * 56 * 3)).fill(-5),
 				});
 				layer.incrementBufferIndex();
+				layer.clear();
 				const clone = layer.clone('clone')
 				assert.equal(clone.name, 'clone');
 				assert.equal(clone.type, FLOAT);
@@ -544,12 +628,20 @@
 				assert.equal(clone.numBuffers, 5);
 				assert.deepEqual(clone.clearValue, clearValue.slice());
 				assert.notEqual(clone.clearValue, layer.clearValue); // Make deep copy.
-				const values = clone.getValues();
-				for (let i = 0; i < values.length; i++) {
-					assert.equal(values[i], -5);
+				assert.equal(layer.bufferIndex, 1);
+				assert.equal(clone.bufferIndex, layer.bufferIndex);
+
+				// Check that values for all buffers have been copied over.
+				for (let j = 0; j < clone.numBuffers; j++) {
+					const values = clone.getValues();
+					const expected = layer.getValues();
+					for (let i = 0; i < values.length; i++) {
+						assert.equal(values[i], expected[i]);
+					}
+					clone.incrementBufferIndex();
+					layer.incrementBufferIndex();
 				}
-				// assert.equal(clone.bufferIndex, layer.bufferIndex);
-				// TODO: check that all buffers were copied.
+				
 				layer.dispose();
 				clone.dispose();
 			});

@@ -49,7 +49,7 @@ export declare function texturePolyfill(shaderSource: string): {
  */
 export declare function GLSL1Polyfills(): string;
 /**
- * Polyfills to be make available for both GLSL1 and GLSL3fragment shaders.
+ * Polyfills to be make available for both GLSL1 and GLSL3 fragment shaders.
  * @private
  */
 export declare function fragmentShaderPolyfills(): string;

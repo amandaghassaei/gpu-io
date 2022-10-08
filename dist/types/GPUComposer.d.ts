@@ -5,10 +5,6 @@ import { GPUProgram } from './GPUProgram';
 import type { WebGLRenderer } from 'three';
 export declare class GPUComposer {
     /**
-     * The canvas element associated with this GPUcomposer.
-     */
-    readonly canvas: HTMLCanvasElement;
-    /**
      * The WebGL context associated with this GPUcomposer.
      */
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
@@ -97,6 +93,22 @@ export declare class GPUComposer {
     private _lastTickFPS?;
     private _numTicks;
     /**
+     * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
+     * @param renderer - Threejs WebGLRenderer.
+     * @param params - GPUComposer parameters.
+     * @param params.intPrecision - Set the global integer precision in shader programs.
+     * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+     * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+     * @returns
+     */
+    static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
+        intPrecision?: GLSLPrecision;
+        floatPrecision?: GLSLPrecision;
+        verboseLogging?: boolean;
+        errorCallback?: ErrorCallback;
+    }): GPUComposer;
+    /**
      * Create a GPUComposer.
      * @param params - GPUComposer parameters.
      * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
@@ -122,22 +134,7 @@ export declare class GPUComposer {
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     });
-    /**
-     * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
-     * @param renderer - Threejs WebGLRenderer.
-     * @param params - GPUComposer parameters.
-     * @param params.intPrecision - Set the global integer precision in shader programs.
-     * @param params.floatPrecision - Set the global float precision in shader programs.
-     * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
-     * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
-     * @returns
-     */
-    static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
-        intPrecision?: GLSLPrecision;
-        floatPrecision?: GLSLPrecision;
-        verboseLogging?: boolean;
-        errorCallback?: ErrorCallback;
-    }): GPUComposer;
+    get canvas(): HTMLCanvasElement;
     /**
      * Gets (and caches) generic set value programs for several input types.
      * Used for GPULayer.clear(), among other things.
@@ -238,7 +235,7 @@ export declare class GPUComposer {
      * Call stepping/drawing function once for each output.
      * This is required when attempting to draw to multiple outputs using GLSL1.
      */
-    private iterateOverOutputsIfNeeded;
+    private _iterateOverOutputsIfNeeded;
     /**
      * Step GPUProgram entire fullscreen quad.
      * @param params - Step parameters.
@@ -357,7 +354,6 @@ export declare class GPUComposer {
         useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer | GPULayer[];
-        endCaps?: boolean;
         numCapSegments?: number;
         blendAlpha?: boolean;
     }): void;

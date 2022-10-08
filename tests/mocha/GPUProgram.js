@@ -284,9 +284,9 @@
 				layer.dispose();
 			});
 		});
-		describe('_setInternalFragmentUniforms', () => {
-			// TODO: 
-		});
+		// describe('_setInternalFragmentUniforms', () => {
+		// 	// This is tested by pipeline.js.
+		// });
 		describe('_setVertexUniform', () => {
 			it('should set program vertex uniform', () => {
 				// Don't throw an error for uniforms that don't exist (only warns).

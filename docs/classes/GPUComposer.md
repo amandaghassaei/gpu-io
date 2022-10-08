@@ -6,17 +6,12 @@
 
 ### Properties
 
-- [canvas](GPUComposer.md#canvas)
 - [gl](GPUComposer.md#gl)
 - [glslVersion](GPUComposer.md#glslversion)
 - [isWebGL2](GPUComposer.md#iswebgl2)
 - [intPrecision](GPUComposer.md#intprecision)
 - [floatPrecision](GPUComposer.md#floatprecision)
 - [verboseLogging](GPUComposer.md#verboselogging)
-
-### Constructors
-
-- [constructor](GPUComposer.md#constructor)
 
 ### Methods
 
@@ -35,15 +30,15 @@
 - [tick](GPUComposer.md#tick)
 - [dispose](GPUComposer.md#dispose)
 
+### Constructors
+
+- [constructor](GPUComposer.md#constructor)
+
+### Accessors
+
+- [canvas](GPUComposer.md#canvas)
+
 ## Properties
-
-### canvas
-
-• `Readonly` **canvas**: `HTMLCanvasElement`
-
-The canvas element associated with this GPUcomposer.
-
-___
 
 ### gl
 
@@ -90,29 +85,6 @@ ___
 • **verboseLogging**: `boolean` = `false`
 
 Flag to set GPUcomposer for verbose logging, defaults to false.
-
-## Constructors
-
-### constructor
-
-• **new GPUComposer**(`params`)
-
-Create a GPUComposer.
-
-#### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `params` | `Object` | GPUComposer parameters. |
-| `params.canvas` | `HTMLCanvasElement` | HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself). |
-| `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` | Pass in a WebGL context for the GPUcomposer to user. |
-| `params.contextID?` | `string` | Set the contextID to use when initing a new WebGL context. |
-| `params.contextAttributes?` | `Object` | Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more information). |
-| `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
-| `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
-| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global float precision in shader programs. |
-| `params.verboseLogging?` | `boolean` | Set the verbosity of GPUComposer logging (defaults to false). |
-| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) | Custom error handler, defaults to throwing an Error with message. |
 
 ## Methods
 
@@ -298,7 +270,6 @@ Step GPUProgram inside a rectangle.
 | `params.useOutputScale?` | `boolean` | If true position and size are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
-| `params.endCaps?` | `boolean` | - |
 | `params.numCapSegments?` | `number` | - |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
@@ -425,3 +396,36 @@ Deallocate GPUComposer instance and associated WebGL properties.
 #### Returns
 
 `void`
+
+## Constructors
+
+### constructor
+
+• **new GPUComposer**(`params`)
+
+Create a GPUComposer.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | GPUComposer parameters. |
+| `params.canvas` | `HTMLCanvasElement` | HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself). |
+| `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` | Pass in a WebGL context for the GPUcomposer to user. |
+| `params.contextID?` | `string` | Set the contextID to use when initing a new WebGL context. |
+| `params.contextAttributes?` | `Object` | Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more information). |
+| `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
+| `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
+| `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global float precision in shader programs. |
+| `params.verboseLogging?` | `boolean` | Set the verbosity of GPUComposer logging (defaults to false). |
+| `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) | Custom error handler, defaults to throwing an Error with message. |
+
+## Accessors
+
+### canvas
+
+• `get` **canvas**(): `HTMLCanvasElement`
+
+#### Returns
+
+`HTMLCanvasElement`

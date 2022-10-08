@@ -162,7 +162,6 @@ export class GPULayer {
 	
 	// Optimization so that "copying" can happen without draw calls by simply swapping WebGL textures between GPULayers.
 	// This functionality is not currently active right now, but will be added back in later.
-	// TODO: take a second look at this.
 	private _textureOverrides?: (WebGLTexture | undefined)[];
 
 	/**
@@ -229,7 +228,7 @@ export class GPULayer {
 			// Load image.
 			const image = new Image();
 			image.onload = () => {
-				layer.setFromImage(image);
+				layer.resize([image.width, image.height], image);
 				// Callback when texture has loaded.
 				resolve(layer);
 			};
@@ -544,6 +543,14 @@ export class GPULayer {
 	}
 
 	/**
+	 * Decrement buffer index by 1.
+	 */
+	 decrementBufferIndex() {
+		// Decrement bufferIndex.
+		this._bufferIndex = (this.bufferIndex - 1 + this.numBuffers) % this.numBuffers;
+	}
+
+	/**
 	 * Get the current state as a GPULayerState object.
 	 */
 	get currentState() {
@@ -556,8 +563,9 @@ export class GPULayer {
 	 * @private
 	 */
 	get _currentTexture() {
-		// tODO: check texture overrides.
-		return this._buffers[this._bufferIndex];
+		const { _buffers, _bufferIndex, _textureOverrides } = this;
+		if (_textureOverrides && _textureOverrides[_bufferIndex]) return _textureOverrides[_bufferIndex]!;
+		return _buffers[_bufferIndex];
 	}
 
 	/**
@@ -588,7 +596,7 @@ export class GPULayer {
 			}
 		}
 		let texture = _buffers[index];
-		if (_textureOverrides && _textureOverrides[index]) texture = _textureOverrides[index]!;
+		if (_textureOverrides && _textureOverrides[index]) texture =  _textureOverrides[index]!;
 		return {
 			texture,
 			layer: this,
@@ -612,39 +620,46 @@ export class GPULayer {
 		}
 	}
 
-	setFromArray(array: GPULayerArray | number[], applyToAllBuffers = false) {
-		const { _composer, _glInternalFormat, _glFormat, _glType, numBuffers, width, height, bufferIndex } = this;
+	setFromArray(array: GPULayerArray | number[]) {
+		const {
+			_composer,
+			_glInternalFormat,
+			_glFormat,
+			_glType,
+			width,
+			height,
+			_currentTexture,
+		} = this;
 		const { gl } = _composer;
 		const validatedArray = GPULayer.validateGPULayerArray(array, this);
-		// TODO: check that this is working.
-		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
-		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
-		for (let i = startIndex; i < endIndex; i++) {
-			const { texture } = this.getStateAtIndex(i);
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
-		}
+		gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
 		// Unbind texture.
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 
-	setFromImage(image: HTMLImageElement) {
-		const { name, _composer } = this;
-		const { verboseLogging } = _composer;
-		// TODO: check compatible type.
-		const dimensions = [image.width, image.height];
-		if (verboseLogging) console.log(`Resizing GPULayer "${name}" to ${JSON.stringify(dimensions)}.`);
-		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging);
-		this._length = length;
-		this._width = width;
-		this._height = height;
-		this._destroyBuffers();
-		this._initBuffers(image);
-	}
+	// setFromImage(image: HTMLImageElement) {
+	// 	const { name, _composer, width, height, _currentTexture, _glInternalFormat, _glFormat, _glType, numComponents, type } = this;
+	// 	const { gl } = _composer;
+	// 	// Check compatibility.
+	// 	if (!isValidImageType(type)) {
+	// 		throw new Error(`GPULayer has invalid type ${type} for setFromImage(), valid types are: ${JSON.stringify(validImageTypes)}.`);
+	// 	}
+	// 	if (numComponents < 3) {
+	// 		throw new Error(`GPULayer has invalid numComponents ${numComponents} for setFromImage(), must have either 3 (RGB) or 4 (RGBA) components.`);
+	// 	}
+	// 	if (image.width !== width || image.height !== height) {
+	// 		throw new Error(`Invalid image dimensions [${image.width}, ${image.height}] for GPULayer "${name}" with dimensions [${width}, ${height}].  Call GPULayer.resize(width, height, image) instead.`);
+	// 	}
+	// 	gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
+	// 	gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, image as any);
+	// 	// Unbind texture.
+	// 	gl.bindTexture(gl.TEXTURE_2D, null);
+	// }
 
 	resize(
 		dimensions: number | number[],
-		array?: GPULayerArray | number[],
+		arrayOrImage?: HTMLImageElement | GPULayerArray | number[],
 	) {
 		const { name, _composer } = this;
 		const { verboseLogging } = _composer;
@@ -654,7 +669,7 @@ export class GPULayer {
 		this._width = width;
 		this._height = height;
 		this._destroyBuffers();
-		this._initBuffers(array);
+		this._initBuffers(arrayOrImage);
 	}
 
 	/**
@@ -681,7 +696,7 @@ export class GPULayer {
 	 * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
 	 */
 	clear(applyToAllBuffers = false) {
-		const { name, _composer, clearValue, numBuffers, bufferIndex, type } = this;
+		const { name, _composer, clearValue, numBuffers, type } = this;
 		const { verboseLogging } = _composer;
 		if (verboseLogging) console.log(`Clearing GPULayer "${name}".`);
 
@@ -695,25 +710,26 @@ export class GPULayer {
 			}
 		}
 	
-		const startIndex = applyToAllBuffers ? 0 : bufferIndex;
-		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
+		const endIndex = applyToAllBuffers ? numBuffers : 1;
 		const program = _composer._setValueProgramForType(type);
 		program.setUniform('u_value', value);
-		for (let i = startIndex; i < endIndex; i++) {
+		this.decrementBufferIndex(); // step() wil increment buffer index before draw, this way we clear in place.
+		for (let i = 0; i < endIndex; i++) {
 			// Write clear value to buffers.
 			_composer.step({
 				program,
 				output: this,
 			});
 		}
+		if (applyToAllBuffers) this.incrementBufferIndex(); // Get us back to the starting index.
 	}
 
 	private _getValuesSetup() {
-		const { width, height, _composer } = this;
+		const { width, height, _composer, _currentTexture } = this;
 		const { gl } = _composer;
 
 		// In case GPULayer was not the last output written to.
-		bindFrameBuffer(this._composer, this, this._buffers[this.bufferIndex]);
+		bindFrameBuffer(_composer, this, _currentTexture);
 
 		let { _glNumChannels, _glType, _glFormat, _internalType } = this;
 		let values;

@@ -98,7 +98,7 @@ GPULayer.initArrayForType = (
  * Also checks that size elements are valid.
  * @private
  */
-// TODO: should we relax adherence to power of 2?
+
 GPULayer.calcGPULayerSize = (
 	size: number | number[],
 	name: string,
@@ -109,15 +109,18 @@ GPULayer.calcGPULayerSize = (
 			throw new Error(`Invalid length: ${JSON.stringify(size)} for GPULayer "${name}", must be positive integer.`);
 		}
 		const length = size as number;
-		// Calc power of two width and height for length.
-		let exp = 1;
-		let remainder = length;
-		while (remainder > 2) {
-			exp++;
-			remainder /= 2;
-		}
-		const width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
-		const height = Math.pow(2, Math.floor(exp/2));
+		// Relaxing adherence to power of 2.
+		// // Calc power of two width and height for length.
+		// let exp = 1;
+		// let remainder = length;
+		// while (remainder > 2) {
+		// 	exp++;
+		// 	remainder /= 2;
+		// }
+		// const width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
+		// const height = Math.pow(2, Math.floor(exp/2));
+		const width = Math.ceil(Math.sqrt(length));
+		const height = Math.ceil(length / width);
 		if (verboseLogging) console.log(`Using [${width}, ${height}] for 1D array of length ${size} in GPULayer "${name}".`);
 		return { width, height, length };
 	}
@@ -814,9 +817,9 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 		if (internalType === HALF_FLOAT) {
 			// The OES_texture_half_float extension implicitly enables EXT_color_buffer_half_float extension (for writing).
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT, true);
-			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
+			// FYI, very old safari issues: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			const valid = testWriteSupport(composer, internalType);
-			// May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+			// May still be ok for read-only, but this will affect the ability to call getValues() and savePNG().
 			// We'll let it pass for now.
 			if (!valid) {
 				console.warn(`This browser does not support writing to HALF_FLOAT textures.`);
@@ -850,7 +853,7 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			}
 			// Test attaching texture to framebuffer to be sure half float writing is supported.
 			const valid = testWriteSupport(composer, internalType);
-			// May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+			// May still be ok for read-only, but this will affect the ability to call getValues() and savePNG().
 			// We'll let it pass for now.
 			if (!valid) {
 				console.warn(`This browser does not support writing to HALF_FLOAT textures.`);

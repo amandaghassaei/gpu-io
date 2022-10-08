@@ -169,6 +169,10 @@ export declare class GPULayer {
      */
     incrementBufferIndex(): void;
     /**
+     * Decrement buffer index by 1.
+     */
+    decrementBufferIndex(): void;
+    /**
      * Get the current state as a GPULayerState object.
      */
     get currentState(): GPULayerState;
@@ -191,9 +195,8 @@ export declare class GPULayer {
      * @private
      */
     _prepareForWrite(incrementBufferIndex: boolean): void;
-    setFromArray(array: GPULayerArray | number[], applyToAllBuffers?: boolean): void;
-    setFromImage(image: HTMLImageElement): void;
-    resize(dimensions: number | number[], array?: GPULayerArray | number[]): void;
+    setFromArray(array: GPULayerArray | number[]): void;
+    resize(dimensions: number | number[], arrayOrImage?: HTMLImageElement | GPULayerArray | number[]): void;
     /**
      * Set the clearValue of the GPULayer, which is applied during GPULayer.clear().
      */

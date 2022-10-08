@@ -99,9 +99,9 @@
 		});
 		describe('GPULayer.calcGPULayerSize', () => {
 			it('should calc layer size for length', () => {
-				assert.deepEqual(GPULayer.calcGPULayerSize(10, 'test', false), { length: 10, width: 4, height: 4 });
-				assert.deepEqual(GPULayer.calcGPULayerSize(100, 'test', false), { length: 100, width: 16, height: 8 });
-				assert.deepEqual(GPULayer.calcGPULayerSize(12534, 'test', false), { length: 12534, width: 128, height: 128 });
+				assert.deepEqual(GPULayer.calcGPULayerSize(10, 'test', false), { length: 10, width: 4, height: 3 });
+				assert.deepEqual(GPULayer.calcGPULayerSize(100, 'test', false), { length: 100, width: 10, height: 10 });
+				assert.deepEqual(GPULayer.calcGPULayerSize(12534, 'test', false), { length: 12534, width: 112, height: 112 });
 			});
 			it('should pass through non-power of 2 width/height combinations', () => {
 				assert.deepEqual(GPULayer.calcGPULayerSize([2345, 245], 'test', false), { width: 2345, height: 245 });
@@ -409,7 +409,7 @@
 				// Wrong length.
 				const array1 = new Array(length * numComponents + 10);
 				assert.throws(() => { GPULayer.validateGPULayerArray(array1, layer1); },	
-					'Invalid data length: 310 for GPULayer "test" of length 100 and dimensions: [16, 8] and numComponents: 3.');
+					'Invalid data length: 310 for GPULayer "test" of length 100 and dimensions: [10, 10] and numComponents: 3.');
 				const array2 = new Array(size[0] * size[1] * numComponents + 10);
 				assert.throws(() => { GPULayer.validateGPULayerArray(array2, layer2); },
 					'Invalid data length: 370 for GPULayer "test" of dimensions: [10, 12] and numComponents: 3.');

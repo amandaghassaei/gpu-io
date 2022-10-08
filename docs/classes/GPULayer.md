@@ -19,9 +19,9 @@
 - [initFromImageURL](GPULayer.md#initfromimageurl)
 - [is1D](GPULayer.md#is1d)
 - [incrementBufferIndex](GPULayer.md#incrementbufferindex)
+- [decrementBufferIndex](GPULayer.md#decrementbufferindex)
 - [getStateAtIndex](GPULayer.md#getstateatindex)
 - [setFromArray](GPULayer.md#setfromarray)
-- [setFromImage](GPULayer.md#setfromimage)
 - [resize](GPULayer.md#resize)
 - [clear](GPULayer.md#clear)
 - [getValues](GPULayer.md#getvalues)
@@ -153,6 +153,18 @@ Increment buffer index by 1.
 
 ___
 
+### decrementBufferIndex
+
+▸ **decrementBufferIndex**(): `void`
+
+Decrement buffer index by 1.
+
+#### Returns
+
+`void`
+
+___
+
 ### getStateAtIndex
 
 ▸ **getStateAtIndex**(`index`): [`GPULayerState`](../README.md#gpulayerstate)
@@ -173,30 +185,13 @@ ___
 
 ### setFromArray
 
-▸ **setFromArray**(`array`, `applyToAllBuffers?`): `void`
-
-#### Parameters
-
-| Name | Type | Default value |
-| :------ | :------ | :------ |
-| `array` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) | `undefined` |
-| `applyToAllBuffers` | `boolean` | `false` |
-
-#### Returns
-
-`void`
-
-___
-
-### setFromImage
-
-▸ **setFromImage**(`image`): `void`
+▸ **setFromArray**(`array`): `void`
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
-| `image` | `HTMLImageElement` |
+| `array` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
 
 #### Returns
 
@@ -206,14 +201,14 @@ ___
 
 ### resize
 
-▸ **resize**(`dimensions`, `array?`): `void`
+▸ **resize**(`dimensions`, `arrayOrImage?`): `void`
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
 | `dimensions` | `number` \| `number`[] |
-| `array?` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
+| `arrayOrImage?` | `number`[] \| `HTMLImageElement` \| [`GPULayerArray`](../README.md#gpulayerarray) |
 
 #### Returns
 

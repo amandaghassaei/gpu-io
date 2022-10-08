@@ -191,8 +191,8 @@ export function compileShader(
 	gl.compileShader(shader);
 
 	if (checkCompileStatus) {
-		// TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
-		// Check if it compiled.
+		// Check if shaders compiled - do this only on the first compilation bc of:
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
 		const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 		if (!success) {
 			// Something went wrong during compilation - print shader source (with line number) and the error.

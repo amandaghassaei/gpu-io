@@ -75,12 +75,18 @@
 	settings.add(webGLSettings, 'webGLVersion', availableWebGLVersions).name('WebGL Version').onChange(reloadExampleWithNewParams);
 
 	// Add info modal.
-	const modalOptions = { showModal: () => {
-		// Show/hide overlay, otherwise clicks are passing through due to fixed/abs positioning of modal.
-		MicroModal.show('modal-1', { onClose: () => { setTimeout(() => { overlay.style.display = 'none'; }, 500); } });
-		overlay.style.display = 'block';
-	}}
+	const modalOptions = {
+		showModal: () => {
+			// Show/hide overlay, otherwise clicks are passing through due to fixed/abs positioning of modal.
+			MicroModal.show('modal-1', { onClose: () => { setTimeout(() => { overlay.style.display = 'none'; }, 500); } });
+			overlay.style.display = 'block';
+		},
+		sourceCode: () => {
+			document.getElementById('sourceCode').click();
+		},
+	}
 	gui.add(modalOptions, 'showModal').name('About');
+	gui.add(modalOptions, 'sourceCode').name('View Code');
 
 	// Load example app.
 	reloadExampleWithNewParams();

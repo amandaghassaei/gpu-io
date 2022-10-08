@@ -505,30 +505,3 @@ void main() {
 }`,
 	});
 }
-
-/**
- * Fragment shader that draws the magnitude of a GPULayer as a color.
- * TODO: this could be replaced with something else.
- * @private
- */
- export function vectorMagnitudeProgram(params: {
-	composer: GPUComposer,
-	type: GPULayerType,
- }) {
-	const { composer, type } = params;
-	const glslPrefix = glslPrefixForType(type);
-	return new GPUProgram(composer, {
-		name: `vectorMagnitude`,
-		fragmentShader: `
-in vec2 v_uv;
-uniform vec3 u_color;
-uniform float u_scale;
-uniform ${glslPrefix}sampler2D u_gpuio_data;
-out vec4 out_result;
-void main() {
-	uvec4 value = texture(u_gpuio_data, v_uv);
-	float mag = length(value);
-	out_result = vec4(mag * u_scale * u_color, 1);
-}`,
-	});
-}

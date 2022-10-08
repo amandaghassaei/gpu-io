@@ -113,7 +113,6 @@ export type GPULayerState = {
 	layer: GPULayer,
 }
 
-// TODO: change this?
 // For image urls that are passed in and inited as textures.
 /**
  * RGB image format.

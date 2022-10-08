@@ -59,15 +59,14 @@ import { SEGMENT_VERTEX_SHADER_SOURCE } from './glsl/vertex/SegmentVertexShader'
 import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerPointsVertexShader';
 import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVectorFieldVertexShader';
 import { uniformTypeForType } from './conversions';
-import { copyProgram, setValueProgram, vectorMagnitudeProgram, wrappedLineColorProgram } from './Programs';
+import {
+	copyProgram,
+	setValueProgram,
+} from './Programs';
 import { checkRequiredKeys, checkValidKeys } from './checks';
 import { bindFrameBuffer } from './framebuffers';
 
 export class GPUComposer {
-	/**
-	 * The canvas element associated with this GPUcomposer.
-	 */
-	readonly canvas: HTMLCanvasElement;
 	/**
 	 * The WebGL context associated with this GPUcomposer.
 	 */
@@ -194,6 +193,41 @@ export class GPUComposer {
 	private _numTicks = 0;
 
 	/**
+	 * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
+	 * @param renderer - Threejs WebGLRenderer.
+	 * @param params - GPUComposer parameters.
+	 * @param params.intPrecision - Set the global integer precision in shader programs.
+	 * @param params.floatPrecision - Set the global float precision in shader programs.
+	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
+	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
+	 * @returns 
+	 */
+	 static initWithThreeRenderer(
+		renderer: WebGLRenderer,
+		params?: {
+			intPrecision?: GLSLPrecision,
+			floatPrecision?: GLSLPrecision,
+			verboseLogging?: boolean,
+			errorCallback?: ErrorCallback,
+		},
+	) {
+		const composer = new GPUComposer(
+			{
+				floatPrecision: renderer.capabilities.precision as GLSLPrecision,
+				intPrecision: renderer.capabilities.precision as GLSLPrecision,
+				...params,
+				canvas: renderer.domElement,
+				context: renderer.getContext(),
+				glslVersion: renderer.capabilities.isWebGL2 ? GLSL3 : GLSL1,
+			},
+		);
+		// Attach renderer.
+		// @ts-ignore
+		composer.renderer = renderer;
+		return composer;
+	}
+
+	/**
      * Create a GPUComposer.
      * @param params - GPUComposer parameters.
 	 * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
@@ -243,7 +277,6 @@ export class GPUComposer {
 		}
 
 		const { canvas } = params;
-		this.canvas = canvas;
 		let gl = params.context;
 
 		// Init GL.
@@ -297,14 +330,6 @@ export class GPUComposer {
 		// Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
 		// https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-		// TODO: look into more of these: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/pixelStorei
-		// // Some implementations of HTMLCanvasElement's or OffscreenCanvas's CanvasRenderingContext2D store color values
-		// // internally in premultiplied form. If such a canvas is uploaded to a WebGL texture with the
-		// // UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter set to false, the color channels will have to be un-multiplied
-		// // by the alpha channel, which is a lossy operation. The WebGL implementation therefore can not guarantee that colors
-		// // with alpha < 1.0 will be preserved losslessly when first drawn to a canvas via CanvasRenderingContext2D and then
-		// // uploaded to a WebGL texture when the UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter is set to false.
-		// gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
 		// Unbind active buffer.
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -318,39 +343,8 @@ export class GPUComposer {
 		}
 	}
 
-	/**
-	 * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
-	 * @param renderer - Threejs WebGLRenderer.
-	 * @param params - GPUComposer parameters.
-	 * @param params.intPrecision - Set the global integer precision in shader programs.
-	 * @param params.floatPrecision - Set the global float precision in shader programs.
-	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
-	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
-	 * @returns 
-	 */
-	static initWithThreeRenderer(
-		renderer: WebGLRenderer,
-		params?: {
-			intPrecision?: GLSLPrecision,
-			floatPrecision?: GLSLPrecision,
-			verboseLogging?: boolean,
-			errorCallback?: ErrorCallback,
-		},
-	) {
-		const composer = new GPUComposer(
-			{
-				floatPrecision: renderer.capabilities.precision as GLSLPrecision,
-				intPrecision: renderer.capabilities.precision as GLSLPrecision,
-				...params,
-				canvas: renderer.domElement,
-				context: renderer.getContext(),
-				glslVersion: renderer.capabilities.isWebGL2 ? GLSL3 : GLSL1,
-			},
-		);
-		// Attach renderer.
-		// @ts-ignore
-		composer.renderer = renderer;
-		return composer;
+	get canvas() {
+		return this.gl.canvas;
 	}
 
 	/**
@@ -456,15 +450,7 @@ export class GPUComposer {
 	 * @private
 	 */
 	_cloneGPULayer(gpuLayer: GPULayer, name?: string) {
-		let dimensions: number | number[] = 0;
-		try {
-			dimensions = gpuLayer.length;
-		} catch {
-			dimensions = [gpuLayer.width, gpuLayer.height];
-		}
-
-		// If read only, get state by reading to GPU.
-		const array = gpuLayer.getValues();
+		const dimensions = gpuLayer.is1D() ? gpuLayer.length : [gpuLayer.width, gpuLayer.height];
 
 		const clone = new GPULayer(this, {
 			name: name || `${gpuLayer.name}-clone`,
@@ -476,25 +462,26 @@ export class GPUComposer {
 			wrapY: gpuLayer.wrapY,
 			numBuffers: gpuLayer.numBuffers,
 			clearValue: gpuLayer.clearValue,
-			array,
 		});
 
-		// TODO: check this.
-		// Copy current state with a draw call.
-		for (let i = 0; i < gpuLayer.numBuffers - 1; i++) {
+		// Copy current state with several draw calls.
+		const copyProgram = this._copyProgramForType(gpuLayer.type);
+		// Set bufferIndex = gpuLayer.numBuffers - 1.
+		for (let i = 0; i < gpuLayer.numBuffers - 1; i++ ){
+			clone.incrementBufferIndex();
+		}
+		for (let i = 0; i < gpuLayer.numBuffers; i++) {
 			this.step({
-				program: this._copyProgramForType(gpuLayer.type),
-				input: gpuLayer.getStateAtIndex((gpuLayer.bufferIndex + i + 1) % gpuLayer.numBuffers),
+				program: copyProgram,
+				input: gpuLayer.getStateAtIndex(i),
 				output: clone,
 			});
 		}
-		this.step({
-			program: this._copyProgramForType(gpuLayer.type),
-			input: gpuLayer.currentState,
-			output: clone,
-		});
+		// Increment clone's buffer index until it is identical to the original layer.
+		for (let i = -1; i < gpuLayer.bufferIndex; i++ ){
+			clone.incrementBufferIndex();
+		}
 
-		// TODO: Increment clone's buffer index until it is identical to the original layer.
 		return clone;
 	}
 
@@ -695,8 +682,7 @@ export class GPUComposer {
 					throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
 				}
 				if (fullscreenRender) {
-					// Render and increment buffer so we are rendering to a different target
-					// than the input texture.
+					// Render and increment buffer.
 					outputLayer._prepareForWrite(true);
 				} else {
 					// Pass input texture through to output.
@@ -706,8 +692,8 @@ export class GPUComposer {
 				}
 			} else {
 				if (fullscreenRender) {
-					// Render to current buffer.
-					outputLayer._prepareForWrite(false);
+					// Render and increment buffer.
+					outputLayer._prepareForWrite(true);
 				} else {
 					// If we are doing a sneaky thing with a swapped texture and are
 					// only rendering part of the screen, we may need to add a copy operation.
@@ -815,7 +801,7 @@ export class GPUComposer {
 	 * Call stepping/drawing function once for each output.
 	 * This is required when attempting to draw to multiple outputs using GLSL1.
 	 */
-	private iterateOverOutputsIfNeeded(params: any, methodName: string) {
+	private _iterateOverOutputsIfNeeded(params: any, methodName: string) {
 		if (params.output && isArray(params.output) && this.glslVersion === GLSL1) {
 			for (let i = 0, numOutputs = (params.output as GPULayer[]).length; i < numOutputs; i++) {
 				// @ts-ignore
@@ -847,7 +833,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'step')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'step')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 
@@ -887,7 +873,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'stepBoundary')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'stepBoundary')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 
@@ -950,7 +936,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'stepNonBoundary')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'stepNonBoundary')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
 
@@ -999,7 +985,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'stepCircle')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'stepCircle')) return;
 		const { gl, _errorState } = this;
 		const { program, position, diameter, input, output } = params;
 
@@ -1060,7 +1046,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'stepSegment')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'stepSegment')) return;
 		const { gl, _errorState } = this;
 		const { program, position1, position2, thickness, input, output } = params;
 
@@ -1134,14 +1120,13 @@ export class GPUComposer {
 			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer | GPULayer[],
-			endCaps?: boolean,
 			numCapSegments?: number,
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'stepRect')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'stepRect')) return;
 		const position1 = [params.position[0], params.position[1] + params.size[1] / 2];
-		const position2 = [params.position[0], position1[1]];
+		const position2 = [params.position[0] + params.size[0], position1[1]];
 		this.stepSegment({
 			program: params.program,
 			position1,
@@ -1168,7 +1153,7 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
-	// 	if (this.iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
+	// 	if (this._iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
 	// 	const { gl, _width, _height, _errorState } = this;
 	// 	const { program, input, output } = params;
 
@@ -1357,7 +1342,7 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
-	// 	if (this.iterateOverOutputsIfNeeded(params, 'stepTriangleStrip')) return;
+	// 	if (this._iterateOverOutputsIfNeeded(params, 'stepTriangleStrip')) return;
 	// 	const { gl, _width, _height, _errorState } = this;
 	// 	const { program, input, output, positions, uvs, normals } = params;
 
@@ -1496,7 +1481,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints')) return;
 		const { gl, _pointIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { layer, output } = params;
 
@@ -1577,7 +1562,7 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
-	// 	if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
+	// 	if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
 	// 	const { gl, _width, _height, glslVersion, _errorState } = this;
 	// 	const { positions, output } = params;
 
@@ -1686,7 +1671,7 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField')) return;
+		if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField')) return;
 		const { gl, _vectorFieldIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { layer, output } = params;
 
@@ -1748,7 +1733,7 @@ export class GPUComposer {
 	 */
 	resetThreeState() {
 		if (!this._renderer) {
-			throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
+			throw new Error(`Can't call resetTHreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 		}
 		const { gl } = this;
 		// Reset viewport.
@@ -1820,55 +1805,79 @@ export class GPUComposer {
 	 * Deallocate GPUComposer instance and associated WebGL properties.
 	 */
 	dispose() {
-		const {
-			gl, verboseLogging,
-			_vertexShaders,
-			_copyPrograms, _setValuePrograms,
-			_vertexAttributeLocations,
-		} = this;
+		const { gl, verboseLogging } = this;
 
 		if (verboseLogging) console.log(`Deallocating GPUComposer.`);
 
-		// TODO: delete buffers.
+		// Delete buffers.
+		if (this._quadPositionsBuffer) {
+			gl.deleteBuffer(this._quadPositionsBuffer);
+			delete this._quadPositionsBuffer;
+		}
+		if (this._boundaryPositionsBuffer) {
+			gl.deleteBuffer(this._boundaryPositionsBuffer);
+			delete this._boundaryPositionsBuffer;
+		}
+		(Object.keys(this._circlePositionsBuffer) as any as number[]).forEach(key => {
+			gl.deleteBuffer(this._circlePositionsBuffer[key]);
+		});
+		// @ts-ignore
+		delete this._circlePositionsBuffer;
+		delete this._pointIndexArray;
+		if (this._pointIndexBuffer) {
+			gl.deleteBuffer(this._pointIndexBuffer);
+			delete this._pointIndexBuffer;
+		}
+		delete this._vectorFieldIndexArray;
+		if (this._vectorFieldIndexBuffer) {
+			gl.deleteBuffer(this._vectorFieldIndexBuffer);
+			delete this._vectorFieldIndexBuffer;
+		}
+		if (this._indexedLinesIndexBuffer) {
+			gl.deleteBuffer(this._indexedLinesIndexBuffer);
+			delete this._indexedLinesIndexBuffer;
+		}
 
 		// Delete vertex attribute locations.
-		Object.keys(_vertexAttributeLocations).forEach((key) => {
-			delete _vertexAttributeLocations[key];
+		Object.keys(this._vertexAttributeLocations).forEach((key) => {
+			delete this._vertexAttributeLocations[key];
 		});
 		// @ts-ignore
 		delete this._vertexAttributeLocations;
 
 		// Delete vertex shaders.
-		Object.values(_vertexShaders).forEach(({ compiledShaders })=> {
+		Object.values(this._vertexShaders).forEach(({ compiledShaders })=> {
 			Object.keys(compiledShaders).forEach(key => {
 				gl.deleteShader(compiledShaders[key]);
 				delete compiledShaders[key];
 			});
 		});
+		// @ts-ignore
+		delete this._vertexShaders;
 		
 		// Delete fragment shaders.
-		Object.values(_copyPrograms).forEach(program => {
-			// @ts-ignore
-			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
+		Object.values(this._copyPrograms).forEach(program => {
+			program.dispose();
 		});
-		Object.keys(_copyPrograms).forEach(key => {
+		Object.keys(this._copyPrograms).forEach(key => {
 			// @ts-ignore
-			delete _copyPrograms[key];
+			delete this._copyPrograms[key];
 		});
-		Object.values(_setValuePrograms).forEach(program => {
+		// @ts-ignore;
+		delete this._copyPrograms;
+
+		Object.values(this._setValuePrograms).forEach(program => {
+			program.dispose();
+		});
+		Object.keys(this._setValuePrograms).forEach(key => {
 			// @ts-ignore
-			if ((program as GPUProgram).dispose) (program as GPUProgram).dispose();
+			delete this._setValuePrograms[key];
 		});
-		Object.keys(_setValuePrograms).forEach(key => {
-			// @ts-ignore
-			delete _setValuePrograms[key];
-		});
+		// @ts-ignore;
+		delete this._setValuePrograms;
+
 		this._wrappedLineColorProgram?.dispose();
 		delete this._wrappedLineColorProgram;
-
-		// This is causing major errors?
-		// const loseContext = getExtension(this, WEBGL_LOSE_CONTEXT, true);
-		// if (loseContext) loseContext.loseContext();
 
 		// @ts-ignore
 		delete this._renderer;
@@ -1877,5 +1886,30 @@ export class GPUComposer {
 		// @ts-ignore;
 		delete this.canvas;
 		// GL context will be garbage collected by webgl.
+		// @ts-ignore
+		delete this._errorCallback;
+		// @ts-ignore
+		delete this._extensions;
+
+		// Delete all other keys.
+		// This is mostly for testing so we can be sure we've deallocated everything.
+		// @ts-ignore;
+		delete this._errorState;
+		// @ts-ignore;
+		delete this.verboseLogging;
+		// @ts-ignore;
+		delete this._numTicks;
+		// @ts-ignore;
+		delete this.isWebGL2;
+		// @ts-ignore;
+		delete this.glslVersion;
+		// @ts-ignore;
+		delete this.intPrecision;
+		// @ts-ignore;
+		delete this.floatPrecision;
+		// @ts-ignore;
+		delete this._width;
+		// @ts-ignore;
+		delete this._height;
 	}
 }

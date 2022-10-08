@@ -2445,7 +2445,6 @@ var GPUComposer = /** @class */ (function () {
             params.errorCallback ? params.errorCallback(message) : (0, constants_1.DEFAULT_ERROR_CALLBACK)(message);
         };
         var canvas = params.canvas;
-        this.canvas = canvas;
         var gl = params.context;
         // Init GL.
         if (!gl) {
@@ -2499,14 +2498,6 @@ var GPUComposer = /** @class */ (function () {
         // Set unpack alignment to 1 so we can have textures of arbitrary dimensions.
         // https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-        // TODO: look into more of these: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/pixelStorei
-        // // Some implementations of HTMLCanvasElement's or OffscreenCanvas's CanvasRenderingContext2D store color values
-        // // internally in premultiplied form. If such a canvas is uploaded to a WebGL texture with the
-        // // UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter set to false, the color channels will have to be un-multiplied
-        // // by the alpha channel, which is a lossy operation. The WebGL implementation therefore can not guarantee that colors
-        // // with alpha < 1.0 will be preserved losslessly when first drawn to a canvas via CanvasRenderingContext2D and then
-        // // uploaded to a WebGL texture when the UNPACK_PREMULTIPLY_ALPHA_WEBGL pixel storage parameter is set to false.
-        // gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         // Unbind active buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         // Canvas setup.
@@ -2533,6 +2524,13 @@ var GPUComposer = /** @class */ (function () {
         composer.renderer = renderer;
         return composer;
     };
+    Object.defineProperty(GPUComposer.prototype, "canvas", {
+        get: function () {
+            return this.gl.canvas;
+        },
+        enumerable: false,
+        configurable: true
+    });
     /**
      * Gets (and caches) generic set value programs for several input types.
      * Used for GPULayer.clear(), among other things.
@@ -2629,15 +2627,7 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._cloneGPULayer = function (gpuLayer, name) {
-        var dimensions = 0;
-        try {
-            dimensions = gpuLayer.length;
-        }
-        catch (_a) {
-            dimensions = [gpuLayer.width, gpuLayer.height];
-        }
-        // If read only, get state by reading to GPU.
-        var array = gpuLayer.getValues();
+        var dimensions = gpuLayer.is1D() ? gpuLayer.length : [gpuLayer.width, gpuLayer.height];
         var clone = new GPULayer_1.GPULayer(this, {
             name: name || "".concat(gpuLayer.name, "-clone"),
             dimensions: dimensions,
@@ -2648,23 +2638,24 @@ var GPUComposer = /** @class */ (function () {
             wrapY: gpuLayer.wrapY,
             numBuffers: gpuLayer.numBuffers,
             clearValue: gpuLayer.clearValue,
-            array: array,
         });
-        // TODO: check this.
-        // Copy current state with a draw call.
+        // Copy current state with several draw calls.
+        var copyProgram = this._copyProgramForType(gpuLayer.type);
+        // Set bufferIndex = gpuLayer.numBuffers - 1.
         for (var i = 0; i < gpuLayer.numBuffers - 1; i++) {
+            clone.incrementBufferIndex();
+        }
+        for (var i = 0; i < gpuLayer.numBuffers; i++) {
             this.step({
-                program: this._copyProgramForType(gpuLayer.type),
-                input: gpuLayer.getStateAtIndex((gpuLayer.bufferIndex + i + 1) % gpuLayer.numBuffers),
+                program: copyProgram,
+                input: gpuLayer.getStateAtIndex(i),
                 output: clone,
             });
         }
-        this.step({
-            program: this._copyProgramForType(gpuLayer.type),
-            input: gpuLayer.currentState,
-            output: clone,
-        });
-        // TODO: Increment clone's buffer index until it is identical to the original layer.
+        // Increment clone's buffer index until it is identical to the original layer.
+        for (var i = -1; i < gpuLayer.bufferIndex; i++) {
+            clone.incrementBufferIndex();
+        }
         return clone;
     };
     /**
@@ -2819,8 +2810,7 @@ var GPUComposer = /** @class */ (function () {
                     throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
                 }
                 if (fullscreenRender) {
-                    // Render and increment buffer so we are rendering to a different target
-                    // than the input texture.
+                    // Render and increment buffer.
                     outputLayer._prepareForWrite(true);
                 }
                 else {
@@ -2832,8 +2822,8 @@ var GPUComposer = /** @class */ (function () {
             }
             else {
                 if (fullscreenRender) {
-                    // Render to current buffer.
-                    outputLayer._prepareForWrite(false);
+                    // Render and increment buffer.
+                    outputLayer._prepareForWrite(true);
                 }
                 else {
                     // If we are doing a sneaky thing with a swapped texture and are
@@ -2940,7 +2930,7 @@ var GPUComposer = /** @class */ (function () {
      * Call stepping/drawing function once for each output.
      * This is required when attempting to draw to multiple outputs using GLSL1.
      */
-    GPUComposer.prototype.iterateOverOutputsIfNeeded = function (params, methodName) {
+    GPUComposer.prototype._iterateOverOutputsIfNeeded = function (params, methodName) {
         if (params.output && (0, type_checks_1.isArray)(params.output) && this.glslVersion === constants_1.GLSL1) {
             for (var i = 0, numOutputs = params.output.length; i < numOutputs; i++) {
                 // @ts-ignore
@@ -2960,7 +2950,7 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.step = function (params) {
-        if (this.iterateOverOutputsIfNeeded(params, 'step'))
+        if (this._iterateOverOutputsIfNeeded(params, 'step'))
             return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
@@ -2989,7 +2979,7 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepBoundary = function (params) {
-        if (this.iterateOverOutputsIfNeeded(params, 'stepBoundary'))
+        if (this._iterateOverOutputsIfNeeded(params, 'stepBoundary'))
             return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
@@ -3043,7 +3033,7 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepNonBoundary = function (params) {
-        if (this.iterateOverOutputsIfNeeded(params, 'stepNonBoundary'))
+        if (this._iterateOverOutputsIfNeeded(params, 'stepNonBoundary'))
             return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
         var program = params.program, input = params.input, output = params.output;
@@ -3078,7 +3068,7 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.stepCircle = function (params) {
         var _a;
-        if (this.iterateOverOutputsIfNeeded(params, 'stepCircle'))
+        if (this._iterateOverOutputsIfNeeded(params, 'stepCircle'))
             return;
         var _b = this, gl = _b.gl, _errorState = _b._errorState;
         var program = params.program, position = params.position, diameter = params.diameter, input = params.input, output = params.output;
@@ -3123,7 +3113,7 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.stepSegment = function (params) {
         var _a;
-        if (this.iterateOverOutputsIfNeeded(params, 'stepSegment'))
+        if (this._iterateOverOutputsIfNeeded(params, 'stepSegment'))
             return;
         var _b = this, gl = _b.gl, _errorState = _b._errorState;
         var program = params.program, position1 = params.position1, position2 = params.position2, thickness = params.thickness, input = params.input, output = params.output;
@@ -3186,10 +3176,10 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepRect = function (params) {
-        if (this.iterateOverOutputsIfNeeded(params, 'stepRect'))
+        if (this._iterateOverOutputsIfNeeded(params, 'stepRect'))
             return;
         var position1 = [params.position[0], params.position[1] + params.size[1] / 2];
-        var position2 = [params.position[0], position1[1]];
+        var position2 = [params.position[0] + params.size[0], position1[1]];
         this.stepSegment({
             program: params.program,
             position1: position1,
@@ -3215,7 +3205,7 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
-    // 	if (this.iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
+    // 	if (this._iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
     // 	const { gl, _width, _height, _errorState } = this;
     // 	const { program, input, output } = params;
     // 	if (_errorState) return;
@@ -3388,7 +3378,7 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
-    // 	if (this.iterateOverOutputsIfNeeded(params, 'stepTriangleStrip')) return;
+    // 	if (this._iterateOverOutputsIfNeeded(params, 'stepTriangleStrip')) return;
     // 	const { gl, _width, _height, _errorState } = this;
     // 	const { program, input, output, positions, uvs, normals } = params;
     // 	if (_errorState) return;
@@ -3499,7 +3489,7 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
-        if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints'))
+        if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints'))
             return;
         var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
         var layer = params.layer, output = params.output;
@@ -3577,7 +3567,7 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
-    // 	if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
+    // 	if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
     // 	const { gl, _width, _height, glslVersion, _errorState } = this;
     // 	const { positions, output } = params;
     // 	if (_errorState) return;
@@ -3665,7 +3655,7 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.drawLayerAsVectorField = function (params) {
-        if (this.iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField'))
+        if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField'))
             return;
         var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
         var layer = params.layer, output = params.output;
@@ -3723,7 +3713,7 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.resetThreeState = function () {
         if (!this._renderer) {
-            throw new Error('GPUComposer was not inited with a renderer, use GPUComposer.initWithThreeRenderer() to initialize GPUComposer instead.');
+            throw new Error("Can't call resetTHreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().");
         }
         var gl = this.gl;
         // Reset viewport.
@@ -3790,49 +3780,76 @@ var GPUComposer = /** @class */ (function () {
      * Deallocate GPUComposer instance and associated WebGL properties.
      */
     GPUComposer.prototype.dispose = function () {
+        var _this = this;
         var _a;
-        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging, _vertexShaders = _b._vertexShaders, _copyPrograms = _b._copyPrograms, _setValuePrograms = _b._setValuePrograms, _vertexAttributeLocations = _b._vertexAttributeLocations;
+        var _b = this, gl = _b.gl, verboseLogging = _b.verboseLogging;
         if (verboseLogging)
             console.log("Deallocating GPUComposer.");
-        // TODO: delete buffers.
+        // Delete buffers.
+        if (this._quadPositionsBuffer) {
+            gl.deleteBuffer(this._quadPositionsBuffer);
+            delete this._quadPositionsBuffer;
+        }
+        if (this._boundaryPositionsBuffer) {
+            gl.deleteBuffer(this._boundaryPositionsBuffer);
+            delete this._boundaryPositionsBuffer;
+        }
+        Object.keys(this._circlePositionsBuffer).forEach(function (key) {
+            gl.deleteBuffer(_this._circlePositionsBuffer[key]);
+        });
+        // @ts-ignore
+        delete this._circlePositionsBuffer;
+        delete this._pointIndexArray;
+        if (this._pointIndexBuffer) {
+            gl.deleteBuffer(this._pointIndexBuffer);
+            delete this._pointIndexBuffer;
+        }
+        delete this._vectorFieldIndexArray;
+        if (this._vectorFieldIndexBuffer) {
+            gl.deleteBuffer(this._vectorFieldIndexBuffer);
+            delete this._vectorFieldIndexBuffer;
+        }
+        if (this._indexedLinesIndexBuffer) {
+            gl.deleteBuffer(this._indexedLinesIndexBuffer);
+            delete this._indexedLinesIndexBuffer;
+        }
         // Delete vertex attribute locations.
-        Object.keys(_vertexAttributeLocations).forEach(function (key) {
-            delete _vertexAttributeLocations[key];
+        Object.keys(this._vertexAttributeLocations).forEach(function (key) {
+            delete _this._vertexAttributeLocations[key];
         });
         // @ts-ignore
         delete this._vertexAttributeLocations;
         // Delete vertex shaders.
-        Object.values(_vertexShaders).forEach(function (_a) {
+        Object.values(this._vertexShaders).forEach(function (_a) {
             var compiledShaders = _a.compiledShaders;
             Object.keys(compiledShaders).forEach(function (key) {
                 gl.deleteShader(compiledShaders[key]);
                 delete compiledShaders[key];
             });
         });
+        // @ts-ignore
+        delete this._vertexShaders;
         // Delete fragment shaders.
-        Object.values(_copyPrograms).forEach(function (program) {
-            // @ts-ignore
-            if (program.dispose)
-                program.dispose();
+        Object.values(this._copyPrograms).forEach(function (program) {
+            program.dispose();
         });
-        Object.keys(_copyPrograms).forEach(function (key) {
+        Object.keys(this._copyPrograms).forEach(function (key) {
             // @ts-ignore
-            delete _copyPrograms[key];
+            delete _this._copyPrograms[key];
         });
-        Object.values(_setValuePrograms).forEach(function (program) {
+        // @ts-ignore;
+        delete this._copyPrograms;
+        Object.values(this._setValuePrograms).forEach(function (program) {
+            program.dispose();
+        });
+        Object.keys(this._setValuePrograms).forEach(function (key) {
             // @ts-ignore
-            if (program.dispose)
-                program.dispose();
+            delete _this._setValuePrograms[key];
         });
-        Object.keys(_setValuePrograms).forEach(function (key) {
-            // @ts-ignore
-            delete _setValuePrograms[key];
-        });
+        // @ts-ignore;
+        delete this._setValuePrograms;
         (_a = this._wrappedLineColorProgram) === null || _a === void 0 ? void 0 : _a.dispose();
         delete this._wrappedLineColorProgram;
-        // This is causing major errors?
-        // const loseContext = getExtension(this, WEBGL_LOSE_CONTEXT, true);
-        // if (loseContext) loseContext.loseContext();
         // @ts-ignore
         delete this._renderer;
         // @ts-ignore
@@ -3840,6 +3857,30 @@ var GPUComposer = /** @class */ (function () {
         // @ts-ignore;
         delete this.canvas;
         // GL context will be garbage collected by webgl.
+        // @ts-ignore
+        delete this._errorCallback;
+        // @ts-ignore
+        delete this._extensions;
+        // Delete all other keys.
+        // This is mostly for testing so we can be sure we've deallocated everything.
+        // @ts-ignore;
+        delete this._errorState;
+        // @ts-ignore;
+        delete this.verboseLogging;
+        // @ts-ignore;
+        delete this._numTicks;
+        // @ts-ignore;
+        delete this.isWebGL2;
+        // @ts-ignore;
+        delete this.glslVersion;
+        // @ts-ignore;
+        delete this.intPrecision;
+        // @ts-ignore;
+        delete this.floatPrecision;
+        // @ts-ignore;
+        delete this._width;
+        // @ts-ignore;
+        delete this._height;
     };
     return GPUComposer;
 }());
@@ -4075,7 +4116,7 @@ var GPULayer = /** @class */ (function () {
                         // Load image.
                         var image = new Image();
                         image.onload = function () {
-                            layer.setFromImage(image);
+                            layer.resize([image.width, image.height], image);
                             // Callback when texture has loaded.
                             resolve(layer);
                         };
@@ -4230,6 +4271,13 @@ var GPULayer = /** @class */ (function () {
         // Increment bufferIndex.
         this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
     };
+    /**
+     * Decrement buffer index by 1.
+     */
+    GPULayer.prototype.decrementBufferIndex = function () {
+        // Decrement bufferIndex.
+        this._bufferIndex = (this.bufferIndex - 1 + this.numBuffers) % this.numBuffers;
+    };
     Object.defineProperty(GPULayer.prototype, "currentState", {
         /**
          * Get the current state as a GPULayerState object.
@@ -4247,8 +4295,10 @@ var GPULayer = /** @class */ (function () {
          * @private
          */
         get: function () {
-            // tODO: check texture overrides.
-            return this._buffers[this._bufferIndex];
+            var _a = this, _buffers = _a._buffers, _bufferIndex = _a._bufferIndex, _textureOverrides = _a._textureOverrides;
+            if (_textureOverrides && _textureOverrides[_bufferIndex])
+                return _textureOverrides[_bufferIndex];
+            return _buffers[_bufferIndex];
         },
         enumerable: false,
         configurable: true
@@ -4305,27 +4355,36 @@ var GPULayer = /** @class */ (function () {
             this._textureOverrides[this.bufferIndex] = undefined;
         }
     };
-    GPULayer.prototype.setFromArray = function (array, applyToAllBuffers) {
-        if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
-        var _a = this, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, numBuffers = _a.numBuffers, width = _a.width, height = _a.height, bufferIndex = _a.bufferIndex;
+    GPULayer.prototype.setFromArray = function (array) {
+        var _a = this, _composer = _a._composer, _glInternalFormat = _a._glInternalFormat, _glFormat = _a._glFormat, _glType = _a._glType, width = _a.width, height = _a.height, _currentTexture = _a._currentTexture;
         var gl = _composer.gl;
         var validatedArray = GPULayer.validateGPULayerArray(array, this);
-        // TODO: check that this is working.
-        var startIndex = applyToAllBuffers ? 0 : bufferIndex;
-        var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
-        for (var i = startIndex; i < endIndex; i++) {
-            var texture = this.getStateAtIndex(i).texture;
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
-        }
+        gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
         // Unbind texture.
         gl.bindTexture(gl.TEXTURE_2D, null);
     };
-    GPULayer.prototype.setFromImage = function (image) {
+    // setFromImage(image: HTMLImageElement) {
+    // 	const { name, _composer, width, height, _currentTexture, _glInternalFormat, _glFormat, _glType, numComponents, type } = this;
+    // 	const { gl } = _composer;
+    // 	// Check compatibility.
+    // 	if (!isValidImageType(type)) {
+    // 		throw new Error(`GPULayer has invalid type ${type} for setFromImage(), valid types are: ${JSON.stringify(validImageTypes)}.`);
+    // 	}
+    // 	if (numComponents < 3) {
+    // 		throw new Error(`GPULayer has invalid numComponents ${numComponents} for setFromImage(), must have either 3 (RGB) or 4 (RGBA) components.`);
+    // 	}
+    // 	if (image.width !== width || image.height !== height) {
+    // 		throw new Error(`Invalid image dimensions [${image.width}, ${image.height}] for GPULayer "${name}" with dimensions [${width}, ${height}].  Call GPULayer.resize(width, height, image) instead.`);
+    // 	}
+    // 	gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
+    // 	gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, image as any);
+    // 	// Unbind texture.
+    // 	gl.bindTexture(gl.TEXTURE_2D, null);
+    // }
+    GPULayer.prototype.resize = function (dimensions, arrayOrImage) {
         var _a = this, name = _a.name, _composer = _a._composer;
         var verboseLogging = _composer.verboseLogging;
-        // TODO: check compatible type.
-        var dimensions = [image.width, image.height];
         if (verboseLogging)
             console.log("Resizing GPULayer \"".concat(name, "\" to ").concat(JSON.stringify(dimensions), "."));
         var _b = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
@@ -4333,19 +4392,7 @@ var GPULayer = /** @class */ (function () {
         this._width = width;
         this._height = height;
         this._destroyBuffers();
-        this._initBuffers(image);
-    };
-    GPULayer.prototype.resize = function (dimensions, array) {
-        var _a = this, name = _a.name, _composer = _a._composer;
-        var verboseLogging = _composer.verboseLogging;
-        if (verboseLogging)
-            console.log("Resizing GPULayer \"".concat(name, "\" to ").concat(JSON.stringify(dimensions), "."));
-        var _b = GPULayer.calcGPULayerSize(dimensions, name, verboseLogging), length = _b.length, width = _b.width, height = _b.height;
-        this._length = length;
-        this._width = width;
-        this._height = height;
-        this._destroyBuffers();
-        this._initBuffers(array);
+        this._initBuffers(arrayOrImage);
     };
     Object.defineProperty(GPULayer.prototype, "clearValue", {
         /**
@@ -4374,7 +4421,7 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.clear = function (applyToAllBuffers) {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
-        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type;
+        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, type = _a.type;
         var verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Clearing GPULayer \"".concat(name, "\"."));
@@ -4388,23 +4435,25 @@ var GPULayer = /** @class */ (function () {
                 value.push(0);
             }
         }
-        var startIndex = applyToAllBuffers ? 0 : bufferIndex;
-        var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
+        var endIndex = applyToAllBuffers ? numBuffers : 1;
         var program = _composer._setValueProgramForType(type);
         program.setUniform('u_value', value);
-        for (var i = startIndex; i < endIndex; i++) {
+        this.decrementBufferIndex(); // step() wil increment buffer index before draw, this way we clear in place.
+        for (var i = 0; i < endIndex; i++) {
             // Write clear value to buffers.
             _composer.step({
                 program: program,
                 output: this,
             });
         }
+        if (applyToAllBuffers)
+            this.incrementBufferIndex(); // Get us back to the starting index.
     };
     GPULayer.prototype._getValuesSetup = function () {
-        var _a = this, width = _a.width, height = _a.height, _composer = _a._composer;
+        var _a = this, width = _a.width, height = _a.height, _composer = _a._composer, _currentTexture = _a._currentTexture;
         var gl = _composer.gl;
         // In case GPULayer was not the last output written to.
-        (0, framebuffers_1.bindFrameBuffer)(this._composer, this, this._buffers[this.bufferIndex]);
+        (0, framebuffers_1.bindFrameBuffer)(_composer, this, _currentTexture);
         var _b = this, _glNumChannels = _b._glNumChannels, _glType = _b._glType, _glFormat = _b._glFormat, _internalType = _b._internalType;
         var values;
         switch (_internalType) {
@@ -4747,22 +4796,24 @@ GPULayer_1.GPULayer.initArrayForType = function (type, length, halfFloatsAsFloat
  * Also checks that size elements are valid.
  * @private
  */
-// TODO: should we relax adherence to power of 2?
 GPULayer_1.GPULayer.calcGPULayerSize = function (size, name, verboseLogging) {
     if ((0, type_checks_1.isNumber)(size)) {
         if (!(0, type_checks_1.isPositiveInteger)(size)) {
             throw new Error("Invalid length: ".concat(JSON.stringify(size), " for GPULayer \"").concat(name, "\", must be positive integer."));
         }
         var length_1 = size;
-        // Calc power of two width and height for length.
-        var exp = 1;
-        var remainder = length_1;
-        while (remainder > 2) {
-            exp++;
-            remainder /= 2;
-        }
-        var width_1 = Math.pow(2, Math.floor(exp / 2) + exp % 2);
-        var height_1 = Math.pow(2, Math.floor(exp / 2));
+        // Relaxing adherence to power of 2.
+        // // Calc power of two width and height for length.
+        // let exp = 1;
+        // let remainder = length;
+        // while (remainder > 2) {
+        // 	exp++;
+        // 	remainder /= 2;
+        // }
+        // const width = Math.pow(2, Math.floor(exp / 2) + exp % 2);
+        // const height = Math.pow(2, Math.floor(exp/2));
+        var width_1 = Math.ceil(Math.sqrt(length_1));
+        var height_1 = Math.ceil(length_1 / width_1);
         if (verboseLogging)
             console.log("Using [".concat(width_1, ", ").concat(height_1, "] for 1D array of length ").concat(size, " in GPULayer \"").concat(name, "\"."));
         return { width: width_1, height: height_1, length: length_1 };
@@ -5373,9 +5424,9 @@ GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
         if (internalType === constants_1.HALF_FLOAT) {
             // The OES_texture_half_float extension implicitly enables EXT_color_buffer_half_float extension (for writing).
             (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HALF_FLOAT, true);
-            // TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
+            // FYI, very old safari issues: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
             var valid = testWriteSupport(composer, internalType);
-            // May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+            // May still be ok for read-only, but this will affect the ability to call getValues() and savePNG().
             // We'll let it pass for now.
             if (!valid) {
                 console.warn("This browser does not support writing to HALF_FLOAT textures.");
@@ -5411,7 +5462,7 @@ GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
             }
             // Test attaching texture to framebuffer to be sure half float writing is supported.
             var valid = testWriteSupport(composer, internalType);
-            // May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+            // May still be ok for read-only, but this will affect the ability to call getValues() and savePNG().
             // We'll let it pass for now.
             if (!valid) {
                 console.warn("This browser does not support writing to HALF_FLOAT textures.");
@@ -6160,7 +6211,7 @@ var GPUProgramChild = /** @class */ (function (_super) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.vectorMagnitudeProgram = exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.zeroProgram = exports.setColorProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
+exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.zeroProgram = exports.setColorProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
 var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
@@ -6519,20 +6570,6 @@ function wrappedLineColorProgram(params) {
     });
 }
 exports.wrappedLineColorProgram = wrappedLineColorProgram;
-/**
- * Fragment shader that draws the magnitude of a GPULayer as a color.
- * TODO: this could be replaced with something else.
- * @private
- */
-function vectorMagnitudeProgram(params) {
-    var composer = params.composer, type = params.type;
-    var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
-    return new GPUProgram_1.GPUProgram(composer, {
-        name: "vectorMagnitude",
-        fragmentShader: "\nin vec2 v_uv;\nuniform vec3 u_color;\nuniform float u_scale;\nuniform ".concat(glslPrefix, "sampler2D u_gpuio_data;\nout vec4 out_result;\nvoid main() {\n\tuvec4 value = texture(u_gpuio_data, v_uv);\n\tfloat mag = length(value);\n\tout_result = vec4(mag * u_scale * u_color, 1);\n}"),
-    });
-}
-exports.vectorMagnitudeProgram = vectorMagnitudeProgram;
 
 
 /***/ }),
@@ -6818,7 +6855,6 @@ exports.validFilters = [exports.NEAREST, exports.LINEAR];
  * @private
  */
 exports.validWraps = [exports.CLAMP_TO_EDGE, exports.REPEAT]; // MIRRORED_REPEAT
-// TODO: change this?
 // For image urls that are passed in and inited as textures.
 /**
  * RGB image format.
@@ -7198,7 +7234,7 @@ exports.glslComponentSelectionForNumComponents = glslComponentSelectionForNumCom
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getExtension = exports.WEBGL_LOSE_CONTEXT = exports.EXT_COLOR_BUFFER_HALF_FLOAT = exports.EXT_COLOR_BUFFER_FLOAT = exports.WEBGL_DEPTH_TEXTURE = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
+exports.getExtension = exports.EXT_COLOR_BUFFER_HALF_FLOAT = exports.EXT_COLOR_BUFFER_FLOAT = exports.WEBGL_DEPTH_TEXTURE = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
 // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float
 // Float is provided by default in WebGL2 contexts.
 // This extension implicitly enables the WEBGL_color_buffer_float extension (if supported), which allows rendering to 32-bit floating-point color buffers.
@@ -7223,7 +7259,6 @@ exports.EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 // On WebGL 2, EXT_COLOR_BUFFER_HALF_FLOAT is an alternative to using the EXT_color_buffer_float extension on platforms
 // that support 16-bit floating point render targets but not 32-bit floating point render targets.
 exports.EXT_COLOR_BUFFER_HALF_FLOAT = 'EXT_color_buffer_half_float';
-exports.WEBGL_LOSE_CONTEXT = 'WEBGL_lose_context';
 function getExtension(composer, extensionName, optional) {
     if (optional === void 0) { optional = false; }
     // Check if we've already loaded the extension.
@@ -7688,7 +7723,7 @@ function GLSL1Polyfills() {
 exports.GLSL1Polyfills = GLSL1Polyfills;
 var FRAGMENT_SHADER_POLYFILLS;
 /**
- * Polyfills to be make available for both GLSL1 and GLSL3fragment shaders.
+ * Polyfills to be make available for both GLSL1 and GLSL3 fragment shaders.
  * @private
  */
 function fragmentShaderPolyfills() {
@@ -8242,8 +8277,8 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
     // Compile the shader
     gl.compileShader(shader);
     if (checkCompileStatus) {
-        // TODO: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
-        // Check if it compiled.
+        // Check if shaders compiled - do this only on the first compilation bc of:
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
         var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
             // Something went wrong during compilation - print shader source (with line number) and the error.

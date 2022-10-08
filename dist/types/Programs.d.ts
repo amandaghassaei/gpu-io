@@ -183,12 +183,3 @@ export declare function renderSignedAmplitudeProgram(params: {
 export declare function wrappedLineColorProgram(params: {
     composer: GPUComposer;
 }): GPUProgram;
-/**
- * Fragment shader that draws the magnitude of a GPULayer as a color.
- * TODO: this could be replaced with something else.
- * @private
- */
-export declare function vectorMagnitudeProgram(params: {
-    composer: GPUComposer;
-    type: GPULayerType;
-}): GPUProgram;

@@ -6,5 +6,4 @@ export declare const OES_TEXTURE_HAlF_FLOAT_LINEAR = "OES_texture_half_float_lin
 export declare const WEBGL_DEPTH_TEXTURE = "WEBGL_depth_texture";
 export declare const EXT_COLOR_BUFFER_FLOAT = "EXT_color_buffer_float";
 export declare const EXT_COLOR_BUFFER_HALF_FLOAT = "EXT_color_buffer_half_float";
-export declare const WEBGL_LOSE_CONTEXT = "WEBGL_lose_context";
 export declare function getExtension(composer: GPUComposer, extensionName: string, optional?: boolean): any;
