@@ -8,6 +8,9 @@ I'm using mocha + karma + chai + headless Chrome to test the components of this 
 npm run test
 ```
 
+The automated tests do not get full code coverage yet, but I'm planning to add to them when I go back to implement WebGPU features in this library.
+
+
 ## Browser Testing
 
 I've also included an html page (at [tests/index.html](https://github.com/amandaghassaei/gpu-io/blob/main/tests/index.html)) for testing various functions of this library in a browser/hardware combo of your choice.  This page is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).

@@ -648,7 +648,6 @@ export function testFilterWrap(
 		wrapX: CLAMP_TO_EDGE,
 		wrapY: CLAMP_TO_EDGE,
 		filter: NEAREST,
-		writable: true,
 	});
 
 	const offset = filter === LINEAR ? 0.5 : 1;
@@ -768,11 +767,10 @@ GPULayer.getGPULayerInternalType = (
 	params: {
 		composer: GPUComposer,
 		type: GPULayerType,
-		writable: boolean,
 		name: string,
 	},
 ) => {
-	const { composer, writable, name } = params;
+	const { composer, name } = params;
 	const { _errorCallback, isWebGL2 } = composer;
 	const { type } = params;
 	let internalType = type;
@@ -818,9 +816,11 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			getExtension(composer, OES_TEXTURE_HALF_FLOAT, true);
 			// TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
 			const valid = testWriteSupport(composer, internalType);
-			// If not writable texture we'll let it pass, but this will affect the ability to call getValues() and savePNG().
-			if (!valid && writable) {
-				_errorCallback(`This browser does not support writing to HALF_FLOAT textures.`);
+			// May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+			// We'll let it pass for now.
+			if (!valid) {
+				console.warn(`This browser does not support writing to HALF_FLOAT textures.`);
+				// _errorCallback(`This browser does not support writing to HALF_FLOAT textures.`);
 			}
 		}
 	} else {
@@ -850,8 +850,10 @@ Large UNSIGNED_INT or INT with absolute value > 16,777,216 are not supported, on
 			}
 			// Test attaching texture to framebuffer to be sure half float writing is supported.
 			const valid = testWriteSupport(composer, internalType);
-			// If not writable texture we'll let it pass, but this will affect the ability to call getValues() and savePNG().
-			if (!valid && writable) {
+			// May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+			// We'll let it pass for now.
+			if (!valid) {
+				console.warn(`This browser does not support writing to HALF_FLOAT textures.`);
 				_errorCallback(`This browser does not support writing to HALF_FLOAT textures.`);
 			}
 		}

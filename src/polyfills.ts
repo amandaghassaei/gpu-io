@@ -431,7 +431,6 @@ return `${type1} bitshiftRight(const ${type1} a, const ${type2} b) {
 	#endif
 }`;
 	}
-// TODO: fix these for glsl3
 	// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
 	// Seems like these could be optimized.
 	const bitwiseOr = (numBits: 8 | 16 | 32) => {

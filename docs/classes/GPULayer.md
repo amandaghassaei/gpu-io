@@ -12,7 +12,6 @@
 - [filter](GPULayer.md#filter)
 - [wrapX](GPULayer.md#wrapx)
 - [wrapY](GPULayer.md#wrapy)
-- [\_writable](GPULayer.md#_writable)
 - [numBuffers](GPULayer.md#numbuffers)
 
 ### Methods
@@ -41,7 +40,6 @@
 - [width](GPULayer.md#width)
 - [height](GPULayer.md#height)
 - [length](GPULayer.md#length)
-- [writable](GPULayer.md#writable)
 - [bufferIndex](GPULayer.md#bufferindex)
 - [currentState](GPULayer.md#currentstate)
 - [lastState](GPULayer.md#laststate)
@@ -97,14 +95,6 @@ Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 
 ___
 
-### \_writable
-
-• **\_writable**: `boolean` = `false`
-
-Sets GPULayer as readonly or readwrite, defaults to false.
-
-___
-
 ### numBuffers
 
 • `Readonly` **numBuffers**: `number`
@@ -130,7 +120,6 @@ Create a GPULayer from an image url.
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST. |
 | `params.wrapX?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
 | `params.wrapY?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
-| `params.writable?` | `boolean` | Sets GPULayer as readonly or readwrite, defaults to false. |
 
 #### Returns
 
@@ -371,7 +360,6 @@ Create a GPULayer.
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST. |
 | `params.wrapX?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
 | `params.wrapY?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
-| `params.writable?` | `boolean` | Sets GPULayer as readonly or readwrite, defaults to false. |
 | `params.numBuffers?` | `number` | How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers. |
 | `params.clearValue?` | `number` \| `number`[] | Value to write to GPULayer when GPULayer.clear() is called. |
 
@@ -410,18 +398,6 @@ The length of the GPULayer array (only available to 1D GPULayers).
 #### Returns
 
 `number`
-
-___
-
-### writable
-
-• `get` **writable**(): `boolean`
-
-Flags GPULayer as readonly or readwrite, defaults to false.
-
-#### Returns
-
-`boolean`
 
 ___
 

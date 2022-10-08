@@ -184,22 +184,18 @@
 				// This is tested more robustly in pipeline.js.
 				[1, 2, 3, 4].forEach(numComponents => {
 					[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
-						[true, false].forEach(writable => {
-							[composer1, composer2, composer3].forEach(composer => {
-								const result = GPULayer.getGLTextureParameters({
+						[composer1, composer2, composer3].forEach(composer => {
+							const result = GPULayer.getGLTextureParameters({
+								composer: composer,
+								name: 'test',
+								numComponents,
+								internalType: GPULayer.getGPULayerInternalType({
 									composer: composer,
+									type,
 									name: 'test',
-									numComponents,
-									writable,
-									internalType: GPULayer.getGPULayerInternalType({
-										composer: composer,
-										type,
-										writable,
-										name: 'test',
-									}),
-								});
-								assert.hasAllKeys(result, ['glFormat', 'glInternalFormat', 'glType', 'glNumChannels']);
+								}),
 							});
+							assert.hasAllKeys(result, ['glFormat', 'glInternalFormat', 'glType', 'glNumChannels']);
 						});
 					});
 				});
@@ -211,7 +207,6 @@
 					name: 'test',
 					numComponents: 3,
 					internalType: INT,
-					writable: true,
 				}); },
 				'Unsupported type: "INT" in WebGL 1.0 for GPULayer "test".');
 				assert.throws(() => { GPULayer.getGLTextureParameters({
@@ -219,7 +214,6 @@
 					name: 'test',
 					numComponents: 5,
 					internalType: INT,
-					writable: false,
 				}); },
 				'Unsupported numComponents: 5 for GPULayer "test".');
 				assert.throws(() => { GPULayer.getGLTextureParameters({
@@ -227,7 +221,6 @@
 					name: 'test',
 					numComponents: 2,
 					internalType: 'bad',
-					writable: true,
 				}); },
 				'Unsupported type: "bad" for GPULayer "test".');
 				assert.throws(() => { GPULayer.getGLTextureParameters({
@@ -235,7 +228,6 @@
 					name: 'test',
 					numComponents: 5,
 					internalType: INT,
-					writable: true,
 				}); },
 				'Unsupported glNumChannels: 5 for GPULayer "test".');
 			});
@@ -249,7 +241,6 @@
 							GPULayer.getGPULayerInternalType({
 								composer: composer,
 								type,
-								writable: true,
 								name: 'test',
 							}),
 						), true, `${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${type}`);
@@ -265,20 +256,17 @@
 							// Don't test int types with LINEAR filtering.
 							if (filter === LINEAR && isIntType(type)) return;
 							[REPEAT, CLAMP_TO_EDGE].forEach(wrap => {
-								[true, false].forEach(writable => {
-									const internalType = GPULayer.getGPULayerInternalType({
-										composer,
-										type,
-										writable,
-										name: 'testFilterWrap',
-									});
-									const internalFilter = GPULayer.getGPULayerInternalFilter({ composer, filter, internalType, wrapX: wrap, wrapY: wrap, name: 'testFilterWrap', });
-									let expected = true;
-									// We do not expect this to succeed for WebGL1 + REPEAT + FLOAT/HALF_FLOAT
-									if (composer === composer1 && wrap === REPEAT && !isIntType(internalType)) expected = false;
-									assert.equal(testFilterWrap(composer, internalType, internalFilter, wrap), expected,
-										`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${internalType} + ${internalFilter} + ${wrap}`);
+								const internalType = GPULayer.getGPULayerInternalType({
+									composer,
+									type,
+									name: 'testFilterWrap',
 								});
+								const internalFilter = GPULayer.getGPULayerInternalFilter({ composer, filter, internalType, wrapX: wrap, wrapY: wrap, name: 'testFilterWrap', });
+								let expected = true;
+								// We do not expect this to succeed for WebGL1 + REPEAT + FLOAT/HALF_FLOAT
+								if (composer === composer1 && wrap === REPEAT && !isIntType(internalType)) expected = false;
+								assert.equal(testFilterWrap(composer, internalType, internalFilter, wrap), expected,
+									`${isWebGL2(composer.gl) ? 'WebGL2' : 'WebGL1'} + ${composer.glslVersion} + ${internalType} + ${internalFilter} + ${wrap}`);
 							});
 						});
 					});
@@ -288,28 +276,22 @@
 		describe('GPULayer.getGPULayerInternalType', () => {
 			it('should return internal type === type for GLSL3', () => {
 				[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
-					[true, false].forEach(writable => {
-						assert.equal(GPULayer.getGPULayerInternalType({
-							composer: composer3,
-							type,
-							writable,
-							name: 'test',
-						}), type);
-					});
+					assert.equal(GPULayer.getGPULayerInternalType({
+						composer: composer3,
+						type,
+						name: 'test',
+					}), type);
 				});
 			});
 			it('should return valid internal type for GLSL1', () => {
 				const results = [FLOAT, HALF_FLOAT, HALF_FLOAT, HALF_FLOAT, FLOAT, FLOAT, FLOAT, FLOAT];
 				[composer1, composer2].forEach(composer => {
 					[FLOAT, HALF_FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach((type, i) => {
-						[true, false].forEach(writable => {
-							assert.equal(GPULayer.getGPULayerInternalType({
-								composer,
-								type,
-								writable,
-								name: 'test',
-							}), results[i]);
-						});
+						assert.equal(GPULayer.getGPULayerInternalType({
+							composer,
+							type,
+							name: 'test',
+						}), results[i]);
 					});
 				});
 			});
@@ -342,7 +324,6 @@
 								name: 'test',
 								type,
 								dimensions,
-								writable: false,
 								numComponents,
 							});
 							// Array1 may be undersized if numComponents < layer.glNumChannels.
@@ -382,7 +363,6 @@
 							name: 'test',
 							type: HALF_FLOAT,
 							dimensions,
-							writable: false,
 							numComponents,
 						});
 						// Array1 may be undersized if numComponents < layer.glNumChannels.
@@ -418,14 +398,12 @@
 					name: 'test',
 					type: UNSIGNED_BYTE,
 					dimensions: length,
-					writable: false,
 					numComponents,
 				});
 				const layer2 = new GPULayer(composer3, {
 					name: 'test',
 					type: UNSIGNED_BYTE,
 					dimensions: size,
-					writable: false,
 					numComponents,
 				});
 				// Wrong length.

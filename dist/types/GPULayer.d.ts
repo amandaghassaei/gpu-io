@@ -27,10 +27,6 @@ export declare class GPULayer {
      * Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      */
     readonly wrapY: GPULayerWrap;
-    /**
-     * Sets GPULayer as readonly or readwrite, defaults to false.
-     */
-    _writable: boolean;
     private _clearValue;
     private _bufferIndex;
     readonly numBuffers: number;
@@ -100,7 +96,6 @@ export declare class GPULayer {
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
      * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      */
     static initFromImageURL(composer: GPUComposer, params: {
         name: string;
@@ -110,7 +105,6 @@ export declare class GPULayer {
         filter?: GPULayerFilter;
         wrapX?: GPULayerWrap;
         wrapY?: GPULayerWrap;
-        writable?: boolean;
     }): Promise<GPULayer>;
     /**
      * Create a GPULayer.
@@ -123,7 +117,6 @@ export declare class GPULayer {
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
      * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
      * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
      * @param params.array - Array to initialize GPULayer.
@@ -137,7 +130,6 @@ export declare class GPULayer {
         filter?: GPULayerFilter;
         wrapX?: GPULayerWrap;
         wrapY?: GPULayerWrap;
-        writable?: boolean;
         numBuffers?: number;
         clearValue?: number | number[];
     });
@@ -154,19 +146,15 @@ export declare class GPULayer {
      */
     get length(): number;
     /**
-     * Flags GPULayer as readonly or readwrite, defaults to false.
-     */
-    get writable(): boolean;
-    /**
      * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
      * @returns - true if GPULayer is 1D, else false.
      */
     is1D(): boolean;
     /**
-     *
+     * Test whether the current buffer index has override enabled.
      * @private
      */
-    _usingTextureOverrideForCurrentBuffer(): WebGLTexture | undefined;
+    _usingTextureOverrideForCurrentBuffer(): boolean;
     /**
      * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
      * @private
@@ -322,7 +310,6 @@ export declare class GPULayer {
     static getGPULayerInternalType(params: {
         composer: GPUComposer;
         type: GPULayerType;
-        writable: boolean;
         name: string;
     }): GPULayerType;
     /**

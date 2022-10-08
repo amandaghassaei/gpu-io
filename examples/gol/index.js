@@ -50,7 +50,6 @@ function main({ gui, contextID, glslVersion}) {
 		numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
 		wrapX: REPEAT,
 		wrapY: REPEAT,
-		writable: true,
 	});
 	const golRules = new GPUProgram(composer, {
 		name: 'golRules',
@@ -150,7 +149,6 @@ function main({ gui, contextID, glslVersion}) {
 		numBuffers: 1,
 		wrapX: REPEAT,
 		wrapY: REPEAT,
-		writable: false,
 	});
 	// During touch, copy data from noise over to state.
 	const touch = copyProgram({

@@ -67,7 +67,6 @@ function main({ gui, contextID, glslVersion}) {
 		numComponents: 2,
 		wrapX: REPEAT,
 		wrapY: REPEAT,
-		writable: true,
 		numBuffers: 2,
 	});
 	const divergenceState = new GPULayer(composer, {
@@ -78,7 +77,6 @@ function main({ gui, contextID, glslVersion}) {
 		numComponents: 1,
 		wrapX: REPEAT,
 		wrapY: REPEAT,
-		writable: true,
 	});
 	const pressureState = new GPULayer(composer, {
 		name: 'pressure',
@@ -88,7 +86,6 @@ function main({ gui, contextID, glslVersion}) {
 		numComponents: 1,
 		wrapX: REPEAT,
 		wrapY: REPEAT,
-		writable: true,
 		numBuffers: 2,
 	});
 	const particlePositionState = new GPULayer(composer, {
@@ -96,7 +93,6 @@ function main({ gui, contextID, glslVersion}) {
 		dimensions: NUM_PARTICLES,
 		type: FLOAT,
 		numComponents: POSITION_NUM_COMPONENTS,
-		writable: true,
 		numBuffers: 2,
 	});
 	// We can use the initial state to reset particles after they've died.
@@ -105,7 +101,6 @@ function main({ gui, contextID, glslVersion}) {
 		dimensions: NUM_PARTICLES,
 		type: FLOAT,
 		numComponents: POSITION_NUM_COMPONENTS,
-		writable: false,
 		numBuffers: 1,
 	});
 	const particleAgeState = new GPULayer(composer, {
@@ -113,7 +108,6 @@ function main({ gui, contextID, glslVersion}) {
 		dimensions: NUM_PARTICLES,
 		type: SHORT,
 		numComponents: 1,
-		writable: true,
 		numBuffers: 2,
 	});
 	// Init a render target for trail effect.
@@ -123,7 +117,6 @@ function main({ gui, contextID, glslVersion}) {
 		type: FLOAT,
 		filter: NEAREST,
 		numComponents: 1,
-		writable: true,
 		numBuffers: 2,
 	});
 

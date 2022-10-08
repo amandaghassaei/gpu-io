@@ -66,7 +66,7 @@
 			it('should support glsl1 fragment shaders with gl_FragColor = ', () => {
 				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), glslVersion: GLSL1 });
 				const program = new GPUProgram(composer1, { name: 'test-program', fragmentShader: glsl1FragmentShader });
-				const layer = new GPULayer(composer1, { name: 'test-layer', numComponents: 4, writable: true, dimensions: [1, 1], type: FLOAT });
+				const layer = new GPULayer(composer1, { name: 'test-layer', numComponents: 4, dimensions: [1, 1], type: FLOAT });
 				composer1.step({
 					program,
 					output: layer,
@@ -93,7 +93,7 @@
 					fragmentShader: setValueWithDefineFragmentShader,
 					compileTimeConstants: { VALUE: `${value}` },
 				});
-				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 1, writable: true, dimensions: [1, 1]});
+				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 1, dimensions: [1, 1]});
 				composer.step({
 					program: setValueProgram,
 					output: layer,
@@ -139,7 +139,7 @@
 				});
 				const value = [1, 2, 3, 4];
 				setValueProgram.setUniform('u_value', value, FLOAT);
-				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
+				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, dimensions: [1, 1]});
 				composer.step({
 					program: setValueProgram,
 					output: layer,
@@ -167,7 +167,7 @@
 						name: 'uniform-test',
 						fragmentShader: setUniformsValueFragmentShader,
 					});
-					const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
+					const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, dimensions: [1, 1]});
 					composer.step({
 						program: setUniformProgram,
 						output: layer,
@@ -235,7 +235,7 @@
 					});
 					const value = [1, 2, 3, 4];
 					setValueProgram.setUniform('u_value', value, UINT);
-					const layer = new GPULayer(composer, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 4, writable: true, dimensions: [1, 1]});
+					const layer = new GPULayer(composer, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 4, dimensions: [1, 1]});
 					composer.step({
 						program: setValueProgram,
 						output: layer,
@@ -260,7 +260,7 @@
 				});
 				const value = [1, 2, 3, 4];
 				setValueProgram.setUniform('u_value_nonexist', value, FLOAT);
-				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
+				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, dimensions: [1, 1]});
 				assert.doesNotThrow(() => { composer.step({
 					program: setValueProgram,
 					output: layer,
@@ -275,7 +275,7 @@
 				});
 				const value = [1, 2, 3, 4];
 				setValueProgram.setUniform('u_value', value, UINT);// u_value should be type float.
-				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, writable: true, dimensions: [1, 1]});
+				const layer = new GPULayer(composer, { name: 'test-layer', type: FLOAT, numComponents: 4, dimensions: [1, 1]});
 				assert.throws(() => { composer.step({
 					program: setValueProgram,
 					output: layer,

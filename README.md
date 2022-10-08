@@ -66,7 +66,6 @@ const state = new GPULayer(composer, {
     numBuffers: 2, // Toggle read/write from one buffer to the other.
     wrapX: REPEAT, // Wrap boundaries.
     wrapY: REPEAT,
-    writable: true,
     array: noise, // Initial value.
 });
 
@@ -231,7 +230,6 @@ const layer1 = new GPUIO.GPULayer({
     wrapX: GPUIO.CLAMP_TO_EDGE,
     wrapY: GPUIO.CLAMP_TO_EDGE,
     filter: GPUIO.NEAREST,
-    writable: true,
     numBuffers: 1,
 });
 
@@ -448,6 +446,8 @@ I'm using mocha + karma + chai + headless Chrome to test the components of gpu-i
 ```
 npm run test
 ```
+
+The automated tests do not get full code coverage yet, but I'm planning to add to them when I go back to implement WebGPU features in this library.
 
 I've also included an html page (at [tests/index.html](https://github.com/amandaghassaei/gpu-io/blob/main/tests/index.html)) for testing various functions of this library in a browser/hardware combo of your choice.  This page is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](http://apps.amandaghassaei.com/gpu-io/tests/).
 

@@ -2646,7 +2646,6 @@ var GPUComposer = /** @class */ (function () {
             filter: gpuLayer.filter,
             wrapX: gpuLayer.wrapX,
             wrapY: gpuLayer.wrapY,
-            writable: true,
             numBuffers: gpuLayer.numBuffers,
             clearValue: gpuLayer.clearValue,
             array: array,
@@ -2665,7 +2664,6 @@ var GPUComposer = /** @class */ (function () {
             input: gpuLayer.currentState,
             output: clone,
         });
-        clone._writable = gpuLayer.writable;
         // TODO: Increment clone's buffer index until it is identical to the original layer.
         return clone;
     };
@@ -3914,16 +3912,11 @@ var GPULayer = /** @class */ (function () {
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
      * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
      * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
      * @param params.array - Array to initialize GPULayer.
      */
     function GPULayer(composer, params) {
-        /**
-         * Sets GPULayer as readonly or readwrite, defaults to false.
-         */
-        this._writable = false;
         // Value to set when clear() is called, defaults to zero.
         // Access with GPULayer.clearValue.
         this._clearValue = 0;
@@ -3943,7 +3936,7 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got ".concat(JSON.stringify(params), "."));
         }
         // Check params keys.
-        var validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapX', 'wrapY', 'writable', 'numBuffers', 'clearValue', 'array'];
+        var validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapX', 'wrapY', 'numBuffers', 'clearValue', 'array'];
         var requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
         var keys = Object.keys(params);
         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer(composer, params)', params.name);
@@ -3958,9 +3951,6 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Invalid numComponents: ".concat(JSON.stringify(numComponents), " for GPULayer \"").concat(name, "\", must be number in range [1-4]."));
         }
         this.numComponents = numComponents;
-        // Writable defaults to false.
-        var writable = !!params.writable;
-        this._writable = writable;
         // Set dimensions, may be 1D or 2D.
         var _a = GPULayer.calcGPULayerSize(dimensions, name, composer.verboseLogging), length = _a.length, width = _a.width, height = _a.height;
         // We already type checked length, width, and height in calcGPULayerSize.
@@ -3998,7 +3988,6 @@ var GPULayer = /** @class */ (function () {
         var internalType = GPULayer.getGPULayerInternalType({
             composer: composer,
             type: type,
-            writable: writable,
             name: name,
         });
         this._internalType = internalType;
@@ -4045,7 +4034,6 @@ var GPULayer = /** @class */ (function () {
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
      * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-     * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
      */
     GPULayer.initFromImageURL = function (composer, params) {
         return __awaiter(this, void 0, void 0, function () {
@@ -4058,12 +4046,12 @@ var GPULayer = /** @class */ (function () {
                             throw new Error("Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got ".concat(JSON.stringify(params), "."));
                         }
                         // Check params.
-                        var validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type', 'writable'];
+                        var validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type'];
                         var requiredKeys = ['name', 'url'];
                         var keys = Object.keys(params);
                         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
                         (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
-                        var url = params.url, name = params.name, filter = params.filter, wrapX = params.wrapX, wrapY = params.wrapY, type = params.type, format = params.format, writable = params.writable;
+                        var url = params.url, name = params.name, filter = params.filter, wrapX = params.wrapX, wrapY = params.wrapY, type = params.type, format = params.format;
                         if (!(0, type_checks_1.isString)(url)) {
                             throw new Error("Expected GPULayer.initFromImageURL params to have url of type string, got ".concat(url, " of type ").concat(typeof url, "."));
                         }
@@ -4082,7 +4070,6 @@ var GPULayer = /** @class */ (function () {
                             wrapY: wrapY,
                             numComponents: format ? format.length : 4,
                             dimensions: [1, 1],
-                            writable: writable,
                             numBuffers: 1,
                         });
                         // Load image.
@@ -4133,16 +4120,6 @@ var GPULayer = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(GPULayer.prototype, "writable", {
-        /**
-         * Flags GPULayer as readonly or readwrite, defaults to false.
-         */
-        get: function () {
-            return this._writable;
-        },
-        enumerable: false,
-        configurable: true
-    });
     /**
      * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
      * @returns - true if GPULayer is 1D, else false.
@@ -4151,23 +4128,17 @@ var GPULayer = /** @class */ (function () {
         return this._length !== undefined;
     };
     /**
-     *
+     * Test whether the current buffer index has override enabled.
      * @private
      */
     GPULayer.prototype._usingTextureOverrideForCurrentBuffer = function () {
-        return this._textureOverrides && this._textureOverrides[this.bufferIndex];
+        return !!(this._textureOverrides && this._textureOverrides[this.bufferIndex]);
     };
     // saveCurrentStateToGPULayer(layer: GPULayer) {
     // 	// A method for saving a copy of the current state without a draw call.
     // 	// Draw calls are expensive, this optimization helps.
     // 	if (this.numBuffers < 2) {
     // 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" with less than 2 buffers.`);
-    // 	}
-    // 	if (!this.writable) {
-    // 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on read-only GPULayer "${this.name}".`);
-    // 	}
-    // 	if (layer.writable) {
-    // 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" using writable GPULayer "${layer.name}".`)
     // 	}
     // 	// Check that texture params are the same.
     // 	if (layer.glWrapS !== this.glWrapS || layer.glWrapT !== this.glWrapT ||
@@ -4207,9 +4178,6 @@ var GPULayer = /** @class */ (function () {
     // }
     // // This is used internally.
     // _setCurrentStateTexture(texture: WebGLTexture) {
-    // 	if (this.writable) {
-    // 		throw new Error(`Can't call GPULayer._setCurrentStateTexture on writable texture "${this.name}".`);
-    // 	}
     // 	this.buffers[this.bufferIndex].texture = texture;
     // }
     /**
@@ -4316,9 +4284,11 @@ var GPULayer = /** @class */ (function () {
                 index = index % numBuffers;
             }
         }
-        // if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
+        var texture = _buffers[index];
+        if (_textureOverrides && _textureOverrides[index])
+            texture = _textureOverrides[index];
         return {
-            texture: _buffers[index],
+            texture: texture,
             layer: this,
         };
     };
@@ -4327,9 +4297,6 @@ var GPULayer = /** @class */ (function () {
      * @private
      */
     GPULayer.prototype._prepareForWrite = function (incrementBufferIndex) {
-        if (!this._writable) {
-            throw new Error("GPULayer \"".concat(this.name, "\" is not writable."));
-        }
         if (incrementBufferIndex) {
             this.incrementBufferIndex();
         }
@@ -4407,7 +4374,7 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.clear = function (applyToAllBuffers) {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
-        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type, _writable = _a._writable;
+        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, bufferIndex = _a.bufferIndex, type = _a.type;
         var verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Clearing GPULayer \"".concat(name, "\"."));
@@ -4425,7 +4392,6 @@ var GPULayer = /** @class */ (function () {
         var endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
         var program = _composer._setValueProgramForType(type);
         program.setUniform('u_value', value);
-        this._writable = true; // Temporarily make writable.
         for (var i = startIndex; i < endIndex; i++) {
             // Write clear value to buffers.
             _composer.step({
@@ -4433,7 +4399,6 @@ var GPULayer = /** @class */ (function () {
                 output: this,
             });
         }
-        this._writable = _writable;
     };
     GPULayer.prototype._getValuesSetup = function () {
         var _a = this, width = _a.width, height = _a.height, _composer = _a._composer;
@@ -5276,7 +5241,6 @@ function testFilterWrap(composer, internalType, filter, wrap) {
         wrapX: constants_1.CLAMP_TO_EDGE,
         wrapY: constants_1.CLAMP_TO_EDGE,
         filter: constants_1.NEAREST,
-        writable: true,
     });
     var offset = filter === constants_1.LINEAR ? 0.5 : 1;
     // Run program to perform linear filter.
@@ -5365,7 +5329,7 @@ exports.testFilterWrap = testFilterWrap;
  * Exported here for testing purposes.
  */
 GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
-    var composer = params.composer, writable = params.writable, name = params.name;
+    var composer = params.composer, name = params.name;
     var _errorCallback = composer._errorCallback, isWebGL2 = composer.isWebGL2;
     var type = params.type;
     var internalType = type;
@@ -5411,9 +5375,11 @@ GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
             (0, extensions_1.getExtension)(composer, extensions_1.OES_TEXTURE_HALF_FLOAT, true);
             // TODO: https://stackoverflow.com/questions/54248633/cannot-create-half-float-oes-texture-from-uint16array-on-ipad
             var valid = testWriteSupport(composer, internalType);
-            // If not writable texture we'll let it pass, but this will affect the ability to call getValues() and savePNG().
-            if (!valid && writable) {
-                _errorCallback("This browser does not support writing to HALF_FLOAT textures.");
+            // May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+            // We'll let it pass for now.
+            if (!valid) {
+                console.warn("This browser does not support writing to HALF_FLOAT textures.");
+                // _errorCallback(`This browser does not support writing to HALF_FLOAT textures.`);
             }
         }
     }
@@ -5445,8 +5411,10 @@ GPULayer_1.GPULayer.getGPULayerInternalType = function (params) {
             }
             // Test attaching texture to framebuffer to be sure half float writing is supported.
             var valid = testWriteSupport(composer, internalType);
-            // If not writable texture we'll let it pass, but this will affect the ability to call getValues() and savePNG().
-            if (!valid && writable) {
+            // May be ok for read-only, but this will affect the ability to call getValues() and savePNG().
+            // We'll let it pass for now.
+            if (!valid) {
+                console.warn("This browser does not support writing to HALF_FLOAT textures.");
                 _errorCallback("This browser does not support writing to HALF_FLOAT textures.");
             }
         }
@@ -7305,7 +7273,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.disposeFramebuffers = exports.bindFrameBuffer = void 0;
-// Cache framebuffers to minimize invalidating FPO attachment bindings:
+// Cache framebuffers to minimize invalidating FBO attachment bindings:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#avoid_invalidating_fbo_attachment_bindings
 var framebufferMap = new WeakMap();
 var allTextureFramebuffersMap = new WeakMap();
@@ -7371,6 +7339,7 @@ exports.bindFrameBuffer = bindFrameBuffer;
  * @private
  */
 function disposeFramebuffers(gl, texture) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     // Delete all framebuffers associated with this texture.
     var allFramebuffers = allTextureFramebuffersMap.get(texture);
     if (allFramebuffers) {
@@ -7733,7 +7702,6 @@ function fragmentShaderPolyfills() {
     var bitshiftRight = function (type1, type2) {
         return "".concat(type1, " bitshiftRight(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a >> b;\n\t#else\n\t\treturn ").concat(type1, "(round(").concat(floatTypeForIntType(type1), "(a) / pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b))));\n\t#endif\n}");
     };
-    // TODO: fix these for glsl3
     // Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
     // Seems like these could be optimized.
     var bitwiseOr = function (numBits) {

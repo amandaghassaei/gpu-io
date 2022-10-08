@@ -36,7 +36,6 @@ function main({ gui, contextID, glslVersion}) {
 		dimensions: [canvas.width, canvas.height],
 		type: FLOAT,
 		numComponents: 1,
-		writable: true,
 	});
 	const fractalCompute = new GPUProgram(composer, {
 		name: 'fractalCompute',

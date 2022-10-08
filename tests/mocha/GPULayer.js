@@ -18,6 +18,7 @@
 		NEAREST,
 		GLSL1,
 		GLSL3,
+		RGB,
 		_testing,
 		isWebGL2,
 	} = GPUIO;
@@ -61,7 +62,7 @@
 			});
 			it('should error if unknown params passed in', async () => {
 				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', otherThing: 4 }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
-					assert.equal(result.message, 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapX","wrapY","format","type","writable"].');
+					assert.equal(result.message, 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapX","wrapY","format","type"].');
 				}));
 			});
 			it('should error if invalid params passed in', async () => {
@@ -97,12 +98,43 @@
 					assert.include(result.message, 'Error loading image "test-layer":');
 				}));
 			});
-			it('should load image', async () => {
+			it('should load png image', async () => {
 				const layer = await GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png' });
 				assert.equal(layer.width, 2);
 				assert.equal(layer.height, 2);
-				// TODO: query image.
-				// layer.getValues();
+				const values = layer.getValues();
+				const expected = [
+					0, 0, 0, 0.501960813999176,
+					1, 0, 0, 1,
+					0, 0.19607844948768616, 1, 1,
+					0, 1, 0, 1,
+				];
+				assert.deepEqual(Array.from(values), expected);
+			});
+			it('should load jpg image', async () => {
+				const layer = await GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.jpg' });
+				assert.equal(layer.width, 2);
+				assert.equal(layer.height, 2);
+				const values = layer.getValues();
+				const expected = [
+					0.49803924560546875, 0.49803924560546875, 0.49803924560546875, 1,
+					0.9960784912109375, 0, 0, 1,
+					0, 0.20000001788139343, 1, 1,
+					0, 1, 0, 1,
+				];
+				assert.deepEqual(Array.from(values), expected);
+
+				const layer2 = await GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.jpg', type: UNSIGNED_BYTE, format: RGB });
+				assert.equal(layer2.width, 2);
+				assert.equal(layer2.height, 2);
+				const values2 = layer2.getValues();
+				const expected2 = [
+					127, 127, 127,
+					254, 0, 0,
+					0, 51, 255,
+					0, 255, 0,
+				];
+				assert.deepEqual(Array.from(values2), expected2);
 			});
 		});
 		describe('constructor', () => {
@@ -128,7 +160,7 @@
 			});
 			it('should error if unknown params passed in', () => {
 				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], otherThing: 3 }); },
-					'Invalid params key "otherThing" passed to GPULayer(composer, params) with name "test-layer".  Valid keys are ["name","type","numComponents","dimensions","filter","wrapX","wrapY","writable","numBuffers","clearValue","array"].');
+					'Invalid params key "otherThing" passed to GPULayer(composer, params) with name "test-layer".  Valid keys are ["name","type","numComponents","dimensions","filter","wrapX","wrapY","numBuffers","clearValue","array"].');
 			});
 			it('should error if invalid params passed in', () => {
 				// Num components.
@@ -180,7 +212,6 @@
 					filter: LINEAR,
 					wrapX: REPEAT,
 					wrapY: REPEAT,
-					writable: true,
 					numBuffers: 5,
 					clearValue,
 					array: (new Float32Array(34 * 56 * 3)).fill(-5),
@@ -193,7 +224,6 @@
 				assert.equal(layer.filter, LINEAR);
 				assert.equal(layer.wrapX, REPEAT);
 				assert.equal(layer.wrapY, REPEAT);
-				assert.equal(layer.writable, true);
 				assert.equal(layer.numBuffers, 5);
 				assert.deepEqual(layer.clearValue, clearValue.slice());
 				assert.notEqual(layer.clearValue, clearValue); // Make deep copy.
@@ -322,7 +352,7 @@
 		});
 		describe('_prepareForWrite', () => {
 			it('should increment index', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3, writable: true});
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 3});
 				const { gl } = composer1;
 				assert.equal(layer1.bufferIndex, 0);
 				layer1._prepareForWrite();
@@ -352,7 +382,7 @@
 		});
 		describe('set clearValue, get clearValue, clear', () => {
 			it('should set/get clear value and clear to value', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], writable: true, numBuffers: 2 });
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], numBuffers: 2 });
 				assert.equal(layer1.clearValue, 0);
 				layer1.clearValue = 10.4;
 				assert.equal(layer1.clearValue, 10.4);
@@ -398,8 +428,8 @@
 				layer1.dispose();
 			});
 			it('should throw errors for bad clear values', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], writable: true });
-				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 3, dimensions: [34, 56], writable: true });
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56]});
+				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 3, dimensions: [34, 56]});
 				// Wrong length.
 				assert.throws(() => { layer1.clearValue = [4, -97.5]; },
 					'Invalid clearValue: [4,-97.5] for GPULayer "test-layer", expected FLOAT or array of FLOAT of length 3.');
@@ -419,7 +449,7 @@
 		describe('getValues', () => {
 			it('should return TypedArray with correct length and type', () => {
 				[HALF_FLOAT, FLOAT, UNSIGNED_BYTE, BYTE, UNSIGNED_SHORT, SHORT, UNSIGNED_INT, INT].forEach(type => {
-					const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245, writable: true});
+					const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245});
 					assert.notEqual(layer1.length, layer1.width * layer1.height);
 					const values = layer1.getValues();
 					// Due to some annoying browser things, this is currently returning one of Float32Array, Int32Array, or Uint32Array.
@@ -427,18 +457,6 @@
 					assert.equal(values.length, layer1.length * layer1.numComponents);
 					layer1.dispose();
 				});
-			});
-			it('should work for non-writable GPULayer', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], clearValue: [1, 2, 3], writable: false});
-				layer1.clear();
-				const values = layer1.getValues();
-				assert.equal(values.length, layer1.width * layer1.height * layer1.numComponents);
-				for (let i = 0; i < values.length / 3; i++) {
-					for (let j = 0; j < 3; j++) {
-						assert.equal(values[3 * i + j], layer1.clearValue[j], values);
-					}
-				}
-				layer1.dispose();
 			});
 			it('should return correct values for UNSIGNED_BYTE GPULayer', () => {
 				// This seems to only work after I changed GPULayer to cast UNSIGNED_BYTE types to HALF_FLOAT for GLSL1.
@@ -456,7 +474,7 @@
 				assert.equal(composer1.glslVersion, GLSL1);
 
 				[composer1, composer2, composer3].forEach(composer => {
-					const layer1 = new GPULayer(composer, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 3, dimensions: [30, 30], writable: true});
+					const layer1 = new GPULayer(composer, { name: 'test-layer', type: UNSIGNED_BYTE, numComponents: 3, dimensions: [30, 30]});
 					layer1.clearValue = [1, 0, 3];
 					layer1.clear();
 					const values = layer1.getValues();
@@ -481,25 +499,13 @@
 		describe('savePNG', () => {
 			// TODO: this could be more thorough.
 			it('should return Blob in callback', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: true});
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67]});
 				layer1.savePNG({
 					filename: 'thing',
 					callback: (blob, filename) => {
 						assert.typeOf(blob, 'Blob');
 						assert.equal(filename, 'thing.png');
 					}
-				});
-				layer1.dispose();
-			});
-			it('should work for non-writable GPULayer', () => {
-				// TODO: actually test this.
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: false});
-				layer1.savePNG({
-					filename: 'thing',
-					callback: (blob, filename) => {
-						assert.typeOf(blob, 'Blob');
-						assert.equal(filename, 'thing.png');
-					},
 				});
 				layer1.dispose();
 			});
@@ -520,7 +526,7 @@
 					filter: LINEAR,
 					wrapX: REPEAT,
 					wrapY: REPEAT,
-					writable: true,
+					
 					numBuffers: 5,
 					clearValue,
 					array: (new Float32Array(34 * 56 * 3)).fill(-5),
@@ -535,7 +541,6 @@
 				assert.equal(clone.filter, LINEAR);
 				assert.equal(clone.wrapX, REPEAT);
 				assert.equal(clone.wrapY, REPEAT);
-				assert.equal(clone.writable, true);
 				assert.equal(clone.numBuffers, 5);
 				assert.deepEqual(clone.clearValue, clearValue.slice());
 				assert.notEqual(clone.clearValue, layer.clearValue); // Make deep copy.
@@ -551,7 +556,7 @@
 		});
 		describe('dispose', () => {
 			it('should delete all object/array keys', () => {
-				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67], writable: false});
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67]});
 				layer1.dispose();
 				// Filter out keys for simple objects (e.g. strings, number, boolean).
 				const keys = Object.keys(layer1).filter(key => {

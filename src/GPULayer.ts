@@ -81,10 +81,7 @@ export class GPULayer {
 	 * Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 */
 	readonly wrapY: GPULayerWrap;
-	/**
-	 * Sets GPULayer as readonly or readwrite, defaults to false.
-	 */
-	_writable: boolean = false;
+
 	// Value to set when clear() is called, defaults to zero.
 	// Access with GPULayer.clearValue.
 	private _clearValue: number | number[] = 0;
@@ -163,7 +160,7 @@ export class GPULayer {
 	 */
 	readonly _glWrapT: number;
 	
-	// Optimizations so that "copying" can happen without draw calls.
+	// Optimization so that "copying" can happen without draw calls by simply swapping WebGL textures between GPULayers.
 	// This functionality is not currently active right now, but will be added back in later.
 	// TODO: take a second look at this.
 	private _textureOverrides?: (WebGLTexture | undefined)[];
@@ -179,7 +176,6 @@ export class GPULayer {
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
 	 * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-	 * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
 	 */
 	static async initFromImageURL(composer: GPUComposer,
 		params: {
@@ -190,7 +186,6 @@ export class GPULayer {
 			filter?: GPULayerFilter,
 			wrapX?: GPULayerWrap,
 			wrapY?: GPULayerWrap,
-			writable?: boolean,
 		},
 	) {
 		return new Promise<GPULayer>((resolve, reject) => {
@@ -201,13 +196,13 @@ export class GPULayer {
 				throw new Error(`Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got ${JSON.stringify(params)}.`);
 			}
 			// Check params.
-			const validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type', 'writable'];
+			const validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type'];
 			const requiredKeys = ['name', 'url'];
 			const keys = Object.keys(params);
 			checkValidKeys(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
 			checkRequiredKeys(keys, requiredKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
 
-			const { url, name, filter, wrapX, wrapY, type, format, writable } = params;
+			const { url, name, filter, wrapX, wrapY, type, format } = params;
 			if (!isString(url)) {
 				throw new Error(`Expected GPULayer.initFromImageURL params to have url of type string, got ${url} of type ${typeof url}.`)
 			}
@@ -227,7 +222,6 @@ export class GPULayer {
 				wrapY,
 				numComponents: format ? format.length as GPULayerNumComponents : 4,
 				dimensions: [1, 1], // Init as 1 px to start.
-				writable,
 				numBuffers: 1,
 			});
 
@@ -257,7 +251,6 @@ export class GPULayer {
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
 	 * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
-	 * @param params.writable - Sets GPULayer as readonly or readwrite, defaults to false.
 	 * @param params.numBuffers - How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers.
 	 * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
 	 * @param params.array - Array to initialize GPULayer.
@@ -273,7 +266,6 @@ export class GPULayer {
 			filter?: GPULayerFilter,
 			wrapX?: GPULayerWrap,
 			wrapY?: GPULayerWrap,
-			writable?: boolean,
 			numBuffers?: number,
 			clearValue?: number | number[],
 		},
@@ -290,7 +282,7 @@ export class GPULayer {
 			throw new Error(`Error initing GPULayer: must pass valid params object to GPULayer(composer, params), got ${JSON.stringify(params)}.`);
 		}
 		// Check params keys.
-		const validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapX', 'wrapY', 'writable', 'numBuffers', 'clearValue', 'array'];
+		const validKeys = ['name', 'type', 'numComponents', 'dimensions', 'filter', 'wrapX', 'wrapY', 'numBuffers', 'clearValue', 'array'];
 		const requiredKeys = ['name', 'type', 'numComponents', 'dimensions'];
 		const keys = Object.keys(params);
 		checkValidKeys(keys, validKeys, 'GPULayer(composer, params)', params.name);
@@ -308,10 +300,6 @@ export class GPULayer {
 			throw new Error(`Invalid numComponents: ${JSON.stringify(numComponents)} for GPULayer "${name}", must be number in range [1-4].`);
 		}
 		this.numComponents = numComponents;
-
-		// Writable defaults to false.
-		const writable = !!params.writable;
-		this._writable = writable;
 
 		// Set dimensions, may be 1D or 2D.
 		const { length, width, height } = GPULayer.calcGPULayerSize(dimensions, name, composer.verboseLogging);
@@ -353,7 +341,6 @@ export class GPULayer {
 		const internalType = GPULayer.getGPULayerInternalType({
 			composer,
 			type,
-			writable,
 			name,
 		});
 		this._internalType = internalType;
@@ -424,13 +411,6 @@ export class GPULayer {
 	}
 
 	/**
-	 * Flags GPULayer as readonly or readwrite, defaults to false.
-	 */
-	get writable() {
-		return this._writable;
-	}
-
-	/**
 	 * Returns whether the GPULayer was inited as a 1D array (rather than 2D).
 	 * @returns - true if GPULayer is 1D, else false.
 	 */
@@ -439,11 +419,11 @@ export class GPULayer {
 	}
 
 	/**
-	 * 
+	 * Test whether the current buffer index has override enabled.
 	 * @private
 	 */
 	_usingTextureOverrideForCurrentBuffer() {
-		return this._textureOverrides && this._textureOverrides[this.bufferIndex];
+		return !!(this._textureOverrides && this._textureOverrides[this.bufferIndex]);
 	}
 
 	// saveCurrentStateToGPULayer(layer: GPULayer) {
@@ -451,12 +431,6 @@ export class GPULayer {
 	// 	// Draw calls are expensive, this optimization helps.
 	// 	if (this.numBuffers < 2) {
 	// 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" with less than 2 buffers.`);
-	// 	}
-	// 	if (!this.writable) {
-	// 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on read-only GPULayer "${this.name}".`);
-	// 	}
-	// 	if (layer.writable) {
-	// 		throw new Error(`Can't call GPULayer.saveCurrentStateToGPULayer on GPULayer "${this.name}" using writable GPULayer "${layer.name}".`)
 	// 	}
 	// 	// Check that texture params are the same.
 	// 	if (layer.glWrapS !== this.glWrapS || layer.glWrapT !== this.glWrapT ||
@@ -500,9 +474,6 @@ export class GPULayer {
 
 	// // This is used internally.
 	// _setCurrentStateTexture(texture: WebGLTexture) {
-	// 	if (this.writable) {
-	// 		throw new Error(`Can't call GPULayer._setCurrentStateTexture on writable texture "${this.name}".`);
-	// 	}
 	// 	this.buffers[this.bufferIndex].texture = texture;
 	// }
 
@@ -616,9 +587,10 @@ export class GPULayer {
 				index = index % numBuffers;
 			}
 		}
-		// if (_textureOverrides && _textureOverrides[index]) return _textureOverrides[index]!;
+		let texture = _buffers[index];
+		if (_textureOverrides && _textureOverrides[index]) texture = _textureOverrides[index]!;
 		return {
-			texture: _buffers[index],
+			texture,
 			layer: this,
 		};
 	}
@@ -630,9 +602,6 @@ export class GPULayer {
 	_prepareForWrite(
 		incrementBufferIndex: boolean,
 	) {
-		if (!this._writable) {
-			throw new Error(`GPULayer "${this.name}" is not writable.`);
-		}
 		if (incrementBufferIndex) {
 			this.incrementBufferIndex();
 		}
@@ -712,7 +681,7 @@ export class GPULayer {
 	 * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
 	 */
 	clear(applyToAllBuffers = false) {
-		const { name, _composer, clearValue, numBuffers, bufferIndex, type, _writable } = this;
+		const { name, _composer, clearValue, numBuffers, bufferIndex, type } = this;
 		const { verboseLogging } = _composer;
 		if (verboseLogging) console.log(`Clearing GPULayer "${name}".`);
 
@@ -730,7 +699,6 @@ export class GPULayer {
 		const endIndex = applyToAllBuffers ? numBuffers : bufferIndex + 1;
 		const program = _composer._setValueProgramForType(type);
 		program.setUniform('u_value', value);
-		this._writable = true; // Temporarily make writable.
 		for (let i = startIndex; i < endIndex; i++) {
 			// Write clear value to buffers.
 			_composer.step({
@@ -738,7 +706,6 @@ export class GPULayer {
 				output: this,
 			});
 		}
-		this._writable = _writable;
 	}
 
 	private _getValuesSetup() {
@@ -1111,7 +1078,6 @@ export class GPULayer {
 		params: {
 			composer: GPUComposer,
 			type: GPULayerType,
-			writable: boolean,
 			name: string,
 		},
 	): GPULayerType;

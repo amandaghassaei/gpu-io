@@ -134,7 +134,6 @@ function main({ gui, glslVersion, contextID }) {
 		numComponents: PARTICLES_NUM_COMPONENTS,
 		type: FLOAT,
 		numBuffers: 2,
-		writable: true,
 		array: positions,
 	});
 	// Init particles heading (orientation) data on GPU.
@@ -144,7 +143,6 @@ function main({ gui, glslVersion, contextID }) {
 		numComponents: 1,
 		type: FLOAT,
 		numBuffers: 2,
-		writable: true,
 		array: heading,
 	});
 	// Fragment shader program for updating particles position and heading.
@@ -306,7 +304,6 @@ function main({ gui, glslVersion, contextID }) {
 		numBuffers: 2,
 		wrapX: REPEAT,
 		wrapY: REPEAT,
-		writable: true,
 	});
 	// Fragment shader program for adding chemical attractant from particles to trail layer.
 	const deposit = addValueProgram({

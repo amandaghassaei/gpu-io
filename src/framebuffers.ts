@@ -1,7 +1,7 @@
 import type { GPUComposer } from './GPUComposer';
 import type { GPULayer } from './GPULayer';
 
-// Cache framebuffers to minimize invalidating FPO attachment bindings:
+// Cache framebuffers to minimize invalidating FBO attachment bindings:
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#avoid_invalidating_fbo_attachment_bindings
 const framebufferMap: WeakMap<WebGLTexture | WebGLTexture[], WebGLFramebuffer> = new WeakMap();
 const allTextureFramebuffersMap: WeakMap<WebGLTexture, WebGLFramebuffer[]> = new WeakMap();
@@ -73,7 +73,6 @@ export function bindFrameBuffer(
 		}
 	}
 	gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-
 }
 
 /**
@@ -81,6 +80,7 @@ export function bindFrameBuffer(
  * @private
  */
 export function disposeFramebuffers(gl: WebGLRenderingContext | WebGL2RenderingContext, texture: WebGLTexture) {
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	// Delete all framebuffers associated with this texture.
 	const allFramebuffers = allTextureFramebuffersMap.get(texture);
 	if (allFramebuffers) {

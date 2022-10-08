@@ -474,7 +474,6 @@ export class GPUComposer {
 			filter: gpuLayer.filter,
 			wrapX: gpuLayer.wrapX,
 			wrapY: gpuLayer.wrapY,
-			writable: true, // Set writable initially.
 			numBuffers: gpuLayer.numBuffers,
 			clearValue: gpuLayer.clearValue,
 			array,
@@ -494,7 +493,6 @@ export class GPUComposer {
 			input: gpuLayer.currentState,
 			output: clone,
 		});
-		clone._writable = gpuLayer.writable;
 
 		// TODO: Increment clone's buffer index until it is identical to the original layer.
 		return clone;
