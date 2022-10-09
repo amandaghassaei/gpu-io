@@ -350,11 +350,11 @@ function main({ gui, contextID, glslVersion}) {
 					diameter: 30,
 				});
 			}
+			activeTouches[e.pointerId] = [e.clientX, e.clientY];
 		} else if (pinchPan && pointers.length === 2) {
 			const { id1, id2, lastDelta, lastAvg } = pinchPan;
 			activeTouches[e.pointerId] = [e.clientX, e.clientY];
 			const { delta, avg } = getAvgAndDeltaBetweenPoints(id1, id2);
-			console.log(avg, lastAvg, delta, lastDelta);
 			onPinchZoom({
 				pointerId: e.pointerId,
 				clientX: avg[0],
@@ -370,7 +370,6 @@ function main({ gui, contextID, glslVersion}) {
 			pinchPan.lastDelta = delta;
 			pinchPan.lastAvg = avg;
 		}
-		
 	}
 	function onPointerStop(e) {
 		delete activeTouches[e.pointerId];

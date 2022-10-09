@@ -145,12 +145,18 @@ Check out the following examples to really understand how gpu-io works.  Many of
 
 Source code for all examples can be found in [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
 
-- [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
-- [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
-- [Reaction Diffusion](https://apps.amandaghassaei.com/gpu-io/examples/reaction-diffusion/)
-- [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
-- [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
+### Simple
+- [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/)
+- [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/)
 
+### Grid-Based Systems
+- [Reaction Diffusion](https://apps.amandaghassaei.com/gpu-io/examples/reaction-diffusion/)
+
+### Particle + Grid Systems
+- [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/)
+- [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/)
+
+<!-- ### Threejs -->
 <!-- 
 TODO:
 - texture synthesis
