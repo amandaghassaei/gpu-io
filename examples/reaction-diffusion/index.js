@@ -9,21 +9,18 @@ function main({ gui, contextID, glslVersion}) {
 		CLAMP_TO_EDGE,
 		LINEAR,
 		renderAmplitudeProgram,
-		setColorProgram,
 		setValueProgram,
 	} = GPUIO;
 
-	const DIFFUSION_A_DEFAULT = 0.2097;
-	const DIFFUSION_B_DEFAULT = 0.105;
 	const PARAMS = {
-		diffusionA: DIFFUSION_A_DEFAULT,
-		diffusionB: DIFFUSION_B_DEFAULT,
+		diffusionA: 0.2097,
+		diffusionB: 0.105,
 		renderLayer: 'Chemical B',
 		feedRateMin: 0.016,
 		feedRateMax: 0.044,
 		killRateMin: 0.05,
 		killRateMax: 0.066,
-		reset: onResize,
+		reset: zoomOut,
 		savePNG: savePNG,
 	}
 
@@ -110,30 +107,6 @@ function main({ gui, contextID, glslVersion}) {
 		]
 	});
 
-	const initialize = new GPUProgram(composer, {
-		name: 'initialize',
-		fragmentShader: `
-		in vec2 v_uv;
-		uniform vec2 u_pxSize;
-		out vec2 out_state;
-		void main() {
-			// Init a checkerboard pattern.
-			vec2 scale = 20.0 * u_pxSize;
-			vec2 subPosition = abs(mod(v_uv, scale) / scale - vec2(0.5));
-			float mask = 0.0;
-			if (dot(subPosition, subPosition) < 0.05) mask = 1.0;
-			out_state = vec2(1.0, 0.5 * mask);
-		}
-		`,
-		uniforms: [
-			{
-				name: 'u_pxSize',
-				value: [SIM_SCALE / canvas.width, SIM_SCALE / canvas.height],
-				type: FLOAT,
-			},
-		],
-	});
-
 	const renderA = renderAmplitudeProgram({
 		name: 'renderA',
 		composer,
@@ -141,6 +114,7 @@ function main({ gui, contextID, glslVersion}) {
 		scale: 1,
 		components: 'x',
 	});
+
 	const renderB = renderAmplitudeProgram({
 		name: 'renderB',
 		composer,
@@ -148,20 +122,14 @@ function main({ gui, contextID, glslVersion}) {
 		scale: 3,
 		components: 'y',
 	});
-	const selection = setColorProgram({
+
+	// During touch, set chemical values to 0.5, 0.5.
+	const touch = setValueProgram({
+		name: 'touch',
 		composer,
 		type: state.type,
-		color: [0, 0, 1],
-		opacity: 0.5,
-		name: 'selection',
+		value: [0.5, 0.5],
 	});
-
-	// Touch/hover events.
-	const selectionRect = {
-		min: [0, 0],
-		max: [0, 0],
-	};
-	let activeTouches = {};
 
 	// Render loop.
 	function loop() {
@@ -172,77 +140,35 @@ function main({ gui, contextID, glslVersion}) {
 				output: state,
 			});
 		}
-		// If no output, will draw to screen.
+		// Draw to screen.
 		composer.step({
 			program: PARAMS.renderLayer === 'Chemical A' ? renderA : renderB,
 			input: state,
 		});
-		if (Object.keys(activeTouches).length) {
-			// Draw a selection rectangle on top of vis.
-			composer.stepRect({
-				program: selection,
-				position: selectionRect.min,
-				size: [selectionRect.max[0] - selectionRect.min[0], selectionRect.max[1] - selectionRect.min[1]],
-				blendAlpha: true,
-			});
-		}
 	}
 
-	// During hover, set chemical values to 0.5, 0.5.
-	const hover = setValueProgram({
-		name: 'hover',
-		composer,
-		type: state.type,
-		value: [0.5, 0.5],
-	});
+	// Touch events.
+	let activeTouches = {};
 
-	
 	function onPointerMove(e) {
 		if (activeTouches[e.pointerId]) {
-			if (e.pointerId === selectionRect.id) {
-				selectionRect.min[0] = Math.min(selectionRect.start[0], e.clientX);
-				selectionRect.min[1] = Math.min(selectionRect.start[1], canvas.height - e.clientY);
-				selectionRect.max[0] = Math.max(selectionRect.start[0], e.clientX);
-				selectionRect.max[1] = Math.max(selectionRect.start[1], canvas.height - e.clientY);
-			}
-		} else {
-			// For hover events.
 			composer.stepCircle({
-				program: hover,
+				program: touch,
 				output: state,
 				position: [e.clientX, canvas.height - e.clientY],
 				diameter: 30,
 			});
 		}
 	}
-	function onPointerUp(e) {
-		if (e.pointerId === selectionRect.id) {
-			// Calculate a new bounds on feedRate and killRate.
-			PARAMS.killRateMin = selectionRect.min[0] / canvas.width * (PARAMS.killRateMax - PARAMS.killRateMin) + PARAMS.killRateMin;
-			PARAMS.killRateMax = selectionRect.max[0] / canvas.width * (PARAMS.killRateMax - PARAMS.killRateMin) + PARAMS.killRateMin;
-			rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
-			PARAMS.feedRateMin = selectionRect.min[1] / canvas.height * (PARAMS.feedRateMax - PARAMS.feedRateMin) + PARAMS.feedRateMin;
-			PARAMS.feedRateMax = selectionRect.max[1] / canvas.height * (PARAMS.feedRateMax - PARAMS.feedRateMin) + PARAMS.feedRateMin;
-			rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
-			updateGUI();
-		}
-		onPointerStop(e);
-	}
 	function onPointerStop(e) {
 		delete activeTouches[e.pointerId];
 	}
 	function onPointerStart(e) {
-		if (Object.keys(activeTouches).length === 0) {
-			selectionRect.start = [e.clientX, canvas.height - e.clientY];
-			selectionRect.min = selectionRect.start.slice();
-			selectionRect.max = selectionRect.start.slice();
-			selectionRect.id = e.pointerId;
-		}
 		activeTouches[e.pointerId] = true;
 	}
 	canvas.addEventListener('pointermove', onPointerMove);
 	canvas.addEventListener('pointerdown', onPointerStart);
-	canvas.addEventListener('pointerup', onPointerUp);
+	canvas.addEventListener('pointerup', onPointerStop);
 	canvas.addEventListener('pointerout', onPointerStop);
 	canvas.addEventListener('pointercancel', onPointerStop);
 
@@ -259,10 +185,6 @@ function main({ gui, contextID, glslVersion}) {
 		if (e.key === 'p') {
 			savePNG();
 		}
-		if (e.key === 'Escape') {
-			activeTouches = {};
-			selectionRect.id = '';
-		}
 	}
 
 	// Resize if needed.
@@ -274,18 +196,28 @@ function main({ gui, contextID, glslVersion}) {
 		// Resize composer.
 		composer.resize(width, height);
 
+		// Resize state with random initial values.
+		const initialState = new Float32Array(Math.round(width / SIM_SCALE) * Math.round(height / SIM_SCALE) * 2);
+		for (let i = 0; i < initialState.length / 2; i++) {
+			initialState[2 * i] = 0.5 + Math.random() * 0.5;
+			initialState[2 * i + 1] = 0.5 + Math.random() * 0.5;
+		}
+		state.resize([Math.round(width / SIM_SCALE), Math.round(height / SIM_SCALE)], initialState);
+
 		// Update px size uniform.
 		rxnDiffusion.setUniform('u_pxSize', [SIM_SCALE / width, SIM_SCALE / height]);
-		initialize.setUniform('u_pxSize', [SIM_SCALE / width, SIM_SCALE / height]);
+	}
+	onResize();
 
-		// Resize state.
-		state.resize([Math.round(width / SIM_SCALE), Math.round(height / SIM_SCALE)]);
-		composer.step({
-			program: initialize,
-			output: state,
-		});
-
-		zoomOut();
+	function zoomOut() {
+		PARAMS.feedRateMin = 0.016;
+		PARAMS.feedRateMax = 0.044;
+		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
+		PARAMS.killRateMin = 0.05;
+		PARAMS.killRateMax = 0.066;
+		rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
+		updateGUI();
+		onResize(); // Reset.
 	}
 
 	// Init simple GUI.
@@ -315,70 +247,94 @@ function main({ gui, contextID, glslVersion}) {
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
-	function zoomOut() {
-		PARAMS.feedRateMin = 0.016;
-		PARAMS.feedRateMax = 0.044;
-		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
-		PARAMS.killRateMin = 0.05;
-		PARAMS.killRateMax = 0.066;
-		rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
-		updateGUI();
-	}
-
 	function updateGUI() {
 		for (let i in range.__controllers) {
 			range.__controllers[i].updateDisplay();
 		}
 	}
 
-	// TouchEmulator();
-	// // Pinch/scroll to zoom
-	// const hammer = new Hammer(document.body);
-	// hammer.get('pinch').set({ enable: true });
-	// hammer.on('pinch', (ev) => {
-	// 	console.log(ev);
-	// });
-	// hammer.on('pinchstart', (ev) => {
-	// 	console.log(ev);
-	// });
+	const applyZoom = new GPUProgram(composer, {
+		name: 'applyZoom',
+		fragmentShader: `
+		in vec2 v_uv;
 
-	window.addEventListener('wheelstart', (e) => {
-		console.log(start, e);
+		uniform sampler2D u_state;
+		uniform vec2 u_offset;
+		uniform float u_scale;
+
+		out vec2 out_state;
+
+		void main() {
+			vec2 uv = u_offset + u_scale * v_uv;
+			if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) out_state = vec2(0);
+			else out_state = texture(u_state, uv).xy;
+		}
+		`,
+		uniforms: [
+			{ // Index of state GPULayer in "input" array.
+				name: 'u_state',
+				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
+				type: INT,
+			},
+			{
+				name: 'u_scale',
+				value: 1,
+				type: FLOAT,
+			},
+			{
+				name: 'u_offset',
+				value: [0, 0],
+				type: FLOAT,
+			},
+		],
 	});
-	window.addEventListener('wheel', (e) => {
+
+	function onPinchZoom(e) {
+		const factor = e.ctrlKey ? 0.005 : 0.001;
+		e.preventDefault();
 		let scaleF = PARAMS.feedRateMax - PARAMS.feedRateMin;
 		let scaleK = PARAMS.killRateMax - PARAMS.killRateMin;
 		const fractionF = (canvas.height - e.clientY) / canvas.height;
 		const fractionK = e.clientX / canvas.width;
 		const centerF = fractionF * scaleF + PARAMS.feedRateMin;
 		const centerK = fractionK * scaleK + PARAMS.killRateMin;
-		scaleF *= 1.0 + e.deltaY * 0.001;
-		scaleK *= 1.0 + e.deltaY * 0.001;
+		const scale = 1.0 + e.deltaY * factor;
+		scaleF = Math.max(scaleF * scale, 1e-6);
+		scaleK = Math.max(scaleK * scale, 1e-6);
 		PARAMS.feedRateMin = centerF - scaleF * fractionF;
 		PARAMS.feedRateMax = centerF + scaleF * (1 - fractionF);
 		PARAMS.killRateMin = centerK - scaleK * fractionK;
 		PARAMS.killRateMax = centerK + scaleK * (1 - fractionK);
 		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
 		rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
+		applyZoom.setUniform('u_scale', scale);
+		applyZoom.setUniform('u_offset', [(1 - scale) * fractionK, (1 - scale) * fractionF]);
+		composer.step({
+			program: applyZoom,
+			input: state,
+			output: state,
+		});
 		updateGUI();
+	}
+	window.addEventListener('wheel', onPinchZoom, {
+		"passive": false
 	});
-
-	onResize();
 
 	function dispose() {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
 		window.removeEventListener('resize', onResize);
+		window.removeEventListener('wheel', onPinchZoom);
 		canvas.removeEventListener('pointermove', onPointerMove);
 		canvas.removeEventListener('pointerdown', onPointerStart);
 		canvas.removeEventListener('pointerup', onPointerStop);
 		canvas.removeEventListener('pointerout', onPointerStop);
 		canvas.removeEventListener('pointercancel', onPointerStop);
 		rxnDiffusion.dispose();
-		initialize.dispose();
 		renderA.dispose();
 		renderB.dispose();
-		hover.dispose();
+		touch.dispose();
+		applyZoom.dispose();
 		state.dispose();
 		composer.dispose();
 		gui.removeFolder(diffusion);
