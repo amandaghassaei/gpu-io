@@ -147,8 +147,10 @@ Source code for all examples can be found in [examples/](https://github.com/aman
 
 - [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/) (simple)
 - [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/) (simple)
+- [Reaction Diffusion](https://apps.amandaghassaei.com/gpu-io/examples/reaction-diffusion/)
 - [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/) (particle + grid)
 - [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/) (particle + grid)
+
 <!-- 
 TODO:
 - texture synthesis
