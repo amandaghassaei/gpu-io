@@ -18,9 +18,9 @@ function main({ gui, contextID, glslVersion}) {
 		renderLayer: 'Chemical B',
 		feedRateMin: 0.016,
 		feedRateMax: 0.044,
-		killRateMin: 0.05,
-		killRateMax: 0.066,
-		reset: zoomOut,
+		removalRateMin: 0.05,
+		removalRateMax: 0.066,
+		reset: reset,
 		savePNG: savePNG,
 	}
 
@@ -49,7 +49,7 @@ function main({ gui, contextID, glslVersion}) {
 			uniform sampler2D u_state;
 			uniform vec2 u_pxSize;
 			uniform vec2 u_feedRateBounds;
-			uniform vec2 u_killRateBounds;
+			uniform vec2 u_removalRateBounds;
 			uniform float u_diffusionA;
 			uniform float u_diffusionB;
 
@@ -65,11 +65,11 @@ function main({ gui, contextID, glslVersion}) {
 				vec2 laplacian = (n + s + e + w) - 4.0 * state;
 
 				float reaction = state.x * state.y * state.y;
-				float killRate = mix(u_killRateBounds.x, u_killRateBounds.y, v_uv.x);
+				float removalRate = mix(u_removalRateBounds.x, u_removalRateBounds.y, v_uv.x);
 				float feedRate = mix(u_feedRateBounds.x, u_feedRateBounds.y, v_uv.y);
 				out_state = clamp(state + vec2(
 					u_diffusionA * laplacian.x - reaction + feedRate * (1.0 - state.x),
-					u_diffusionB * laplacian.y + reaction - (killRate + feedRate) * state.y
+					u_diffusionB * laplacian.y + reaction - (removalRate + feedRate) * state.y
 				), 0.0, 1.0);
 			}
 		`,
@@ -90,8 +90,8 @@ function main({ gui, contextID, glslVersion}) {
 				type: FLOAT,
 			},
 			{
-				name: 'u_killRateBounds',
-				value: [PARAMS.killRateMin, PARAMS.killRateMax],
+				name: 'u_removalRateBounds',
+				value: [PARAMS.removalRateMin, PARAMS.removalRateMax],
 				type: FLOAT,
 			},
 			{
@@ -112,7 +112,7 @@ function main({ gui, contextID, glslVersion}) {
 		composer,
 		type: state.type,
 		scale: 1,
-		components: 'x',
+		components: 'x', // Chemical A is stored in x component of state.
 	});
 
 	const renderB = renderAmplitudeProgram({
@@ -120,15 +120,7 @@ function main({ gui, contextID, glslVersion}) {
 		composer,
 		type: state.type,
 		scale: 3,
-		components: 'y',
-	});
-
-	// During touch, set chemical values to 0.5, 0.5.
-	const touch = setValueProgram({
-		name: 'touch',
-		composer,
-		type: state.type,
-		value: [0.5, 0.5],
+		components: 'y', // Chemical B is stored in y component of state.
 	});
 
 	// Render loop.
@@ -140,7 +132,7 @@ function main({ gui, contextID, glslVersion}) {
 				output: state,
 			});
 		}
-		// Draw to screen.
+		// No "output" will draw to screen.
 		composer.step({
 			program: PARAMS.renderLayer === 'Chemical A' ? renderA : renderB,
 			input: state,
@@ -150,6 +142,13 @@ function main({ gui, contextID, glslVersion}) {
 	// Touch events.
 	let activeTouches = {};
 
+	// During touch, set chemical values to 0.5, 0.5 within a small circle.
+	const touch = setValueProgram({
+		name: 'touch',
+		composer,
+		type: state.type,
+		value: [0.5, 0.5],
+	});
 	function onPointerMove(e) {
 		if (activeTouches[e.pointerId]) {
 			composer.stepCircle({
@@ -209,15 +208,16 @@ function main({ gui, contextID, glslVersion}) {
 	}
 	onResize();
 
-	function zoomOut() {
+	function reset() {
+		// Zoom back to original settings.
 		PARAMS.feedRateMin = 0.016;
 		PARAMS.feedRateMax = 0.044;
 		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
-		PARAMS.killRateMin = 0.05;
-		PARAMS.killRateMax = 0.066;
-		rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
+		PARAMS.removalRateMin = 0.05;
+		PARAMS.removalRateMax = 0.066;
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
 		updateGUI();
-		onResize(); // Reset.
+		onResize(); // Re-init state.
 	}
 
 	// Init simple GUI.
@@ -229,21 +229,21 @@ function main({ gui, contextID, glslVersion}) {
 	diffusion.add(PARAMS, 'diffusionB', 0.05, 0.2, 0.01).name('Diffusion B').onChange((val) => {
 		rxnDiffusion.setUniform('u_diffusionB', val);
 	});
-	ui.push(gui.add(PARAMS, 'renderLayer', ['Chemical A', 'Chemical B']).name('Render Layer'));
 	const range = gui.addFolder('Parameter Ranges');
-	range.add(PARAMS, 'feedRateMin', 0, 0.1, 0.001).name('Feed Rate Min').onChange(() => {
+	range.add(PARAMS, 'removalRateMin', 0, 0.1, 0.001).name('K Min').onChange(() => {
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+	});
+	range.add(PARAMS, 'removalRateMax', 0, 0.1, 0.001).name('K Max').onChange(() => {
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+	});
+	range.add(PARAMS, 'feedRateMin', 0, 0.1, 0.001).name('F Min').onChange(() => {
 		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
 	});
-	range.add(PARAMS, 'feedRateMax', 0, 0.1, 0.001).name('Feed Rate Max').onChange(() => {
+	range.add(PARAMS, 'feedRateMax', 0, 0.1, 0.001).name('F Max').onChange(() => {
 		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
 	});
-	range.add(PARAMS, 'killRateMin', 0, 0.1, 0.001).name('Kill Rate Min').onChange(() => {
-		rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
-	});
-	range.add(PARAMS, 'killRateMax', 0, 0.1, 0.001).name('Kill Rate Max').onChange(() => {
-		rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
-	});
-	range.open();
+	// range.open();
+	ui.push(gui.add(PARAMS, 'renderLayer', ['Chemical A', 'Chemical B']).name('Render Layer'));
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
@@ -253,8 +253,8 @@ function main({ gui, contextID, glslVersion}) {
 		}
 	}
 
-	const applyZoom = new GPUProgram(composer, {
-		name: 'applyZoom',
+	const applyTransform = new GPUProgram(composer, {
+		name: 'applyTransform',
 		fragmentShader: `
 		in vec2 v_uv;
 
@@ -290,27 +290,28 @@ function main({ gui, contextID, glslVersion}) {
 	});
 
 	function onPinchZoom(e) {
+		// Calculate new bounds for feed/removal rate.
 		const factor = e.ctrlKey ? 0.005 : 0.001;
 		e.preventDefault();
 		let scaleF = PARAMS.feedRateMax - PARAMS.feedRateMin;
-		let scaleK = PARAMS.killRateMax - PARAMS.killRateMin;
+		let scaleK = PARAMS.removalRateMax - PARAMS.removalRateMin;
 		const fractionF = (canvas.height - e.clientY) / canvas.height;
 		const fractionK = e.clientX / canvas.width;
 		const centerF = fractionF * scaleF + PARAMS.feedRateMin;
-		const centerK = fractionK * scaleK + PARAMS.killRateMin;
+		const centerK = fractionK * scaleK + PARAMS.removalRateMin;
 		const scale = 1.0 + e.deltaY * factor;
 		scaleF = Math.max(scaleF * scale, 1e-6);
 		scaleK = Math.max(scaleK * scale, 1e-6);
 		PARAMS.feedRateMin = centerF - scaleF * fractionF;
 		PARAMS.feedRateMax = centerF + scaleF * (1 - fractionF);
-		PARAMS.killRateMin = centerK - scaleK * fractionK;
-		PARAMS.killRateMax = centerK + scaleK * (1 - fractionK);
+		PARAMS.removalRateMin = centerK - scaleK * fractionK;
+		PARAMS.removalRateMax = centerK + scaleK * (1 - fractionK);
 		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
-		rxnDiffusion.setUniform('u_killRateBounds', [PARAMS.killRateMin, PARAMS.killRateMax]);
-		applyZoom.setUniform('u_scale', scale);
-		applyZoom.setUniform('u_offset', [(1 - scale) * fractionK, (1 - scale) * fractionF]);
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+		applyTransform.setUniform('u_scale', scale);
+		applyTransform.setUniform('u_offset', [(1 - scale) * fractionK, (1 - scale) * fractionF]);
 		composer.step({
-			program: applyZoom,
+			program: applyTransform,
 			input: state,
 			output: state,
 		});
@@ -334,7 +335,7 @@ function main({ gui, contextID, glslVersion}) {
 		renderA.dispose();
 		renderB.dispose();
 		touch.dispose();
-		applyZoom.dispose();
+		applyTransform.dispose();
 		state.dispose();
 		composer.dispose();
 		gui.removeFolder(diffusion);
