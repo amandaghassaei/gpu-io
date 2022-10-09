@@ -262,9 +262,9 @@ function main({ gui, contextID, glslVersion}) {
 	let pinchPan;
 
 	function onPinchZoom(e) {
+		if (e.preventDefault) e.preventDefault();
 		// Calculate new bounds for feed/removal rate.
 		const factor = e.ctrlKey ? 0.005 : 0.001;
-		e.preventDefault();
 		let scaleF = PARAMS.feedRateMax - PARAMS.feedRateMin;
 		let scaleK = PARAMS.removalRateMax - PARAMS.removalRateMin;
 		const fractionF = (canvas.height - e.clientY) / canvas.height;
@@ -352,6 +352,7 @@ function main({ gui, contextID, glslVersion}) {
 			}
 		} else if (pinchPan && pointers.length === 2) {
 			const { id1, id2, lastDelta, lastAvg } = pinchPan;
+			activeTouches[e.pointerId] = [e.clientX, e.clientY];
 			const { delta, avg } = getAvgAndDeltaBetweenPoints(id1, id2);
 			console.log(avg, lastAvg, delta, lastDelta);
 			onPinchZoom({
@@ -368,7 +369,7 @@ function main({ gui, contextID, glslVersion}) {
 			pinchPan.lastDelta = delta;
 			pinchPan.lastAvg = avg;
 		}
-		activeTouches[e.pointerId] = [e.clientX, e.clientY];
+		
 	}
 	function onPointerStop(e) {
 		delete activeTouches[e.pointerId];
