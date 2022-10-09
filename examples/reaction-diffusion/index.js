@@ -272,8 +272,9 @@ function main({ gui, contextID, glslVersion}) {
 		const centerF = fractionF * scaleF + PARAMS.feedRateMin;
 		const centerK = fractionK * scaleK + PARAMS.removalRateMin;
 		const scale = 1.0 + e.deltaY * factor;
-		scaleF = Math.max(scaleF * scale, 1e-6);
-		scaleK = Math.max(scaleK * scale, 1e-6);
+		const scaleLimit = 1e-6;
+		scaleF = Math.max(scaleF * scale, scaleLimit);
+		scaleK = Math.max(scaleK * scale, scaleLimit);
 		PARAMS.feedRateMin = centerF - scaleF * fractionF;
 		PARAMS.feedRateMax = centerF + scaleF * (1 - fractionF);
 		PARAMS.removalRateMin = centerK - scaleK * fractionK;
