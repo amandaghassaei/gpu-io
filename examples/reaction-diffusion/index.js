@@ -353,6 +353,7 @@ function main({ gui, contextID, glslVersion}) {
 		} else if (pinchPan && pointers.length === 2) {
 			const { id1, id2, lastDelta, lastAvg } = pinchPan;
 			const { delta, avg } = getAvgAndDeltaBetweenPoints(id1, id2);
+			console.log(avg, lastAvg, delta, lastDelta);
 			onPinchZoom({
 				pointerId: e.pointerId,
 				clientX: avg[0],
