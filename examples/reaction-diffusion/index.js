@@ -359,7 +359,8 @@ function main({ gui, contextID, glslVersion}) {
 				pointerId: e.pointerId,
 				clientX: avg[0],
 				clientY: avg[1],
-				deltaY: delta - lastDelta,
+				deltaY: lastDelta - delta,
+				ctrlKey: true,
 			});
 			onPan({
 				pointerId: e.pointerId,
