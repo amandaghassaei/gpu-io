@@ -139,38 +139,6 @@ function main({ gui, contextID, glslVersion}) {
 		});
 	}
 
-	// Touch events.
-	let activeTouches = {};
-
-	// During touch, set chemical values to 0.5, 0.5 within a small circle.
-	const touch = setValueProgram({
-		name: 'touch',
-		composer,
-		type: state.type,
-		value: [0.5, 0.5],
-	});
-	function onPointerMove(e) {
-		if (activeTouches[e.pointerId]) {
-			composer.stepCircle({
-				program: touch,
-				output: state,
-				position: [e.clientX, canvas.height - e.clientY],
-				diameter: 30,
-			});
-		}
-	}
-	function onPointerStop(e) {
-		delete activeTouches[e.pointerId];
-	}
-	function onPointerStart(e) {
-		activeTouches[e.pointerId] = true;
-	}
-	canvas.addEventListener('pointermove', onPointerMove);
-	canvas.addEventListener('pointerdown', onPointerStart);
-	canvas.addEventListener('pointerup', onPointerStop);
-	canvas.addEventListener('pointerout', onPointerStop);
-	canvas.addEventListener('pointercancel', onPointerStop);
-
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
 		composer.step({
@@ -289,6 +257,10 @@ function main({ gui, contextID, glslVersion}) {
 		],
 	});
 
+	// Touch events.
+	const activeTouches = {};
+	let pinchPan;
+
 	function onPinchZoom(e) {
 		// Calculate new bounds for feed/removal rate.
 		const factor = e.ctrlKey ? 0.005 : 0.001;
@@ -321,6 +293,112 @@ function main({ gui, contextID, glslVersion}) {
 		"passive": false
 	});
 
+	function onPan(e) {
+		const { deltaX, deltaY } = e;
+		const scaleF = PARAMS.feedRateMax - PARAMS.feedRateMin;
+		const scaleK = PARAMS.removalRateMax - PARAMS.removalRateMin;
+		const scaledDeltaX = deltaX / canvas.width;
+		const scaledDeltaY = -deltaY / canvas.height;
+		PARAMS.feedRateMin -= scaleF * scaledDeltaY;
+		PARAMS.feedRateMax -= scaleF * scaledDeltaY;
+		PARAMS.removalRateMin -= scaleK * scaledDeltaX;
+		PARAMS.removalRateMax -= scaleK * scaledDeltaX;
+		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+		applyTransform.setUniform('u_scale', 1);
+		applyTransform.setUniform('u_offset', [-scaledDeltaX, -scaledDeltaY]);
+		composer.step({
+			program: applyTransform,
+			input: state,
+			output: state,
+		});
+		updateGUI();
+	}
+
+	// During touch, set chemical values to 0.5, 0.5 within a small circle.
+	const touch = setValueProgram({
+		name: 'touch',
+		composer,
+		type: state.type,
+		value: [0.5, 0.5],
+	});
+	function getAvgAndDeltaBetweenPoints(id1, id2) {
+		const diffX = activeTouches[id1][0] - activeTouches[id2][0];
+		const diffY = activeTouches[id1][1] - activeTouches[id2][1];
+		const delta = Math.sqrt(diffX * diffX + diffY * diffY);
+		const avg = [
+			(activeTouches[id1][0] + activeTouches[id2][0]) / 2,
+			(activeTouches[id1][1] + activeTouches[id2][1]) / 2,
+		];
+		return { avg, delta };
+	}
+	function onPointerMove(e) {
+		if (!activeTouches[e.pointerId]) return;
+		e.preventDefault();
+		const pointers = Object.keys(activeTouches);
+		if (pointers.length === 1) {
+			if (e.which === 3 || e.button === 2 || e.buttons === 2) {
+				onPan({
+					deltaX: e.clientX - activeTouches[e.pointerId][0],
+					deltaY: e.clientY - activeTouches[e.pointerId][1],
+				});
+			} else {
+				composer.stepCircle({
+					program: touch,
+					output: state,
+					position: [e.clientX, canvas.height - e.clientY],
+					diameter: 30,
+				});
+			}
+		} else if (pinchPan && pointers.length === 2) {
+			const { id1, id2, lastDelta, lastAvg } = pinchPan;
+			const { delta, avg } = getAvgAndDeltaBetweenPoints(id1, id2);
+			onPinchZoom({
+				pointerId: e.pointerId,
+				clientX: avg[0],
+				clientY: avg[1],
+				deltaY: delta - lastDelta,
+			});
+			onPan({
+				pointerId: e.pointerId,
+				deltaX: avg[0] - lastAvg[0],
+				deltaY: avg[1] - lastAvg[1],
+			});
+			pinchPan.lastDelta = delta;
+			pinchPan.lastAvg = avg;
+		}
+		activeTouches[e.pointerId] = [e.clientX, e.clientY];
+	}
+	function onPointerStop(e) {
+		delete activeTouches[e.pointerId];
+	}
+	function onPointerStart(e) {
+		e.preventDefault();
+		activeTouches[e.pointerId] = [e.clientX, e.clientY];
+		const pointers = Object.keys(activeTouches);
+		if (pointers.length === 2) {
+			pinchPan = {};
+			pinchPan.id1 = pointers[0];
+			pinchPan.id2 = pointers[1];
+			const { delta, avg } = getAvgAndDeltaBetweenPoints(pointers[0], pointers[1]);
+			pinchPan.lastDelta = delta;
+			pinchPan.lastAvg = avg;
+		}
+		if (pointers.length > 2) {
+			pinchPan = undefined;
+		}
+	}
+	function onContextMenu(e) {
+		e.preventDefault();
+		return false;
+	}
+	canvas.addEventListener('pointermove', onPointerMove);
+	canvas.addEventListener('pointerdown', onPointerStart);
+	canvas.addEventListener('pointerup', onPointerStop);
+	canvas.addEventListener('pointerout', onPointerStop);
+	canvas.addEventListener('pointercancel', onPointerStop);
+	canvas.addEventListener('contextmenu', onContextMenu);
+
 	function dispose() {
 		document.body.removeChild(canvas);
 		window.removeEventListener('keydown', onKeydown);
@@ -331,6 +409,7 @@ function main({ gui, contextID, glslVersion}) {
 		canvas.removeEventListener('pointerup', onPointerStop);
 		canvas.removeEventListener('pointerout', onPointerStop);
 		canvas.removeEventListener('pointercancel', onPointerStop);
+		canvas.removeEventListener('contextmenu', onContextMenu);
 		rxnDiffusion.dispose();
 		renderA.dispose();
 		renderB.dispose();
