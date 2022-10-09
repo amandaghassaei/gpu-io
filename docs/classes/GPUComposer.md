@@ -266,11 +266,9 @@ Step GPUProgram inside a rectangle.
 | `params.program` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run. |
 | `params.position` | `number`[] | Position of one top corner of rectangle. |
 | `params.size` | `number`[] | Width and height of rectangle. |
-| `params.thickness` | `number` | - |
 | `params.useOutputScale?` | `boolean` | If true position and size are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers to GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
-| `params.numCapSegments?` | `number` | - |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
 
 #### Returns
@@ -358,7 +356,6 @@ Save the current state of the canvas to png.
 | `params` | `Object` | PNG parameters. |
 | `params.filename?` | `string` | PNG filename (no extension). |
 | `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
-| `params.multiplier?` | `number` | - |
 | `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
 
 #### Returns

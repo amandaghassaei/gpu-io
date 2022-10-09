@@ -1116,11 +1116,9 @@ export class GPUComposer {
 			program: GPUProgram,
 			position: number[],
 			size: number[],
-			thickness: number,
 			useOutputScale?: boolean,
 			input?:  (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer | GPULayer[],
-			numCapSegments?: number,
 			blendAlpha?: boolean,
 		},
 	) {
@@ -1755,12 +1753,13 @@ export class GPUComposer {
 	savePNG(params: {
 		filename?: string,
 		dpi?: number,
-		multiplier?: number,
 		callback?: (blob: Blob, filename: string) => void,
 	} = {}) {
-		const { canvas } = this;
+		const { canvas, gl } = this;
 		const filename = params.filename || 'output';
 		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+		// TODO: need to adjust the canvas size to get the correct px ratio from toBlob().
+		// const ratio = window.devicePixelRatio || 1;
 		canvas.toBlob((blob) => {
 			if (!blob) {
 				console.warn(`Problem saving PNG, unable to init blob from canvas.`);

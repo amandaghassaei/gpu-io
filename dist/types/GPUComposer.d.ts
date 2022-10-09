@@ -350,11 +350,9 @@ export declare class GPUComposer {
         program: GPUProgram;
         position: number[];
         size: number[];
-        thickness: number;
         useOutputScale?: boolean;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer | GPULayer[];
-        numCapSegments?: number;
         blendAlpha?: boolean;
     }): void;
     /**
@@ -421,7 +419,6 @@ export declare class GPUComposer {
     savePNG(params?: {
         filename?: string;
         dpi?: number;
-        multiplier?: number;
         callback?: (blob: Blob, filename: string) => void;
     }): void;
     /**

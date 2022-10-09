@@ -284,8 +284,9 @@ function main({ gui, contextID, glslVersion}) {
 		for (let i = 0; i < array.length; i++) {
 			array[i] = Math.random() < PARAMS.seedRatio ? 1 : 0;
 		}
-		state.resize([width, height], array);
+		// Copy noise into noise and state layers.
 		noise.resize([width, height], array);
+		state.resize([width, height], array);
 
 		// Update px size uniform.
 		golRules.setUniform('u_pxSize', [1 / width, 1 / height]);
@@ -305,6 +306,7 @@ function main({ gui, contextID, glslVersion}) {
 		golRender.dispose();
 		touch.dispose();
 		state.dispose();
+		noise.dispose();
 		composer.dispose();
 		gui.removeFolder(survival);
 		gui.removeFolder(birth);

@@ -3733,9 +3733,11 @@ var GPUComposer = /** @class */ (function () {
     */
     GPUComposer.prototype.savePNG = function (params) {
         if (params === void 0) { params = {}; }
-        var canvas = this.canvas;
+        var _a = this, canvas = _a.canvas, gl = _a.gl;
         var filename = params.filename || 'output';
         var callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+        // TODO: need to adjust the canvas size to get the correct px ratio from toBlob().
+        // const ratio = window.devicePixelRatio || 1;
         canvas.toBlob(function (blob) {
             if (!blob) {
                 console.warn("Problem saving PNG, unable to init blob from canvas.");

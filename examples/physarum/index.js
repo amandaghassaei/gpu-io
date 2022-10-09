@@ -189,16 +189,16 @@ function main({ gui, glslVersion, contextID }) {
 				float rightState = sense(position, heading - u_sensorAngle);
 				// Using some tricks here to remove conditionals (they cause significant slowdowns).
 				// Leaving the old code here for clarity, replaced by the lines below.
-				// if (middleState > rightState && middleState < leftState) {
-				// 	// Rotate left.
-				// 	heading += u_rotationAngle;
-				// } else if (middleState < rightState && middleState > leftState) {
-				// 	// Rotate right.
-				// 	heading -= u_rotationAngle;
-				// } else if (middleState < rightState && middleState < leftState) {
-				// 	// Choose randomly.
-				// 	heading += u_rotationAngle * (u_randomDir ? 1.0 : -1.0);
-				// } // else do nothing.
+					// if (middleState > rightState && middleState < leftState) {
+					// 	// Rotate left.
+					// 	heading += u_rotationAngle;
+					// } else if (middleState < rightState && middleState > leftState) {
+					// 	// Rotate right.
+					// 	heading -= u_rotationAngle;
+					// } else if (middleState < rightState && middleState < leftState) {
+					// 	// Choose randomly.
+					// 	heading += u_rotationAngle * (u_randomDir ? 1.0 : -1.0);
+					// } // else do nothing.
 				// The following lines give the same result without conditionals.
 				float rightWeight = step(middleState, rightState);
 				float leftWeight = step(middleState, leftState);
@@ -220,21 +220,21 @@ function main({ gui, glslVersion, contextID }) {
 				// This method reduces floating point error in position.
 				// Using some tricks here to remove conditionals (they cause significant slowdowns).
 				// Leaving the old code here for clarity, replaced by the lines below.
-				// if (dot(nextDisplacement, nextDisplacement) > 30.0) {
-				// 	absolute += nextDisplacement;
-				// 	nextDisplacement = vec2(0);
-				// 	// Also check if we've wrapped.
-				// 	if (absolute.x < 0.0) {
-				// 		absolute.x = absolute.x + u_dimensions.x;
-				// 	} else if (absolute.x >= u_dimensions.x) {
-				// 		absolute.x = absolute.x - u_dimensions.x;
-				// 	}
-				// 	if (absolute.y < 0.0) {
-				// 		absolute.y = absolute.y + u_dimensions.y;
-				// 	} else if (absolute.y >= u_dimensions.y) {
-				// 		absolute.y = absolute.y - u_dimensions.y;
-				// 	}
-				// }
+					// if (dot(nextDisplacement, nextDisplacement) > 30.0) {
+					// 	absolute += nextDisplacement;
+					// 	nextDisplacement = vec2(0);
+					// 	// Also check if we've wrapped.
+					// 	if (absolute.x < 0.0) {
+					// 		absolute.x = absolute.x + u_dimensions.x;
+					// 	} else if (absolute.x >= u_dimensions.x) {
+					// 		absolute.x = absolute.x - u_dimensions.x;
+					// 	}
+					// 	if (absolute.y < 0.0) {
+					// 		absolute.y = absolute.y + u_dimensions.y;
+					// 	} else if (absolute.y >= u_dimensions.y) {
+					// 		absolute.y = absolute.y - u_dimensions.y;
+					// 	}
+					// }
 				// The following lines give the same result without conditionals.
 				float shouldMerge = step(30.0, dot(nextDisplacement, nextDisplacement));
 				absolute = mod(absolute + shouldMerge * nextDisplacement + u_dimensions, u_dimensions);
@@ -243,17 +243,17 @@ function main({ gui, glslVersion, contextID }) {
 				out_position = vec4(absolute, nextDisplacement);
 			}`,
 		uniforms: [
-			{
+			{ // Index of particlesHeading GPULayer in "input" array.
 				name: 'u_particlesHeading',
 				value: 0,
 				type: INT,
 			},
-			{
+			{ // Index of particlesPositions GPULayer in "input" array.
 				name: 'u_particlesPositions',
 				value: 1,
 				type: INT,
 			},
-			{
+			{ // Index of trail GPULayer in "input" array.
 				name: 'u_trail',
 				value: 2,
 				type: INT,
@@ -341,7 +341,7 @@ function main({ gui, glslVersion, contextID }) {
 				out_state = u_decayFactor * diffusedState;
 			}`,
 		uniforms: [
-			{
+			{ // Index of trail GPULayer in "input" array.
 				name: 'u_trail',
 				value: 0, // We don't even really need to set this uniform, bc all uniforms default to zero.
 				type: INT,
