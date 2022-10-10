@@ -24,6 +24,7 @@ function main({ gui, glslVersion, contextID }) {
 		stepSize: 2,
 		rotationAngle: 45,
 		renderAmplitude: 0.03,
+		currentPreset: 'Fibers',
 		setFibers: () => {
 			const settings = {
 				decayFactor: 0.9,
@@ -472,6 +473,7 @@ function main({ gui, glslVersion, contextID }) {
 	 function getParticlesFolderTitle() {
 		return `Particles (${particlesPositions.length.toLocaleString("en-US")})`;
 	}
+	const ui = [];
 	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
 	const particlesOrigName = particlesGUI.name; // We need this in order to delete the folder, see dispose().
 	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
@@ -506,13 +508,15 @@ function main({ gui, glslVersion, contextID }) {
 		render.setUniform('u_scale', value);
 	}).name('Amplitude');
 	// Interesting presets to try out.
-	const presetsGUI = gui.addFolder('Presets');
-	presetsGUI.add(PARAMS, 'setNet').name('Net');
-	presetsGUI.add(PARAMS, 'setDots').name('Dots');
-	presetsGUI.add(PARAMS, 'setHoneycomb').name('Honeycomb');
-	presetsGUI.add(PARAMS, 'setFingerprint').name('Fingerprint');	
-	presetsGUI.add(PARAMS, 'setFibers').name('Fibers');
-	presetsGUI.open();
+	ui.push(gui.add(PARAMS, 'currentPreset', [
+		'Net',
+		'Dots',
+		'Honeycomb',
+		'Fingerprint',
+		'Fibers',
+	]).name('Presets').onChange(() => {
+		PARAMS[`set${PARAMS.currentPreset}`]();
+	}));
 	function setPreset(settings) {
 		for (let key in settings) {
 			PARAMS[key] = settings[key];
@@ -522,7 +526,6 @@ function main({ gui, glslVersion, contextID }) {
 		}
 		reset();
 	}
-	ui = [];
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
@@ -547,7 +550,6 @@ function main({ gui, glslVersion, contextID }) {
 		diffuseAndDecay.setUniform('u_pxSize', [1 / width, 1 / height]);
 		updateParticles.setUniform('u_dimensions', [width, height]);
 	}
-	onResize();
 
 	// Reset the system.
 	function reset() {
@@ -561,6 +563,8 @@ function main({ gui, glslVersion, contextID }) {
 		trail.clear();
 		onResize();
 	}
+
+	setPreset(); // Kick things off.
 
 	// Garbage collection.
 	function dispose() {
@@ -588,7 +592,6 @@ function main({ gui, glslVersion, contextID }) {
 		gui.removeFolder(particlesGUI);
 
 		gui.removeFolder(trailsGUI);
-		gui.removeFolder(presetsGUI);
 		gui.removeFolder(renderGUI);
 		ui.forEach(el => {
 			gui.remove(el);

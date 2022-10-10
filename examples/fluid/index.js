@@ -15,9 +15,8 @@ function main({ gui, contextID, glslVersion}) {
 	} = GPUIO;
 
 	const PARAMS = {
-		showPressureField: false,
-		showVelocityField: false,
-		trailLength: 10,
+		trailLength: 15,
+		render: 'Fluid',
 		reset: onResize,
 		savePNG: savePNG,
 	};
@@ -435,13 +434,8 @@ function main({ gui, contextID, glslVersion}) {
 	const renderPressure = renderSignedAmplitudeProgram(composer, {
 		name: 'renderPressure',
 		type: pressureState.type,
+		scale: 0.25,
 		component: 'x',
-	});
-	const renderVelocityAmplitude = renderAmplitudeProgram(composer, {
-		name: 'renderVelocityAmplitude',
-		type: velocityState.type,
-		components: 'xy',
-		scale: 0.3,
 	});
 
 	// Render loop.
@@ -473,21 +467,17 @@ function main({ gui, contextID, glslVersion}) {
 			output: velocityState,
 		});
 
-		if (PARAMS.showPressureField) {
+		if (PARAMS.render === 'Pressure') {
 			composer.step({
 				program: renderPressure,
 				input: pressureState,
 			});
-		} else if (PARAMS.showVelocityField) {
-			composer.step({
-				program: renderVelocityAmplitude,
-				input: velocityState,
-			});
+		} else if (PARAMS.render === 'Velocity') {
 			composer.drawLayerAsVectorField({
 				layer: velocityState,
 				vectorSpacing: 10,
-				vectorScale: 5,
-				color: [1, 0, 1],
+				vectorScale: 2.5,
+				color: [0, 0, 0],
 			});
 		} else {
 			// Increment particle age.
@@ -601,23 +591,13 @@ function main({ gui, contextID, glslVersion}) {
 	canvas.addEventListener('pointerout', onPointerStop);
 	canvas.addEventListener('pointercancel', onPointerStop);
 
-	function refreshGUI() {
-		for (let i in gui.__controllers) {
-			gui.__controllers[i].updateDisplay();
-		}
-	}
 	const ui = [];
 	ui.push(gui.add(PARAMS, 'trailLength', 0, 100, 1).onChange((value) => {
 		fadeTrails.setUniform('u_increment', -1 / value);
 	}).name('Trail Length'));
-	ui.push(gui.add(PARAMS, 'showPressureField').onChange((value) => {
-		if (value) PARAMS.showVelocityField = false;
-		refreshGUI();
-	}).name('Show Pressure'));
-	ui.push(gui.add(PARAMS, 'showVelocityField').onChange((value) => {
-		if (value) PARAMS.showPressureField = false;
-		refreshGUI();
-	}).name('Show Velocity'));
+	ui.push(gui.add(PARAMS, 'render', ['Fluid', 'Pressure', 'Velocity']).name('Render').onChange(() => {
+		
+	}));
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
@@ -700,7 +680,6 @@ function main({ gui, contextID, glslVersion}) {
 		renderTrails.dispose();
 		fadeTrails.dispose();
 		renderPressure.dispose();
-		renderVelocityAmplitude.dispose();
 		touch.dispose();
 		composer.dispose();
 		ui.forEach(el => {
