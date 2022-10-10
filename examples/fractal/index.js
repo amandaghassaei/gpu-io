@@ -24,8 +24,9 @@ function main({ gui, contextID, glslVersion}) {
 		cReal: -0.8,
 		cImaginary: 0.16,
 		maxIters: 150,
-		reset: reset,
-		savePNG: savePNG,
+		reset,
+		savePNG,
+		pngScaleFactor: 10,
 	};
 	// Flag to trigger recompute.
 	let needsCompute = true;
@@ -43,6 +44,9 @@ function main({ gui, contextID, glslVersion}) {
 	const fractalCompute = new GPUProgram(composer, {
 		name: 'fractalCompute',
 		fragmentShader: `
+			// Sub-sampling for anti-aliasing.
+			#define SUBSAMPLE_RES 2.0
+
 			in vec2 v_uv;
 
 			uniform vec2 u_boundsMin;
@@ -50,21 +54,28 @@ function main({ gui, contextID, glslVersion}) {
 			uniform float u_cReal;
 			uniform float u_cImaginary;
 			uniform float u_radius;
+			uniform vec2 u_pxSize;
 
 			out float out_value;
 
 			void main() {
 				// https://en.wikipedia.org/wiki/Julia_set#Pseudocode
-				vec2 z = v_uv * u_boundsMax + (1.0 - v_uv) * u_boundsMin;
 				int value = 0;
-				for (int i = 0; i < MAX_ITERS; i++) {
-					if (z.x * z.x + z.y * z.y > u_radius * u_radius) break;
-					float xTemp = z.x * z.x - z.y * z.y;
-					z.y = 2.0 * z.x * z.y + u_cImaginary;
-					z.x = xTemp + u_cReal;
-					value += 1;
+				for (float u = 0.0; u < SUBSAMPLE_RES; u++) {
+					for (float v = 0.0; v < SUBSAMPLE_RES; v++) {
+						vec2 uvOffset = vec2(u, v) / (SUBSAMPLE_RES + 1.0) + 0.5;
+						vec2 uv = v_uv + uvOffset * u_pxSize;
+						vec2 z = uv * u_boundsMax + (1.0 - uv) * u_boundsMin;
+						for (int i = 0; i < MAX_ITERS; i++) {
+							if (z.x * z.x + z.y * z.y > u_radius * u_radius) break;
+							float xTemp = z.x * z.x - z.y * z.y;
+							z.y = 2.0 * z.x * z.y + u_cImaginary;
+							z.x = xTemp + u_cReal;
+							value += 1;
+						}
+					}
 				}
-				out_value = float(value) / float(MAX_ITERS);
+				out_value = (float(value) / (SUBSAMPLE_RES * SUBSAMPLE_RES)) / float(MAX_ITERS);
 			}`,
 		uniforms: [
 			{
@@ -90,6 +101,11 @@ function main({ gui, contextID, glslVersion}) {
 			{
 				name: 'u_radius',
 				value: Math.max(bounds.max[0] - bounds.min[0], bounds.max[1] - bounds.min[1]) / 2,
+				type: FLOAT,
+			},
+			{
+				name: 'u_pxSize',
+				value: [1 / canvas.width, 1 / canvas.height],
 				type: FLOAT,
 			},
 		],
@@ -141,14 +157,25 @@ function main({ gui, contextID, glslVersion}) {
 		needsCompute = true;
 	}).name('Max Iters'));
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
+	const pngScaleFactorUI = gui.add(PARAMS, 'pngScaleFactor', 1, 20, 1).name('PNG Scale Factor');
+	ui.push(pngScaleFactorUI);
+	ui.push(gui.add(PARAMS, 'savePNG').name('Save HD PNG (p)'));
 
 	function savePNG() {
+		// Save an HD png.
+		const scaleFactor = PARAMS.pngScaleFactor;
+		const width = window.innerWidth;
+		const height = window.innerHeight;
+		state.resize([scaleFactor * width, scaleFactor * height]);
+		fractalCompute.setUniform('u_pxSize', [1 / (scaleFactor * width), 1 / (scaleFactor * height)]);
 		composer.step({
-			program: fractalRender,
-			input: state,
+			program: fractalCompute,
+			output: state,
 		});
-		composer.savePNG({ filename: `julia-set_${PARAMS.cReal}_${PARAMS.cImaginary}i` });
+		state.savePNG({ filename: `julia-set_${PARAMS.cReal}_${PARAMS.cImaginary}i`, dpi: 600 });
+		state.resize([width, height]);
+		fractalCompute.setUniform('u_pxSize', [1 / width, 1 / height]);
+		needsCompute = true;
 	}
 	// Add 'p' hotkey to print screen.
 	window.addEventListener('keydown', onKeydown);
@@ -175,8 +202,17 @@ function main({ gui, contextID, glslVersion}) {
 		composer.resize(width, height);
 		// Resize state.
 		state.resize([width, height]);
+		// Update uniforms.
+		fractalCompute.setUniform('u_pxSize', [1 / width, 1 / height]);
 		// Reset bounds and recompute.
 		reset();
+
+		// Check the max texture size and set an upper bound to the PNG export.
+		// Subtract 1 from the abs max value to create headroom bc there have been buffer allocation issues.
+		const maxPNGScale = Math.floor(composer.gl.getParameter(composer.gl.MAX_TEXTURE_SIZE) / Math.max(width, height)) - 1;
+		pngScaleFactorUI.max(maxPNGScale);
+		if (PARAMS.pngScaleFactor > maxPNGScale) PARAMS.pngScaleFactor = maxPNGScale;
+		pngScaleFactorUI.updateDisplay();
 	}
 	onResize();
 
