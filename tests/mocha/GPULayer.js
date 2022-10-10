@@ -654,6 +654,7 @@
 		describe('dispose', () => {
 			it('should delete all object/array keys', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67]});
+				layer1.getValues(); // This will init some cached arrays.	
 				layer1.dispose();
 				// Filter out keys for simple objects (e.g. strings, number, boolean).
 				const keys = Object.keys(layer1).filter(key => {
