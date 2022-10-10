@@ -161,20 +161,24 @@ function main({ gui, contextID, glslVersion}) {
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save HD PNG (p)'));
 
 	function savePNG() {
-		// Save an HD png.
-		const scaleFactor = PARAMS.pngScaleFactor;
-		const width = window.innerWidth;
-		const height = window.innerHeight;
-		state.resize([scaleFactor * width, scaleFactor * height]);
-		fractalCompute.setUniform('u_pxSize', [1 / (scaleFactor * width), 1 / (scaleFactor * height)]);
-		composer.step({
-			program: fractalCompute,
-			output: state,
-		});
-		state.savePNG({ filename: `julia-set_${PARAMS.cReal}_${PARAMS.cImaginary}i`, dpi: 600 });
-		state.resize([width, height]);
-		fractalCompute.setUniform('u_pxSize', [1 / width, 1 / height]);
-		needsCompute = true;
+		try {
+			// Save an HD png.
+			const scaleFactor = PARAMS.pngScaleFactor;
+			const width = window.innerWidth;
+			const height = window.innerHeight;
+			state.resize([scaleFactor * width, scaleFactor * height]);
+			fractalCompute.setUniform('u_pxSize', [1 / (scaleFactor * width), 1 / (scaleFactor * height)]);
+			composer.step({
+				program: fractalCompute,
+				output: state,
+			});
+			state.savePNG({ filename: `julia-set_${PARAMS.cReal}_${PARAMS.cImaginary}i`, dpi: 600 });
+			state.resize([width, height]);
+			fractalCompute.setUniform('u_pxSize', [1 / width, 1 / height]);
+			needsCompute = true;
+		} catch {
+			MicroModal.show('modal-error');
+		}
 	}
 	// Add 'p' hotkey to print screen.
 	window.addEventListener('keydown', onKeydown);
@@ -309,6 +313,9 @@ function main({ gui, contextID, glslVersion}) {
 	}
 	function onPointerStop(e) {
 		delete activeTouches[e.pointerId];
+		if (Object.keys(activeTouches).length !== 2) {
+			pinchPan = undefined;
+		}
 	}
 	function onPointerStart(e) {
 		e.preventDefault();
@@ -322,7 +329,7 @@ function main({ gui, contextID, glslVersion}) {
 			pinchPan.lastDelta = delta;
 			pinchPan.lastAvg = avg;
 		}
-		if (pointers.length > 2) {
+		if (pointers.length !== 2) {
 			pinchPan = undefined;
 		}
 	}
