@@ -113,9 +113,8 @@ function main({ gui, contextID, glslVersion}) {
 		// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md#other-glsl1-gotchas
 		compileTimeConstants: { MAX_ITERS: `${PARAMS.maxIters}` },
 	});
-	const fractalRender = renderAmplitudeProgram({
+	const fractalRender = renderAmplitudeProgram(composer, {
 		name: 'render',
-		composer,
 		type: state.type,
 		components: 'x',
 	});

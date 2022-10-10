@@ -432,14 +432,12 @@ function main({ gui, contextID, glslVersion}) {
 			}
 		`,
 	});
-	const renderPressure = renderSignedAmplitudeProgram({
-		composer,
+	const renderPressure = renderSignedAmplitudeProgram(composer, {
 		name: 'renderPressure',
 		type: pressureState.type,
 		component: 'x',
 	});
-	const renderVelocityAmplitude = renderAmplitudeProgram({
-		composer,
+	const renderVelocityAmplitude = renderAmplitudeProgram(composer, {
 		name: 'renderVelocityAmplitude',
 		type: velocityState.type,
 		components: 'xy',

@@ -467,7 +467,7 @@ ___
 
 ### copyProgram
 
-▸ **copyProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **copyProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to copy contents of one GPULayer to another GPULayer.
 
@@ -475,8 +475,8 @@ Init GPUProgram to copy contents of one GPULayer to another GPULayer.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output. |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input/output. |
@@ -489,7 +489,7 @@ ___
 
 ### addLayersProgram
 
-▸ **addLayersProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **addLayersProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to add several GPULayers together.
 
@@ -497,8 +497,8 @@ Init GPUProgram to add several GPULayers together.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the inputs/output. |
 | `params.components?` | `string` | Component(s) of inputs to add, defaults to 'xyzw. |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
@@ -513,7 +513,7 @@ ___
 
 ### addValueProgram
 
-▸ **addValueProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **addValueProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to add uniform "u_value" to a GPULayer.
 
@@ -521,8 +521,8 @@ Init GPUProgram to add uniform "u_value" to a GPULayer.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output (we assume "u_value" has the same type). |
 | `params.value` | `number` \| `number`[] | Initial value to add, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
@@ -536,7 +536,7 @@ ___
 
 ### multiplyValueProgram
 
-▸ **multiplyValueProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **multiplyValueProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to multiply uniform "u_value" to a GPULayer.
 
@@ -544,8 +544,8 @@ Init GPUProgram to multiply uniform "u_value" to a GPULayer.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output (we assume "u_value" has the same type). |
 | `params.value` | `number` \| `number`[] | Initial value to multiply, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
@@ -559,7 +559,7 @@ ___
 
 ### renderAmplitudeProgram
 
-▸ **renderAmplitudeProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **renderAmplitudeProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
 
@@ -567,8 +567,8 @@ Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defa
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
 | `params.components?` | `string` | Component(s) of input GPULayer to render, defaults to 'xyzw'. |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
@@ -586,7 +586,7 @@ ___
 
 ### renderSignedAmplitudeProgram
 
-▸ **renderSignedAmplitudeProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **renderSignedAmplitudeProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to render signed amplitude of an input GPULayer to linearly interpolated colors.
 
@@ -594,8 +594,8 @@ Init GPUProgram to render signed amplitude of an input GPULayer to linearly inte
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
 | `params.component?` | ``"x"`` \| ``"y"`` \| ``"z"`` \| ``"w"`` | Component of input GPULayer to render, defaults to "x". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
@@ -614,7 +614,7 @@ ___
 
 ### setValueProgram
 
-▸ **setValueProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **setValueProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
 
@@ -622,8 +622,8 @@ Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the output (we assume "u_value" has same type). |
 | `params.value` | `number` \| `number`[] | Initial value to set, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
@@ -637,7 +637,7 @@ ___
 
 ### setColorProgram
 
-▸ **setColorProgram**(`params`): [`GPUProgram`](classes/GPUProgram.md)
+▸ **setColorProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
 
 Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
 
@@ -645,8 +645,8 @@ Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
-| `params.composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the output. |
 | `params.color?` | `number`[] | Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color". |
 | `params.opacity?` | `number` | - |

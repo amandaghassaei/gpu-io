@@ -2540,7 +2540,7 @@ var GPUComposer = /** @class */ (function () {
         var _setValuePrograms = this._setValuePrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_setValuePrograms[key] === undefined) {
-            _setValuePrograms[key] = (0, Programs_1.setValueProgram)({ composer: this, type: type, value: [0, 0, 0, 0] });
+            _setValuePrograms[key] = (0, Programs_1.setValueProgram)(this, { type: type, value: [0, 0, 0, 0] });
         }
         return _setValuePrograms[key];
     };
@@ -2553,7 +2553,7 @@ var GPUComposer = /** @class */ (function () {
         var _copyPrograms = this._copyPrograms;
         var key = (0, conversions_1.uniformTypeForType)(type, this.glslVersion);
         if (_copyPrograms[key] === undefined) {
-            _copyPrograms[key] = (0, Programs_1.copyProgram)({ composer: this, type: type });
+            _copyPrograms[key] = (0, Programs_1.copyProgram)(this, { type: type });
         }
         return _copyPrograms[key];
     };
@@ -6221,15 +6221,15 @@ var GPUProgram_1 = __webpack_require__(664);
 /**
  * Init GPUProgram to copy contents of one GPULayer to another GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output.
  * @returns
  */
-function copyProgram(params) {
-    var composer = params.composer, type = params.type;
+function copyProgram(composer, params) {
+    var type = params.type;
     var precision = params.precision || '';
     var glslType = (0, conversions_1.glslTypeForType)(type, 4);
     var name = params.name || "copy_".concat((0, conversions_1.uniformTypeForType)(type, composer.glslVersion), "_layer");
@@ -6249,8 +6249,8 @@ exports.copyProgram = copyProgram;
 /**
  * Init GPUProgram to add several GPULayers together.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the inputs/output.
  * @param params.components - Component(s) of inputs to add, defaults to 'xyzw.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
@@ -6258,8 +6258,8 @@ exports.copyProgram = copyProgram;
  * @param params.precision - Optionally specify the precision of the inputs/output.
  * @returns
  */
-function addLayersProgram(params) {
-    var composer = params.composer, type = params.type;
+function addLayersProgram(composer, params) {
+    var type = params.type;
     var numInputs = params.numInputs || 2;
     var precision = params.precision || '';
     var components = params.components || 'xyzw';
@@ -6282,16 +6282,16 @@ exports.addLayersProgram = addLayersProgram;
 /**
  * Init GPUProgram to add uniform "u_value" to a GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.value - Initial value to add, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
-function addValueProgram(params) {
-    var composer = params.composer, type = params.type, value = params.value;
+function addValueProgram(composer, params) {
+    var type = params.type, value = params.value;
     var precision = params.precision || '';
     var valueLength = (0, type_checks_1.isArray)(value) ? value.length : 1;
     var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
@@ -6320,16 +6320,16 @@ exports.addValueProgram = addValueProgram;
 /**
  * Init GPUProgram to multiply uniform "u_value" to a GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.value - Initial value to multiply, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
-function multiplyValueProgram(params) {
-    var composer = params.composer, type = params.type, value = params.value;
+function multiplyValueProgram(composer, params) {
+    var type = params.type, value = params.value;
     var precision = params.precision || '';
     var valueLength = (0, type_checks_1.isArray)(value) ? value.length : 1;
     var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
@@ -6358,16 +6358,16 @@ exports.multiplyValueProgram = multiplyValueProgram;
 /**
  * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output (we assume "u_value" has same type).
  * @param params.value - Initial value to set, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
-function setValueProgram(params) {
-    var composer = params.composer, type = params.type, value = params.value;
+function setValueProgram(composer, params) {
+    var type = params.type, value = params.value;
     var precision = params.precision || '';
     var valueLength = (0, type_checks_1.isArray)(value) ? value.length : 1;
     var valueType = (0, conversions_1.glslTypeForType)(type, valueLength);
@@ -6390,8 +6390,8 @@ exports.setValueProgram = setValueProgram;
 /**
  * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output.
  * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
  * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
@@ -6399,8 +6399,8 @@ exports.setValueProgram = setValueProgram;
  * @param params.precision - Optionally specify the precision of the output/uniforms.
  * @returns
  */
-function setColorProgram(params) {
-    var composer = params.composer, type = params.type;
+function setColorProgram(composer, params) {
+    var type = params.type;
     var precision = params.precision || '';
     var opacity = params.opacity === undefined ? 1 : params.opacity;
     var color = params.color || [0, 0, 0];
@@ -6427,14 +6427,13 @@ exports.setColorProgram = setColorProgram;
 /**
  * Init GPUProgram to zero output GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @returns
  */
-function zeroProgram(params) {
-    return setValueProgram({
-        composer: params.composer,
+function zeroProgram(composer, params) {
+    return setValueProgram(composer, {
         type: constants_1.FLOAT,
         value: 0,
         name: params.name,
@@ -6444,8 +6443,8 @@ exports.zeroProgram = zeroProgram;
 /**
  * Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
  * @param params.components - Component(s) of input GPULayer to render, defaults to 'xyzw'.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
@@ -6456,8 +6455,8 @@ exports.zeroProgram = zeroProgram;
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
-function renderAmplitudeProgram(params) {
-    var composer = params.composer, type = params.type;
+function renderAmplitudeProgram(composer, params) {
+    var type = params.type;
     var precision = params.precision || '';
     var components = params.components || 'xyzw';
     var numComponents = components.length;
@@ -6502,8 +6501,8 @@ exports.renderAmplitudeProgram = renderAmplitudeProgram;
 /**
  * Init GPUProgram to render signed amplitude of an input GPULayer to linearly interpolated colors.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
@@ -6515,8 +6514,8 @@ exports.renderAmplitudeProgram = renderAmplitudeProgram;
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
-function renderSignedAmplitudeProgram(params) {
-    var composer = params.composer, type = params.type;
+function renderSignedAmplitudeProgram(composer, params) {
+    var type = params.type;
     var precision = params.precision || '';
     var glslType = (0, conversions_1.glslTypeForType)(type, 1);
     var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
@@ -6564,8 +6563,7 @@ exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 /**
  * @private
  */
-function wrappedLineColorProgram(params) {
-    var composer = params.composer;
+function wrappedLineColorProgram(composer) {
     return new GPUProgram_1.GPUProgram(composer, {
         name: "wrappedLineColor",
         fragmentShader: "\nin vec2 v_lineWrapping;\nuniform vec4 u_value;\nout vec4 out_result;\nvoid main() {\n\t// Check if this line has wrapped.\n\tif ((v_lineWrapping.x != 0.0 && v_lineWrapping.x != 1.0) || (v_lineWrapping.y != 0.0 && v_lineWrapping.y != 1.0)) {\n\t\t// Render nothing.\n\t\tdiscard;\n\t\treturn;\n\t}\n\tout_result = vec4(u_value);\n}",

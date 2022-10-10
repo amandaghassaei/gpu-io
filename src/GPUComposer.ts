@@ -356,7 +356,7 @@ export class GPUComposer {
 		const { _setValuePrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
 		if (_setValuePrograms[key] === undefined) {
-			_setValuePrograms[key] = setValueProgram({ composer: this, type, value: [0, 0, 0, 0] });
+			_setValuePrograms[key] = setValueProgram(this, { type, value: [0, 0, 0, 0] });
 		}
 		return _setValuePrograms[key]!;
 	}
@@ -369,7 +369,7 @@ export class GPUComposer {
 		const { _copyPrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
 		if (_copyPrograms[key] === undefined) {
-			_copyPrograms[key] = copyProgram({ composer: this, type });
+			_copyPrograms[key] = copyProgram(this, { type });
 		}
 		return _copyPrograms[key]!;
 	}

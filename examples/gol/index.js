@@ -118,9 +118,8 @@ function main({ gui, contextID, glslVersion}) {
 			},
 		],
 	});
-	const golRender = renderAmplitudeProgram({
+	const golRender = renderAmplitudeProgram(composer, {
 		name: 'render',
-		composer,
 		type: state.type,
 		components: 'x',
 		precision: PRECISION_LOW_P,
@@ -151,9 +150,8 @@ function main({ gui, contextID, glslVersion}) {
 		wrapY: REPEAT,
 	});
 	// During touch, copy data from noise over to state.
-	const touch = copyProgram({
+	const touch = copyProgram(composer, {
 		name: 'touch',
-		composer,
 		type: noise.type,
 		precision: PRECISION_LOW_P,
 	});

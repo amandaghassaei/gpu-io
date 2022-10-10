@@ -18,20 +18,19 @@ import { GPUProgram } from './GPUProgram';
 /**
  * Init GPUProgram to copy contents of one GPULayer to another GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output.
  * @returns
  */
-export function copyProgram(params: {
-	composer: GPUComposer,
+export function copyProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	name?: string,
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type } = params;
+	const { type } = params;
 	const precision = params.precision || '';
 	const glslType = glslTypeForType(type, 4);
 	const name = params.name ||`copy_${uniformTypeForType(type, composer.glslVersion)}_layer`;
@@ -57,8 +56,8 @@ void main() {
 /**
  * Init GPUProgram to add several GPULayers together.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the inputs/output.
  * @param params.components - Component(s) of inputs to add, defaults to 'xyzw.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
@@ -66,15 +65,14 @@ void main() {
  * @param params.precision - Optionally specify the precision of the inputs/output.
  * @returns
  */
- export function addLayersProgram(params: {
-	composer: GPUComposer,
+ export function addLayersProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	components?: string,
 	name?: string,
 	numInputs?: number,
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type } = params;
+	const { type } = params;
 	const numInputs = params.numInputs || 2;
 	const precision = params.precision || '';
 	const components = params.components || 'xyzw';
@@ -103,22 +101,21 @@ void main() {
 /**
  * Init GPUProgram to add uniform "u_value" to a GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.value - Initial value to add, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
- export function addValueProgram(params: {
-	composer: GPUComposer,
+ export function addValueProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	value: number | number[],
 	name?: string,
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type, value } = params;
+	const { type, value } = params;
 	const precision = params.precision || '';
 	const valueLength = isArray(value) ? (value as number[]).length : 1;
 	const valueType = glslTypeForType(type, valueLength as GPULayerNumComponents);
@@ -154,22 +151,21 @@ void main() {
 /**
  * Init GPUProgram to multiply uniform "u_value" to a GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input/output (we assume "u_value" has the same type).
  * @param params.value - Initial value to multiply, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the input/output/"u_value".
  * @returns
  */
- export function multiplyValueProgram(params: {
-	composer: GPUComposer,
+ export function multiplyValueProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	value: number | number[],
 	name?: string,
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type, value } = params;
+	const { type, value } = params;
 	const precision = params.precision || '';
 	const valueLength = isArray(value) ? (value as number[]).length : 1;
 	const valueType = glslTypeForType(type, valueLength as GPULayerNumComponents);
@@ -205,22 +201,21 @@ void main() {
 /**
  * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output (we assume "u_value" has same type).
  * @param params.value - Initial value to set, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the output/"u_value".
  * @returns
  */
-export function setValueProgram(params: {
-	composer: GPUComposer,
+export function setValueProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	value: number | number[],
 	name?: string,
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type, value } = params;
+	const { type, value } = params;
 	const precision = params.precision || '';
 	const valueLength = isArray(value) ? (value as number[]).length : 1;
 	const valueType = glslTypeForType(type, valueLength as GPULayerNumComponents);
@@ -248,8 +243,8 @@ void main() {
 /**
  * Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the output.
  * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
  * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
@@ -257,15 +252,14 @@ void main() {
  * @param params.precision - Optionally specify the precision of the output/uniforms.
  * @returns
  */
- export function setColorProgram(params: {
-	composer: GPUComposer,
+ export function setColorProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	color?: number[],
 	opacity?: number,
 	name?: string,
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type } = params;
+	const { type } = params;
 	const precision = params.precision || '';
 	const opacity = params.opacity === undefined ? 1 : params.opacity;
 	const color = params.color || [0, 0, 0];
@@ -298,17 +292,15 @@ void main() {
 /**
  * Init GPUProgram to zero output GPULayer.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @returns
  */
- export function zeroProgram(params: {
-	composer: GPUComposer,
+ export function zeroProgram(composer: GPUComposer, params: {
 	name?: string,
 }) {
-	return setValueProgram({
-		composer: params.composer,
+	return setValueProgram(composer, {
 		type: FLOAT,
 		value: 0,
 		name: params.name,
@@ -318,8 +310,8 @@ void main() {
 /**
  * Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
  * @param params.components - Component(s) of input GPULayer to render, defaults to 'xyzw'.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
@@ -330,8 +322,7 @@ void main() {
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
- export function renderAmplitudeProgram(params: {
-	composer: GPUComposer,
+ export function renderAmplitudeProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	components?: string,
 	name?: string,
@@ -341,7 +332,7 @@ void main() {
 	colorZero: number[],
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type } = params;
+	const { type } = params;
 	const precision = params.precision || '';
 	const components = params.components || 'xyzw';
 	const numComponents = components.length as GPULayerNumComponents;
@@ -398,8 +389,8 @@ void main() {
 /**
  * Init GPUProgram to render signed amplitude of an input GPULayer to linearly interpolated colors.
  * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
  * @param params - Program parameters.
- * @param params.composer - The current GPUComposer.
  * @param params.type - The type of the input.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
@@ -411,8 +402,7 @@ void main() {
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
- export function renderSignedAmplitudeProgram(params: {
-	composer: GPUComposer,
+ export function renderSignedAmplitudeProgram(composer: GPUComposer, params: {
 	type: GPULayerType,
 	component?: 'x' | 'y' | 'z' | 'w',
 	name?: string,
@@ -423,7 +413,7 @@ void main() {
 	colorZero?: number[],
 	precision?: GLSLPrecision,
 }) {
-	const { composer, type } = params;
+	const { type } = params;
 	const precision = params.precision || '';
 	const glslType = glslTypeForType(type, 1);
 	const glslPrefix = glslPrefixForType(type);
@@ -486,8 +476,7 @@ void main() {
 /**
  * @private
  */
-export function wrappedLineColorProgram(params: { composer: GPUComposer }) {
-	const { composer } = params;
+export function wrappedLineColorProgram(composer: GPUComposer) {
 	return new GPUProgram(composer, {
 		name: `wrappedLineColor`,
 		fragmentShader: `

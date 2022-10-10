@@ -108,9 +108,8 @@ void main() {
 
 // Init a program to render "state" to screen.
 // See docs/README#gpuprogram-helper-functions for more built-in GPUPrograms.
-const renderProgram = renderAmplitudeProgram({
+const renderProgram = renderAmplitudeProgram(composer, {
     name: 'render',
-    composer,
     type: state.type,
     components: 'x', // "state" is a scalar field, only has an x component.
 });

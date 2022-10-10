@@ -306,9 +306,8 @@ function main({ gui, glslVersion, contextID }) {
 		wrapY: REPEAT,
 	});
 	// Fragment shader program for adding chemical attractant from particles to trail layer.
-	const deposit = addValueProgram({
+	const deposit = addValueProgram(composer, {
 		name: 'deposit',
-		composer,
 		type: trail.type,
 		value: PARAMS.depositAmount,
 	});
@@ -359,9 +358,8 @@ function main({ gui, glslVersion, contextID }) {
 		],
 	});
 	// Fragment shader program for rendering trail state to screen (with a scaling factor).
-	const render = renderAmplitudeProgram({
+	const render = renderAmplitudeProgram(composer, {
 		name: 'render',
-		composer,
 		type: trail.type,
 		components: 'x',
 		scale: PARAMS.renderAmplitude,

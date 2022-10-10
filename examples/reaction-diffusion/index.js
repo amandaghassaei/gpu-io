@@ -107,17 +107,15 @@ function main({ gui, contextID, glslVersion}) {
 		]
 	});
 
-	const renderA = renderAmplitudeProgram({
+	const renderA = renderAmplitudeProgram(composer, {
 		name: 'renderA',
-		composer,
 		type: state.type,
 		scale: 1,
 		components: 'x', // Chemical A is stored in x component of state.
 	});
 
-	const renderB = renderAmplitudeProgram({
+	const renderB = renderAmplitudeProgram(composer, {
 		name: 'renderB',
-		composer,
 		type: state.type,
 		scale: 3,
 		components: 'y', // Chemical B is stored in y component of state.
@@ -317,9 +315,8 @@ function main({ gui, contextID, glslVersion}) {
 	}
 
 	// During touch, set chemical values to 0.5, 0.5 within a small circle.
-	const touch = setValueProgram({
+	const touch = setValueProgram(composer, {
 		name: 'touch',
-		composer,
 		type: state.type,
 		value: [0.5, 0.5],
 	});
