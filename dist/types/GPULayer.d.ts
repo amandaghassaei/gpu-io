@@ -85,6 +85,9 @@ export declare class GPULayer {
      */
     readonly _glWrapT: number;
     private _textureOverrides?;
+    private _values?;
+    private _valuesRaw?;
+    private _valuesBufferView?;
     /**
      * Create a GPULayer from an image url.
      * @param composer - The current GPUComposer instance.

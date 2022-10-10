@@ -55,6 +55,36 @@ export function uniformTypeForType(type: GPULayerType, glslVersion: GLSLVersion)
 /**
  * @private
  */
+export function arrayConstructorForType(
+	type: GPULayerType,
+	halfFloatsAsFloats = false,
+) {
+	switch (type) {
+		case HALF_FLOAT:
+			if (halfFloatsAsFloats) return Float32Array;
+			return Uint16Array;
+		case FLOAT:
+			return Float32Array;
+		case UNSIGNED_BYTE:
+			return Uint8Array;
+		case BYTE:
+			return Int8Array;
+		case UNSIGNED_SHORT:
+			return Uint16Array;
+		case SHORT:
+			return Int16Array;
+		case UNSIGNED_INT:
+			return Uint32Array;
+		case INT:
+			return Int32Array;
+		default:
+			throw new Error(`Unsupported type: "${type}".`);
+	}
+}
+
+/**
+ * @private
+ */
 export function glslTypeForType(type: GPULayerType, numComponents: GPULayerNumComponents) {
 	switch (type) {
 		case HALF_FLOAT:

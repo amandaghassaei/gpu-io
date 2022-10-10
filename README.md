@@ -422,6 +422,7 @@ I used a few codebases as reference when writing this, thanks to their authors f
 Other resources:
 
 - [WebGL best practices](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices) by Mozilla
+- [Compatibility issues in Shadertoy / webGLSL](https://shadertoyunofficial.wordpress.com/2016/07/22/compatibility-issues-in-shadertoy-webglsl/) Shadertoy – Unofficial
 
 
 ## License

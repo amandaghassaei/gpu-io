@@ -529,8 +529,13 @@
 					const layer1 = new GPULayer(composer1, { name: 'test-layer', type, numComponents: 3, dimensions: 245});
 					assert.notEqual(layer1.length, layer1.width * layer1.height);
 					const values = layer1.getValues();
-					// Due to some annoying browser things, this is currently returning one of Float32Array, Int32Array, or Uint32Array.
-					assert.typeOf(values, isFloatType(type) ? 'Float32Array' : (isUnsignedIntType(type) ? 'UInt32Array' : 'Int32Array'));
+					if (isFloatType(type)) assert.typeOf(values, 'Float32Array');
+					if (type === UNSIGNED_BYTE) assert.typeOf(values, 'Uint8Array');
+					if (type === BYTE) assert.typeOf(values, 'Int8Array');
+					if (type === UNSIGNED_SHORT) assert.typeOf(values, 'Uint16Array');
+					if (type === SHORT) assert.typeOf(values, 'Int16Array');
+					if (type === UNSIGNED_INT) assert.typeOf(values, 'Uint32Array');
+					if (type === INT) assert.typeOf(values, 'Int32Array');
 					assert.equal(values.length, layer1.length * layer1.numComponents);
 					layer1.dispose();
 				});

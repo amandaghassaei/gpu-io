@@ -34,6 +34,7 @@ import {
 	LINEAR,
 	DEFAULT_PROGRAM_NAME,
 } from './constants';
+import { arrayConstructorForType } from './conversions';
 import {
 	EXT_COLOR_BUFFER_FLOAT,
 	EXT_COLOR_BUFFER_HALF_FLOAT,
@@ -69,27 +70,7 @@ GPULayer.initArrayForType = (
 	length: number,
 	halfFloatsAsFloats = false,
 ) => {
-	switch (type) {
-		case HALF_FLOAT:
-			if (halfFloatsAsFloats) return new Float32Array(length);
-			return new Uint16Array(length);
-		case FLOAT:
-			return new Float32Array(length);
-		case UNSIGNED_BYTE:
-			return new Uint8Array(length);
-		case BYTE:
-			return new Int8Array(length);
-		case UNSIGNED_SHORT:
-			return new Uint16Array(length);
-		case SHORT:
-			return new Int16Array(length);
-		case UNSIGNED_INT:
-			return new Uint32Array(length);
-		case INT:
-			return new Int32Array(length);
-		default:
-			throw new Error(`Unsupported type: "${type}".`);
-	}
+	return new (arrayConstructorForType(type, halfFloatsAsFloats))(length);
 }
 
 /**

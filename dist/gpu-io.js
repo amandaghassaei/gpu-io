@@ -3943,6 +3943,7 @@ var checks_1 = __webpack_require__(707);
 var constants_1 = __webpack_require__(601);
 var utils_1 = __webpack_require__(593);
 var framebuffers_1 = __webpack_require__(798);
+var conversions_1 = __webpack_require__(690);
 var GPULayer = /** @class */ (function () {
     /**
      * Create a GPULayer.
@@ -4453,11 +4454,11 @@ var GPULayer = /** @class */ (function () {
     };
     GPULayer.prototype._getValuesSetup = function () {
         var _a = this, width = _a.width, height = _a.height, _composer = _a._composer, _currentTexture = _a._currentTexture;
+        var _valuesRaw = this._valuesRaw;
         var gl = _composer.gl;
         // In case GPULayer was not the last output written to.
         (0, framebuffers_1.bindFrameBuffer)(_composer, this, _currentTexture);
         var _b = this, _glNumChannels = _b._glNumChannels, _glType = _b._glType, _glFormat = _b._glFormat, _internalType = _b._internalType;
-        var values;
         switch (_internalType) {
             case constants_1.HALF_FLOAT:
                 if (gl.FLOAT !== undefined) {
@@ -4465,20 +4466,20 @@ var GPULayer = /** @class */ (function () {
                     _glNumChannels = 4;
                     _glFormat = gl.RGBA;
                     _glType = gl.FLOAT;
-                    values = new Float32Array(width * height * _glNumChannels);
+                    _valuesRaw = _valuesRaw || new Float32Array(width * height * _glNumChannels);
                 }
                 else {
-                    values = new Uint16Array(width * height * _glNumChannels);
+                    _valuesRaw = _valuesRaw || new Uint16Array(width * height * _glNumChannels);
                 }
                 // // The following works in Chrome.
-                // values = new Uint16Array(width * height * glNumChannels);
+                // _valuesRaw = _valuesRaw || new Uint16Array(width * height * glNumChannels);
                 break;
             case constants_1.FLOAT:
                 // Chrome and Firefox require that RGBA/FLOAT is used for readPixels of float32 types.
                 // https://github.com/KhronosGroup/WebGL/issues/2747
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA;
-                values = new Float32Array(width * height * _glNumChannels);
+                _valuesRaw = _valuesRaw || new Float32Array(width * height * _glNumChannels);
                 break;
             case constants_1.UNSIGNED_BYTE:
                 // We never hit glslVersion === GLSL1 anymore, see GPULayerHelpers.shouldCastIntTypeAsFloat for more info.
@@ -4486,100 +4487,107 @@ var GPULayer = /** @class */ (function () {
                 // 	// Firefox requires that RGBA/UNSIGNED_BYTE is used for readPixels of unsigned byte types.
                 // 	_glNumChannels = 4;
                 // 	_glFormat = gl.RGBA;
-                // 	values = new Uint8Array(width * height * _glNumChannels);
+                // 	_valuesRaw = _valuesRaw || new Uint8Array(width * height * _glNumChannels);
                 // 	break;
                 // }
                 // Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA_INTEGER;
                 _glType = gl.UNSIGNED_INT;
-                values = new Uint32Array(width * height * _glNumChannels);
+                _valuesRaw = _valuesRaw || new Uint32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
-                // values = new Uint8Array(width * height * glNumChannels);
+                // _valuesRaw = _valuesRaw || new Uint8Array(width * height * glNumChannels);
                 break;
             case constants_1.UNSIGNED_SHORT:
                 // Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA_INTEGER;
                 _glType = gl.UNSIGNED_INT;
-                values = new Uint32Array(width * height * _glNumChannels);
+                _valuesRaw = _valuesRaw || new Uint32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
-                // values = new Uint16Array(width * height * glNumChannels);
+                // _valuesRaw = _valuesRaw || new Uint16Array(width * height * glNumChannels);
                 break;
             case constants_1.UNSIGNED_INT:
                 // Firefox requires that RGBA_INTEGER/UNSIGNED_INT is used for readPixels of unsigned int types.
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA_INTEGER;
-                values = new Uint32Array(width * height * _glNumChannels);
+                _valuesRaw = _valuesRaw || new Uint32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
-                // values = new Uint32Array(width * height * glNumChannels);
+                // _valuesRaw = _valuesRaw || new Uint32Array(width * height * glNumChannels);
                 break;
             case constants_1.BYTE:
                 // Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA_INTEGER;
                 _glType = gl.INT;
-                values = new Int32Array(width * height * _glNumChannels);
+                _valuesRaw = _valuesRaw || new Int32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
-                // values = new Int8Array(width * height * glNumChannels);
+                // _valuesRaw = _valuesRaw || new Int8Array(width * height * glNumChannels);
                 break;
             case constants_1.SHORT:
                 // Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA_INTEGER;
                 _glType = gl.INT;
-                values = new Int32Array(width * height * _glNumChannels);
+                _valuesRaw = _valuesRaw || new Int32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
-                // values = new Int16Array(width * height * glNumChannels);
+                // _valuesRaw = _valuesRaw || new Int16Array(width * height * glNumChannels);
                 break;
             case constants_1.INT:
                 // Firefox requires that RGBA_INTEGER/INT is used for readPixels of int types.
                 _glNumChannels = 4;
                 _glFormat = gl.RGBA_INTEGER;
-                values = new Int32Array(width * height * _glNumChannels);
+                _valuesRaw = _valuesRaw || new Int32Array(width * height * _glNumChannels);
                 // // The following works in Chrome.
-                // values = new Int32Array(width * height * glNumChannels);
+                // _valuesRaw = _valuesRaw || new Int32Array(width * height * glNumChannels);
                 break;
             default:
                 throw new Error("Unsupported internalType ".concat(_internalType, " for getValues()."));
         }
+        this._valuesRaw = _valuesRaw;
         if ((0, utils_1.readyToRead)(gl)) {
-            return { _glFormat: _glFormat, _glType: _glType, values: values, _glNumChannels: _glNumChannels, _internalType: _internalType };
+            return { _glFormat: _glFormat, _glType: _glType, _valuesRaw: _valuesRaw, _glNumChannels: _glNumChannels, _internalType: _internalType };
         }
         else {
             throw new Error("Unable to read values from Buffer with status: ".concat(gl.checkFramebufferStatus(gl.FRAMEBUFFER), "."));
         }
     };
-    GPULayer.prototype._getValuesPost = function (values, _glNumChannels, _internalType) {
+    GPULayer.prototype._getValuesPost = function (_valuesRaw, _glNumChannels, _internalType) {
         var _a = this, width = _a.width, height = _a.height, numComponents = _a.numComponents, type = _a.type;
         var OUTPUT_LENGTH = (this._length ? this._length : width * height) * numComponents;
         // Convert uint16 to float32 if needed.
-        var handleFloat16Conversion = _internalType === constants_1.HALF_FLOAT && values.constructor === Uint16Array;
-        // @ts-ignore
-        var view = handleFloat16Conversion ? new DataView(values.buffer) : undefined;
+        var handleFloat16Conversion = _internalType === constants_1.HALF_FLOAT && _valuesRaw.constructor === Uint16Array;
+        var _valuesBufferView = this._valuesBufferView;
+        if (handleFloat16Conversion && !_valuesBufferView) {
+            // @ts-ignore
+            _valuesBufferView = new DataView(_valuesRaw.buffer);
+            this._valuesBufferView = _valuesBufferView;
+        }
         // We may use a different internal type than the assigned type of the GPULayer.
-        var output = _internalType === type ? values : GPULayer.initArrayForType(type, OUTPUT_LENGTH, true);
+        if (_valuesRaw.length === OUTPUT_LENGTH && (0, conversions_1.arrayConstructorForType)(type, true) === _valuesRaw.constructor) {
+            this._values = _valuesRaw;
+        }
+        else if (!this._values)
+            this._values = GPULayer.initArrayForType(type, OUTPUT_LENGTH, true);
+        var _values = this._values;
         // In some cases glNumChannels may be > numComponents.
-        if (view || output !== values || numComponents !== _glNumChannels) {
+        if (_valuesBufferView || _values !== _valuesRaw || numComponents !== _glNumChannels) {
             for (var i = 0, length_1 = width * height; i < length_1; i++) {
                 var index1 = i * _glNumChannels;
                 var index2 = i * numComponents;
                 if (index2 >= OUTPUT_LENGTH)
                     break;
                 for (var j = 0; j < numComponents; j++) {
-                    if (view) {
-                        output[index2 + j] = (0, float16_1.getFloat16)(view, 2 * (index1 + j), true);
+                    if (_valuesBufferView) {
+                        _values[index2 + j] = (0, float16_1.getFloat16)(_valuesBufferView, 2 * (index1 + j), true);
                     }
                     else {
-                        output[index2 + j] = values[index1 + j];
+                        _values[index2 + j] = _valuesRaw[index1 + j];
                     }
                 }
             }
         }
-        if (output.length !== OUTPUT_LENGTH) {
-            output = output.slice(0, OUTPUT_LENGTH);
-        }
-        return output;
+        return _values;
     };
     /**
      * Returns the current values of the GPULayer as a TypedArray.
@@ -4588,10 +4596,10 @@ var GPULayer = /** @class */ (function () {
     GPULayer.prototype.getValues = function () {
         var _a = this, width = _a.width, height = _a.height, _composer = _a._composer;
         var gl = _composer.gl;
-        var _b = this._getValuesSetup(), _glFormat = _b._glFormat, _glType = _b._glType, values = _b.values, _glNumChannels = _b._glNumChannels, _internalType = _b._internalType;
+        var _b = this._getValuesSetup(), _glFormat = _b._glFormat, _glType = _b._glType, _valuesRaw = _b._valuesRaw, _glNumChannels = _b._glNumChannels, _internalType = _b._internalType;
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
-        gl.readPixels(0, 0, width, height, _glFormat, _glType, values);
-        return this._getValuesPost(values, _glNumChannels, _internalType);
+        gl.readPixels(0, 0, width, height, _glFormat, _glType, _valuesRaw);
+        return this._getValuesPost(_valuesRaw, _glNumChannels, _internalType);
     };
     /**
      * Non-blocking function to return the current values of the GPULayer as a TypedArray.
@@ -4600,7 +4608,7 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.getValuesAsync = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, width, height, _composer, gl, isWebGL2, _b, _glFormat, _glType, values, _glNumChannels, _internalType;
+            var _a, width, height, _composer, gl, isWebGL2, _b, _glFormat, _glType, _valuesRaw, _glNumChannels, _internalType;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -4610,13 +4618,13 @@ var GPULayer = /** @class */ (function () {
                             // Async method is not supported for WebGL1.
                             return [2 /*return*/, this.getValues()];
                         }
-                        _b = this._getValuesSetup(), _glFormat = _b._glFormat, _glType = _b._glType, values = _b.values, _glNumChannels = _b._glNumChannels, _internalType = _b._internalType;
+                        _b = this._getValuesSetup(), _glFormat = _b._glFormat, _glType = _b._glType, _valuesRaw = _b._valuesRaw, _glNumChannels = _b._glNumChannels, _internalType = _b._internalType;
                         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
-                        return [4 /*yield*/, (0, utils_1.readPixelsAsync)(gl, 0, 0, width, height, _glFormat, _glType, values)];
+                        return [4 /*yield*/, (0, utils_1.readPixelsAsync)(gl, 0, 0, width, height, _glFormat, _glType, _valuesRaw)];
                     case 1:
                         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
                         _c.sent();
-                        return [2 /*return*/, this._getValuesPost(values, _glNumChannels, _internalType)];
+                        return [2 /*return*/, this._getValuesPost(_valuesRaw, _glNumChannels, _internalType)];
                 }
             });
         });
@@ -4736,6 +4744,10 @@ var GPULayer = /** @class */ (function () {
         delete this._buffers;
         // @ts-ignore
         delete this._composer;
+        if (this._values)
+            delete this._values;
+        if (this._valuesRaw)
+            delete this._valuesRaw;
     };
     return GPULayer;
 }());
@@ -4754,6 +4766,7 @@ exports.minMaxValuesForType = exports.testFilterWrap = exports.testWriteSupport 
 var type_checks_1 = __webpack_require__(566);
 var float16_1 = __webpack_require__(847);
 var constants_1 = __webpack_require__(601);
+var conversions_1 = __webpack_require__(690);
 var extensions_1 = __webpack_require__(581);
 var framebuffers_1 = __webpack_require__(798);
 var GPULayer_1 = __webpack_require__(355);
@@ -4769,28 +4782,7 @@ var results = {
  */
 GPULayer_1.GPULayer.initArrayForType = function (type, length, halfFloatsAsFloats) {
     if (halfFloatsAsFloats === void 0) { halfFloatsAsFloats = false; }
-    switch (type) {
-        case constants_1.HALF_FLOAT:
-            if (halfFloatsAsFloats)
-                return new Float32Array(length);
-            return new Uint16Array(length);
-        case constants_1.FLOAT:
-            return new Float32Array(length);
-        case constants_1.UNSIGNED_BYTE:
-            return new Uint8Array(length);
-        case constants_1.BYTE:
-            return new Int8Array(length);
-        case constants_1.UNSIGNED_SHORT:
-            return new Uint16Array(length);
-        case constants_1.SHORT:
-            return new Int16Array(length);
-        case constants_1.UNSIGNED_INT:
-            return new Uint32Array(length);
-        case constants_1.INT:
-            return new Int32Array(length);
-        default:
-            throw new Error("Unsupported type: \"".concat(type, "\"."));
-    }
+    return new ((0, conversions_1.arrayConstructorForType)(type, halfFloatsAsFloats))(length);
 };
 /**
  * Calc 2D size [width, height] for GPU layer given a 1D or 2D size parameter.
@@ -7121,7 +7113,7 @@ exports.BOUNDARY_RIGHT = 'BOUNDARY_RIGHT';
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.glslComponentSelectionForNumComponents = exports.glslPrefixForType = exports.glslTypeForType = exports.uniformTypeForType = exports.intForPrecision = void 0;
+exports.glslComponentSelectionForNumComponents = exports.glslPrefixForType = exports.glslTypeForType = exports.arrayConstructorForType = exports.uniformTypeForType = exports.intForPrecision = void 0;
 var constants_1 = __webpack_require__(601);
 /**
  * Enum for precision values.
@@ -7161,6 +7153,35 @@ function uniformTypeForType(type, glslVersion) {
     }
 }
 exports.uniformTypeForType = uniformTypeForType;
+/**
+ * @private
+ */
+function arrayConstructorForType(type, halfFloatsAsFloats) {
+    if (halfFloatsAsFloats === void 0) { halfFloatsAsFloats = false; }
+    switch (type) {
+        case constants_1.HALF_FLOAT:
+            if (halfFloatsAsFloats)
+                return Float32Array;
+            return Uint16Array;
+        case constants_1.FLOAT:
+            return Float32Array;
+        case constants_1.UNSIGNED_BYTE:
+            return Uint8Array;
+        case constants_1.BYTE:
+            return Int8Array;
+        case constants_1.UNSIGNED_SHORT:
+            return Uint16Array;
+        case constants_1.SHORT:
+            return Int16Array;
+        case constants_1.UNSIGNED_INT:
+            return Uint32Array;
+        case constants_1.INT:
+            return Int32Array;
+        default:
+            throw new Error("Unsupported type: \"".concat(type, "\"."));
+    }
+}
+exports.arrayConstructorForType = arrayConstructorForType;
 /**
  * @private
  */

@@ -7,7 +7,7 @@
 		_testing,
 	} = GPUIO;
 
-	describe.only('GPUComposer', () => {
+	describe('GPUComposer', () => {
 		beforeEach(() => {
 			composer = new GPUComposer({ canvas: document.createElement('canvas') });
 		});
@@ -15,7 +15,7 @@
 			composer.dispose();
 			composer = undefined;
 		});
-		describe('initWidthThreeRenderer', () => {
+		describe('initWithThreeRenderer', () => {
 			it('should ', () => {
 			});
 		});
@@ -38,48 +38,48 @@
 			it('should ', () => {
 			});
 		});
-		describe('step', () => {
-			it('should ', () => {
-			});
-		});
-		describe('stepBoundary', () => {
-			it('should ', () => {
-			});
-		});
-		describe('stepNonBoundary', () => {
-			it('should ', () => {
-			});
-		});
-		describe('stepCircle', () => {
-			it('should ', () => {
-			});
-		});
-		describe('stepSegment', () => {
-			it('should ', () => {
-			});
-		});
-		describe('stepRect', () => {
-			it('should ', () => {
-			});
-		});
-		describe('drawLayerAsPoints', () => {
-			it('should ', () => {
-			});
-		});
-		describe('drawLayerAsVectorField', () => {
-			it('should ', () => {
-			});
-		});
+		// describe('step', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
+		// describe('stepBoundary', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
+		// describe('stepNonBoundary', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
+		// describe('stepCircle', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
+		// describe('stepSegment', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
+		// describe('stepRect', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
+		// describe('drawLayerAsPoints', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
+		// describe('drawLayerAsVectorField', () => {
+		// 	it('should ', () => {
+		// 	});
+		// });
 		describe('resetThreeState', () => {
 			it('should throw an error for GPUComposers not inited with three renderer', () => {
 				assert.throws(() => { composer.resetThreeState(); },
 					`Can't call resetTHreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 			});
-			it('should not throw an error if threejs renderer present', () => {
-				const renderer = new THREE.WebGLRenderer();
-				const threeGPU = new GPUComposer.initWithThreeRenderer({ renderer });
-				assert.equal(threeGPU.resetThreeState(), undefined);
-			});
+		// 	it('should not throw an error if threejs renderer present', () => {
+		// 		const renderer = new THREE.WebGLRenderer();
+		// 		const threeGPU = new GPUComposer.initWithThreeRenderer({ renderer });
+		// 		assert.equal(threeGPU.resetThreeState(), undefined);
+		// 	});
 		});
 		describe('savePNG', () => {
 			it('should return Blob in callback', () => {

@@ -9,6 +9,7 @@ import * as Programs from './Programs';
 declare const _testing: {
     intForPrecision(precision: import("./constants").GLSLPrecision): 2 | 1 | 0;
     uniformTypeForType(type: import("./constants").GPULayerType, glslVersion: import("./constants").GLSLVersion): "FLOAT" | "INT" | "UINT";
+    arrayConstructorForType(type: import("./constants").GPULayerType, halfFloatsAsFloats?: boolean): Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor | Int8ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor;
     glslTypeForType(type: import("./constants").GPULayerType, numComponents: import("./constants").GPULayerNumComponents): string;
     glslPrefixForType(type: import("./constants").GPULayerType): "" | "u" | "i";
     glslComponentSelectionForNumComponents(numComponents: import("./constants").GPULayerNumComponents): "" | ".x" | ".xy" | ".xyz";

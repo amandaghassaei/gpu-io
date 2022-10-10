@@ -12,6 +12,10 @@ export declare function uniformTypeForType(type: GPULayerType, glslVersion: GLSL
 /**
  * @private
  */
+export declare function arrayConstructorForType(type: GPULayerType, halfFloatsAsFloats?: boolean): Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor | Int8ArrayConstructor | Int16ArrayConstructor | Uint32ArrayConstructor | Int32ArrayConstructor;
+/**
+ * @private
+ */
 export declare function glslTypeForType(type: GPULayerType, numComponents: GPULayerNumComponents): string;
 /**
  * @private
