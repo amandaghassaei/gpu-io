@@ -232,7 +232,7 @@ function main({ gui, contextID, glslVersion}) {
 
 		void main() {
 			vec2 uv = u_offset + u_scale * v_uv;
-			if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) out_state = vec2(0);
+			if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) out_state = vec2(0.5, 0.5);
 			else out_state = texture(u_state, uv).xy;
 		}
 		`,

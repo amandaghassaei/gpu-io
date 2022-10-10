@@ -432,12 +432,17 @@ export class GPUComposer {
 		const { _circlePositionsBuffer } = this;
 		if (_circlePositionsBuffer[numSegments] == undefined) {
 			const unitCirclePoints = [0, 0];
-			for (let i = 0; i <= numSegments; i++) { // TODO: should this be strictly less than?
+			for (let i = 0; i < numSegments; i++) {
 				unitCirclePoints.push(
 					Math.cos(2 * Math.PI * i / numSegments),
 					Math.sin(2 * Math.PI * i / numSegments),
 				);
 			}
+			// Add one more point to close the loop on the triangle fan.
+			unitCirclePoints.push(
+				Math.cos(0),
+				Math.sin(0),
+			);
 			const circlePositions = new Float32Array(unitCirclePoints);
 			const buffer = this._initVertexBuffer(circlePositions)!;
 			_circlePositionsBuffer[numSegments] = buffer;
@@ -1078,11 +1083,10 @@ export class GPUComposer {
 			if (numSegments < 6 || numSegments % 6 !== 0) {
 				throw new Error(`numCapSegments for GPUComposer.stepSegment must be divisible by 3, got ${numSegments / 2}.`);
 			}
-			// Have to subtract a small offset from length.
-			program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness * Math.sin(Math.PI / numSegments), FLOAT);
+			program._setVertexUniform(glProgram, 'u_gpuio_length', length, FLOAT);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._getCirclePositionsBuffer(numSegments));
 		} else {
-			// Have to subtract a small offset from length. // TODO: ?
+			// u_gpuio_length + thickness = length, bc we are stretching a square of size thickness into a rectangle.
 			program._setVertexUniform(glProgram, 'u_gpuio_length', length - thickness, FLOAT);
 			// Use a rectangle in case of no caps.
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._getQuadPositionsBuffer());
