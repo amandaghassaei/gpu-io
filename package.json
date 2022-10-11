@@ -38,6 +38,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "mocha": "^10.0.0",
     "npm": "^8.18.0",
+    "remarkable": "^2.0.1",
     "three": "^0.145.0",
     "ts-loader": "^8.4.0",
     "typedoc": "^0.23.10",

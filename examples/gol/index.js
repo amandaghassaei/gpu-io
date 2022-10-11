@@ -253,13 +253,20 @@ function main({ gui, contextID, glslVersion}) {
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
 
+	function getRulesString(rule) {
+		let rules = `_${rule.toUpperCase()}`;
+		for (let i = 0; i < 8; i++) {
+			if (PARAMS[`${rule}${i}`]) rules += i;
+		}
+		return rules;
+	}
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
 		composer.step({
 			program: golRender,
 			input: state,
 		});
-		composer.savePNG({ filename: `gol_S${PARAMS.survivalRules}_B${PARAMS.birthRules}` });
+		composer.savePNG({ filename: `gol${getRulesString('s')}${getRulesString('b')}` });
 	}
 	window.addEventListener('keydown', onKeydown);
 	function onKeydown(e) {
