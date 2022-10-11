@@ -1,6 +1,6 @@
 # gpu-io
 
-**Update 8/28/22: This has not been officially released, coming very soon.**
+&#9888; **Update 10/11/22: This has not been officially released, coming very soon.**
 
 <!-- [![NPM Package](https://img.shields.io/npm/v/gpu-io)](https://www.npmjs.com/package/gpu-io)
 [![Build Size](https://img.shields.io/bundlephobia/min/gpu-io)](https://bundlephobia.com/result?p=gpu-io)
