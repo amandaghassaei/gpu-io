@@ -328,8 +328,7 @@ function main({ gui, contextID, glslVersion}) {
 			const { delta, avg } = getAvgAndDeltaBetweenPoints(pointers[0], pointers[1]);
 			pinchPan.lastDelta = delta;
 			pinchPan.lastAvg = avg;
-		}
-		if (pointers.length !== 2) {
+		} else {
 			pinchPan = undefined;
 		}
 	}

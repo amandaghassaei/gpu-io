@@ -371,6 +371,9 @@ function main({ gui, contextID, glslVersion}) {
 	}
 	function onPointerStop(e) {
 		delete activeTouches[e.pointerId];
+		if (Object.keys(activeTouches).length !== 2) {
+			pinchPan = undefined;
+		}
 	}
 	function onPointerStart(e) {
 		e.preventDefault();
@@ -383,8 +386,7 @@ function main({ gui, contextID, glslVersion}) {
 			const { delta, avg } = getAvgAndDeltaBetweenPoints(pointers[0], pointers[1]);
 			pinchPan.lastDelta = delta;
 			pinchPan.lastAvg = avg;
-		}
-		if (pointers.length > 2) {
+		} else {
 			pinchPan = undefined;
 		}
 	}

@@ -1,4 +1,4 @@
-import { setFloat16, getFloat16, Float16Array } from '@petamoriken/float16';
+import { getFloat16 } from '@petamoriken/float16';
 import type { Texture } from 'three';
 import {
 	isArray,
@@ -871,7 +871,6 @@ export class GPULayer {
 				}
 			}
 		}
-
 		return _values;
 	}
 

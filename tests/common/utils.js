@@ -34,7 +34,7 @@ function checkTypeIssue(type, internalType, expected, output) {
 		}
 	}
 	if (type === FLOAT && internalType === FLOAT) {
-		if (Math.abs(expected - output) < 1e-2 || Math.abs((expected - output) / expected) < 1e-2) {
+		if (Math.abs(expected - output) < 1e-1 || Math.abs((expected - output) / expected) < 1e-1) {
 			return true;
 		}
 	}
