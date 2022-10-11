@@ -22,8 +22,8 @@
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
     "build": "webpack && npm run docs",
-    "docs": "typedoc --options ./typedoc.json",
-    "tohtml": "marked -i ./examples/README.md -o ./examples/index.html"
+    "docs": "typedoc --options ./typedoc.json && npm run tohtml",
+    "tohtml": "marked -i ./examples/README.md -o ./examples/index.html && concat -o ./examples/index.html ./examples/common/github-markdown-wrapper1.html ./examples/index.html ./examples/common/github-markdown-wrapper2.html"
   },
   "author": "Amanda Ghassaei",
   "license": "MIT",
@@ -32,6 +32,7 @@
     "@types/offscreencanvas": "^2019.7.0",
     "@types/three": "^0.127.1",
     "chai": "^4.3.6",
+    "concat": "^1.0.3",
     "install": "^0.13.0",
     "karma": "^6.4.0",
     "karma-chai": "^0.1.0",
