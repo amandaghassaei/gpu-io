@@ -10,7 +10,7 @@ More info about the difference between GLSL and WebGL versions:
 - [WebGL2 from WebGL1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html) by [webgl2fundamentals.org](https://webgl2fundamentals.org/)
 - [WebGL Report](https://webglreport.com/?v=2) by Cesium
 
-When necessary, gpu-io will attempt to automatically convert GLSL3 shaders to GLSL1 so that they can be run in browsers that only support WebGL1.  This simplifies the process of developing an application by removing the burden of managing multiple sets of shaders targeting different GLSL versions.  All of the [Examples](https://github.com/amandaghassaei/gpu-io#examples) in this repository run in both WebGL2 and WebGL1; you can test this for yourself using the WebGL controls menu:
+When necessary, gpu-io will attempt to automatically convert GLSL3 shaders to GLSL1 so that they can be run in browsers that only support WebGL1.  This simplifies the process of developing an application by removing the burden of managing multiple sets of shaders targeting different GLSL versions.  All of the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) in this repository run in both WebGL2 and WebGL1; you can test this for yourself using the WebGL controls menu:
 
 ![WebGL setting controls](./imgs/WebGLControls.png)
 

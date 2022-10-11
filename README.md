@@ -9,7 +9,7 @@
 
 **A GPU-accelerated computing library for physics simulations, cellular automata, and general-purpose calculations**
 
-gpu-io is a WebGL library that helps you easily compose interactive shader programs.  This library can be used for a variety of applications, but it is especially helpful for 2D physics simulations or cellular automata, where state is stored in scalar/vector fields and updated by fragment shader programs.  It supports rendering directly to the WebGL canvas and has some built-in utilities that make interactivity easy.  gpu-io contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](#examples) for more details.
+gpu-io is a WebGL library that helps you easily compose interactive shader programs.  This library can be used for a variety of applications, but it is especially helpful for 2D physics simulations or cellular automata, where state is stored in scalar/vector fields and updated by fragment shader programs.  It supports rendering directly to the WebGL canvas and has some built-in utilities that make interactivity easy.  gpu-io contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  
 WebGPU support is planned in the future.
@@ -140,29 +140,11 @@ loop(); // Start animation loop.
 
 ## Examples
 
-Check out the following examples to really understand how gpu-io works.  Many of them show how to easily create touch interactions in your application.
+Check out the [Examples page](https://apps.amandaghassaei.com/gpu-io/examples/) to really understand how gpu-io works.
+Many of these examples show how to easily create touch interactions in your application.
+Source code for all examples can be found in the [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples) folder.
 
-Source code for all examples can be found in [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
-
-### Simple
-- [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/)
-- [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/)
-
-### Grid-Based Systems
-- [Reaction Diffusion](https://apps.amandaghassaei.com/gpu-io/examples/reaction-diffusion/)
-
-### Particle + Grid Systems
-- [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/)
-- [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/)
-
-<!-- ### Threejs -->
-<!-- 
-TODO:
-- texture synthesis
-- threejs -->
-
-
-Please let me kow if you have something that you would like to add to this list!
+Please let me kow if you have something that you would like to add to the Examples page!
 
 
 ## Installation
@@ -338,7 +320,7 @@ gpu-io will automatically convert any GLSL3 shaders to GLSL1 when targeting WebG
 
 ### Transform Feedback
 
-You might notice that gpu-io does not use any transform feedback to handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](#examples)), but currently all the computation happens in a fragment shader.  There are a few reasons for this:
+You might notice that gpu-io does not use any transform feedback to handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](https://apps.amandaghassaei.com/gpu-io/examples/)), but currently all the computation happens in a fragment shader.  There are a few reasons for this:
 
 - The main use case for gpu-io is to operate on 2D spatially-distributed state (i.e. fields) stored in textures using fragment shaders.  There is additional support for 1D arrays and lines/particles, but that is secondary functionality.
 - Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, for now I'd like to support all functionality in gpu-io in WebGL1/GLSL1 as well.
@@ -436,7 +418,7 @@ This work is distributed under an MIT license.  Note that gpu-io depends on a fe
 
 ## Development
 
-Update 9/22:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [Examples](#examples) for more info about how to use this library.
+Update 9/22:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more info about how to use this library.
 
 Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://twitter.com/amandaghassaei) if you end up using this, I'd love to see what you're making!  
 
