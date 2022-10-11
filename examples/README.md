@@ -1,6 +1,6 @@
 # [gpu-io](https://github.com/amandaghassaei/gpu-io) Examples
 
-## Simple
+## Simple Examples
 
 ### [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/)
 ![Conway's Game of Life](./gol/main.png)
