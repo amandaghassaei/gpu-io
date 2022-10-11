@@ -434,7 +434,7 @@ function main({ gui, contextID, glslVersion}) {
 	const renderPressure = renderSignedAmplitudeProgram(composer, {
 		name: 'renderPressure',
 		type: pressureState.type,
-		scale: 0.25,
+		scale: 0.5,
 		component: 'x',
 	});
 
