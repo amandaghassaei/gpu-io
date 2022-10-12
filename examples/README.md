@@ -10,7 +10,7 @@ This app simulates a simple <a href="https://en.wikipedia.org/wiki/Reaction%E2%8
 
 ### [Physarum Transport Network](https://apps.amandaghassaei.com/gpu-io/examples/physarum/)
 [![Physarum Transport Network](./physarum/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/physarum/)
-This app simulates the network effects of a multicellular slime mold (Physarum polycephalum), based on a 2010 paper by Jeff Jones: <a href="https://uwe-repository.worktribe.com/output/980579">"Characteristics of pattern formation and evolution in approximations of Physarum transport networks"</a> and work by <a href="https://cargocollective.com/sagejenson/physarum">Sage Jenson</a>.  In this simulation, particle "agents" interact with an underlying field of chemical attractants to form complex, emergent behaviors.
+This app simulates the network effects of a multicellular slime mold (Physarum polycephalum), based on a 2010 paper by Jeff Jones: <a href="https://uwe-repository.worktribe.com/output/980579">"Characteristics of pattern formation and evolution in approximations of Physarum transport networks"</a> and work by <a href="https://cargocollective.com/sagejenson/physarum">Sage Jenson</a>.  In this simulation, simple particle "agents" interact with an underlying field of chemical attractants to form complex, emergent behaviors.
 
 ### [Fluid Simulation](https://apps.amandaghassaei.com/gpu-io/examples/fluid/)
 [![Fluid Simulation](./fluid/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/fluid/)
@@ -20,7 +20,7 @@ This simulation solves the <a href="https://en.wikipedia.org/wiki/Navier%E2%80%9
 
 ### [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/)
 [![Conway's Game of Life](./gol/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/gol/)
-This is a WebGL fragment shader implementation of <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a>.
+The 1-bit cellular automata <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a>.
 
 ### [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/)
 [![Julia Set Fractal](./fractal/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/fractal/)
