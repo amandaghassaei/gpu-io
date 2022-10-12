@@ -316,7 +316,7 @@ Draw the contents of a 2 component GPULayer as a vector field.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `params` | `Object` | Draw parameters. |
-| `params.layer` | [`GPULayer`](GPULayer.md) | - |
+| `params.layer` | [`GPULayer`](GPULayer.md) | GPULayer containing vector data. |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run, defaults to drawing vector lines in red. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |

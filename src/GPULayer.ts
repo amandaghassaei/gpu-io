@@ -905,6 +905,7 @@ export class GPULayer {
 		return this._getValuesPost(_valuesRaw, _glNumChannels, _internalType);
 	}
 
+	// TODO: params.callback is not generated in the docs.
 	/**
 	 * Save the current state of this GPULayer to png.
 	 * @param params - PNG parameters.

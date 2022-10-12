@@ -1651,7 +1651,7 @@ export class GPUComposer {
 	/**
 	 * Draw the contents of a 2 component GPULayer as a vector field.
 	 * @param params - Draw parameters.
-	 * @param params.positions - GPULayer containing vector data.
+	 * @param params.layer - GPULayer containing vector data.
 	 * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
 	 * @param params.input - Input GPULayers for GPUProgram.
 	 * @param params.output - Output GPULayer, will draw to screen if undefined.
@@ -1747,6 +1747,7 @@ export class GPUComposer {
 		this._renderer.resetState();
 	}
 
+	// TODO: params.callback is not generated in the docs.
 	/**
 	 * Save the current state of the canvas to png.
 	 * @param params - PNG parameters.
