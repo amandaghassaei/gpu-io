@@ -9,7 +9,7 @@
 
 **A GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations**
 
-gpu-io is a WebGL library that helps you easily compose interactive shader programs for demanding simulation/computation applications.  This library can be used for a variety of applications, but it is especially helpful for 2D physics simulations or cellular automata, where state is stored in dense, scalar/vector fields and iteratively updated by fragment shader programs.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  gpu-io contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
+gpu-io is a WebGL library that helps you easily compose shader programs to create real-time, interactive simulations and perform other computationally-demanding tasks.  This library can be used for a variety of applications, but it is especially useful for constructing grid-based physics simulations and cellular automata, where state is stored in dense scalar/vector fields and iteratively updated by various programs/operators.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  This library contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  WebGPU support is planned in the future.
 
@@ -150,10 +150,6 @@ Please let me know if you have something that you would like to add to the Examp
 ### Install via npm
 
 `npm install github:amandaghassaei/gpu-io`
-
-(Because this repo is under active development, you may also want to include a specific commit in your install):
-
-`npm install github:amandaghassaei/gpu-io#d6c75dd`
 
 And import into your project:
 
