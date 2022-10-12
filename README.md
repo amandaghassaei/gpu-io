@@ -1,15 +1,13 @@
 # gpu-io
 
-&#9888; **Update 10/11/22: This has not been officially released, coming very soon.**
-
-<!-- [![NPM Package](https://img.shields.io/npm/v/gpu-io)](https://www.npmjs.com/package/gpu-io)
+[![NPM Package](https://img.shields.io/npm/v/gpu-io)](https://www.npmjs.com/package/gpu-io)
 [![Build Size](https://img.shields.io/bundlephobia/min/gpu-io)](https://bundlephobia.com/result?p=gpu-io)
 [![NPM Downloads](https://img.shields.io/npm/dw/gpu-io)](https://www.npmtrends.com/gpu-io)
-[![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE) -->
+[![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE)
 
 **A GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations**
 
-gpu-io is a WebGL library that helps you easily compose shader programs to create real-time, interactive simulations and perform other computationally-demanding tasks.  This library can be used for a variety of applications, but it is especially useful for constructing grid-based physics simulations and cellular automata, where state is stored in dense scalar/vector fields and iteratively updated by various programs/operators.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  This library contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
+gpu-io is a WebGL library that helps you easily compose shader programs for real-time physics simulations and other computationally-demanding tasks.  This library can be used for a variety of applications, but it is especially useful for grid-based physics simulations and cellular automata, where state is stored in dense scalar/vector fields and iteratively updated by various programs/operators.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  This library contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  WebGPU support is planned in the future.
 
