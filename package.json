@@ -1,0 +1,62 @@
+{
+  "name": "gpu-io",
+  "version": "0.1.0",
+  "description": "A GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations",
+  "keywords": [
+    "gpgpu",
+    "gpu",
+    "glsl",
+    "webgl",
+    "webgl1",
+    "webgl2",
+    "shader",
+    "physics",
+    "simulation",
+    "cellular automata"
+  ],
+  "main": "dist/gpu-io.js",
+  "types": "dist/types/index.d.ts",
+  "homepage": "https://apps.amandaghassaei.com/gpu-io/examples/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amandaghassaei/gpu-io.git"
+  },
+  "scripts": {
+    "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
+    "build": "webpack && npm run docs",
+    "docs": "typedoc --options ./typedoc.json && npm run tohtml",
+    "tohtml": "marked -i ./examples/README.md -o ./examples/index.html && concat -o ./examples/index.html ./examples/common/github-markdown-wrapper1.html ./examples/index.html ./examples/common/github-markdown-wrapper2.html"
+  },
+  "author": "Amanda Ghassaei",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/file-saver": "^2.0.3",
+    "@types/offscreencanvas": "^2019.7.0",
+    "@types/three": "^0.127.1",
+    "chai": "^4.3.6",
+    "concat": "^1.0.3",
+    "install": "^0.13.0",
+    "karma": "^6.4.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^3.1.1",
+    "karma-mocha": "^2.0.1",
+    "karma-mocha-reporter": "^2.2.5",
+    "marked": "^4.1.1",
+    "mocha": "^10.0.0",
+    "npm": "^8.19.2",
+    "three": "^0.145.0",
+    "ts-loader": "^8.4.0",
+    "typedoc": "^0.23.10",
+    "typedoc-plugin-markdown": "^3.13.6",
+    "typescript": "^4.7.4",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "@amandaghassaei/type-checks": "^1.0.0",
+    "@petamoriken/float16": "^2.0.0",
+    "changedpi": "^1.0.4",
+    "file-saver": "^2.0.5"
+  },
+  "sideEffects": false
+}

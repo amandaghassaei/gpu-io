@@ -1,0 +1,9 @@
+node_modules/
+src/DataArray-Feedback.ts
+dist/DataArray-Feedback*
+*.DS_Store
+examples/shells/*
+examples/fdtd/*
+examples/drawing/*
+examples/threejs/*
+docs/main-image.psd

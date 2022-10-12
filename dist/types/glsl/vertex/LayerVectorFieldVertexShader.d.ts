@@ -1,0 +1,1 @@
+export declare const LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE: string;

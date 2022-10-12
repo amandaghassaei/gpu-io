@@ -1,0 +1,12 @@
+{
+    "entryPoints": ["./src/index.ts"],
+    "tsconfig": "./tsconfig.json",
+	"cleanOutputDir": false,
+	"plugin": "typedoc-plugin-markdown",
+	"excludePrivate": true,
+	"readme": "none",
+	"sort": "source-order",
+	"disableSources": true,
+	"githubPages": false,
+    "out": "./docs"
+}

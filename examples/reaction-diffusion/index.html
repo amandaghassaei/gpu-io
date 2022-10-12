@@ -1,0 +1,46 @@
+<html>
+	<head>
+		<title>Reaction Diffusion</title>
+		<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+		<link rel="stylesheet" type="text/css" href="../common/dat.gui.css" />
+		<link rel="stylesheet" type="text/css" href="../common/micromodal.css" />
+		<link rel="stylesheet" type="text/css" href="../common/index.css" />
+		<script src="../common/dat.gui.min.js"></script>
+		<script src="../common/micromodal.min.js"></script>
+		<script src="../../dist/gpu-io.min.js"></script>
+	</head>
+	<body>
+		<div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
+			<div class="modal__overlay" tabindex="-1" data-micromodal-close>
+			  <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
+				<header class="modal__header">
+				  <h2 class="modal__title" id="modal-1-title">
+					Reaction Diffusion
+				  </h2>
+				  <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+				</header>
+				<main class="modal__content" id="modal-1-content">
+				  <p>
+					This app simulates a simple <a href="https://en.wikipedia.org/wiki/Reaction%E2%80%93diffusion_system">reaction-diffusion system</a>, where two virtual chemicals interact to create dynamic patterns.
+					Similar systems were proposed by <a href="https://www.dna.caltech.edu/courses/cs191/paperscs191/turing.pdf">Alan Turing in 1952</a> as a mechanism for pattern formation in plants and animals.
+					This reaction-diffusion system is particularly sensitive to two parameters: K (varies along x-axis) and F (varies along y-axis).
+					You can interactively explore regions of K,F parameter space by zooming and panning across the screen.
+					More info about ways to control these systems can be found on <a href="http://www.karlsims.com/rd.html">Karl Sims' Webpage</a>.
+					Written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
+				  </p>
+				  <p>
+					Instructions: Zoom/scroll and pan to adjust the window of K,F parameter space you want to explore.
+					Touch/drag to interact directly with the system.
+				  </p>
+				  <p>
+					This page is part of a series of examples using <a href="https://apps.amandaghassaei.com/gpu-io/examples/">gpu-io</a>, a web-based GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations.
+					Find the source code on <a id="sourceCode" href="https://github.com/amandaghassaei/gpu-io/tree/main/examples/reaction-diffusion">Github</a>.
+				  </p>
+				</main>
+			  </div>
+			</div>
+		  </div>
+	</body>
+	<script src="./index.js"></script>
+	<script src="../common/wrapper.js"></script>
+</html>

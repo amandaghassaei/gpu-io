@@ -1,0 +1,60 @@
+<html>
+	<head>
+		<title>Julia Set</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" type="text/css" href="../common/dat.gui.css" />
+		<link rel="stylesheet" type="text/css" href="../common/micromodal.css" />
+		<link rel="stylesheet" type="text/css" href="../common/index.css" />
+		<script src="../common/dat.gui.min.js"></script>
+		<script src="../common/micromodal.min.js"></script>
+		<script src="../../dist/gpu-io.min.js"></script>
+	</head>
+	<body>
+		<div class="modal micromodal-slide" id="modal-error" aria-hidden="true">
+			<div class="modal__overlay" tabindex="-1" data-micromodal-close>
+			  <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
+				<header class="modal__header">
+				  <h2 class="modal__title" id="modal-1-title">
+					Error
+				  </h2>
+				  <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+				</header>
+				<main class="modal__content" id="modal-1-content">
+				  <p>
+					Error exporting PNG, please reduce PNG Scale Factor and try again.
+				  </p>
+				</main>
+			  </div>
+			</div>
+		  </div>
+	</body>
+		<div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
+			<div class="modal__overlay" tabindex="-1" data-micromodal-close>
+			  <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
+				<header class="modal__header">
+				  <h2 class="modal__title" id="modal-1-title">
+					2D Fractal Rendering - Julia Set
+				  </h2>
+				  <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+				</header>
+				<main class="modal__content" id="modal-1-content">
+				  <p>
+					This app renders 2D <a href="https://en.wikipedia.org/wiki/Julia_set">Julia set</a> fractals for a variety of input parameters using a WebGL fragment shader.
+					Written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
+				  </p>
+				  <p>
+					Instructions: Zoom/scroll and pan to explore each fractal's structure.
+					Adjust "C Real" and "C Imaginary" to generate different Julia sets, and increase "Max Iters" to see more detail in the brightest regions.
+				  </p>
+				  <p>
+					This page is part of a series of examples using <a href="https://apps.amandaghassaei.com/gpu-io/examples/">gpu-io</a>, a web-based GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations.
+					Find the source code on <a id="sourceCode" href="https://github.com/amandaghassaei/gpu-io/tree/main/examples/fractal">Github</a>.
+				  </p>
+				</main>
+			  </div>
+			</div>
+		  </div>
+	</body>
+	<script src="./index.js"></script>
+	<script src="../common/wrapper.js"></script>
+</html>

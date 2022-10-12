@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gpu-io -  GPULayer writes</title>
+    <link rel="stylesheet" type="text/css" href="./browser/deps/micromodal.css">
+	  <link rel="stylesheet" type="text/css" href="./browser/main.css">
+  </head>
+  <body>
+  <div id="output">
+    <div id="title"><span class="pending">Testing </span>GPULayer <span id="testTitle">READWRITE</span><span class="pending">...</span></div>
+    <div id="info"></div>
+  </div>
+  <script src="./browser/deps/dom-to-image.min.js"></script>
+  <script src="./browser/deps/micromodal.min.js"></script>
+  <script src="./browser/deps/browser-report.js"></script>
+  <script src="./browser/deps/float16.js"></script>
+  <script src="../dist/gpu-io.js"></script>
+  <script src="./browser/main.js"></script>
+  <script src="./common/utils.js"></script>
+  <script src="./common/ReadWrite.js"></script>
+	<script>
+    makeTable(testLayerWrites);
+  </script>
+  </body>
+</html>

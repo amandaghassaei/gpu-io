@@ -1,0 +1,107 @@
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	min-width: 960px;
+}
+
+canvas {
+	display: none;
+}
+
+#output {
+	min-width: 930px;
+	display: inline-block;
+	padding-bottom: 5px;
+	background: white;
+}
+
+#title {
+	display: block;
+    margin: 10px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+#info {
+	display: block;
+	max-width: 900px;
+	margin: 10px;
+}
+
+a, a:link, a:visited, a:hover, a:active {
+	text-decoration: none;
+	background-color: transparent;
+	color: black;
+}
+#saveImage {
+	text-decoration: underline;
+	color: blue;
+}
+
+.container {
+	margin: 10px;
+	margin-right: 0px;
+}
+.label {
+	width: 20px;
+	position: relative;
+	margin: 0 5px;
+	height: 160px;
+}
+.label>div {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+}
+.rotate {
+	-moz-transform: translateX(-50%) translateY(-50%) rotate(-90deg);
+	-webkit-transform: translateX(-50%) translateY(-50%) rotate(-90deg);
+	transform:  translateX(-50%) translateY(-50%) rotate(-90deg);
+}
+.label, .container, .column, .column-title, .outerTable {
+	display: inline-block;
+}
+
+.outerTable {
+	border: solid 1px #444;
+	margin-right: 10px;
+}
+
+.outerTable-title {
+	text-align: center;
+}
+.column-title {
+	text-align: right;
+	border: solid 1px #444;
+	margin-right: -2px;
+}
+.column .entry {
+	text-align: center;
+}
+.entry {
+	padding: 5px;
+	min-height: 15px;
+	line-height: 15px;
+	border: solid 1px #444;
+	font-size: 14px;
+}
+.header {
+	height: 30px;
+	padding-left:8px;
+	padding-right:8px;
+}
+.bold {
+	font-weight: 900;
+}
+.success {
+	background-color: lightgreen;
+}
+.warning {
+	background-color: lightyellow;
+}
+.error {
+	background-color: lightpink;
+}
+.log {
+	background-color: white;
+}
