@@ -90,6 +90,8 @@ function main({ gui, contextID, glslVersion}) {
 				// 	}
 				// }
 				// The following lines give the same result without conditionals.
+				// Using bitwiseAnd8() rather than & operator for GLSL1 support:
+				// https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md#operators
 				lowp uint mask = bitwiseAnd8((u_survivalRules * uint(state) + u_birthRules * uint(1 - state)), uint(bitshiftLeft(1, numLiving - 1)));
 				state = min(int(mask), 1);
 

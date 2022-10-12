@@ -1,6 +1,6 @@
 # GLSL1 Support
 
-OpenGL Shading Language (GLSL) is the language used for writing vertex and fragment shader code in WebGL.  WebGL2 supports a newer version of GLSL called GLSL3, whereas WebGL1 only supports GLSL1.  GLSL3 provides new types, operators, and functions that were not previously supported by GLSL1 and has a slightly different syntax for importing/exporting data from shader programs.
+OpenGL Shading Language (GLSL) is the language used for writing vertex and fragment shader code in WebGL.  WebGL2 supports a newer version of GLSL called GLSL3, while WebGL1 only supports GLSL1.  GLSL3 provides new types, operators, and functions that were not previously supported by GLSL1 and has a slightly different syntax for importing/exporting data from shader programs.
 
 More info about the difference between GLSL and WebGL versions:
 
@@ -10,7 +10,7 @@ More info about the difference between GLSL and WebGL versions:
 - [WebGL2 from WebGL1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html) by [webgl2fundamentals.org](https://webgl2fundamentals.org/)
 - [WebGL Report](https://webglreport.com/?v=2) by Cesium
 
-When necessary, gpu-io will attempt to automatically convert GLSL3 shaders to GLSL1 so that they can be run in browsers that only support WebGL1.  This simplifies the process of developing an application by removing the burden of managing multiple sets of shaders targeting different GLSL versions.  All of the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) in this repository run in both WebGL2 and WebGL1; you can test this for yourself using the WebGL controls menu:
+When necessary, gpu-io will attempt to automatically convert GLSL3 shaders to GLSL1 so that they can be run in browsers that only support WebGL1.  This simplifies the process of developing an application by removing the burden of managing multiple sets of shaders targeting different GLSL versions.  All of the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) in this repository run in both WebGL2 and WebGL1; you can test this for yourself using the WebGL controls menu in each example application:
 
 ![WebGL setting controls](./imgs/WebGLControls.png)
 
@@ -34,9 +34,9 @@ In 2022 WebGL2 was finally rolled out to all major platforms (including iOS, the
 
 - All unsigned integer types (`uint`, `uvec2`, `uvec3`, `uvec4`, `usampler2D`) are automatically converted to signed integer types (`int`, `ivec2`, `ivec3`, `ivec4`, `isampler2D`) when targeting GLSL1.
 - The only texture lookup function officially supported by gpu-io is `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)`.  Currently, the bias parameter is not supported.  Other built-in GLSL1 texture lookup functions may also work, but have not been tested.
-- `out float|int|[u|i]vec(2|3|4)` declarations are automatically converted to `gl_FragColor` when targeting GLSL1; these variables will be typecast and padded with extra zeros if needed to convert them to a `vec4` type.  Additionally, gpu-io interprets the `layout` and `location` declarations for shader programs with multiple outputs so that they will work as expected in GLSL1 using a WebGL1-compatible fallback.
+- `out float|int|[u|i]vec(2|3|4)` declarations are automatically converted to `gl_FragColor` when targeting GLSL1; these variables will be typecast and padded with extra zeros if needed to convert them to a `vec4` type.  Additionally, gpu-io interprets the `layout` and `location` declarations for shader programs with multiple outputs so that they will work as expected in GLSL1 using a WebGL1-compatible fallback.  You can test this by running the [Physarum Example](https://apps.amandaghassaei.com/gpu-io/examples/physarum/) in GLSL1, which uses multiple outputs in one of its simulation steps.
 
-More information about the implementation can be found in [regex.ts](../src/regex.ts) and [polyfills.ts](../src/polyfills.ts).  Pull requests welcome, I'm sure there are ways to speed some of these functions up.  The [bitwise logical operators](#operators) are particularly in need of help, as they include branching conditional statements.
+More information about the implementation can be found in [regex.ts](../src/regex.ts) and [polyfills.ts](../src/polyfills.ts).  Pull requests welcome, I'm sure there are ways to speed some of these functions up.  The GLSL1 [bitwise logical operators](#operators) are particularly in need of help, as they include branching conditional statements.
 
 Type annotations used in function descriptions:
 
@@ -89,7 +89,7 @@ Because operator overloading does not seem to be supported through GLSL1, I've c
 
 ## Built-In Functions
 
-gpu-io contains GLSL1 polyfills for many GLSL3 built-in functions (pages 7-8 in the [WebGL2 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl20-reference-guide.pdf)).  Along with the built-in functions described the in the WebGL1/GLSL1 spec (page 4 in the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf)), the following functions are available to GLSL1 fragment shader programs:
+gpu-io contains GLSL1 polyfills for many GLSL3 built-in functions (pages 7-8 in the [WebGL2 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl20-reference-guide.pdf) ).  Along with the built-in functions described the in the WebGL1/GLSL1 spec (page 4 in the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) ), the following functions are available to GLSL1 fragment shader programs:
 
 ### Common Functions
 

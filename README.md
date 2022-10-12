@@ -8,7 +8,7 @@
 
 **A GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations**
 
-gpu-io is a WebGL library that helps you easily compose shader programs for real-time physics simulations and other computationally-demanding tasks.  This library can be used for a variety of applications, but it is especially useful for grid-based physics simulations and cellular automata, where state is stored in dense scalar/vector fields and iteratively updated by various programs/operators.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  This library contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
+gpu-io is a WebGL library that helps you easily compose shader programs for real-time physics simulations and other computationally demanding tasks.  This library can be used for a variety of applications, but it is especially useful for grid-based physics simulations and cellular automata, where state is stored in dense scalar/vector fields and iteratively updated by various programs/operators.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  This library contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  WebGPU support is planned in the future.
 
@@ -17,7 +17,7 @@ Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so 
 
 The main motivation behind gpu-io is to make it easier to compose GPU-accelerated applications without worrying too much about low-level WebGL details.  This library manages WebGL state, implements shader and program caching, and deals with issues of available WebGL versions or spec inconsistencies across different browsers/hardware.  It should significantly cut down on the amount of boilerplate code and state management you need to do in your applications.  At the same time, gpu-io gives you enough low-level control to write extremely efficient programs for demanding simulation applications.
 
-[As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge) - but even among WebGL2 implementations, there are differences in behavior across browsers (especially mobile).  Additionally, you may still come across non-WebGL2 enabled browsers in the wild for some time.  gpu-io rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  gpu-io will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that it can run on WebGL1 in a pinch. See [tests/README.md](https://github.com/amandaghassaei/gpu-io/tree/main/tests#browser-support) for more information on browser support.
+[As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge) - but even among WebGL2 implementations, there are differences in behavior across browsers (especially mobile).  Additionally, you may still come across non-WebGL2 enabled browsers in the wild for some time.  gpu-io rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  gpu-io will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that they can run on WebGL1 in a pinch. See [tests/README.md](https://github.com/amandaghassaei/gpu-io/tree/main/tests#browser-support) for more information on browser support.
 
 - [Use](#use)
 - [Examples](#examples)
@@ -104,7 +104,7 @@ const diffuseProgram = new GPUProgram(composer, {
 	],
 });
 
-// Init a program to render state to screen.
+// Init a program to render state to canvas.
 // See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions for more built-in GPUPrograms to use.
 const renderProgram = renderAmplitudeProgram(composer, {
 	name: 'render',
@@ -123,7 +123,7 @@ function loop() {
 		output: state,
 	});
 
-	// If no "output", will draw to screen.
+	// If no "output", will draw to canvas.
 	composer.step({
 		program: renderProgram,
 		input: state,
@@ -132,7 +132,7 @@ function loop() {
 loop(); // Start animation loop.
 ```
 
-[Demo this code](https://apps.amandaghassaei.com/gpu-io/examples/demo/) - You should see the noise blur, refresh the page to start it over.
+[Demo this code](https://apps.amandaghassaei.com/gpu-io/examples/demo/) - You should see the noise slowly blur, refresh the page to start it over.
 
 
 ## Examples
@@ -140,14 +140,14 @@ loop(); // Start animation loop.
 Check out the [Examples page](https://apps.amandaghassaei.com/gpu-io/examples/) to really understand how gpu-io works and how to easily create touch interactions in your application.
 Source code for all examples can be found in the [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples) folder.
 
-Please let me know if you have something that you would like to add to the Examples page!
+Please let me know if you have something that you would like to add to the examples page!
 
 
 ## Installation
 
 ### Install via npm
 
-`npm install github:amandaghassaei/gpu-io`
+`npm install gpu-io`
 
 And import into your project:
 
@@ -178,7 +178,7 @@ const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
 
 ## API
 
-Full API documentation can be found in the [docs/](https://github.com/amandaghassaei/gpu-io/tree/main/docs)
+Full API documentation can be found in the [docs/](https://github.com/amandaghassaei/gpu-io/tree/main/docs).
 
 More information about writing GLSL shaders for gpu-io can be found at [docs/GLSL](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL.md).
 
@@ -198,16 +198,13 @@ const renderer = new THREE.WebGLRenderer();
 // on top of things rendered to the screen from gpu-io.
 renderer.autoClear = false;
 
-const gl = renderer.getContext();
-const canvas = renderer.domElement;
-
 const composer = GPUIO.GPUComposer.initWithThreeRenderer(renderer);
 ```
 
-To use the output from a gpu-io GPULayer to a Threejs Texture:
+To bind a GPULayer to a Threejs Texture:
 
 ```js
-const layer1 = new GPUIO.GPULayer({
+const layer1 = new GPUIO.GPULayer(composer, {
     name: 'layer1',
     dimensions: [100, 100],
     type: GPUIO.UNSIGNED_BYTE,
@@ -312,18 +309,18 @@ gpu-io will automatically convert any GLSL3 shaders to GLSL1 when targeting WebG
 
 ### Transform Feedback
 
-You might notice that gpu-io does not use any transform feedback to handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is totally possible to perform these types of simulations using gpu-io (see [Examples](https://apps.amandaghassaei.com/gpu-io/examples/)), but currently all the computation happens in a fragment shader.  There are a few reasons for this:
+You might notice that gpu-io does not use any transform feedback to handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is still possible to perform these types of simulations using gpu-io (see [Examples](https://apps.amandaghassaei.com/gpu-io/examples/)), but currently all the computation happens in a fragment shader.  There are a few reasons for this:
 
 - The main use case for gpu-io is to operate on 2D spatially-distributed state (i.e. fields) stored in textures using fragment shaders.  There is additional support for 1D arrays and lines/particles, but that is secondary functionality.
 - Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, for now I'd like to support all functionality in gpu-io in WebGL1/GLSL1 as well.
-- Fragment-shader only is a simpler API.
+- The API is simpler if we constrain computations in the fragment shader only.
 
 My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch by default in some browsers, and then re-evaluate some of the design decisions made in gpu-io.  WebGL puts artificial constraints on the current API by forcing general-purpose computing to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term, and using transform feedback feels like a step backwards at this point.
 
 
 ### Precision
 
-By default all shaders in gpu-io are inited with highp precision floats and ints, but it falls back to mediump if highp is not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.ts](https://github.com/amandaghassaei/gpu-io/blob/main/src/glsl/common/precision.ts).
+By default all shaders in gpu-io are inited with highp precision floats and ints, but they will fall back to mediump if highp is not available (this is the same convention used by Threejs).  More info in [src/glsl/common/precision.ts](https://github.com/amandaghassaei/gpu-io/blob/main/src/glsl/common/precision.ts).
 
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
 ```js
@@ -403,6 +400,7 @@ Other resources:
 
 This work is distributed under an MIT license.  Note that gpu-io depends on a few npm packages:
 
+- [@amandaghassaei/type-checks](https://www.npmjs.com/package/@amandaghassaei/type-checks) - MIT license, no dependencies.
 - [@petamoriken/float16](https://www.npmjs.com/package/@petamoriken/float16) - MIT license, no dependencies.
 - [changedpi](https://www.npmjs.com/package/changedpi) - MIT license, no dependencies.
 - [file-saver](https://www.npmjs.com/package/file-saver) - MIT license, no dependencies.
@@ -410,7 +408,7 @@ This work is distributed under an MIT license.  Note that gpu-io depends on a fe
 
 ## Development
 
-Update 9/22:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more info about how to use this library.
+Update 10/2022:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more info about how to use this library.
 
 Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://twitter.com/amandaghassaei) if you end up using this, I'd love to see what you're making!  
 
@@ -425,7 +423,7 @@ npm run build
 ```
 
 
-### Testing
+### Automated Testing
 
 I'm using mocha + karma + chai + headless Chrome to test the components of gpu-io, following the setup described in [Automated testing with Headless Chrome](https://developer.chrome.com/blog/headless-karma-mocha-chai/).  Those tests are located in [tests/mocha/](https://github.com/amandaghassaei/gpu-io/blob/main/tests/mocha/).  To run the automated tests, use:
 
@@ -435,19 +433,10 @@ npm run test
 
 The automated tests do not get full code coverage yet, but I'm planning to add to them when I go back to implement WebGPU features in this library.
 
-I've also included an html page (at [tests/index.html](https://github.com/amandaghassaei/gpu-io/blob/main/tests/index.html)) for testing various functions of this library in a browser/hardware combo of your choice.  This page is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](https://apps.amandaghassaei.com/gpu-io/tests/).
+### Browser/Device Testing
+
+I've also included a webpage for testing various functions of this library in a browser/hardware combo of your choice.  This page is current hosted at [apps.amandaghassaei.com/gpu-io/tests/](https://apps.amandaghassaei.com/gpu-io/tests/).
 
 Note: The detected OS and browser version may not always be 100% accurate.
-
-To run these tests locally:
-
-```
-npm install
-npm run build
-npm install http-server
-node node_modules/http-server/bin/http-server
-```
-
-In a browser navigate to `http://127.0.0.1:8080/tests/` to view test page.
 
 See [tests/README#browser-support](./tests/README.md#browser-support) for results of various browser/hardware combos.
