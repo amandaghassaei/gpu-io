@@ -1,12 +1,13 @@
 {
   "name": "gpu-io",
-  "version": "0.0.1",
-  "description": "A GPU computing library for WebGL",
+  "version": "0.1.0",
+  "description": "A GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations",
   "keywords": [
     "gpgpu",
     "gpu",
     "glsl",
     "webgl",
+	"webgl1",
     "webgl2",
     "shader",
     "physics",
@@ -15,6 +16,7 @@
   ],
   "main": "dist/gpu-io.js",
   "types": "dist/types/index.d.ts",
+  "homepage": "https://apps.amandaghassaei.com/gpu-io/examples/",
   "repository": {
     "type": "git",
     "url": "https://github.com/amandaghassaei/gpu-io.git"
