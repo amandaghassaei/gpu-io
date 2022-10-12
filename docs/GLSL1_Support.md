@@ -89,7 +89,7 @@ Because operator overloading does not seem to be supported through GLSL1, I've c
 
 ## Built-In Functions
 
-gpu-io contains GLSL1 polyfills for many GLSL3 built-in functions (pages 7-8 in the [WebGL2 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl20-reference-guide.pdf) ).  Along with the built-in functions described the in the WebGL1/GLSL1 spec (page 4 in the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) ), the following functions are available to GLSL1 fragment shader programs:
+gpu-io contains GLSL1 polyfills for many GLSL3 built-in functions (pages 7-8 in the [WebGL2 Reference Card](https://www.khronos.org/files/webgl20-reference-guide.pdf)).  Along with the built-in functions described the in the WebGL1/GLSL1 spec (page 4 in the [WebGL1 Reference Card](https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf)), the following functions are available to GLSL1 fragment shader programs:
 
 ### Common Functions
 
@@ -196,7 +196,7 @@ The following GLSL3 functions are currently NOT available to GLSL1 fragment shad
 
 ### Texture Lookup Functions
 
-- All texture lookup functions other than `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)` are not officially supported by this library.  Most of them probably still work, but none of have been tested.  See the [WebGL1 Reference Card](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) to find out what is supported in GLSL1.
+- All texture lookup functions other than `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)` are not officially supported by this library.  Most of them probably still work, but none of have been tested.  See the [WebGL1 Reference Card](https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) to find out what is supported in GLSL1.
 
 ### Fragment Processing Functions
 
