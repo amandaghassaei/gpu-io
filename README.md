@@ -1,4 +1,5 @@
 # gpu-io
+![gpu-io main image](./docs/main-image.jpg)
 
 [![NPM Package](https://img.shields.io/npm/v/gpu-io)](https://www.npmjs.com/package/gpu-io)
 [![Build Size](https://img.shields.io/bundlephobia/min/gpu-io)](https://bundlephobia.com/result?p=gpu-io)
