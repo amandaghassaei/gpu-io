@@ -252,7 +252,7 @@ void main() {
 }
 ```
 
-OR use compile-time constants:
+OR use compile-time constants (see the [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/) for an example of this.):
 
 ```js
 // JavaScript

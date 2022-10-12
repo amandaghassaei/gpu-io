@@ -25,7 +25,7 @@ There may be additional inputs available depending on how the fragment shader pr
 
 ## Fragment Shader Outputs
 
-gpu-io supports rendering to multiple GPULayers from a single GPUProgram using the `layout` and `location` declarations.  This functionality will continue to work when gpu-io converts your GLSL3 code to GLSL1 for WebGL1.
+gpu-io supports rendering to multiple GPULayers from a single GPUProgram using the `layout` and `location` declarations.  This functionality will continue to work when gpu-io converts your GLSL3 code to GLSL1 for WebGL1.  You can test this by running the [Physarum Example](https://apps.amandaghassaei.com/gpu-io/examples/physarum/) in GLSL1, which uses multiple outputs in one of its simulation steps.
 
 
 ## Helper Functions
