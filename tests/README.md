@@ -20,7 +20,7 @@ Note: The detected OS and browser version may not always be 100% accurate.
 
 ## Browser Support
 
-Here are some results I've gathered testing different combinations of hardware/browsers.  All tests are passing, but some combinations require a fragment shader polyfill (indicated by a `*`) to achieve the desired WRAP/FILTER combination, and others fall back on data types that do not fully cover the range of values expected in the desired type (e.g. using FLOAT types instead of INT types, FLOAT only covers integers in the range [-16,777,216, 16,777,216.], while INT covers the range [-2,147,483,648, 2,147,483,647]).
+Here are some results I've gathered testing different combinations of hardware/browsers.  All tests are passing, but some combinations require a fragment shader polyfill (indicated by a `*`) to achieve the desired WRAP/FILTER combination, and others (indicated in yellow) fall back on internal data types that do not fully cover the range of values expected in the desired type (e.g. using FLOAT types instead of INT types, FLOAT only covers integers in the range [-16,777,216, 16,777,216.], while INT covers the range [-2,147,483,648, 2,147,483,647]).
 
 
 ### Mac
@@ -35,7 +35,7 @@ Here are some results I've gathered testing different combinations of hardware/b
 ### iOS
 
 - iOS v15.6.1 + Safari v15.6.1 [results](results/READWRITE_Safari_v15.6.1_iOS_v15.6.1.png)
-    - iPhones
+    - iPhone
     - (WebGL1 only) iOS v14.7.1 + Safari v14.1.2  [results](results/READWRITE_Safari_v14.1.2_iOS_v14.7.1.png)
 - iPadOS v15.6.1 + Safari v15.6.1 [results](results/READWRITE_Safari_v15.6.1_ipadOS_v15.6.1.png)
     - iPad, iPad Air, iPad Pro, iPad Mini
@@ -45,9 +45,9 @@ Here are some results I've gathered testing different combinations of hardware/b
 ### Windows
 
 - Windows 11.0 + Edge (Chromium) v105.0.0.0 [results](results/READWRITE_Chrome_v105.0.0.0_Windows_v11.0.png)
-    - Galaxy Book2 Pro, Galaxy Book Flex2 Alpha
+    - Surface Laptop 4, Galaxy Book2 Pro, Galaxy Book Flex2 Alpha
     - Note: Microsoft Edge is running Chromium internally, which is why it shows up as Chrome.
 
 
 ### Android
-
+    
