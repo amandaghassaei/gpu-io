@@ -33,16 +33,16 @@ The main motivation behind gpu-io is to make it easier to compose GPU-accelerate
 A simple example of how to use gpu-io to simulate 2D diffusion:
 
 ```js
-import {
-    GPUComposer,
-    GPULayer,
-    GPUProgram,
-    renderAmplitudeProgram,
-    FLOAT,
-    INT,
-    REPEAT,
-    LINEAR,
-} from 'gpu-io';
+const {
+	GPUComposer,
+	GPULayer,
+	GPUProgram,
+	renderAmplitudeProgram,
+	FLOAT,
+	INT,
+	REPEAT,
+	LINEAR,
+} = GPUIO;
 
 // Init a canvas element.
 const canvas = document.createElement('canvas');
@@ -51,83 +51,82 @@ document.body.appendChild(canvas);
 // Init a composer.
 const composer = new GPUComposer({ canvas });
 
-// Init a GPULayer of float data filled with noise.
+// Init a layer of float data filled with noise.
 const noise = new Float32Array(canvas.width * canvas.height);
 noise.forEach((el, i) => noise[i] = Math.random());
 const state = new GPULayer(composer, {
-    name: 'state',
-    dimensions: [canvas.width, canvas.height],
-    numComponents: 1, // Scalar field.
-    type: FLOAT,
-    filter: LINEAR, // Linear interpolation.
-    numBuffers: 2, // Toggle read/write from one buffer to the other.
-    wrapX: REPEAT, // Wrap boundaries.
-    wrapY: REPEAT,
-    array: noise, // Initial value.
+	name: 'state',
+	dimensions: [canvas.width, canvas.height],
+	numComponents: 1,
+	type: FLOAT,
+	filter: LINEAR,
+	numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
+	wrapX: REPEAT,
+	wrapY: REPEAT,
+	array: noise,
 });
 
 // Init a program to diffuse state.
 const diffuseProgram = new GPUProgram(composer, {
-    name: 'render',
-    fragmentShader: `
-// Don't worry about declaring #version or precision here
-// gpu-io takes care of that for you.
-in vec2 v_uv;
+	name: 'render',
+	fragmentShader: `
+		in vec2 v_uv;
 
-uniform sampler2D u_state;
-uniform vec2 u_halfPx;
+		uniform sampler2D u_state;
+		uniform vec2 u_pxSize;
 
-out float out_result;
+		out float out_result;
 
-void main() {
-    // Average this pixel with neighbors.
-    // Use built-in linear filtering to reduce the number of lookups.
-    float prevStateNE = texture(u_state, v_uv + u_halfPx).x;
-    float prevStateNW = texture(u_state, v_uv + vec2(-u_halfPx.x, u_halfPx.y)).x;
-    float prevStateSE = texture(u_state, v_uv + vec2(u_halfPx.x, -u_halfPx.y)).x;
-    float prevStateSW = texture(u_state, v_uv - u_halfPx).x;
-    out_result = (prevStateNE + prevStateNW + prevStateSE + prevStateSW) / 4.0;
-}
-`,
-    uniforms: [
-        { // Index of GPULayer "state" in composer.step() "input" array.
-            name: 'u_state',
-            value: 0,
-            type: INT,
-        },
-        { // Calculate the size of a half px step in UV coordinates.
-            name: 'u_halfPx',
-            value: [0.5 / canvas.width, 0.5 / canvas.height],
-            type: FLOAT,
-        },
-    ],
+		void main() {
+			// Compute the discrete Laplacian.
+			// https://en.wikipedia.org/wiki/Discrete_Laplace_operator
+			float center = texture(u_state, v_uv).x;
+			float n = texture(u_state, v_uv + vec2(0, u_pxSize.y)).x;
+			float s = texture(u_state, v_uv - vec2(0, u_pxSize.y)).x;
+			float e = texture(u_state, v_uv + vec2(u_pxSize.x, 0)).x;
+			float w = texture(u_state, v_uv - vec2(u_pxSize.x, 0)).x;
+			float diffusionRate = 0.1;
+			out_result = center + diffusionRate * (n + s + e + w - 4.0 * center);
+		}
+	`,
+	uniforms: [
+		{ // Index of sampler2D uniform to assign to value "u_state".
+			name: 'u_state',
+			value: 0,
+			type: INT,
+		},
+		{ // Calculate the size of a 1 px step in UV coordinates.
+			name: 'u_pxSize',
+			value: [1 / canvas.width, 1 / canvas.height],
+			type: FLOAT,
+		},
+	],
 });
 
-// Init a program to render "state" to screen.
-// See docs/README#gpuprogram-helper-functions for more built-in GPUPrograms.
+// Init a program to render state to screen.
+// See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions for more built-in GPUPrograms to use.
 const renderProgram = renderAmplitudeProgram(composer, {
-    name: 'render',
-    type: state.type,
-    components: 'x', // "state" is a scalar field, only has an x component.
+	name: 'render',
+	type: state.type,
+	components: 'x',
 });
 
 // Simulation/render loop.
 function loop() {
-    window.requestAnimationFrame(loop);
+	window.requestAnimationFrame(loop);
 
-    // Diffuse "state" and write result to "state".
-    composer.step({
-        program: diffuseProgram,
-        input: state, // "input" can be a single GPULayer or an array of GPULayers.
-        output: state, // "output" can be a single GPULayer or an array of GPULayers.
-    });
+	// Diffuse state and write result to state.
+	composer.step({
+		program: diffuseProgram,
+		input: state,
+		output: state,
+	});
 
-    // Render state.
-    composer.step({
-        program: renderProgram,
-        input: state,
-        // If no "output", will draw to screen.
-    });
+	// If no "output", will draw to screen.
+	composer.step({
+		program: renderProgram,
+		input: state,
+	});
 }
 loop(); // Start animation loop.
 ```
