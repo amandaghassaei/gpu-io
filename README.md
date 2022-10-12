@@ -35,14 +35,14 @@ A simple example of how to use gpu-io to simulate 2D diffusion:
 
 ```js
 const {
-	GPUComposer,
-	GPULayer,
-	GPUProgram,
-	renderAmplitudeProgram,
-	FLOAT,
-	INT,
-	REPEAT,
-	LINEAR,
+  GPUComposer,
+  GPULayer,
+  GPUProgram,
+  renderAmplitudeProgram,
+  FLOAT,
+  INT,
+  REPEAT,
+  LINEAR,
 } = GPUIO;
 
 // Init a canvas element.
@@ -56,79 +56,79 @@ const composer = new GPUComposer({ canvas });
 const noise = new Float32Array(canvas.width * canvas.height);
 noise.forEach((el, i) => noise[i] = Math.random());
 const state = new GPULayer(composer, {
-	name: 'state',
-	dimensions: [canvas.width, canvas.height],
-	numComponents: 1,
-	type: FLOAT,
-	filter: LINEAR,
-	numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
-	wrapX: REPEAT,
-	wrapY: REPEAT,
-	array: noise,
+  name: 'state',
+  dimensions: [canvas.width, canvas.height],
+  numComponents: 1,
+  type: FLOAT,
+  filter: LINEAR,
+  numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
+  wrapX: REPEAT,
+  wrapY: REPEAT,
+  array: noise,
 });
 
 // Init a program to diffuse state.
 const diffuseProgram = new GPUProgram(composer, {
-	name: 'render',
-	fragmentShader: `
-		in vec2 v_uv;
+  name: 'render',
+  fragmentShader: `
+    in vec2 v_uv;
 
-		uniform sampler2D u_state;
-		uniform vec2 u_pxSize;
+    uniform sampler2D u_state;
+    uniform vec2 u_pxSize;
 
-		out float out_result;
+    out float out_result;
 
-		void main() {
-			// Compute the discrete Laplacian.
-			// https://en.wikipedia.org/wiki/Discrete_Laplace_operator
-			float center = texture(u_state, v_uv).x;
-			float n = texture(u_state, v_uv + vec2(0, u_pxSize.y)).x;
-			float s = texture(u_state, v_uv - vec2(0, u_pxSize.y)).x;
-			float e = texture(u_state, v_uv + vec2(u_pxSize.x, 0)).x;
-			float w = texture(u_state, v_uv - vec2(u_pxSize.x, 0)).x;
-			float diffusionRate = 0.1;
-			out_result = center + diffusionRate * (n + s + e + w - 4.0 * center);
-		}
-	`,
-	uniforms: [
-		{ // Index of sampler2D uniform to assign to value "u_state".
-			name: 'u_state',
-			value: 0,
-			type: INT,
-		},
-		{ // Calculate the size of a 1 px step in UV coordinates.
-			name: 'u_pxSize',
-			value: [1 / canvas.width, 1 / canvas.height],
-			type: FLOAT,
-		},
-	],
+    void main() {
+      // Compute the discrete Laplacian.
+      // https://en.wikipedia.org/wiki/Discrete_Laplace_operator
+      float center = texture(u_state, v_uv).x;
+      float n = texture(u_state, v_uv + vec2(0, u_pxSize.y)).x;
+      float s = texture(u_state, v_uv - vec2(0, u_pxSize.y)).x;
+      float e = texture(u_state, v_uv + vec2(u_pxSize.x, 0)).x;
+      float w = texture(u_state, v_uv - vec2(u_pxSize.x, 0)).x;
+      float diffusionRate = 0.1;
+      out_result = center + diffusionRate * (n + s + e + w - 4.0 * center);
+    }
+  `,
+  uniforms: [
+    { // Index of sampler2D uniform to assign to value "u_state".
+      name: 'u_state',
+      value: 0,
+      type: INT,
+    },
+    { // Calculate the size of a 1 px step in UV coordinates.
+      name: 'u_pxSize',
+      value: [1 / canvas.width, 1 / canvas.height],
+      type: FLOAT,
+    },
+  ],
 });
 
 // Init a program to render state to canvas.
 // See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions
 // for more built-in GPUPrograms to use.
 const renderProgram = renderAmplitudeProgram(composer, {
-	name: 'render',
-	type: state.type,
-	components: 'x',
+  name: 'render',
+  type: state.type,
+  components: 'x',
 });
 
 // Simulation/render loop.
 function loop() {
-	window.requestAnimationFrame(loop);
+  window.requestAnimationFrame(loop);
 
-	// Diffuse state and write result to state.
-	composer.step({
-		program: diffuseProgram,
-		input: state,
-		output: state,
-	});
+  // Diffuse state and write result to state.
+  composer.step({
+    program: diffuseProgram,
+    input: state,
+    output: state,
+  });
 
-	// If no "output", will draw to canvas.
-	composer.step({
-		program: renderProgram,
-		input: state,
-	});
+  // If no "output", will draw to canvas.
+  composer.step({
+    program: renderProgram,
+    input: state,
+  });
 }
 loop(); // Start animation loop.
 ```
@@ -163,11 +163,11 @@ import { GPUComposer, GPULayer, GPUProgram } from 'gpu-io';
 
 ```html
 <html>
-    <head>
-        <script src="gpu-io.js"></script>
-    </head>
-    <body>
-    </body>
+  <head>
+    <script src="gpu-io.js"></script>
+  </head>
+  <body>
+  </body>
 </html>
 ```
 
@@ -206,34 +206,34 @@ To bind a GPULayer to a Threejs Texture:
 
 ```js
 const layer1 = new GPUIO.GPULayer(composer, {
-    name: 'layer1',
-    dimensions: [100, 100],
-    type: GPUIO.UNSIGNED_BYTE,
-    numComponents: 1,
-    wrapX: GPUIO.CLAMP_TO_EDGE,
-    wrapY: GPUIO.CLAMP_TO_EDGE,
-    filter: GPUIO.NEAREST,
-    numBuffers: 1,
+  name: 'layer1',
+  dimensions: [100, 100],
+  type: GPUIO.UNSIGNED_BYTE,
+  numComponents: 1,
+  wrapX: GPUIO.CLAMP_TO_EDGE,
+  wrapY: GPUIO.CLAMP_TO_EDGE,
+  filter: GPUIO.NEAREST,
+  numBuffers: 1,
 });
 
 const texture = new THREE.Texture(
-    renderer.domElement,
-    undefined,
-    THREE.ClampToEdgeWrapping,
-    THREE.ClampToEdgeWrapping,
-    THREE.NearestFilter,
-    THREE.NearestFilter,
-    THREE.RGBFormat,
-    THREE.UnsignedByteType,
+  renderer.domElement,
+  undefined,
+  THREE.ClampToEdgeWrapping,
+  THREE.ClampToEdgeWrapping,
+  THREE.NearestFilter,
+  THREE.NearestFilter,
+  THREE.RGBFormat,
+  THREE.UnsignedByteType,
 );
 // Link webgl texture to threejs object.
 layer1.attachToThreeTexture(texture);
 
 const mesh = new THREE.Mesh(
-    new PlaneBufferGeometry(1, 1),
-    new MeshBasicMaterial({
-        map: offsetTextureThree,
-    }),
+  new PlaneBufferGeometry(1, 1),
+  new MeshBasicMaterial({
+    map: offsetTextureThree,
+  }),
 );
 
 // Updates to layer1 will propagate to mesh map without any
@@ -260,21 +260,21 @@ uniform sampler2D u_sampler2;
 out vec4 out_result;
 
 vec4 lookupSampler2(vec2 uv) {
-    // This is good, it passes u_sampler2 directly to texture().
-    return texture(u_sampler2, uv);
+  // This is good, it passes u_sampler2 directly to texture().
+  return texture(u_sampler2, uv);
 }
 
 vec4 lookupSampler(sampler2D sampler, vec2 uv) {
-    // At compile time it is hard to say which sampler is passed to texture().
-    // This will not be polyfilled, it will throw a warning.
-    return texture(sampler, uv);
+  // At compile time it is hard to say which sampler is passed to texture().
+  // This will not be polyfilled, it will throw a warning.
+  return texture(sampler, uv);
 }
 
 void main() {
-    // This is good, it passes u_sampler1 directly to texture().
-    vec2 position = texture(u_sampler1, v_uv).xy;
+  // This is good, it passes u_sampler1 directly to texture().
+  vec2 position = texture(u_sampler1, v_uv).xy;
 
-    ....
+  ....
 }
 ```
 
@@ -285,21 +285,21 @@ gpu-io defaults to using WebGL2 (if available) with GLSL version 300 (GLSL3) but
 
 ```js
 import {
-    GPUComposer,
-    GLSL1,
-    WEBGL1,
+  GPUComposer,
+  GLSL1,
+  WEBGL1,
 } from 'gpu-io';
 
 // Init with WebGL2 (if available) with GLSL1.
 const composer1 = new GPUComposer({
-    canvas: document.createElement('canvas'),
-    glslVersion: GLSL1,
+  canvas: document.createElement('canvas'),
+  glslVersion: GLSL1,
 });
 
 // Init with WebGL1 with GLSL1 (GLSL3 is not supported in WebGL1).
 const composer2 = new GPUComposer({
-    canvas: document.createElement('canvas'),
-    contextID: WEBGL1,
+  canvas: document.createElement('canvas'),
+  contextID: WEBGL1,
 });
 ```
 
@@ -326,16 +326,16 @@ By default all shaders in gpu-io are inited with highp precision floats and ints
 You can override these defaults by specifying `intPrecision` and `floatPrecision` in GPUComposer's constructor:
 ```js
 import {
-    GPUComposer,
-    PRECISION_LOW_P,
-    PRECISION_MEDIUM_P,
-    PRECISION_HIGH_P,
+  GPUComposer,
+  PRECISION_LOW_P,
+  PRECISION_MEDIUM_P,
+  PRECISION_HIGH_P,
 } from 'gpu-io';
 
 const composer = new GPUComposer({
-    canvas: document.getElementById('webgl-canvas'),
-    intPrecision: PRECISION_MEDIUM_P,
-    floatPrecision: PRECISION_MEDIUM_P,
+  canvas: document.getElementById('webgl-canvas'),
+  intPrecision: PRECISION_MEDIUM_P,
+  floatPrecision: PRECISION_MEDIUM_P,
 });
 ```
 
@@ -350,8 +350,8 @@ uniform lowp isampler2D u_state;
 out vec4 out_result;
 
 void main() {
-    lowp int state = texture(u_state, v_uv).r;
-    ....
+  lowp int state = texture(u_state, v_uv).r;
+  ....
 }
 ```
 
@@ -361,10 +361,10 @@ I've also included the following helper functions to test the precision of mediu
 
 ```js
 import {
-    isHighpSupportedInVertexShader,
-    isHighpSupportedInFragmentShader,
-    getVertexShaderMediumpPrecision,
-    getFragmentShaderMediumpPrecision,
+  isHighpSupportedInVertexShader,
+  isHighpSupportedInFragmentShader,
+  getVertexShaderMediumpPrecision,
+  getFragmentShaderMediumpPrecision,
 } from 'gpu-io';
 
 // Prints 'highp' or 'mediump' depending on returned precision of

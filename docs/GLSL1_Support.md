@@ -22,8 +22,8 @@ In general, I recommend writing your application for WebGL2 with GLSL3 shaders a
 import { WEBGL1, GPUComposer } from 'gpu-io';
 // Init with WebGL1 with GLSL1 (GLSL3 is not supported in WebGL1).
 const composer = new GPUComposer({
-    canvas: document.createElement('canvas'),
-    contextID: WEBGL1,
+  canvas: document.createElement('canvas'),
+  contextID: WEBGL1,
 });
 ```
 
@@ -135,11 +135,11 @@ uniform usampler2D u_uintSampler;
 ....
 
 void main() {
-    ivec4 intValue1 = texture(u_intSampler, v_uv);
-    int intValue2 = texture(u_intSampler, v_uv).x;
-    uvec4 uintValue1 = texture(u_uintSampler, v_uv);
-    uvec2 uintValue2 = texture(u_uintSampler, v_uv).xy;
-    ....
+  ivec4 intValue1 = texture(u_intSampler, v_uv);
+  int intValue2 = texture(u_intSampler, v_uv).x;
+  uvec4 uintValue1 = texture(u_uintSampler, v_uv);
+  uvec2 uintValue2 = texture(u_uintSampler, v_uv).xy;
+  ....
 }
 ```
 
@@ -216,7 +216,7 @@ The following code will run in GLSL3, but not in GLSL1:
 ```js
 // JavaScript
 const program = new GPUProgram({
-    name: 'example', composer, fragmentShader, uniforms: [{ name: 'u_numIters', type: INT, value: 7 }],
+  name: 'example', composer, fragmentShader, uniforms: [{ name: 'u_numIters', type: INT, value: 7 }],
 });
 ....
 
@@ -229,10 +229,10 @@ uniform int u_numIters;
 ....
 
 void main() {
-    for (int i = 0; i < u_numIters; i++) {
-        // Do something in loop.
-    }
-    ....
+  for (int i = 0; i < u_numIters; i++) {
+    // Do something in loop.
+  }
+  ....
 }
 ```
 
@@ -244,11 +244,11 @@ uniform int u_numIters;
 ....
 
 void main() {
-    for (int i = 0; i < 10; i++) {
-        if (i == u_numIters) break;
-        // Do something in loop.
-    }
-    ....
+  for (int i = 0; i < 10; i++) {
+    if (i == u_numIters) break;
+    // Do something in loop.
+  }
+  ....
 }
 ```
 
@@ -257,7 +257,7 @@ OR use compile-time constants (see the [Julia Set Fractal](https://apps.amandagh
 ```js
 // JavaScript
 const program = new GPUProgram({
-    name: 'example', composer, fragmentShader, compileTimeConstants: { NUM_ITERS: '7' },
+  name: 'example', composer, fragmentShader, compileTimeConstants: { NUM_ITERS: '7' },
 });
 ....
 
@@ -269,10 +269,10 @@ program.recompile({ NUM_ITERS: '3' });
 ....
 
 void main() {
-    for (int i = 0; i < NUM_ITERS; i++) {
-        // Do something in loop.
-    }
-    ....
+  for (int i = 0; i < NUM_ITERS; i++) {
+    // Do something in loop.
+  }
+  ....
 }
 ```
 

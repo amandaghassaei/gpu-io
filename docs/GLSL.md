@@ -10,17 +10,16 @@ There may be additional inputs available depending on how the fragment shader pr
 
 - For programs run by `step()`, `stepNonBoundary()`, `stepCircle()`, `stepSegment()`:
 
-    - `in vec2 v_uv_local` - The local UV coordinates of of the patch being stepped.  This value is identical to `v_uv` when calling `step()`.  For `stepSegment()` with rounded endcaps enabled, `v_uv_local.x` equals 0.5 for the entirety of the middle section.
+  - `in vec2 v_uv_local` - The local UV coordinates of of the patch being stepped.  This value is identical to `v_uv` when calling `step()`.  For `stepSegment()` with rounded endcaps enabled, `v_uv_local.x` equals 0.5 for the entirety of the middle section.
 
 - For programs run by `drawLayerAsPoints()`:
 
-    - `in int v_index` - The index of the current point.
-    - `in vec2 v_uv_1d` - The UV coordinates of this point within the 1D GPULayer containing    point position data.  This may be helpful if there are other point attributes stored in 1D     GPULayers that you would like to access.
-    - `in vec2 v_position` - Position of the current point.
+  - `in int v_index` - The index of the current point.
+  - `in vec2 v_uv_1d` - The UV coordinates of this point within the 1D GPULayer containing    point position data.  This may be helpful if there are other point attributes stored in 1D     GPULayers that you would like to access.
+  - `in vec2 v_position` - Position of the current point.
 
 - For programs run by `drawLayerAsVectorField()`:
-
-    - `in int v_index` - The index of the current vector.  Both the head and tail vertices of   each vector segment have the same `v_index`.
+  - `in int v_index` - The index of the current vector.  Both the head and tail vertices of   each vector segment have the same `v_index`.
 
 
 ## Fragment Shader Outputs
