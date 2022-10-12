@@ -105,7 +105,8 @@ const diffuseProgram = new GPUProgram(composer, {
 });
 
 // Init a program to render state to canvas.
-// See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions for more built-in GPUPrograms to use.
+// See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions
+// for more built-in GPUPrograms to use.
 const renderProgram = renderAmplitudeProgram(composer, {
 	name: 'render',
 	type: state.type,
