@@ -57,6 +57,5 @@
     "@petamoriken/float16": "^2.0.0",
     "changedpi": "^1.0.4",
     "file-saver": "^2.0.5"
-  },
-  "sideEffects": false
+  }
 }
