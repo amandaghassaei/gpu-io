@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@amandaghassaei/type-checks": "^1.0.2",
-    "@petamoriken/float16": "^2.0.0",
+    "@petamoriken/float16": "^3.6.6",
     "changedpi": "^1.0.4",
     "file-saver": "^2.0.5"
   }
