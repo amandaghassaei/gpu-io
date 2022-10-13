@@ -575,7 +575,7 @@ var GPUComposer = /** @class */ (function () {
         var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision, intPrecision: renderer.capabilities.precision }, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? constants_1.GLSL3 : constants_1.GLSL1 }));
         // Attach renderer.
         // @ts-ignore
-        composer.renderer = renderer;
+        composer._renderer = renderer;
         return composer;
     };
     Object.defineProperty(GPUComposer.prototype, "canvas", {
@@ -989,7 +989,6 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype._iterateOverOutputsIfNeeded = function (params, methodName) {
         if (params.output && (0, type_checks_1.isArray)(params.output) && this.glslVersion === constants_1.GLSL1) {
             for (var i = 0, numOutputs = params.output.length; i < numOutputs; i++) {
-                // @ts-ignore
                 this[methodName](__assign(__assign({}, params), { program: i === 0 ? params.program : params.program._childPrograms[i - 1], output: params.output[i] }));
             }
             return true;
@@ -2615,7 +2614,6 @@ var GPULayer = /** @class */ (function () {
         var handleFloat16Conversion = _internalType === constants_1.HALF_FLOAT && _valuesRaw.constructor === Uint16Array;
         var _valuesBufferView = this._valuesBufferView;
         if (handleFloat16Conversion && !_valuesBufferView) {
-            // @ts-ignore
             _valuesBufferView = new DataView(_valuesRaw.buffer);
             this._valuesBufferView = _valuesBufferView;
         }

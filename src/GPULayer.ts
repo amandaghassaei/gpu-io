@@ -844,7 +844,6 @@ export class GPULayer {
 		const handleFloat16Conversion = _internalType === HALF_FLOAT && _valuesRaw.constructor === Uint16Array;
 		let { _valuesBufferView } = this;
 		if (handleFloat16Conversion && !_valuesBufferView) {
-			// @ts-ignore
 			_valuesBufferView = new DataView((_valuesRaw as Uint16Array).buffer);
 			this._valuesBufferView = _valuesBufferView;
 		}

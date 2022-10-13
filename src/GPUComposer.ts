@@ -223,7 +223,7 @@ export class GPUComposer {
 		);
 		// Attach renderer.
 		// @ts-ignore
-		composer.renderer = renderer;
+		composer._renderer = renderer;
 		return composer;
 	}
 
@@ -809,8 +809,7 @@ export class GPUComposer {
 	private _iterateOverOutputsIfNeeded(params: any, methodName: string) {
 		if (params.output && isArray(params.output) && this.glslVersion === GLSL1) {
 			for (let i = 0, numOutputs = (params.output as GPULayer[]).length; i < numOutputs; i++) {
-				// @ts-ignore
-				this[methodName]({
+				(this[methodName as keyof this] as any)({
 					...params,
 					program: i === 0 ? params.program : params.program._childPrograms![i - 1],
 					output: (params.output as GPULayer[])[i],
