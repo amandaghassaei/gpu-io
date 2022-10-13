@@ -311,13 +311,13 @@ gpu-io will automatically convert any GLSL3 shaders to GLSL1 when targeting WebG
 
 ### Transform Feedback
 
-You might notice that gpu-io does not use any transform feedback to handle computations on 1D GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is still possible to perform these types of simulations using gpu-io (see [Examples](https://apps.amandaghassaei.com/gpu-io/examples/)), but currently all the computation happens in a fragment shader.  There are a few reasons for this:
+You might notice that gpu-io does not use any transform feedback to handle computations on GPULayers.  Transform feedback is great for things like particle simulations and other types of physics that is computed on the vertex level as opposed to the pixel level.  It is still absolutely possible to perform these types of simulations using gpu-io (see [Examples](https://apps.amandaghassaei.com/gpu-io/examples/)), but currently all the computation happens in a fragment shader.  There are a few reasons for this:
 
 - The main use case for gpu-io is to operate on 2D spatially-distributed state (i.e. fields) stored in textures using fragment shaders.  There is additional support for 1D arrays and lines/particles, but that is secondary functionality.
 - Transform feedback is only supported in WebGL2.  At the time I first started writing this in 2020, WebGL2 was not supported by mobile Safari.  Though that has changed recently, for now I'd like to support all functionality in gpu-io in WebGL1/GLSL1 as well.
-- The API is simpler if we constrain computations in the fragment shader only.
+- The API is simpler if we constrain computations to the fragment shader only.
 
-My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch by default in some browsers, and then re-evaluate some of the design decisions made in gpu-io.  WebGL puts artificial constraints on the current API by forcing general-purpose computing to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term, and using transform feedback feels like a step backwards at this point.
+My current plan is to wait for [WebGPU](https://web.dev/gpu/) to officially launch by default in some browsers, and then re-evaluate some of the design decisions made in gpu-io.  WebGL puts artificial constraints on the current API by forcing general-purpose computing to happen in a vertex and fragment shader rendering pipeline rather than a compute pipeline, so I'd like to get away from WebGL in the long term – and using transform feedback feels like a step backwards at this point.
 
 
 ### Precision
