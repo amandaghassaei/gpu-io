@@ -258,7 +258,7 @@ export class GPUComposer {
 		},
 	) {
 		// Check params.
-		const validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'verboseLogging', 'errorCallback'];
+		const validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'intPrecision', 'floatPrecision', 'verboseLogging', 'errorCallback'];
 		const requiredKeys = ['canvas'];
 		const keys = Object.keys(params);
 		checkValidKeys(keys, validKeys, 'GPUComposer(params)');

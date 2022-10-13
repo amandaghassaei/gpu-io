@@ -75,11 +75,11 @@
 				assert.throws(() => { composer.resetThreeState(); },
 					`Can't call resetTHreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 			});
-		// 	it('should not throw an error if threejs renderer present', () => {
-		// 		const renderer = new THREE.WebGLRenderer();
-		// 		const threeGPU = new GPUComposer.initWithThreeRenderer({ renderer });
-		// 		assert.equal(threeGPU.resetThreeState(), undefined);
-		// 	});
+			it('should not throw an error if threejs renderer present', () => {
+				const renderer = new THREE.WebGLRenderer();
+				const threeGPU = new GPUComposer.initWithThreeRenderer(renderer);
+				assert.equal(threeGPU.resetThreeState(), undefined);
+			});
 		});
 		describe('savePNG', () => {
 			it('should return Blob in callback', () => {

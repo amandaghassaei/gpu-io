@@ -482,7 +482,7 @@ var GPUComposer = /** @class */ (function () {
         this.verboseLogging = false;
         this._numTicks = 0;
         // Check params.
-        var validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'verboseLogging', 'errorCallback'];
+        var validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'intPrecision', 'floatPrecision', 'verboseLogging', 'errorCallback'];
         var requiredKeys = ['canvas'];
         var keys = Object.keys(params);
         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer(params)');
@@ -2751,12 +2751,12 @@ var GPULayer = /** @class */ (function () {
             throw new Error('GPUComposer was not inited with a renderer.');
         }
         // Link webgl texture to threejs object.
-        // This is not officially supported.
+        // This is not officially supported by threejs.
         if (numBuffers > 1) {
             throw new Error("GPULayer \"".concat(name, "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer."));
         }
         var offsetTextureProperties = _renderer.properties.get(texture);
-        offsetTextureProperties.__webglTexture = currentState;
+        offsetTextureProperties.__webglTexture = currentState.texture;
         offsetTextureProperties.__webglInit = true;
     };
     /**

@@ -978,12 +978,12 @@ export class GPULayer {
 			throw new Error('GPUComposer was not inited with a renderer.');
 		}
 		// Link webgl texture to threejs object.
-		// This is not officially supported.
+		// This is not officially supported by threejs.
 		if (numBuffers > 1) {
 			throw new Error(`GPULayer "${name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
 		}
 		const offsetTextureProperties = _renderer.properties.get(texture);
-		offsetTextureProperties.__webglTexture = currentState;
+		offsetTextureProperties.__webglTexture = currentState.texture;
 		offsetTextureProperties.__webglInit = true;
 	}
 
