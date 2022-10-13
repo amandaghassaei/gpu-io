@@ -187,7 +187,7 @@ More information about writing GLSL shaders for gpu-io can be found at [docs/GLS
 
 ## Compatibility with Threejs
 
-&#9888; Update 10/11/2022: This still needs to be tested more.
+&#9888; Update 10/11/2022: This still needs to be tested more, updates coming soon.
 
 Currently, gpu-io can run in a separate webgl context from threejs without any problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so, though I am still sorting out some lingering WebGL warnings:
 
