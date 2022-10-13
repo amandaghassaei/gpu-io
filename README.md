@@ -69,7 +69,7 @@ const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
 A simple example of how to use gpu-io to simulate 2D diffusion:
 
 ```js
-const {
+import {
   GPUComposer,
   GPULayer,
   GPUProgram,
@@ -78,7 +78,7 @@ const {
   INT,
   REPEAT,
   LINEAR,
-} = GPUIO;
+} from 'gpu-io';
 
 // Init a canvas element.
 const canvas = document.createElement('canvas');
