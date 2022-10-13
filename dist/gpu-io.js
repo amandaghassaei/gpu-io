@@ -32,22 +32,70 @@ return /******/ (() => { // webpackBootstrap
 	    return isNumber(value) && Number.isFinite(value);
 	}
 	/**
-	 * Checks if value is finite integer.
+	 * Checks if value is integer.
 	 */
 	function isInteger(value) {
 	    return isFiniteNumber(value) && (value % 1 === 0);
 	}
 	/**
-	 * Checks if value is finite positive integer (> 0).
+	 * Checks if value is positive number (> 0).
+	 */
+	function isPositiveNumber(value) {
+	    return isNumber(value) && value > 0;
+	}
+	/**
+	 * Checks if value is positive integer (> 0).
 	 */
 	function isPositiveInteger(value) {
 	    return isInteger(value) && value > 0;
 	}
 	/**
-	 * Checks if value is finite non-negative integer (>= 0).
+	 * Checks if value is negative number (< 0).
+	 */
+	function isNegativeNumber(value) {
+	    return isNumber(value) && value < 0;
+	}
+	/**
+	 * Checks if value is negative integer (< 0).
+	 */
+	function isNegativeInteger(value) {
+	    return isInteger(value) && value < 0;
+	}
+	/**
+	 * Checks if value is non-negative number (>= 0).
+	 */
+	function isNonNegativeNumber(value) {
+	    return isNumber(value) && value >= 0;
+	}
+	/**
+	 * Checks if value is non-negative integer (>= 0).
 	 */
 	function isNonNegativeInteger(value) {
 	    return isInteger(value) && value >= 0;
+	}
+	/**
+	 * Checks if value is non-positive number (<= 0).
+	 */
+	function isNonPositiveNumber(value) {
+	    return isNumber(value) && value <= 0;
+	}
+	/**
+	 * Checks if value is non-positive integer (<= 0).
+	 */
+	function isNonPositiveInteger(value) {
+	    return isInteger(value) && value <= 0;
+	}
+	/**
+	 * Checks if value is number in range [min, max].
+	 */
+	function isNumberInRange(value, min, max) {
+	    return isNumber(value) && value >= min && value <= max;
+	}
+	/**
+	 * Checks if value is integer in range [min, max].
+	 */
+	function isIntegerInRange(value, min, max) {
+	    return isInteger(value) && value >= min && value <= max;
 	}
 	/**
 	 * Checks if value is string.
@@ -84,10 +132,18 @@ return /******/ (() => { // webpackBootstrap
 	exports.isBoolean = isBoolean;
 	exports.isFiniteNumber = isFiniteNumber;
 	exports.isInteger = isInteger;
+	exports.isIntegerInRange = isIntegerInRange;
+	exports.isNegativeInteger = isNegativeInteger;
+	exports.isNegativeNumber = isNegativeNumber;
 	exports.isNonNegativeInteger = isNonNegativeInteger;
+	exports.isNonNegativeNumber = isNonNegativeNumber;
+	exports.isNonPositiveInteger = isNonPositiveInteger;
+	exports.isNonPositiveNumber = isNonPositiveNumber;
 	exports.isNumber = isNumber;
+	exports.isNumberInRange = isNumberInRange;
 	exports.isObject = isObject;
 	exports.isPositiveInteger = isPositiveInteger;
+	exports.isPositiveNumber = isPositiveNumber;
 	exports.isString = isString;
 	exports.isTypedArray = isTypedArray;
 
