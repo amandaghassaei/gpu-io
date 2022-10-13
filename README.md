@@ -19,15 +19,50 @@ The main motivation behind gpu-io is to make it easier to compose GPU-accelerate
 
 [As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge) - but even among WebGL2 implementations, there are differences in behavior across browsers (especially mobile).  Additionally, you may still come across non-WebGL2 enabled browsers in the wild for some time.  gpu-io rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  gpu-io will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that they can run on WebGL1 in a pinch. See [tests/README.md](https://github.com/amandaghassaei/gpu-io/tree/main/tests#browser-support) for more information on browser support.
 
+- [Installation](#installation)
 - [Use](#use)
 - [Examples](#examples)
-- [Installation](#installation)
 - [API](#api)
 - [Compatibility with Threejs](#compatibility-with-threejs)
 - [Limitations/Notes](#limitationsnotes)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 - [Development](#development)
+
+
+## Installation
+
+### Install via npm
+
+`npm install gpu-io`
+
+And import into your project:
+
+```js
+import { GPUComposer, GPULayer, GPUProgram } from 'gpu-io';
+```
+
+
+### Import into HTML
+
+*OR* you can add [gpu-io.js](https://raw.githubusercontent.com/amandaghassaei/gpu-io/main/dist/gpu-io.js) or [gpu-io.min.js](https://raw.githubusercontent.com/amandaghassaei/gpu-io/main/dist/gpu-io.min.js) to your html directly:
+
+```html
+<html>
+  <head>
+    <script src="gpu-io.js"></script>
+  </head>
+  <body>
+  </body>
+</html>
+```
+
+GPUIO will be accessible globally:
+
+```js
+const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
+```
+
 
 ## Use
 
@@ -142,40 +177,6 @@ Check out the [Examples page](https://apps.amandaghassaei.com/gpu-io/examples/) 
 Source code for all examples can be found in the [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples) folder.
 
 Please let me know if you have something that you would like to add to the examples page!
-
-
-## Installation
-
-### Install via npm
-
-`npm install gpu-io`
-
-And import into your project:
-
-```js
-import { GPUComposer, GPULayer, GPUProgram } from 'gpu-io';
-```
-
-
-### Import into HTML
-
-*OR* you can add [gpu-io.js](https://raw.githubusercontent.com/amandaghassaei/gpu-io/main/dist/gpu-io.js) or [gpu-io.min.js](https://raw.githubusercontent.com/amandaghassaei/gpu-io/main/dist/gpu-io.min.js) to your html directly:
-
-```html
-<html>
-  <head>
-    <script src="gpu-io.js"></script>
-  </head>
-  <body>
-  </body>
-</html>
-```
-
-GPUIO will be accessible globally:
-
-```js
-const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
-```
 
 ## API
 
