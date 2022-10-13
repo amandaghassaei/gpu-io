@@ -67,7 +67,7 @@ const diffuseProgram = new GPUProgram(composer, {
 			float s = texture(u_state, v_uv - vec2(0, u_pxSize.y)).x;
 			float e = texture(u_state, v_uv + vec2(u_pxSize.x, 0)).x;
 			float w = texture(u_state, v_uv - vec2(u_pxSize.x, 0)).x;
-			float diffusionRate = 0.1;
+			const float diffusionRate = 0.1;
 			out_result = center + diffusionRate * (n + s + e + w - 4.0 * center);
 		}
 	`,
