@@ -93,7 +93,7 @@ export declare function setValueProgram(composer: GPUComposer, params: {
  * @param params - Program parameters.
  * @param params.type - The type of the output.
  * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
- * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.opacity - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the output/uniforms.
  * @returns

@@ -284,7 +284,7 @@ function main({ gui, contextID, glslVersion}) {
 		const height = window.innerHeight;
 
 		// Resize composer.
-		composer.resize(width, height);
+		composer.resize([width, height]);
 
 		// Init new random state.
 		const array = new Uint8Array(width * height);

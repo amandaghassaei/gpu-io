@@ -180,7 +180,7 @@ Please let me know if you have something that you would like to add to the examp
 
 ## API
 
-Full API documentation can be found in the [docs/](https://github.com/amandaghassaei/gpu-io/tree/main/docs).
+Full API documentation can be found in the [docs/](https://github.com/amandaghassaei/gpu-io/tree/main/docs) folder.
 
 More information about writing GLSL shaders for gpu-io can be found at [docs/GLSL](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL.md).
 
@@ -441,4 +441,4 @@ I've also included a webpage for testing various functions of this library in a 
 
 Note: The detected OS and browser version may not always be 100% accurate.
 
-See [tests/README#browser-support](./tests/README.md#browser-support) for results of various browser/hardware combos.
+See [tests/README#browser-support](https://github.com/amandaghassaei/gpu-io/blob/main/tests/README.md#browser-support) for results of various browser/hardware combos.

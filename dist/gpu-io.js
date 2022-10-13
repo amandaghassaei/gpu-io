@@ -2501,7 +2501,7 @@ var GPUComposer = /** @class */ (function () {
         // Unbind active buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         // Canvas setup.
-        this.resize(canvas.clientWidth, canvas.clientHeight);
+        this.resize([canvas.clientWidth, canvas.clientHeight]);
         if (this.verboseLogging) {
             // Log number of textures available.
             console.log("".concat(this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS), " textures max."));
@@ -2688,11 +2688,11 @@ var GPUComposer = /** @class */ (function () {
     };
     /**
      * Notify the GPUComposer that the canvas should change size.
-     * @param width - The width of the canvas element.
-     * @param height - The height of the canvas element.
+     * @param dimensions - The new [width, height] to resize to.
      */
-    GPUComposer.prototype.resize = function (width, height) {
+    GPUComposer.prototype.resize = function (dimensions) {
         var canvas = this.canvas;
+        var width = dimensions[0], height = dimensions[1];
         // Set correct canvas pixel size.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
         canvas.width = width;
@@ -3645,7 +3645,7 @@ var GPUComposer = /** @class */ (function () {
     /**
      * Draw the contents of a 2 component GPULayer as a vector field.
      * @param params - Draw parameters.
-     * @param params.positions - GPULayer containing vector data.
+     * @param params.layer - GPULayer containing vector data.
      * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
      * @param params.input - Input GPULayers for GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
@@ -3725,6 +3725,7 @@ var GPUComposer = /** @class */ (function () {
         // Reset texture bindings.
         this._renderer.resetState();
     };
+    // TODO: params.callback is not generated in the docs.
     /**
      * Save the current state of the canvas to png.
      * @param params - PNG parameters.
@@ -4630,6 +4631,7 @@ var GPULayer = /** @class */ (function () {
             });
         });
     };
+    // TODO: params.callback is not generated in the docs.
     /**
      * Save the current state of this GPULayer to png.
      * @param params - PNG parameters.
@@ -6387,7 +6389,7 @@ exports.setValueProgram = setValueProgram;
  * @param params - Program parameters.
  * @param params.type - The type of the output.
  * @param params.color - Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color".
- * @param params.color - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.opacity - Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity".
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.precision - Optionally specify the precision of the output/uniforms.
  * @returns

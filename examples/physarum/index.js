@@ -536,7 +536,7 @@ function main({ gui, glslVersion, contextID }) {
 		const height = window.innerHeight;
 
 		// Resize composer.
-		composer.resize(width, height);
+		composer.resize([width, height]);
 
 		// Init new particles.
 		const { positions, heading, numParticles } = initParticlesArrays();

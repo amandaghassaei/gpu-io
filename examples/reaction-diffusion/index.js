@@ -159,7 +159,7 @@ function main({ gui, contextID, glslVersion}) {
 		const height = window.innerHeight;
 
 		// Resize composer.
-		composer.resize(width, height);
+		composer.resize([width, height]);
 
 		// Resize state with random initial values.
 		const initialState = new Float32Array(Math.round(width / SIM_SCALE) * Math.round(height / SIM_SCALE) * 2);

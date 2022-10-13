@@ -196,7 +196,7 @@ function main({ gui, contextID, glslVersion}) {
 		const height = window.innerHeight;
 
 		// Resize composer.
-		composer.resize(width, height);
+		composer.resize([width, height]);
 		// Resize state.
 		state.resize([width, height]);
 		// Update uniforms.

@@ -619,7 +619,7 @@ function main({ gui, contextID, glslVersion}) {
 		const height = window.innerHeight;
 
 		// Resize composer.
-		composer.resize(width, height);
+		composer.resize([width, height]);
 
 		// Re-init textures at new size.
 		const velocityDimensions = [Math.ceil(width / VELOCITY_SCALE_FACTOR), Math.ceil(height / VELOCITY_SCALE_FACTOR)];

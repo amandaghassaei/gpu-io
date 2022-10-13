@@ -180,10 +180,9 @@ export declare class GPUComposer {
     _getVertexShader(name: PROGRAM_NAME_INTERNAL, vertexID: string, vertexCompileConstants: CompileTimeConstants, programName: string): WebGLShader | undefined;
     /**
      * Notify the GPUComposer that the canvas should change size.
-     * @param width - The width of the canvas element.
-     * @param height - The height of the canvas element.
+     * @param dimensions - The new [width, height] to resize to.
      */
-    resize(width: number, height: number): void;
+    resize(dimensions: [number, number]): void;
     /**
      * Set inputs and outputs in preparation for draw call.
      * @private
@@ -385,7 +384,7 @@ export declare class GPUComposer {
     /**
      * Draw the contents of a 2 component GPULayer as a vector field.
      * @param params - Draw parameters.
-     * @param params.positions - GPULayer containing vector data.
+     * @param params.layer - GPULayer containing vector data.
      * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
      * @param params.input - Input GPULayers for GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.

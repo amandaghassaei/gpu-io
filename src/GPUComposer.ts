@@ -335,7 +335,7 @@ export class GPUComposer {
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		// Canvas setup.
-		this.resize(canvas.clientWidth, canvas.clientHeight);
+		this.resize([canvas.clientWidth, canvas.clientHeight]);
 
 		if (this.verboseLogging) {
 			// Log number of textures available.
@@ -541,11 +541,11 @@ export class GPUComposer {
 
 	/**
 	 * Notify the GPUComposer that the canvas should change size.
-	 * @param width - The width of the canvas element.
-	 * @param height - The height of the canvas element.
+	 * @param dimensions - The new [width, height] to resize to.
 	 */
-	resize(width: number, height: number) {
+	resize(dimensions: [number, number]) {
 		const { canvas } = this;
+		const [width, height] = dimensions;
 		// Set correct canvas pixel size.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
 		canvas.width = width;

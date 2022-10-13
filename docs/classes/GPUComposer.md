@@ -113,7 +113,7 @@ ___
 
 ### resize
 
-▸ **resize**(`width`, `height`): `void`
+▸ **resize**(`dimensions`): `void`
 
 Notify the GPUComposer that the canvas should change size.
 
@@ -121,8 +121,7 @@ Notify the GPUComposer that the canvas should change size.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `width` | `number` | The width of the canvas element. |
-| `height` | `number` | The height of the canvas element. |
+| `dimensions` | [`number`, `number`] | The new [width, height] to resize to. |
 
 #### Returns
 
