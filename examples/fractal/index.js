@@ -21,9 +21,9 @@ function main({ gui, contextID, glslVersion}) {
 	let bounds = calcInitialBounds();
 
 	const PARAMS = {
-		cReal: -0.8,
-		cImaginary: 0.16,
-		maxIters: 150,
+		cReal: 0.38,
+		cImaginary: -0.23,
+		maxIters: 500,
 		reset,
 		savePNG,
 		pngScaleFactor: 10,
@@ -53,7 +53,6 @@ function main({ gui, contextID, glslVersion}) {
 			uniform vec2 u_boundsMax;
 			uniform float u_cReal;
 			uniform float u_cImaginary;
-			uniform float u_radius;
 			uniform vec2 u_pxSize;
 
 			out float out_value;
@@ -67,7 +66,7 @@ function main({ gui, contextID, glslVersion}) {
 						vec2 uv = v_uv + uvOffset * u_pxSize;
 						vec2 z = uv * u_boundsMax + (1.0 - uv) * u_boundsMin;
 						for (int i = 0; i < MAX_ITERS; i++) {
-							if (z.x * z.x + z.y * z.y > u_radius * u_radius) break;
+							if (z.x * z.x + z.y * z.y > ${RADIUS * RADIUS}) break;
 							float xTemp = z.x * z.x - z.y * z.y;
 							z.y = 2.0 * z.x * z.y + u_cImaginary;
 							z.x = xTemp + u_cReal;
@@ -96,11 +95,6 @@ function main({ gui, contextID, glslVersion}) {
 			{
 				name: 'u_cImaginary',
 				value: PARAMS.cImaginary,
-				type: FLOAT,
-			},
-			{
-				name: 'u_radius',
-				value: Math.max(bounds.max[0] - bounds.min[0], bounds.max[1] - bounds.min[1]) / 2,
 				type: FLOAT,
 			},
 			{
