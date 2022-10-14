@@ -395,6 +395,7 @@ function test1PxCalc(
 	gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
 
 	// Deallocate everything.
+	gl.disableVertexAttribArray(positionLocation);
 	gl.deleteProgram(program);
 	gl.deleteShader(vs);
 	gl.deleteShader(fs);

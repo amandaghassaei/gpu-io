@@ -53,6 +53,7 @@ export declare class GPUComposer {
      * Cache vertex shader attribute locations.
      */
     private _vertexAttributeLocations;
+    private _enabledVertexAttributes;
     /**
      * @private
      */
@@ -96,6 +97,7 @@ export declare class GPUComposer {
      * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
      * @param renderer - Threejs WebGLRenderer.
      * @param params - GPUComposer parameters.
+     * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
      * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
@@ -103,6 +105,7 @@ export declare class GPUComposer {
      * @returns
      */
     static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
+        glslVersion?: GLSLVersion;
         intPrecision?: GLSLPrecision;
         floatPrecision?: GLSLPrecision;
         verboseLogging?: boolean;
@@ -214,6 +217,7 @@ export declare class GPUComposer {
      * @private
      */
     private _setVertexAttribute;
+    private _disableVertexAttributes;
     /**
      * Set vertex shader position attribute.
      * @private
@@ -235,6 +239,7 @@ export declare class GPUComposer {
      * This is required when attempting to draw to multiple outputs using GLSL1.
      */
     private _iterateOverOutputsIfNeeded;
+    private _drawFinish;
     /**
      * Step GPUProgram entire fullscreen quad.
      * @param params - Step parameters.

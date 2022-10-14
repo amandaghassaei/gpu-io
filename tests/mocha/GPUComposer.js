@@ -73,7 +73,7 @@
 		describe('resetThreeState', () => {
 			it('should throw an error for GPUComposers not inited with three renderer', () => {
 				assert.throws(() => { composer.resetThreeState(); },
-					`Can't call resetTHreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
+					`Can't call resetThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 			});
 			it('should not throw an error if threejs renderer present', () => {
 				const renderer = new THREE.WebGLRenderer();

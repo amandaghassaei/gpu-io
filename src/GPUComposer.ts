@@ -121,6 +121,7 @@ export class GPUComposer {
 	 * Cache vertex shader attribute locations.
 	 */
 	private _vertexAttributeLocations: {[key: string]: WeakMap<WebGLProgram, number>} = {};
+	private _enabledVertexAttributes: {[key: number]: boolean} = {};;
 
 	// Keep track of all GL extensions that have been loaded.
 	/**
@@ -196,6 +197,7 @@ export class GPUComposer {
 	 * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
 	 * @param renderer - Threejs WebGLRenderer.
 	 * @param params - GPUComposer parameters.
+	 * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
 	 * @param params.intPrecision - Set the global integer precision in shader programs.
 	 * @param params.floatPrecision - Set the global float precision in shader programs.
 	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
@@ -205,6 +207,7 @@ export class GPUComposer {
 	 static initWithThreeRenderer(
 		renderer: WebGLRenderer,
 		params?: {
+			glslVersion?: GLSLVersion,
 			intPrecision?: GLSLPrecision,
 			floatPrecision?: GLSLPrecision,
 			verboseLogging?: boolean,
@@ -218,7 +221,6 @@ export class GPUComposer {
 				...params,
 				canvas: renderer.domElement,
 				context: renderer.getContext(),
-				glslVersion: renderer.capabilities.isWebGL2 ? GLSL3 : GLSL1,
 			},
 		);
 		// Attach renderer.
@@ -735,8 +737,8 @@ export class GPUComposer {
 	 * @private
 	 */
 	private _setVertexAttribute(program: WebGLProgram, name: string, size: number, programName: string) {
-		const { gl, _vertexAttributeLocations } = this;
-		// Point attribute to the currently bound VBO.
+		const { gl, _vertexAttributeLocations, _enabledVertexAttributes } = this;
+		// Enable vertex attribute array.
 		let locations = _vertexAttributeLocations[name];
 		let location;
 		if (!locations) {
@@ -754,12 +756,24 @@ export class GPUComposer {
 			locations.set(program, location);
 		}
 
+		// Enable the attribute.
+		gl.enableVertexAttribArray(location);
+		_enabledVertexAttributes[location] = true;
 		// INT types not supported for attributes.
 		// Use FLOAT rather than SHORT bc FLOAT covers more INT range.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
 		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
-		// Enable the attribute.
-		gl.enableVertexAttribArray(location);
+	}
+	private _disableVertexAttributes() {
+		const { _enabledVertexAttributes, gl } = this;
+		const locations = Object.keys(_enabledVertexAttributes) as any as number[];
+		for (let i = 0, numAttributes = locations.length; i < numAttributes; i++) {
+			const location = locations[i];
+			if (_enabledVertexAttributes[location]) {
+				gl.disableVertexAttribArray(location);
+				delete _enabledVertexAttributes[location];
+			}
+		}
 	}
 	/**
 	 * Set vertex shader position attribute.
@@ -820,6 +834,12 @@ export class GPUComposer {
 		return false;
 	}
 
+	private _drawFinish() {
+		const { gl } = this;
+		gl.disable(gl.BLEND);
+		this._disableVertexAttributes();
+	}
+
 	/**
 	 * Step GPUProgram entire fullscreen quad.
 	 * @param params - Step parameters.
@@ -855,7 +875,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		gl.disable(gl.BLEND);
+		this._drawFinish()
 	}
 
 	/**
@@ -920,7 +940,7 @@ export class GPUComposer {
 		} else {
 			gl.drawArrays(gl.LINE_LOOP, 0, 4);
 		}
-		gl.disable(gl.BLEND);
+		this._drawFinish();
 	}
 
 	/**
@@ -961,7 +981,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		gl.disable(gl.BLEND);
+		this._drawFinish();
 	}
 
 	/**
@@ -1017,7 +1037,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);	
-		gl.disable(gl.BLEND);
+		this._drawFinish();
 	}
 
 	/**
@@ -1099,7 +1119,7 @@ export class GPUComposer {
 		} else {
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		}
-		gl.disable(gl.BLEND);
+		this._drawFinish();
 	}
 
 	/**
@@ -1328,7 +1348,7 @@ export class GPUComposer {
 	// 	// Draw.
 	// 	this._setBlendMode(params.blendAlpha);
 	// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
-	// 	gl.disable(gl.BLEND);
+	// 	this._drawFinish();
 	// }
 
 	// stepTriangleStrip(
@@ -1378,7 +1398,7 @@ export class GPUComposer {
 	// 	// Draw.
 	// 	this._setBlendMode(params.blendAlpha);
 	// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
-	// 	gl.disable(gl.BLEND);
+	// 	this._drawFinish();
 	// }
 
 	// stepLines(params: {
@@ -1450,7 +1470,7 @@ export class GPUComposer {
 	// 			gl.drawArrays(gl.LINE_STRIP, 0, count);
 	// 		}
 	// 	}
-	// 	gl.disable(gl.BLEND);
+	// 	this._drawFinish();
 	// }
 
 	/**
@@ -1545,7 +1565,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.POINTS, 0, count);
-		gl.disable(gl.BLEND);
+		this._drawFinish();
 	}
 
 	// drawLayerAsLines(
@@ -1644,7 +1664,7 @@ export class GPUComposer {
 	// 			gl.drawArrays(gl.LINE_STRIP, 0, count);
 	// 		}
 	// 	}
-	// 	gl.disable(gl.BLEND);
+	// 	this._drawFinish();
 	// }
 
 	/**
@@ -1726,7 +1746,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.LINES, 0, length);
-		gl.disable(gl.BLEND);
+		this._drawFinish();
 	}
 
 	/**
@@ -1734,7 +1754,7 @@ export class GPUComposer {
 	 */
 	resetThreeState() {
 		if (!this._renderer) {
-			throw new Error(`Can't call resetTHreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
+			throw new Error(`Can't call resetThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 		}
 		const { gl } = this;
 		// Reset viewport.
@@ -1759,7 +1779,7 @@ export class GPUComposer {
 		dpi?: number,
 		callback?: (blob: Blob, filename: string) => void,
 	} = {}) {
-		const { canvas, gl } = this;
+		const { canvas } = this;
 		const filename = params.filename || 'output';
 		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
 		// TODO: need to adjust the canvas size to get the correct px ratio from toBlob().
@@ -1847,6 +1867,8 @@ export class GPUComposer {
 		});
 		// @ts-ignore
 		delete this._vertexAttributeLocations;
+		// @ts-ignore
+		delete this._enabledVertexAttributes;
 
 		// Delete vertex shaders.
 		Object.values(this._vertexShaders).forEach(({ compiledShaders })=> {

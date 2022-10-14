@@ -434,6 +434,7 @@ var GPUComposer = /** @class */ (function () {
          * Cache vertex shader attribute locations.
          */
         this._vertexAttributeLocations = {};
+        this._enabledVertexAttributes = {};
         // Keep track of all GL extensions that have been loaded.
         /**
          * @private
@@ -561,10 +562,12 @@ var GPUComposer = /** @class */ (function () {
             console.log("".concat(this.gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS), " textures max."));
         }
     }
+    ;
     /**
      * Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single WebGL context.
      * @param renderer - Threejs WebGLRenderer.
      * @param params - GPUComposer parameters.
+     * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
      * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
@@ -572,7 +575,7 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.initWithThreeRenderer = function (renderer, params) {
-        var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision, intPrecision: renderer.capabilities.precision }, params), { canvas: renderer.domElement, context: renderer.getContext(), glslVersion: renderer.capabilities.isWebGL2 ? constants_1.GLSL3 : constants_1.GLSL1 }));
+        var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision, intPrecision: renderer.capabilities.precision }, params), { canvas: renderer.domElement, context: renderer.getContext() }));
         // Attach renderer.
         // @ts-ignore
         composer._renderer = renderer;
@@ -917,8 +920,8 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._setVertexAttribute = function (program, name, size, programName) {
-        var _a = this, gl = _a.gl, _vertexAttributeLocations = _a._vertexAttributeLocations;
-        // Point attribute to the currently bound VBO.
+        var _a = this, gl = _a.gl, _vertexAttributeLocations = _a._vertexAttributeLocations, _enabledVertexAttributes = _a._enabledVertexAttributes;
+        // Enable vertex attribute array.
         var locations = _vertexAttributeLocations[name];
         var location;
         if (!locations) {
@@ -936,12 +939,24 @@ var GPUComposer = /** @class */ (function () {
             // Cache attribute location.
             locations.set(program, location);
         }
+        // Enable the attribute.
+        gl.enableVertexAttribArray(location);
+        _enabledVertexAttributes[location] = true;
         // INT types not supported for attributes.
         // Use FLOAT rather than SHORT bc FLOAT covers more INT range.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
         gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
-        // Enable the attribute.
-        gl.enableVertexAttribArray(location);
+    };
+    GPUComposer.prototype._disableVertexAttributes = function () {
+        var _a = this, _enabledVertexAttributes = _a._enabledVertexAttributes, gl = _a.gl;
+        var locations = Object.keys(_enabledVertexAttributes);
+        for (var i = 0, numAttributes = locations.length; i < numAttributes; i++) {
+            var location_1 = locations[i];
+            if (_enabledVertexAttributes[location_1]) {
+                gl.disableVertexAttribArray(location_1);
+                delete _enabledVertexAttributes[location_1];
+            }
+        }
     };
     /**
      * Set vertex shader position attribute.
@@ -995,6 +1010,11 @@ var GPUComposer = /** @class */ (function () {
         }
         return false;
     };
+    GPUComposer.prototype._drawFinish = function () {
+        var gl = this.gl;
+        gl.disable(gl.BLEND);
+        this._disableVertexAttributes();
+    };
     /**
      * Step GPUProgram entire fullscreen quad.
      * @param params - Step parameters.
@@ -1021,7 +1041,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.disable(gl.BLEND);
+        this._drawFinish();
     };
     /**
      * Step GPUProgram only for a 1px strip of pixels along the boundary.
@@ -1076,7 +1096,7 @@ var GPUComposer = /** @class */ (function () {
         else {
             gl.drawArrays(gl.LINE_LOOP, 0, 4);
         }
-        gl.disable(gl.BLEND);
+        this._drawFinish();
     };
     /**
      * Step GPUProgram for all but a 1px strip of pixels along the boundary.
@@ -1106,7 +1126,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.disable(gl.BLEND);
+        this._drawFinish();
     };
     /**
      * Step GPUProgram inside a circular spot.  This is useful for touch interactions.
@@ -1148,7 +1168,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
-        gl.disable(gl.BLEND);
+        this._drawFinish();
     };
     /**
      * Step GPUProgram inside a line segment (rounded end caps available).
@@ -1215,7 +1235,7 @@ var GPUComposer = /** @class */ (function () {
         else {
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
-        gl.disable(gl.BLEND);
+        this._drawFinish();
     };
     /**
      * Step GPUProgram inside a rectangle.
@@ -1418,7 +1438,7 @@ var GPUComposer = /** @class */ (function () {
     // 	// Draw.
     // 	this._setBlendMode(params.blendAlpha);
     // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, numPositions);
-    // 	gl.disable(gl.BLEND);
+    // 	this._drawFinish();
     // }
     // stepTriangleStrip(
     // 	params: {
@@ -1461,7 +1481,7 @@ var GPUComposer = /** @class */ (function () {
     // 	// Draw.
     // 	this._setBlendMode(params.blendAlpha);
     // 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
-    // 	gl.disable(gl.BLEND);
+    // 	this._drawFinish();
     // }
     // stepLines(params: {
     // 	program: GPUProgram,
@@ -1525,7 +1545,7 @@ var GPUComposer = /** @class */ (function () {
     // 			gl.drawArrays(gl.LINE_STRIP, 0, count);
     // 		}
     // 	}
-    // 	gl.disable(gl.BLEND);
+    // 	this._drawFinish();
     // }
     /**
      * Draw the contents of a GPULayer as points.  This assumes the components of the GPULayer have the form [xPosition, yPosition] or [xPosition, yPosition, xOffset, yOffset].
@@ -1604,7 +1624,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.POINTS, 0, count);
-        gl.disable(gl.BLEND);
+        this._drawFinish();
     };
     // drawLayerAsLines(
     // 	params: {
@@ -1693,7 +1713,7 @@ var GPUComposer = /** @class */ (function () {
     // 			gl.drawArrays(gl.LINE_STRIP, 0, count);
     // 		}
     // 	}
-    // 	gl.disable(gl.BLEND);
+    // 	this._drawFinish();
     // }
     /**
      * Draw the contents of a 2 component GPULayer as a vector field.
@@ -1760,14 +1780,14 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.LINES, 0, length);
-        gl.disable(gl.BLEND);
+        this._drawFinish();
     };
     /**
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
      */
     GPUComposer.prototype.resetThreeState = function () {
         if (!this._renderer) {
-            throw new Error("Can't call resetTHreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().");
+            throw new Error("Can't call resetThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().");
         }
         var gl = this.gl;
         // Reset viewport.
@@ -1788,7 +1808,7 @@ var GPUComposer = /** @class */ (function () {
     */
     GPUComposer.prototype.savePNG = function (params) {
         if (params === void 0) { params = {}; }
-        var _a = this, canvas = _a.canvas, gl = _a.gl;
+        var canvas = this.canvas;
         var filename = params.filename || 'output';
         var callback = params.callback || saveAs; // Default to saving the image with FileSaver.
         // TODO: need to adjust the canvas size to get the correct px ratio from toBlob().
@@ -1876,6 +1896,8 @@ var GPUComposer = /** @class */ (function () {
         });
         // @ts-ignore
         delete this._vertexAttributeLocations;
+        // @ts-ignore
+        delete this._enabledVertexAttributes;
         // Delete vertex shaders.
         Object.values(this._vertexShaders).forEach(function (_a) {
             var compiledShaders = _a.compiledShaders;
@@ -6510,6 +6532,7 @@ function test1PxCalc(name, gl, fs, vs, addUniforms) {
     var pixel = new Uint8Array(4);
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
     // Deallocate everything.
+    gl.disableVertexAttribArray(positionLocation);
     gl.deleteProgram(program);
     gl.deleteShader(vs);
     gl.deleteShader(fs);
