@@ -214,7 +214,7 @@ export class GPUProgram {
 		// Delete all cached uniform locations.
 		const uniforms = Object.values(_uniforms);
 		for (let i = 0, numUniforms = uniforms.length; i < numUniforms; i++) {
-			uniforms[i].location = {};
+			uniforms[i].location = new WeakMap();
 		}
 
 		if (this._childPrograms) {
@@ -334,11 +334,11 @@ export class GPUProgram {
 		// Set active program.
 		gl.useProgram(program);
 		const uniformNames = Object.keys(_uniforms);
-		for (let i = 0; i < uniformNames.length; i++) {
+		for (let i = 0, numUniforms = uniformNames.length; i < numUniforms; i++) {
 			const uniformName = uniformNames[i];
 			const uniform = _uniforms[uniformName];
 			const { value, type } = uniform;
-			this._setProgramUniform(program, key, uniformName, value, type);
+			this._setProgramUniform(program, uniformName, value, type);
 		}
 
 		_programs[key] = program;
@@ -352,7 +352,6 @@ export class GPUProgram {
 	 */
 	private _setProgramUniform(
 		program: WebGLProgram,
-		programName: string,
 		uniformName: string,
 		value: UniformValue,
 		type: UniformInternalType,
@@ -364,7 +363,7 @@ export class GPUProgram {
 
 		const isGLSL3 = glslVersion === GLSL3;
 
-		let location = _uniforms[uniformName]?.location[programName];
+		let location = _uniforms[uniformName]?.location.get(program);
 		// Init a location for WebGLProgram if needed (only do this once).
 		if (location === undefined) {
 			const _location = gl.getUniformLocation(program, uniformName);
@@ -373,9 +372,10 @@ export class GPUProgram {
 				return;
 			}
 			location = _location;
+
 			// Save location for future use.
 			if (_uniforms[uniformName]) {
-				_uniforms[uniformName].location[programName] = location;
+				_uniforms[uniformName].location.set(program, location);
 			}
 
 			// Since this is the first time we are initing the uniform, check that type is correct.
@@ -386,8 +386,7 @@ export class GPUProgram {
 				if (!isBoolean(uniform) && uniform.constructor !== Array) {
 					badType = true;
 				}
-			} else 
-			if (type === FLOAT_1D_UNIFORM || type === FLOAT_2D_UNIFORM || type === FLOAT_3D_UNIFORM || type === FLOAT_4D_UNIFORM) {
+			} else if (type === FLOAT_1D_UNIFORM || type === FLOAT_2D_UNIFORM || type === FLOAT_3D_UNIFORM || type === FLOAT_4D_UNIFORM) {
 				if (!isFiniteNumber(uniform) && uniform.constructor !== Float32Array) {
 					badType = true;
 				}
@@ -476,10 +475,37 @@ export class GPUProgram {
 	}
 
 	/**
+	 * Cache uniform value and return whether the value has changed.
+	 * @private
+	 */
+	private _cacheUniformValue(name: string, value: UniformValue, type: UniformInternalType) {
+		const { _uniforms } = this;
+		// Cache uniform values.
+		const uniform = _uniforms[name];
+		if (!uniform) {
+			// Init uniform if needed.
+			_uniforms[name] = { location: new WeakMap(), value: isArray(value) ? (value as number[]).slice() : value, type };
+			return true;
+		}
+		const oldValue = uniform.value;
+		// Update value with a deep copy of input.
+		uniform.value = isArray(value) ? (value as number[]).slice() : value;
+		// Deep check if value has changed.
+		if (isArray(value)) {
+			for (let i = 0, length = (value as number[]).length; i < length; i++) {
+				if ((value as number[])[i] !== (oldValue as number[])[i]) {
+					return true;
+				}
+			}
+			return false; // No change.
+		}
+		return value !== oldValue;
+	}
+
+	/**
 	 * Set fragment shader uniform for GPUProgram.
 	 * @param name - Uniform name as it appears in fragment shader.
 	 * @param value - Uniform value.
-	 * @param type - Uniform type (this only needs to be set once).
 	 */
 	setUniform(
 		name: string,
@@ -495,6 +521,7 @@ export class GPUProgram {
 			if (length > 4) throw new Error(`Invalid uniform value: [${(value as number[]).join(', ')}] passed to GPUProgram "${this.name}, uniforms must be of type number[] with length <= 4, number, or boolean."`)
 		}
 
+		// Get uniform internal type.
 		let currentType = _uniforms[name]?.type;
 		if (type) {
 			const internalType = uniformInternalTypeForValue(value, type, name, this.name);
@@ -511,44 +538,29 @@ export class GPUProgram {
 			throw new Error(`Unknown type for uniform "${name}", please pass in type to GPUProgram.setUniform(name, value, type) when initing a new uniform.`);
 		}
 
-		if (!_uniforms[name]) {
-			// Init uniform if needed.
-			_uniforms[name] = { type: currentType, location: {}, value };
-		} else {
-			// Deep check if value has changed.
-			if (isArray(value)) {
-				let isChanged = true;
-				for (let i = 0; i < (value as number[]).length; i++) {
-					if (_uniforms[name].value !== value) {
-						isChanged = true;
-						break;
-					}
-				}
-				if (!isChanged) return; // No change.
-			} else if (_uniforms[name].value === value) {
-				return; // No change.
-			}
-			// Update value.
-			_uniforms[name].value = value;
-		}
+		const changed = this._cacheUniformValue(name, value, currentType);
+		if (!changed) return;
 
+		// TODO: look at this.
 		const samplerUniform = _samplerUniformsIndices.find((uniform) => uniform.name === name);
-		if (samplerUniform && currentType === INT_1D_UNIFORM) {
+		if (samplerUniform && isInteger(value)) {
 			samplerUniform.inputIndex = value as number;
 		}
 
-		if (verboseLogging) console.log(`Setting uniform "${name}" for program "${this.name}" to value ${JSON.stringify(value)} with type ${currentType}.`)
+		if (verboseLogging) console.log(`Setting uniform "${name}" for program "${this.name}" to value ${JSON.stringify(value)}.`)
 
 		// Update any active programs.
-		const keys = Object.keys(_programs);
-		for (let i = 0, numKeys = keys.length; i < numKeys; i++) {
-			const programName = keys[i];
+		const programNames = Object.keys(_programs);
+		for (let i = 0, numPrograms = programNames.length; i < numPrograms; i++) {
+			const programName = programNames[i];
 			// Set active program.
 			const program = _programs[programName]!;
 			gl.useProgram(program);
-			this._setProgramUniform(program, programName, name, value, currentType);
+			this._setProgramUniform(program, name, value, currentType);
 		}
 
+		// this code is only executed in cases where we have a shader program with multiple outputs in a WebGL1 context.
+		// Notify all child programs of the setUniform.
 		if (this._childPrograms) {
 			for (let i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
 				this._childPrograms[i].setUniform(name, value, type);
@@ -595,23 +607,27 @@ export class GPUProgram {
 			if (filterMismatch || wrapX !== _internalWrapX || wrapY !== _internalWrapY) {
 				const halfPxSize = [0.5 / width, 0.5 / height];
 				const halfPxUniform = `${SAMPLER2D_HALF_PX_UNIFORM}${index}`;
-				this._setProgramUniform(
-					program,
-					programName,
-					halfPxUniform,
-					halfPxSize,
-					FLOAT_2D_UNIFORM,
-				);
+				const halfPxUniformChanged = this._cacheUniformValue(halfPxUniform, halfPxSize, FLOAT_2D_UNIFORM);
+				if (halfPxUniformChanged) {
+					this._setProgramUniform(
+						program,
+						halfPxUniform,
+						halfPxSize,
+						FLOAT_2D_UNIFORM,
+					);
+				}
 				if (filterMismatch) {
 					const dimensions = [width, height];
 					const dimensionsUniform = `${SAMPLER2D_DIMENSIONS_UNIFORM}${index}`;
-					this._setProgramUniform(
-						program,
-						programName,
-						dimensionsUniform,
-						dimensions,
-						FLOAT_2D_UNIFORM,
-					);
+					const dimensionsUniformChanged = this._cacheUniformValue(dimensionsUniform, dimensions, FLOAT_2D_UNIFORM);
+					if (dimensionsUniformChanged) {
+						this._setProgramUniform(
+							program,
+							dimensionsUniform,
+							dimensions,
+							FLOAT_2D_UNIFORM,
+						);
+					}
 				}
 			}
 		}
@@ -636,7 +652,8 @@ export class GPUProgram {
 			throw new Error(`Could not find valid programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
 		const internalType = uniformInternalTypeForValue(value, type, uniformName, this.name);
-		this._setProgramUniform(program, programName, uniformName, value, internalType);
+		const changed = this._cacheUniformValue(uniformName, value, internalType);
+		if (changed) this._setProgramUniform(program, uniformName, value, internalType);
 	}
 
 	/**

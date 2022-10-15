@@ -296,9 +296,9 @@ export type UniformParams = {
  * @private
  */
 export type Uniform = { 
-	location: { [key: string]: WebGLUniformLocation },
-	type: UniformInternalType,
+	location: WeakMap<WebGLProgram, WebGLUniformLocation>,
 	value: UniformValue,
+	type: UniformInternalType,
 };
 
 // Vertex shader types.

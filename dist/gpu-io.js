@@ -3837,7 +3837,7 @@ var GPUProgram = /** @class */ (function () {
         // Delete all cached uniform locations.
         var uniforms = Object.values(_uniforms);
         for (var i = 0, numUniforms = uniforms.length; i < numUniforms; i++) {
-            uniforms[i].location = {};
+            uniforms[i].location = new WeakMap();
         }
         if (this._childPrograms) {
             for (var i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
@@ -3925,11 +3925,11 @@ var GPUProgram = /** @class */ (function () {
         // Set active program.
         gl.useProgram(program);
         var uniformNames = Object.keys(_uniforms);
-        for (var i = 0; i < uniformNames.length; i++) {
+        for (var i = 0, numUniforms = uniformNames.length; i < numUniforms; i++) {
             var uniformName = uniformNames[i];
             var uniform = _uniforms[uniformName];
             var value = uniform.value, type = uniform.type;
-            this._setProgramUniform(program, key, uniformName, value, type);
+            this._setProgramUniform(program, uniformName, value, type);
         }
         _programs[key] = program;
         _programsKeyLookup.set(program, key);
@@ -3939,13 +3939,13 @@ var GPUProgram = /** @class */ (function () {
      * Set uniform for GLProgram.
      * @private
      */
-    GPUProgram.prototype._setProgramUniform = function (program, programName, uniformName, value, type) {
+    GPUProgram.prototype._setProgramUniform = function (program, uniformName, value, type) {
         var _a;
         var _b = this, _composer = _b._composer, _uniforms = _b._uniforms;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback, glslVersion = _composer.glslVersion;
         // We have already set gl.useProgram(program) outside this function.
         var isGLSL3 = glslVersion === constants_1.GLSL3;
-        var location = (_a = _uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.location[programName];
+        var location = (_a = _uniforms[uniformName]) === null || _a === void 0 ? void 0 : _a.location.get(program);
         // Init a location for WebGLProgram if needed (only do this once).
         if (location === undefined) {
             var _location = gl.getUniformLocation(program, uniformName);
@@ -3956,7 +3956,7 @@ var GPUProgram = /** @class */ (function () {
             location = _location;
             // Save location for future use.
             if (_uniforms[uniformName]) {
-                _uniforms[uniformName].location[programName] = location;
+                _uniforms[uniformName].location.set(program, location);
             }
             // Since this is the first time we are initing the uniform, check that type is correct.
             // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getUniform
@@ -4065,10 +4065,36 @@ var GPUProgram = /** @class */ (function () {
         }
     };
     /**
+     * Cache uniform value and return whether the value has changed.
+     * @private
+     */
+    GPUProgram.prototype._cacheUniformValue = function (name, value, type) {
+        var _uniforms = this._uniforms;
+        // Cache uniform values.
+        var uniform = _uniforms[name];
+        if (!uniform) {
+            // Init uniform if needed.
+            _uniforms[name] = { location: new WeakMap(), value: (0, type_checks_1.isArray)(value) ? value.slice() : value, type: type };
+            return true;
+        }
+        var oldValue = uniform.value;
+        // Update value with a deep copy of input.
+        uniform.value = (0, type_checks_1.isArray)(value) ? value.slice() : value;
+        // Deep check if value has changed.
+        if ((0, type_checks_1.isArray)(value)) {
+            for (var i = 0, length_2 = value.length; i < length_2; i++) {
+                if (value[i] !== oldValue[i]) {
+                    return true;
+                }
+            }
+            return false; // No change.
+        }
+        return value !== oldValue;
+    };
+    /**
      * Set fragment shader uniform for GPUProgram.
      * @param name - Uniform name as it appears in fragment shader.
      * @param value - Uniform value.
-     * @param type - Uniform type (this only needs to be set once).
      */
     GPUProgram.prototype.setUniform = function (name, value, type) {
         var _a;
@@ -4076,10 +4102,11 @@ var GPUProgram = /** @class */ (function () {
         var verboseLogging = _composer.verboseLogging, gl = _composer.gl;
         // Check that length of value is correct.
         if ((0, type_checks_1.isArray)(value)) {
-            var length_2 = value.length;
-            if (length_2 > 4)
+            var length_3 = value.length;
+            if (length_3 > 4)
                 throw new Error("Invalid uniform value: [".concat(value.join(', '), "] passed to GPUProgram \"").concat(this.name, ", uniforms must be of type number[] with length <= 4, number, or boolean.\""));
         }
+        // Get uniform internal type.
         var currentType = (_a = _uniforms[name]) === null || _a === void 0 ? void 0 : _a.type;
         if (type) {
             var internalType = (0, utils_1.uniformInternalTypeForValue)(value, type, name, this.name);
@@ -4096,44 +4123,27 @@ var GPUProgram = /** @class */ (function () {
         if (currentType === undefined) {
             throw new Error("Unknown type for uniform \"".concat(name, "\", please pass in type to GPUProgram.setUniform(name, value, type) when initing a new uniform."));
         }
-        if (!_uniforms[name]) {
-            // Init uniform if needed.
-            _uniforms[name] = { type: currentType, location: {}, value: value };
-        }
-        else {
-            // Deep check if value has changed.
-            if ((0, type_checks_1.isArray)(value)) {
-                var isChanged = true;
-                for (var i = 0; i < value.length; i++) {
-                    if (_uniforms[name].value !== value) {
-                        isChanged = true;
-                        break;
-                    }
-                }
-                if (!isChanged)
-                    return; // No change.
-            }
-            else if (_uniforms[name].value === value) {
-                return; // No change.
-            }
-            // Update value.
-            _uniforms[name].value = value;
-        }
+        var changed = this._cacheUniformValue(name, value, currentType);
+        if (!changed)
+            return;
+        // TODO: look at this.
         var samplerUniform = _samplerUniformsIndices.find(function (uniform) { return uniform.name === name; });
-        if (samplerUniform && currentType === constants_1.INT_1D_UNIFORM) {
+        if (samplerUniform && (0, type_checks_1.isInteger)(value)) {
             samplerUniform.inputIndex = value;
         }
         if (verboseLogging)
-            console.log("Setting uniform \"".concat(name, "\" for program \"").concat(this.name, "\" to value ").concat(JSON.stringify(value), " with type ").concat(currentType, "."));
+            console.log("Setting uniform \"".concat(name, "\" for program \"").concat(this.name, "\" to value ").concat(JSON.stringify(value), "."));
         // Update any active programs.
-        var keys = Object.keys(_programs);
-        for (var i = 0, numKeys = keys.length; i < numKeys; i++) {
-            var programName = keys[i];
+        var programNames = Object.keys(_programs);
+        for (var i = 0, numPrograms = programNames.length; i < numPrograms; i++) {
+            var programName = programNames[i];
             // Set active program.
             var program = _programs[programName];
             gl.useProgram(program);
-            this._setProgramUniform(program, programName, name, value, currentType);
+            this._setProgramUniform(program, name, value, currentType);
         }
+        // this code is only executed in cases where we have a shader program with multiple outputs in a WebGL1 context.
+        // Notify all child programs of the setUniform.
         if (this._childPrograms) {
             for (var i = 0, numChildren = this._childPrograms.length; i < numChildren; i++) {
                 this._childPrograms[i].setUniform(name, value, type);
@@ -4157,7 +4167,7 @@ var GPUProgram = /** @class */ (function () {
             throw new Error("Could not find valid programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
         var indexLookup = new Array(_samplerUniformsIndices.length).fill(-1);
-        for (var i = 0, length_3 = _samplerUniformsIndices.length; i < length_3; i++) {
+        for (var i = 0, length_4 = _samplerUniformsIndices.length; i < length_4; i++) {
             var _b = _samplerUniformsIndices[i], inputIndex = _b.inputIndex, shaderIndex = _b.shaderIndex;
             if (indexLookup[inputIndex] >= 0) {
                 // There is an index collision, this should not happen.
@@ -4167,7 +4177,7 @@ var GPUProgram = /** @class */ (function () {
                 indexLookup[inputIndex] = shaderIndex;
             }
         }
-        for (var i = 0, length_4 = input.length; i < length_4; i++) {
+        for (var i = 0, length_5 = input.length; i < length_5; i++) {
             var layer = input[i].layer;
             var width = layer.width, height = layer.height;
             var index = indexLookup[i];
@@ -4178,11 +4188,17 @@ var GPUProgram = /** @class */ (function () {
             if (filterMismatch || wrapX !== _internalWrapX || wrapY !== _internalWrapY) {
                 var halfPxSize = [0.5 / width, 0.5 / height];
                 var halfPxUniform = "".concat(polyfills_1.SAMPLER2D_HALF_PX_UNIFORM).concat(index);
-                this._setProgramUniform(program, programName, halfPxUniform, halfPxSize, constants_1.FLOAT_2D_UNIFORM);
+                var halfPxUniformChanged = this._cacheUniformValue(halfPxUniform, halfPxSize, constants_1.FLOAT_2D_UNIFORM);
+                if (halfPxUniformChanged) {
+                    this._setProgramUniform(program, halfPxUniform, halfPxSize, constants_1.FLOAT_2D_UNIFORM);
+                }
                 if (filterMismatch) {
                     var dimensions = [width, height];
                     var dimensionsUniform = "".concat(polyfills_1.SAMPLER2D_DIMENSIONS_UNIFORM).concat(index);
-                    this._setProgramUniform(program, programName, dimensionsUniform, dimensions, constants_1.FLOAT_2D_UNIFORM);
+                    var dimensionsUniformChanged = this._cacheUniformValue(dimensionsUniform, dimensions, constants_1.FLOAT_2D_UNIFORM);
+                    if (dimensionsUniformChanged) {
+                        this._setProgramUniform(program, dimensionsUniform, dimensions, constants_1.FLOAT_2D_UNIFORM);
+                    }
                 }
             }
         }
@@ -4201,7 +4217,9 @@ var GPUProgram = /** @class */ (function () {
             throw new Error("Could not find valid programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
         var internalType = (0, utils_1.uniformInternalTypeForValue)(value, type, uniformName, this.name);
-        this._setProgramUniform(program, programName, uniformName, value, internalType);
+        var changed = this._cacheUniformValue(uniformName, value, internalType);
+        if (changed)
+            this._setProgramUniform(program, uniformName, value, internalType);
     };
     /**
      * Deallocate GPUProgram instance and associated WebGL properties.

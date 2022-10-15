@@ -258,11 +258,9 @@ export declare type UniformParams = {
  * @private
  */
 export declare type Uniform = {
-    location: {
-        [key: string]: WebGLUniformLocation;
-    };
-    type: UniformInternalType;
+    location: WeakMap<WebGLProgram, WebGLUniformLocation>;
     value: UniformValue;
+    type: UniformInternalType;
 };
 /**
  * @private

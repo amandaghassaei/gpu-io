@@ -24,6 +24,7 @@
 		GPUIO_VS_NORMAL_ATTRIBUTE,
 		GPUIO_VS_POSITION_W_ACCUM,
 		GPUIO_VS_INDEXED_POSITIONS,
+		FLOAT_4D_UNIFORM,
 	} = GPUIO;
 
 	describe('GPUProgram', () => {
@@ -131,6 +132,23 @@
 				assert.typeOf(program._getProgramWithName(LAYER_VECTOR_FIELD_PROGRAM_NAME, {}, []), 'WebGLProgram');
 			});
 		});
+		describe('_cacheUniformValue', () => {
+			it('should cache uniform values', () => {
+				const setValueProgram = new GPUProgram(composer, {
+					name: 'uniform-test',
+					fragmentShader: setValueFragmentShader,
+				});
+				const value = [1, 2, 3, 4];
+				assert.equal(setValueProgram._cacheUniformValue('u_value', value, FLOAT_4D_UNIFORM), true);
+				assert.equal(setValueProgram._cacheUniformValue('u_value', value, FLOAT_4D_UNIFORM), false);
+				value[3] = 0;
+				assert.equal(setValueProgram._cacheUniformValue('u_value', value, FLOAT_4D_UNIFORM), true);
+				value[2] = 5.2;
+				setValueProgram.setUniform('u_value', value, FLOAT);
+				assert.equal(setValueProgram._cacheUniformValue('u_value', value, FLOAT_4D_UNIFORM), false);
+				setValueProgram.dispose();
+			});
+		}),
 		describe('setUniform', () => {
 			it('should set program uniform', () => {
 				const setValueProgram = new GPUProgram(composer, {

@@ -59,10 +59,14 @@ export declare class GPUProgram {
      */
     private _setProgramUniform;
     /**
+     * Cache uniform value and return whether the value has changed.
+     * @private
+     */
+    private _cacheUniformValue;
+    /**
      * Set fragment shader uniform for GPUProgram.
      * @param name - Uniform name as it appears in fragment shader.
      * @param value - Uniform value.
-     * @param type - Uniform type (this only needs to be set once).
      */
     setUniform(name: string, value: UniformValue, type?: UniformType): void;
     /**
