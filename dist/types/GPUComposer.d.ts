@@ -37,7 +37,7 @@ export declare class GPUComposer {
     /**
      * @private
      */
-    readonly _renderer?: WebGLRenderer | WebGL1Renderer;
+    readonly _threeRenderer?: WebGLRenderer | WebGL1Renderer;
     /**
      * Precomputed vertex buffers (inited as needed).
      */

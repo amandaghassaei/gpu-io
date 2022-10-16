@@ -554,7 +554,6 @@ var GPUComposer = /** @class */ (function () {
         // https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
         // Unbind active buffer.
-        // TODO:
         if (this.isWebGL2)
             gl.bindVertexArray(null);
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -581,7 +580,7 @@ var GPUComposer = /** @class */ (function () {
         var composer = new GPUComposer(__assign(__assign({ floatPrecision: renderer.capabilities.precision, intPrecision: renderer.capabilities.precision }, params), { canvas: renderer.domElement, context: renderer.getContext() }));
         // Attach renderer.
         // @ts-ignore
-        composer._renderer = renderer;
+        composer._threeRenderer = renderer;
         return composer;
     };
     Object.defineProperty(GPUComposer.prototype, "canvas", {
@@ -633,7 +632,7 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype._initVertexBuffer = function (data) {
         var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl, isWebGL2 = _a.isWebGL2;
-        // TODO:
+        // Unbind any  VAOs.
         if (isWebGL2)
             gl.bindVertexArray(null);
         var buffer = gl.createBuffer();
@@ -641,7 +640,6 @@ var GPUComposer = /** @class */ (function () {
             _errorCallback('Unable to allocate gl buffer.');
             return;
         }
-        // TODO:  let bufferType = data instanceof Uint16Array || data instanceof Uint32Array ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         // Add buffer data.
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -771,13 +769,10 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexCompileConstants, fullscreenRender, input, output) {
-        var _a = this, gl = _a.gl, _renderer = _a._renderer, isWebGL2 = _a.isWebGL2;
+        var _a = this, gl = _a.gl, _threeRenderer = _a._threeRenderer, isWebGL2 = _a.isWebGL2;
         // Unbind VAO for threejs compatibility.
-        if (_renderer) {
-            // TODO:
-            if (isWebGL2)
-                gl.bindVertexArray(null);
-        }
+        if (_threeRenderer && isWebGL2)
+            gl.bindVertexArray(null);
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
         // This line must come before this._setOutputLayer() as it depends on current internal state.
@@ -952,8 +947,9 @@ var GPUComposer = /** @class */ (function () {
             // Cache attribute location.
             locations.set(program, location);
         }
-        // TODO: check int support for webgl2.
-        // INT types not supported for attributes.
+        // INT types not supported for attributes in WebGL1.
+        // We're only really using INT vertex attributes for WebGL1 cases anyway,
+        // because WebGL1 does not support gl_VertexID.
         // Use FLOAT rather than SHORT bc FLOAT covers more INT range.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
         gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
@@ -1802,16 +1798,16 @@ var GPUComposer = /** @class */ (function () {
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
      */
     GPUComposer.prototype.resetThreeState = function () {
-        if (!this._renderer) {
+        if (!this._threeRenderer) {
             throw new Error("Can't call resetThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().");
         }
         var gl = this.gl;
         // Reset viewport.
-        var viewport = this._renderer.getViewport(new ThreejsUtils.Vector4());
+        var viewport = this._threeRenderer.getViewport(new ThreejsUtils.Vector4());
         gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         // Unbind framebuffer (render to screen).
         // Reset threejs WebGL bindings and state, this also unbinds the framebuffer.
-        this._renderer.resetState();
+        this._threeRenderer.resetState();
     };
     // TODO: params.callback is not generated in the docs.
     /**
@@ -1945,7 +1941,7 @@ var GPUComposer = /** @class */ (function () {
         (_a = this._wrappedLineColorProgram) === null || _a === void 0 ? void 0 : _a.dispose();
         delete this._wrappedLineColorProgram;
         // @ts-ignore
-        delete this._renderer;
+        delete this._threeRenderer;
         // @ts-ignore
         delete this.gl;
         // @ts-ignore;
@@ -2783,8 +2779,8 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.attachToThreeTexture = function (texture) {
         var _a = this, _composer = _a._composer, numBuffers = _a.numBuffers, currentState = _a.currentState, name = _a.name;
-        var _renderer = _composer._renderer, gl = _composer.gl;
-        if (!_renderer) {
+        var _threeRenderer = _composer._threeRenderer, gl = _composer.gl;
+        if (!_threeRenderer) {
             throw new Error('GPUComposer was not inited with a renderer.');
         }
         // Link webgl texture to threejs object.
@@ -2792,7 +2788,7 @@ var GPULayer = /** @class */ (function () {
         if (numBuffers > 1) {
             throw new Error("GPULayer \"".concat(name, "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer."));
         }
-        var offsetTextureProperties = _renderer.properties.get(texture);
+        var offsetTextureProperties = _threeRenderer.properties.get(texture);
         gl.deleteTexture(offsetTextureProperties.__webglTexture);
         offsetTextureProperties.__webglTexture = currentState.texture;
         offsetTextureProperties.__webglInit = true;
@@ -5612,7 +5608,7 @@ exports.SEGMENT_VERTEX_SHADER_SOURCE = "\nin vec2 a_gpuio_position;\n\nuniform f
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VERTEX_SHADER_HELPERS_SOURCE = void 0;
-exports.VERTEX_SHADER_HELPERS_SOURCE = "\n/**\n * Returns accurate MOD when arguments are approximate integers.\n */\nfloat modI(float a, float b) {\n    float m = a - floor((a + 0.5) / b) * b;\n    return floor(m + 0.5);\n}\n\n/**\n * Create UV coordinates from a 1D index for data stored in a texture of size \"dimensions\".\n */\nvec2 uvFromIndex(const float index, const vec2 dimensions) {\n    return vec2(\n        modI(index, dimensions.x),\n\t\tfloor(floor(index + 0.5) / dimensions.x)\n\t) / dimensions;\n}\nvec2 uvFromIndex(const int index, const vec2 dimensions) {\n    int width = int(dimensions.x);\n    int y = index / width;\n    return vec2(\n        index - y * width,\n\t\ty\n\t) / dimensions;\n}";
+exports.VERTEX_SHADER_HELPERS_SOURCE = "\n/**\n * Create UV coordinates from a 1D index for data stored in a texture of size \"dimensions\".\n */\nvec2 uvFromIndex(const float index, const vec2 dimensions) {\n\tfloat y = floor((index + 0.5) / dimensions.x);\n\tfloat x = floor(index - y * dimensions.x + 0.5);\n\treturn vec2(x + 0.5, y + 0.5) / dimensions;\n}\nvec2 uvFromIndex(const int index, const vec2 dimensions) {\n    int width = int(dimensions.x);\n    int y = index / width;\n\tint x = index - y * width;\n    return vec2(float(x) + 0.5, float(y) + 0.5) / dimensions;\n}\nvec2 uvFromIndex(const float index, const ivec2 dimensions) {\n\tfloat width = float(dimensions.x);\n    float y = floor((index + 0.5) / width);\n\tfloat x = floor(index - y * width + 0.5);\n    return vec2(x + 0.5, y + 0.5) / vec2(dimensions);\n}\nvec2 uvFromIndex(const int index, const ivec2 dimensions) {\n    int y = index / dimensions.x;\n\tint x = index - y * dimensions.x;\n    return vec2(float(x) + 0.5, float(y) + 0.5) / vec2(dimensions);\n}";
 
 
 /***/ }),

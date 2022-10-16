@@ -104,7 +104,7 @@ export class GPUComposer {
 	/**
 	 * @private
 	 */
-	readonly _renderer?: WebGLRenderer | WebGL1Renderer;
+	readonly _threeRenderer?: WebGLRenderer | WebGL1Renderer;
 	
 	/**
 	 * Precomputed vertex buffers (inited as needed).
@@ -226,7 +226,7 @@ export class GPUComposer {
 		);
 		// Attach renderer.
 		// @ts-ignore
-		composer._renderer = renderer;
+		composer._threeRenderer = renderer;
 		return composer;
 	}
 
@@ -335,7 +335,6 @@ export class GPUComposer {
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
 		// Unbind active buffer.
-		// TODO:
 		if (this.isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
@@ -397,14 +396,13 @@ export class GPUComposer {
 		data: Float32Array,
 	) {
 		const { _errorCallback, gl, isWebGL2 } = this;
-		// TODO:
+		// Unbind any  VAOs.
 		if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
 		const buffer = gl.createBuffer();
 		if (!buffer) {
 			_errorCallback('Unable to allocate gl buffer.');
 			return;
 		}
-		// TODO:  let bufferType = data instanceof Uint16Array || data instanceof Uint32Array ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 		// Add buffer data.
 		gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -575,14 +573,10 @@ export class GPUComposer {
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer | GPULayer[],
 	) {
-		const { gl, _renderer, isWebGL2 } = this;
+		const { gl, _threeRenderer, isWebGL2 } = this;
 
 		// Unbind VAO for threejs compatibility.
-		if (_renderer) {
-			// TODO:
-			if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
-		}
-		
+		if (_threeRenderer && isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
 
 		// CAUTION: the order of these next few lines is important.
 
@@ -769,8 +763,9 @@ export class GPUComposer {
 			locations.set(program, location);
 		}
 
-		// TODO: check int support for webgl2.
-		// INT types not supported for attributes.
+		// INT types not supported for attributes in WebGL1.
+		// We're only really using INT vertex attributes for WebGL1 cases anyway,
+		// because WebGL1 does not support gl_VertexID.
 		// Use FLOAT rather than SHORT bc FLOAT covers more INT range.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
 		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
@@ -1770,16 +1765,16 @@ export class GPUComposer {
 	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
 	 */
 	resetThreeState() {
-		if (!this._renderer) {
+		if (!this._threeRenderer) {
 			throw new Error(`Can't call resetThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 		}
 		const { gl } = this;
 		// Reset viewport.
-		const viewport = this._renderer.getViewport(new ThreejsUtils.Vector4() as Vector4);
+		const viewport = this._threeRenderer.getViewport(new ThreejsUtils.Vector4() as Vector4);
 		gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		// Unbind framebuffer (render to screen).
 		// Reset threejs WebGL bindings and state, this also unbinds the framebuffer.
-		this._renderer.resetState();
+		this._threeRenderer.resetState();
 	}
 
 	// TODO: params.callback is not generated in the docs.
@@ -1921,7 +1916,7 @@ export class GPUComposer {
 		delete this._wrappedLineColorProgram;
 
 		// @ts-ignore
-		delete this._renderer;
+		delete this._threeRenderer;
 		// @ts-ignore
 		delete this.gl;
 		// @ts-ignore;

@@ -973,8 +973,8 @@ export class GPULayer {
 	 */
 	attachToThreeTexture(texture: Texture) {
 		const { _composer, numBuffers, currentState, name } = this;
-		const { _renderer, gl } = _composer;
-		if (!_renderer) {
+		const { _threeRenderer, gl } = _composer;
+		if (!_threeRenderer) {
 			throw new Error('GPUComposer was not inited with a renderer.');
 		}
 		// Link webgl texture to threejs object.
@@ -982,7 +982,7 @@ export class GPULayer {
 		if (numBuffers > 1) {
 			throw new Error(`GPULayer "${name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
 		}
-		const offsetTextureProperties = _renderer.properties.get(texture);
+		const offsetTextureProperties = _threeRenderer.properties.get(texture);
 		gl.deleteTexture(offsetTextureProperties.__webglTexture);
 		offsetTextureProperties.__webglTexture = currentState.texture;
 		offsetTextureProperties.__webglInit = true;
