@@ -301,12 +301,14 @@
 				layer2.dispose();
 			});
 		});
-		describe('is1D', () => {
+		describe('is1D, is2D', () => {
 			it('should distinguish between 1D and 2D GPULayers', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: 245});
 				const layer2 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56]});
 				assert.equal(layer1.is1D(), true);
 				assert.equal(layer2.is1D(), false);
+				assert.equal(layer1.is2D(), false);
+				assert.equal(layer2.is2D(), true);
 				layer1.dispose();
 				layer2.dispose();
 			});
@@ -600,8 +602,54 @@
 			});
 		});
 		describe('attachToThreeTexture', () => {
-			it('should ', () => {
+			it ('should throw error in invalid cases', () => {
+				const texture = new THREE.Texture();
+				const layer1 = new GPULayer(composer1, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [34, 56],
+					filter: LINEAR,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
+				});
+				assert.throws(() => { layer1.attachToThreeTexture(texture); },
+					'GPUComposer was not inited with a renderer.');
+				const renderer = new THREE.WebGLRenderer();
+				const composer = new GPUComposer.initWithThreeRenderer(renderer);
+				const layer2 = new GPULayer(composer, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [34, 56],
+					filter: LINEAR,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
+					numBuffers: 2,
+				});
+				assert.throws(() => { layer2.attachToThreeTexture(texture); },
+					'GPULayer "test-layer" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.');
+				layer1.dispose();
+				layer2.dispose();
+				composer.dispose();
+			});
+			it('should attach webgl texture to three texture', () => {
 				// TODO:
+				const renderer = new THREE.WebGLRenderer();
+				const composer = new GPUComposer.initWithThreeRenderer(renderer);
+				const layer1 = new GPULayer(composer, {
+					name: 'test-layer',
+					type: FLOAT,
+					numComponents: 3,
+					dimensions: [34, 56],
+					filter: LINEAR,
+					wrapX: REPEAT,
+					wrapY: REPEAT,
+				});
+				const texture = new THREE.Texture();
+				layer1.attachToThreeTexture(texture);
+				assert.equal(renderer.properties.get(texture).__webglTexture, layer1.currentState.texture);
+				assert.equal(renderer.properties.get(texture).__webglInit, true);
 			});
 		});
 		describe('clone', () => {

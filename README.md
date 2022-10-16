@@ -6,16 +6,16 @@
 [![NPM Downloads](https://img.shields.io/npm/dw/gpu-io)](https://www.npmtrends.com/gpu-io)
 [![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE)
 
-**A GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations**
+**A GPU-accelerated computing library for physics simulations, image processing, and other mathematical calculations**
 
-gpu-io is a WebGL library that helps you easily compose shader programs for real-time physics simulations and other computationally demanding tasks.  This library can be used for a variety of applications, but it is especially useful for grid-based physics simulations and cellular automata, where state is stored in dense scalar/vector fields and iteratively updated by various programs/operators.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  This library contains additional utilities for doing general-purpose GPU computations and particle/geometry manipulations via a fragment shader implementation.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
+gpu-io is a WebGL library that helps you easily compose shader programs for real-time physics simulations and other computationally demanding tasks.  This library can be used for a variety of applications including physics simulations, cellular automata, particle/agent-based simulations, image processing, and general purpose GPU computations.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  WebGPU support is planned in the future.
 
 
 ### Motivation
 
-The main motivation behind gpu-io is to make it easier to compose GPU-accelerated applications without worrying too much about low-level WebGL details.  This library manages WebGL state, implements shader and program caching, and deals with issues of available WebGL versions or spec inconsistencies across different browsers/hardware.  It should significantly cut down on the amount of boilerplate code and state management you need to do in your applications.  At the same time, gpu-io gives you enough low-level control to write extremely efficient programs for demanding simulation applications.
+The main motivation behind gpu-io is to make it easier to compose GPU-accelerated applications without worrying too much about low-level WebGL details.  This library manages WebGL state, implements shader and program caching, and deals with issues of available WebGL versions or spec inconsistencies across different browsers/hardware.  It should significantly cut down on the amount of boilerplate code and state management you need to do in your applications.  At the same time, gpu-io gives you enough low-level control to write extremely efficient programs for demanding applications.
 
 [As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge) - but even among WebGL2 implementations, there are differences in behavior across browsers (especially mobile).  Additionally, you may still come across non-WebGL2 enabled browsers in the wild for some time.  gpu-io rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  gpu-io will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that they can run on WebGL1 in a pinch. See [tests/README.md](https://github.com/amandaghassaei/gpu-io/tree/main/tests#browser-support) for more information on browser support.
 
@@ -249,6 +249,8 @@ More info about using gpu-io to update mesh positions data is coming soon.
 
 ### Limitations
 
+- gpu-io currently only supports GPULayers with 1D or 2D arrays of dense data.  3D textures are not currently supported by the library.  You can still compute 3D simulations in gpu-io, you will just need to pass in your 3D position data as
+1D list to a GPULayer and then access it in the fragment shader using .xyz.  TODO: make example for this.
 - gpu-io does not currently allow you to pass in your own vertex shaders.  Currently all computation is happening in user-specified fragment shaders; vertex shaders are managed internally.
 - In order for the WRAP/FILTER polyfilling to work correctly, any calls to texture() must contain a direct reference to the sampler2D that it should operate on.  For example:
 

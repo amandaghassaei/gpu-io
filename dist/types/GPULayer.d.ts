@@ -154,6 +154,11 @@ export declare class GPULayer {
      */
     is1D(): boolean;
     /**
+     * Returns whether the GPULayer was inited as a 2D array (rather than 1D).
+     * @returns - true if GPULayer is 2D, else false.
+     */
+    is2D(): boolean;
+    /**
      * Test whether the current buffer index has override enabled.
      * @private
      */

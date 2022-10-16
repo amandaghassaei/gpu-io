@@ -18,6 +18,7 @@
 
 - [initFromImageURL](GPULayer.md#initfromimageurl)
 - [is1D](GPULayer.md#is1d)
+- [is2D](GPULayer.md#is2d)
 - [incrementBufferIndex](GPULayer.md#incrementbufferindex)
 - [decrementBufferIndex](GPULayer.md#decrementbufferindex)
 - [getStateAtIndex](GPULayer.md#getstateatindex)
@@ -138,6 +139,20 @@ Returns whether the GPULayer was inited as a 1D array (rather than 2D).
 `boolean`
 
 - true if GPULayer is 1D, else false.
+
+___
+
+### is2D
+
+▸ **is2D**(): `boolean`
+
+Returns whether the GPULayer was inited as a 2D array (rather than 1D).
+
+#### Returns
+
+`boolean`
+
+- true if GPULayer is 2D, else false.
 
 ___
 
