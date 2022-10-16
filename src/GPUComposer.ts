@@ -40,10 +40,11 @@ import {
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
-// Only @types/three is installed as dev dependency.
+// This repo does not depend on three, only @types/three is installed as dev dependency.
 import type {
 	WebGLRenderer,
 	Vector4,
+	WebGL1Renderer,
 } from 'three';
 import * as ThreejsUtils from './Vector4';
 import {
@@ -103,7 +104,7 @@ export class GPUComposer {
 	/**
 	 * @private
 	 */
-	readonly _renderer?: WebGLRenderer;
+	readonly _renderer?: WebGLRenderer | WebGL1Renderer;
 	
 	/**
 	 * Precomputed vertex buffers (inited as needed).
@@ -205,7 +206,7 @@ export class GPUComposer {
 	 * @returns 
 	 */
 	 static initWithThreeRenderer(
-		renderer: WebGLRenderer,
+		renderer: WebGLRenderer| WebGL1Renderer,
 		params?: {
 			glslVersion?: GLSLVersion,
 			intPrecision?: GLSLPrecision,
@@ -334,6 +335,8 @@ export class GPUComposer {
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
 		// Unbind active buffer.
+		// TODO:
+		if (this.isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		// Canvas setup.
@@ -393,12 +396,15 @@ export class GPUComposer {
 	private _initVertexBuffer(
 		data: Float32Array,
 	) {
-		const { _errorCallback, gl } = this;
+		const { _errorCallback, gl, isWebGL2 } = this;
+		// TODO:
+		if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
 		const buffer = gl.createBuffer();
 		if (!buffer) {
 			_errorCallback('Unable to allocate gl buffer.');
 			return;
 		}
+		// TODO:  let bufferType = data instanceof Uint16Array || data instanceof Uint32Array ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 		// Add buffer data.
 		gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -569,7 +575,14 @@ export class GPUComposer {
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer | GPULayer[],
 	) {
-		const { gl } = this;
+		const { gl, _renderer, isWebGL2 } = this;
+
+		// Unbind VAO for threejs compatibility.
+		if (_renderer) {
+			// TODO:
+			if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
+		}
+		
 
 		// CAUTION: the order of these next few lines is important.
 
@@ -745,7 +758,7 @@ export class GPUComposer {
 			locations = new WeakMap<WebGLProgram, number>();
 			_vertexAttributeLocations[name] = locations;
 		} else {
-			location = locations.get(program);
+		// 	location = locations.get(program);
 		}
 		if (location === undefined) {
 			location = gl.getAttribLocation(program, name);
@@ -756,13 +769,14 @@ export class GPUComposer {
 			locations.set(program, location);
 		}
 
-		// Enable the attribute.
-		gl.enableVertexAttribArray(location);
-		_enabledVertexAttributes[location] = true;
+		// TODO: check int support for webgl2.
 		// INT types not supported for attributes.
 		// Use FLOAT rather than SHORT bc FLOAT covers more INT range.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
 		gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
+		// Enable the attribute.
+		gl.enableVertexAttribArray(location);
+		_enabledVertexAttributes[location] = true;
 	}
 	private _disableVertexAttributes() {
 		const { _enabledVertexAttributes, gl } = this;
@@ -834,10 +848,13 @@ export class GPUComposer {
 		return false;
 	}
 
-	private _drawFinish() {
+	private _drawFinish(params: {
+		blendAlpha?: boolean,
+	}) {
 		const { gl } = this;
-		gl.disable(gl.BLEND);
-		this._disableVertexAttributes();
+		// Reset WebGL state.
+		if (params.blendAlpha) gl.disable(gl.BLEND);
+		// this._disableVertexAttributes();
 	}
 
 	/**
@@ -875,7 +892,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		this._drawFinish()
+		this._drawFinish(params)
 	}
 
 	/**
@@ -940,7 +957,7 @@ export class GPUComposer {
 		} else {
 			gl.drawArrays(gl.LINE_LOOP, 0, 4);
 		}
-		this._drawFinish();
+		this._drawFinish(params);
 	}
 
 	/**
@@ -981,7 +998,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		this._drawFinish();
+		this._drawFinish(params);
 	}
 
 	/**
@@ -1037,7 +1054,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);	
-		this._drawFinish();
+		this._drawFinish(params);
 	}
 
 	/**
@@ -1119,7 +1136,7 @@ export class GPUComposer {
 		} else {
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		}
-		this._drawFinish();
+		this._drawFinish(params);
 	}
 
 	/**
@@ -1470,7 +1487,7 @@ export class GPUComposer {
 	// 			gl.drawArrays(gl.LINE_STRIP, 0, count);
 	// 		}
 	// 	}
-	// 	this._drawFinish();
+	// 	this._drawFinish(params);
 	// }
 
 	/**
@@ -1565,7 +1582,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.POINTS, 0, count);
-		this._drawFinish();
+		this._drawFinish(params);
 	}
 
 	// drawLayerAsLines(
@@ -1664,7 +1681,7 @@ export class GPUComposer {
 	// 			gl.drawArrays(gl.LINE_STRIP, 0, count);
 	// 		}
 	// 	}
-	// 	this._drawFinish();
+	// 	this._drawFinish(params);
 	// }
 
 	/**
@@ -1746,7 +1763,7 @@ export class GPUComposer {
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		gl.drawArrays(gl.LINES, 0, length);
-		this._drawFinish();
+		this._drawFinish(params);
 	}
 
 	/**
@@ -1761,8 +1778,7 @@ export class GPUComposer {
 		const viewport = this._renderer.getViewport(new ThreejsUtils.Vector4() as Vector4);
 		gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		// Unbind framebuffer (render to screen).
-		this._renderer.setRenderTarget(null);
-		// Reset texture bindings.
+		// Reset threejs WebGL bindings and state, this also unbinds the framebuffer.
 		this._renderer.resetState();
 	}
 

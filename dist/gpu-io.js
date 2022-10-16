@@ -554,6 +554,9 @@ var GPUComposer = /** @class */ (function () {
         // https://stackoverflow.com/questions/51582282/error-when-creating-textures-in-webgl-with-the-rgb-format
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
         // Unbind active buffer.
+        // TODO:
+        if (this.isWebGL2)
+            gl.bindVertexArray(null);
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         // Canvas setup.
         this.resize([canvas.clientWidth, canvas.clientHeight]);
@@ -629,12 +632,16 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._initVertexBuffer = function (data) {
-        var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl;
+        var _a = this, _errorCallback = _a._errorCallback, gl = _a.gl, isWebGL2 = _a.isWebGL2;
+        // TODO:
+        if (isWebGL2)
+            gl.bindVertexArray(null);
         var buffer = gl.createBuffer();
         if (!buffer) {
             _errorCallback('Unable to allocate gl buffer.');
             return;
         }
+        // TODO:  let bufferType = data instanceof Uint16Array || data instanceof Uint32Array ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER;
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         // Add buffer data.
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -764,7 +771,13 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexCompileConstants, fullscreenRender, input, output) {
-        var gl = this.gl;
+        var _a = this, gl = _a.gl, _renderer = _a._renderer, isWebGL2 = _a.isWebGL2;
+        // Unbind VAO for threejs compatibility.
+        if (_renderer) {
+            // TODO:
+            if (isWebGL2)
+                gl.bindVertexArray(null);
+        }
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
         // This line must come before this._setOutputLayer() as it depends on current internal state.
@@ -929,7 +942,7 @@ var GPUComposer = /** @class */ (function () {
             _vertexAttributeLocations[name] = locations;
         }
         else {
-            location = locations.get(program);
+            // 	location = locations.get(program);
         }
         if (location === undefined) {
             location = gl.getAttribLocation(program, name);
@@ -939,13 +952,14 @@ var GPUComposer = /** @class */ (function () {
             // Cache attribute location.
             locations.set(program, location);
         }
-        // Enable the attribute.
-        gl.enableVertexAttribArray(location);
-        _enabledVertexAttributes[location] = true;
+        // TODO: check int support for webgl2.
         // INT types not supported for attributes.
         // Use FLOAT rather than SHORT bc FLOAT covers more INT range.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
         gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
+        // Enable the attribute.
+        gl.enableVertexAttribArray(location);
+        _enabledVertexAttributes[location] = true;
     };
     GPUComposer.prototype._disableVertexAttributes = function () {
         var _a = this, _enabledVertexAttributes = _a._enabledVertexAttributes, gl = _a.gl;
@@ -1010,10 +1024,12 @@ var GPUComposer = /** @class */ (function () {
         }
         return false;
     };
-    GPUComposer.prototype._drawFinish = function () {
+    GPUComposer.prototype._drawFinish = function (params) {
         var gl = this.gl;
-        gl.disable(gl.BLEND);
-        this._disableVertexAttributes();
+        // Reset WebGL state.
+        if (params.blendAlpha)
+            gl.disable(gl.BLEND);
+        // this._disableVertexAttributes();
     };
     /**
      * Step GPUProgram entire fullscreen quad.
@@ -1041,7 +1057,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        this._drawFinish();
+        this._drawFinish(params);
     };
     /**
      * Step GPUProgram only for a 1px strip of pixels along the boundary.
@@ -1096,7 +1112,7 @@ var GPUComposer = /** @class */ (function () {
         else {
             gl.drawArrays(gl.LINE_LOOP, 0, 4);
         }
-        this._drawFinish();
+        this._drawFinish(params);
     };
     /**
      * Step GPUProgram for all but a 1px strip of pixels along the boundary.
@@ -1126,7 +1142,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        this._drawFinish();
+        this._drawFinish(params);
     };
     /**
      * Step GPUProgram inside a circular spot.  This is useful for touch interactions.
@@ -1168,7 +1184,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, numSegments + 2);
-        this._drawFinish();
+        this._drawFinish(params);
     };
     /**
      * Step GPUProgram inside a line segment (rounded end caps available).
@@ -1235,7 +1251,7 @@ var GPUComposer = /** @class */ (function () {
         else {
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
-        this._drawFinish();
+        this._drawFinish(params);
     };
     /**
      * Step GPUProgram inside a rectangle.
@@ -1545,7 +1561,7 @@ var GPUComposer = /** @class */ (function () {
     // 			gl.drawArrays(gl.LINE_STRIP, 0, count);
     // 		}
     // 	}
-    // 	this._drawFinish();
+    // 	this._drawFinish(params);
     // }
     /**
      * Draw the contents of a GPULayer as points.  This assumes the components of the GPULayer have the form [xPosition, yPosition] or [xPosition, yPosition, xOffset, yOffset].
@@ -1624,7 +1640,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.POINTS, 0, count);
-        this._drawFinish();
+        this._drawFinish(params);
     };
     // drawLayerAsLines(
     // 	params: {
@@ -1713,7 +1729,7 @@ var GPUComposer = /** @class */ (function () {
     // 			gl.drawArrays(gl.LINE_STRIP, 0, count);
     // 		}
     // 	}
-    // 	this._drawFinish();
+    // 	this._drawFinish(params);
     // }
     /**
      * Draw the contents of a 2 component GPULayer as a vector field.
@@ -1780,7 +1796,7 @@ var GPUComposer = /** @class */ (function () {
         // Draw.
         this._setBlendMode(params.blendAlpha);
         gl.drawArrays(gl.LINES, 0, length);
-        this._drawFinish();
+        this._drawFinish(params);
     };
     /**
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
@@ -1794,8 +1810,7 @@ var GPUComposer = /** @class */ (function () {
         var viewport = this._renderer.getViewport(new ThreejsUtils.Vector4());
         gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         // Unbind framebuffer (render to screen).
-        this._renderer.setRenderTarget(null);
-        // Reset texture bindings.
+        // Reset threejs WebGL bindings and state, this also unbinds the framebuffer.
         this._renderer.resetState();
     };
     // TODO: params.callback is not generated in the docs.
@@ -2768,7 +2783,7 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.attachToThreeTexture = function (texture) {
         var _a = this, _composer = _a._composer, numBuffers = _a.numBuffers, currentState = _a.currentState, name = _a.name;
-        var _renderer = _composer._renderer;
+        var _renderer = _composer._renderer, gl = _composer.gl;
         if (!_renderer) {
             throw new Error('GPUComposer was not inited with a renderer.');
         }
@@ -2778,6 +2793,7 @@ var GPULayer = /** @class */ (function () {
             throw new Error("GPULayer \"".concat(name, "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer."));
         }
         var offsetTextureProperties = _renderer.properties.get(texture);
+        gl.deleteTexture(offsetTextureProperties.__webglTexture);
         offsetTextureProperties.__webglTexture = currentState.texture;
         offsetTextureProperties.__webglInit = true;
     };

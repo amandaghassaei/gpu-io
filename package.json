@@ -24,8 +24,9 @@
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
     "build": "webpack && npm run docs",
-    "docs": "typedoc --options ./typedoc.json && npm run tohtml",
-    "tohtml": "marked -i ./examples/README.md -o ./examples/index.html && concat -o ./examples/index.html ./examples/common/github-markdown-wrapper1.html ./examples/index.html ./examples/common/github-markdown-wrapper2.html"
+    "docs": "typedoc --options ./typedoc.json && npm run mdtohtml",
+    "mdtohtml": "marked -i ./examples/README.md -o ./examples/index.html && concat -o ./examples/index.html ./examples/common/github-markdown-wrapper1.html ./examples/index.html ./examples/common/github-markdown-wrapper2.html",
+    "updatethree": "npm install --save-dev three@latest && cp ./node_modules/three/build/three.min.js ./examples/common/ && cp ./node_modules/three/examples/js/controls/OrbitControls.js ./examples/common/"
   },
   "author": "Amanda Ghassaei",
   "license": "MIT",

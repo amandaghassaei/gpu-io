@@ -2,7 +2,7 @@ import { GPULayer } from './GPULayer';
 import './GPULayerHelpers';
 import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
 import { GPUProgram } from './GPUProgram';
-import type { WebGLRenderer } from 'three';
+import type { WebGLRenderer, WebGL1Renderer } from 'three';
 export declare class GPUComposer {
     /**
      * The WebGL context associated with this GPUcomposer.
@@ -37,7 +37,7 @@ export declare class GPUComposer {
     /**
      * @private
      */
-    readonly _renderer?: WebGLRenderer;
+    readonly _renderer?: WebGLRenderer | WebGL1Renderer;
     /**
      * Precomputed vertex buffers (inited as needed).
      */
@@ -104,7 +104,7 @@ export declare class GPUComposer {
      * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
      * @returns
      */
-    static initWithThreeRenderer(renderer: WebGLRenderer, params?: {
+    static initWithThreeRenderer(renderer: WebGLRenderer | WebGL1Renderer, params?: {
         glslVersion?: GLSLVersion;
         intPrecision?: GLSLPrecision;
         floatPrecision?: GLSLPrecision;

@@ -98,7 +98,7 @@ Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single W
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `renderer` | `WebGLRenderer` | Threejs WebGLRenderer. |
+| `renderer` | `WebGLRenderer` \| `WebGL1Renderer` | Threejs WebGLRenderer. |
 | `params?` | `Object` | GPUComposer parameters. |
 | `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
 | `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |

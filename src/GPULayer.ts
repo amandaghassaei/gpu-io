@@ -973,7 +973,7 @@ export class GPULayer {
 	 */
 	attachToThreeTexture(texture: Texture) {
 		const { _composer, numBuffers, currentState, name } = this;
-		const { _renderer } = _composer;
+		const { _renderer, gl } = _composer;
 		if (!_renderer) {
 			throw new Error('GPUComposer was not inited with a renderer.');
 		}
@@ -983,6 +983,7 @@ export class GPULayer {
 			throw new Error(`GPULayer "${name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
 		}
 		const offsetTextureProperties = _renderer.properties.get(texture);
+		gl.deleteTexture(offsetTextureProperties.__webglTexture);
 		offsetTextureProperties.__webglTexture = currentState.texture;
 		offsetTextureProperties.__webglInit = true;
 	}
