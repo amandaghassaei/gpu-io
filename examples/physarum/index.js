@@ -442,7 +442,6 @@ function main({ gui, glslVersion, contextID }) {
 			output: trail,
 			position: currentPosition,
 			diameter: TOUCH_DIAMETER,
-			endCaps: true,
 		});
 		activeTouches[e.pointerId] = currentPosition;
 	}

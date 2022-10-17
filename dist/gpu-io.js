@@ -4219,7 +4219,7 @@ var GPUProgram = /** @class */ (function () {
         var changed = this._cacheUniformValue(name, value, currentType);
         if (!changed)
             return;
-        // TODO: look at this.
+        // Cache user-defined sampler uniform values.
         var samplerUniform = _samplerUniformsIndices.find(function (uniform) { return uniform.name === name; });
         if (samplerUniform && (0, type_checks_1.isInteger)(value)) {
             samplerUniform.inputIndex = value;
@@ -4310,9 +4310,10 @@ var GPUProgram = /** @class */ (function () {
             throw new Error("Could not find valid programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
         var internalType = (0, utils_1.uniformInternalTypeForValue)(value, type, uniformName, this.name);
-        var changed = this._cacheUniformValue(uniformName, value, internalType);
-        if (changed)
-            this._setProgramUniform(program, uniformName, value, internalType);
+        // const changed = this._cacheUniformValue(uniformName, value, internalType);
+        // Don't cache vertex uniforms for now.
+        // TODO: cached vertex uniforms need to be stored per WebGLProgram.
+        this._setProgramUniform(program, uniformName, value, internalType);
     };
     /**
      * Deallocate GPUProgram instance and associated WebGL properties.

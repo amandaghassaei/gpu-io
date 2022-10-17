@@ -47,7 +47,7 @@ function main({ gui, contextID, glslVersion }) {
 	const DX = 1;
 	const C = 0.25; // Wave propagation speed.
 	const ALPHA = (C * DT / DX) ** 2;
-	const DECAY = 0.99;
+	const DECAY = 0.01;
 	// Drop parameters.
 	const NUM_FRAMES_BETWEEN_DROPS = 75;
 	const DROP_DIAMETER = 10;
@@ -214,7 +214,7 @@ function main({ gui, contextID, glslVersion }) {
 				// Solve discrete wave equation.
 				float laplacian = n + s + e + w - 4.0 * current;
 				// Add a decay factor slightly less than 1 to dampen.
-				out_result = ${DECAY.toFixed(6)} * (${ALPHA.toFixed(6)} * laplacian + 2.0 * current - last);
+				out_result = ${(1 - DECAY).toFixed(6)} * (${ALPHA.toFixed(6)} * laplacian + 2.0 * current - last);
 			}
 		`,
 		uniforms: [
