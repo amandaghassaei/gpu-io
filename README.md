@@ -244,8 +244,8 @@ loop() {
   // Reset three state back to what threejs is expecting
   // (otherwise we get WebGL errors).
   composer.resetThreeState();
-  // Render threejs state.
-  // Updates to layer1 will propagate to mesh texture without any
+  // Render threejs scene.
+  // Updates to layer1 will propagate to texture without any
   // additional needsUpdate flags.
   renderer.render(scene, camera);
 }
