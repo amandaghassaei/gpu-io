@@ -30,7 +30,7 @@ This app simulates the [2D wave equation](https://en.wikipedia.org/wiki/Wave_equ
 
 ### [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/)
 [![Conway's Game of Life](./gol/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/gol/)  
-The 1-bit cellular automata <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a>.
+The 1-bit cellular automaton <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a>.
 
 ### [Julia Set Fractal](https://apps.amandaghassaei.com/gpu-io/examples/fractal/)
 [![Julia Set Fractal](./fractal/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/fractal/)  
