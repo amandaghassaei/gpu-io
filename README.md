@@ -233,7 +233,7 @@ const mesh = new THREE.Mesh(
 );
 
 loop() {
-  // Compute things with gpu-io, including updating layer1.
+  // Compute things with gpu-io.
   composer.step({
     program: myProgram,
     output: layer1,
