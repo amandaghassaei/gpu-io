@@ -396,7 +396,7 @@ console.log(isHighpSupportedInFragmentShader());
 
 ## Acknowledgements
 
-I used a few codebases as reference when writing this, thanks to their authors for making the repos available:
+I used a few codebases as reference when writing this, thanks to their authors for making these repos available:
 
 - [three.js](https://github.com/mrdoob/three.js/)
 - [regl](https://github.com/regl-project/regl)
