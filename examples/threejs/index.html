@@ -1,13 +1,15 @@
 <html>
 	<head>
-		<title>Physarum</title>
+		<title>ThreeJS</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="stylesheet" type="text/css" href="../common/dat.gui.css" />
 		<link rel="stylesheet" type="text/css" href="../common/micromodal.css" />
 		<link rel="stylesheet" type="text/css" href="../common/index.css" />
 		<script src="../common/dat.gui.min.js"></script>
 		<script src="../common/micromodal.min.js"></script>
-		<script src="../../dist/gpu-io.js"></script>
+		<script src="../common/three.min.js"></script>
+		<script src="../common/OrbitControls.js"></script>
+		<script src="../../dist/gpu-io.min.js"></script>
 	</head>
 	<body>
 		<div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
@@ -15,24 +17,21 @@
 			  <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
 				<header class="modal__header">
 				  <h2 class="modal__title" id="modal-1-title">
-					Physarum Transport Network
+					Wave Equation - ThreeJS
 				  </h2>
 				  <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
 				</header>
 				<main class="modal__content" id="modal-1-content">
 				  <p>
-					This app simulates the network effects of a multicellular slime mold (Physarum polycephalum), based on a 2010 paper by Jeff Jones: <a href="https://uwe-repository.worktribe.com/output/980579">"Characteristics of pattern formation and evolution in approximations of Physarum transport networks"</a> and work by <a href="https://cargocollective.com/sagejenson/physarum">Sage Jenson</a>.
-					In this simulation, simple particle "agents" interact with an underlying field of chemical attractants to form complex, emergent behaviors.
-					All simulation steps are computed on the GPU via a series of WebGL fragment shaders.
-					Written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
+					This app simulates the <a href="https://en.wikipedia.org/wiki/Wave_equation">2D wave equation</a> and renders the resulting height field as an RGB texture and as a 3D mesh geometry.
+					All computations are performed in <a href="https://apps.amandaghassaei.com/gpu-io/examples/">gpu-io</a> and the results are passed to <a href="https://threejs.org/">threejs</a> without ever leaving the GPU.  Written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
 				  </p>
 				  <p>
-					Instructions: Touch/drag to add chemical attractant to the system.
-					Change the parameters in the menu to control the dynamics of the system; several interesting presets have been preloaded.
+					Instructions: Drag to rotate, Pinch/Scroll to zoom.
 				  </p>
 				  <p>
 					This page is part of a series of examples using <a href="https://apps.amandaghassaei.com/gpu-io/examples/">gpu-io</a>, a GPU-accelerated computing library for physics simulations and other mathematical calculations.
-					Find the source code on <a id="sourceCode" href="https://github.com/amandaghassaei/gpu-io/tree/main/examples/physarum">Github</a>.
+					Find the source code on <a id="sourceCode" href="https://github.com/amandaghassaei/gpu-io/tree/main/examples/threejs">Github</a>.
 				  </p>
 				</main>
 			  </div>

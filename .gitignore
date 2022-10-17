@@ -5,5 +5,4 @@ dist/DataArray-Feedback*
 examples/shells/*
 examples/fdtd/*
 examples/drawing/*
-examples/threejs/*
 docs/main-image.psd
