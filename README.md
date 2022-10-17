@@ -6,9 +6,9 @@
 [![NPM Downloads](https://img.shields.io/npm/dw/gpu-io)](https://www.npmtrends.com/gpu-io)
 [![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE)
 
-**A GPU-accelerated computing library for physics simulations, image processing, and other mathematical calculations**
+**A GPU-accelerated computing library for physics simulations and other mathematical calculations**
 
-gpu-io is a WebGL library that helps you easily compose shader programs for real-time physics simulations and other computationally demanding tasks.  This library can be used for a variety of applications including physics simulations, cellular automata, particle/agent-based simulations, image processing, and general purpose GPU computations.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
+gpu-io is a WebGL library that helps you easily compose GPU-accelerated computing workflows.  This library can be used for a variety of applications including real-time physics simulations, particle/agent-based simulations, cellular automata, image processing, and general purpose GPU computations.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
 
 Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so it should run on practically any mobile or older browsers.  WebGPU support is planned in the future.
 
@@ -187,58 +187,55 @@ More information about writing GLSL shaders for gpu-io can be found at [docs/GLS
 
 ## Compatibility with Threejs
 
-&#9888; Update 10/11/2022: This still needs to be tested more, updates coming soon.
-
-Currently, gpu-io can run in a separate webgl context from threejs without any problems.  The advantage to sharing the webgl context is that both libraries will be able to access shared memory on the gpu.  Theoretically, a shared context should work like so, though I am still sorting out some lingering WebGL warnings:
+gpu-io shader a webgl context with threejs so that both libraries will be able to access shared memory on the gpu:
 
 ```js
 import THREE from 'three';
-import * as GPUIO from 'gpu-io';
+import {
+  GPUComposer,
+  GPULayer,
+  FLOAT,
+  CLAMP_TO_EDGE,
+  LINEAR,
+} from 'gpu-io';
 
 const renderer = new THREE.WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff
 // on top of things rendered to the screen from gpu-io.
 renderer.autoClear = false;
 
-const composer = GPUIO.GPUComposer.initWithThreeRenderer(renderer);
+const composer = GPUComposer.initWithThreeRenderer(renderer);
 ```
 
 To bind a GPULayer to a Threejs Texture:
 
 ```js
-const layer1 = new GPUIO.GPULayer(composer, {
+const layer1 = new GPULayer(composer, {
   name: 'layer1',
   dimensions: [100, 100],
-  type: GPUIO.UNSIGNED_BYTE,
+  type: FLOAT,
   numComponents: 1,
-  wrapX: GPUIO.CLAMP_TO_EDGE,
-  wrapY: GPUIO.CLAMP_TO_EDGE,
-  filter: GPUIO.NEAREST,
-  numBuffers: 1,
+  wrapX: CLAMP_TO_EDGE,
+  wrapY: CLAMP_TO_EDGE,
+  filter: LINEAR,
 });
 
-const texture = new THREE.Texture(
-  renderer.domElement,
-  undefined,
-  THREE.ClampToEdgeWrapping,
-  THREE.ClampToEdgeWrapping,
-  THREE.NearestFilter,
-  THREE.NearestFilter,
-  THREE.RGBFormat,
-  THREE.UnsignedByteType,
-);
+const texture = new THREE.Texture();
 // Link webgl texture to threejs object.
 layer1.attachToThreeTexture(texture);
 
 const mesh = new THREE.Mesh(
   new PlaneBufferGeometry(1, 1),
   new MeshBasicMaterial({
-    map: offsetTextureThree,
+    map: texture,
   }),
 );
 
-// Updates to layer1 will propagate to mesh map without any
-// additional needsUpdate flags.
+loop() {
+  // Updates to layer1 will propagate to mesh map without any
+  // additional needsUpdate flags.
+  renderer.render();
+}
 ```
 
 More info about using gpu-io to update mesh positions data is coming soon.

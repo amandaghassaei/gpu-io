@@ -1,7 +1,7 @@
 {
   "name": "gpu-io",
   "version": "0.1.1",
-  "description": "A GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations",
+  "description": "A GPU-accelerated computing library for physics simulations and other mathematical calculations",
   "keywords": [
     "gpgpu",
     "gpu",
@@ -11,7 +11,10 @@
     "webgl2",
     "shader",
     "physics",
+	"particle",
     "simulation",
+	"parallel",
+	"image processing",
     "cellular automata"
   ],
   "main": "dist/gpu-io.js",

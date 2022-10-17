@@ -1,6 +1,6 @@
 # gpu-io Examples
 
-[gpu-io](https://github.com/amandaghassaei/gpu-io) is a web-based GPU-accelerated computing library for physics simulations, cellular automata, and other mathematical calculations.  This page contains a series of interactive examples applications that demonstrate key capabilities of the library.
+[gpu-io](https://github.com/amandaghassaei/gpu-io) is a web-based GPU-accelerated computing library for physics simulations and other mathematical calculations.  This page contains a series of interactive examples applications that demonstrate key capabilities of the library.
 
 Find the source code for all examples on [Github](https://github.com/amandaghassaei/gpu-io/tree/main/examples).
 
