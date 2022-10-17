@@ -24,7 +24,7 @@ This simulation solves the <a href="https://en.wikipedia.org/wiki/Navier%E2%80%9
 
 ### [2D Wave Equation](https://apps.amandaghassaei.com/gpu-io/examples/threejs/)
 [![2D Wave Equation](./threejs/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/threejs/)  
-This app simulates the [2D wave equation](https://en.wikipedia.org/wiki/Wave_equation) and renders the resulting height field as an RGB texture and as a 3D mesh geometry.  All computations are performed in gpu-io and the results are passed to [Threejs](https://threejs.org/) without ever leaving the GPU.
+This app simulates the [2D wave equation](https://en.wikipedia.org/wiki/Wave_equation) and renders the resulting height field as an RGB texture and as a 3D mesh.  All computations are performed in gpu-io and the results are passed to [Threejs](https://threejs.org/) without ever leaving the GPU.
 
 ## Simple Examples
 
