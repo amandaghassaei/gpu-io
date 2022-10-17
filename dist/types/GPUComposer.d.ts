@@ -435,6 +435,11 @@ export declare class GPUComposer {
         numTicks: number;
     };
     /**
+     * Return the number of ticks of the simulation.
+     * Use GPUComposer.tick() to increment this value on each animation cycle.
+     */
+    get numTicks(): number;
+    /**
      * Deallocate GPUComposer instance and associated WebGL properties.
      */
     dispose(): void;

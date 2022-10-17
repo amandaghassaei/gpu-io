@@ -869,6 +869,13 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		// Check params.
+		const validKeys = ['program', 'input', 'output', 'blendAlpha'];
+		const requiredKeys = ['program'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.step(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.step(params)');
+
 		if (this._iterateOverOutputsIfNeeded(params, 'step')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
@@ -909,6 +916,13 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		// Check params.
+		const validKeys = ['program', 'input', 'output', 'edges', 'blendAlpha'];
+		const requiredKeys = ['program'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.stepBoundary(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.stepBoundary(params)');
+	
 		if (this._iterateOverOutputsIfNeeded(params, 'stepBoundary')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
@@ -972,6 +986,13 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		// Check params.
+		const validKeys = ['program', 'input', 'output', 'blendAlpha'];
+		const requiredKeys = ['program'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.stepNonBoundary(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.stepNonBoundary(params)');
+
 		if (this._iterateOverOutputsIfNeeded(params, 'stepNonBoundary')) return;
 		const { gl, _errorState } = this;
 		const { program, input, output } = params;
@@ -1021,6 +1042,13 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		// Check params.
+		const validKeys = ['program', 'position', 'diameter', 'useOutputScale', 'input', 'output', 'numSegments', 'blendAlpha'];
+		const requiredKeys = ['program', 'position', 'diameter'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.stepCircle(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.stepCircle(params)');
+
 		if (this._iterateOverOutputsIfNeeded(params, 'stepCircle')) return;
 		const { gl, _errorState } = this;
 		const { program, position, diameter, input, output } = params;
@@ -1082,6 +1110,13 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		// Check params.
+		const validKeys = ['program', 'position1', 'position2', 'thickness', 'useOutputScale', 'input', 'output', 'endCaps', 'numCapSegments', 'blendAlpha'];
+		const requiredKeys = ['program', 'position1', 'position2', 'thickness'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.stepSegment(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.stepSegment(params)');
+
 		if (this._iterateOverOutputsIfNeeded(params, 'stepSegment')) return;
 		const { gl, _errorState } = this;
 		const { program, position1, position2, thickness, input, output } = params;
@@ -1157,6 +1192,13 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		// Check params.
+		const validKeys = ['program', 'position', 'size', 'useOutputScale', 'input', 'output', 'blendAlpha'];
+		const requiredKeys = ['program', 'position', 'size'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.stepRect(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.stepRect(params)');
+
 		if (this._iterateOverOutputsIfNeeded(params, 'stepRect')) return;
 		const position1 = [params.position[0], params.position[1] + params.size[1] / 2];
 		const position2 = [params.position[0] + params.size[0], position1[1]];
@@ -1186,6 +1228,14 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
+
+	// // Check params.
+	// const validKeys = ['program', 'positions', 'thickness', 'input', 'output', 'closeLoop', 'includeUVs', 'includeNormals', 'blendAlpha'];
+	// const requiredKeys = ['program', 'positions', 'thickness'];
+	// const keys = Object.keys(params);
+	// checkValidKeys(keys, validKeys, 'GPUComposer.stepPolyline(params)');
+	// checkRequiredKeys(keys, requiredKeys, 'GPUComposer.stepPolyline(params)');
+
 	// 	if (this._iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
 	// 	const { gl, _width, _height, _errorState } = this;
 	// 	const { program, input, output } = params;
@@ -1514,6 +1564,12 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		const validKeys = ['layer', 'program', 'input', 'output', 'pointSize', 'count', 'color', 'wrapX', 'wrapY', 'blendAlpha'];
+		const requiredKeys = ['layer'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.drawLayerAsPoints(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.drawLayerAsPoints(params)');
+
 		if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints')) return;
 		const { gl, _pointIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { layer, output } = params;
@@ -1595,6 +1651,11 @@ export class GPUComposer {
 	// 		blendAlpha?: boolean,
 	// 	},
 	// ) {
+	// const validKeys = ['positions', 'indices', 'program', 'input', 'output', 'count', 'color', 'wrapX', 'wrapY', 'closeLoop', 'blendAlpha'];
+	// const requiredKeys = ['positions'];
+	// const keys = Object.keys(params);
+	// checkValidKeys(keys, validKeys, 'GPUComposer.drawLayerAsLines(params)');
+	// checkRequiredKeys(keys, requiredKeys, 'GPUComposer.drawLayerAsLines(params)');
 	// 	if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
 	// 	const { gl, _width, _height, glslVersion, _errorState } = this;
 	// 	const { positions, output } = params;
@@ -1704,6 +1765,12 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
+		const validKeys = ['layer', 'program', 'input', 'output', 'vectorSpacing', 'vectorScale', 'color', 'blendAlpha'];
+		const requiredKeys = ['layer'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.drawLayerAsVectorField(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.drawLayerAsVectorField(params)');
+
 		if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField')) return;
 		const { gl, _vectorFieldIndexArray, _width, _height, glslVersion, _errorState } = this;
 		const { layer, output } = params;
@@ -1790,6 +1857,10 @@ export class GPUComposer {
 		dpi?: number,
 		callback?: (blob: Blob, filename: string) => void,
 	} = {}) {
+		const validKeys = ['filename', 'dpi', 'callback'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.savePNG(params)');
+
 		const { canvas } = this;
 		const filename = params.filename || 'output';
 		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
@@ -1833,6 +1904,14 @@ export class GPUComposer {
 			fps,
 			numTicks: this._numTicks,
 		};
+	}
+
+	/**
+	 * Return the number of ticks of the simulation.
+	 * Use GPUComposer.tick() to increment this value on each animation cycle.
+	 */
+	get numTicks() {
+		return this._numTicks;
 	}
 	
 	/**

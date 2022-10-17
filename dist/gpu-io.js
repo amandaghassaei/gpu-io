@@ -1037,6 +1037,12 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.step = function (params) {
+        // Check params.
+        var validKeys = ['program', 'input', 'output', 'blendAlpha'];
+        var requiredKeys = ['program'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.step(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.step(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'step'))
             return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
@@ -1066,6 +1072,12 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepBoundary = function (params) {
+        // Check params.
+        var validKeys = ['program', 'input', 'output', 'edges', 'blendAlpha'];
+        var requiredKeys = ['program'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.stepBoundary(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.stepBoundary(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'stepBoundary'))
             return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
@@ -1120,6 +1132,12 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepNonBoundary = function (params) {
+        // Check params.
+        var validKeys = ['program', 'input', 'output', 'blendAlpha'];
+        var requiredKeys = ['program'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.stepNonBoundary(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.stepNonBoundary(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'stepNonBoundary'))
             return;
         var _a = this, gl = _a.gl, _errorState = _a._errorState;
@@ -1155,6 +1173,12 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.stepCircle = function (params) {
         var _a;
+        // Check params.
+        var validKeys = ['program', 'position', 'diameter', 'useOutputScale', 'input', 'output', 'numSegments', 'blendAlpha'];
+        var requiredKeys = ['program', 'position', 'diameter'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.stepCircle(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.stepCircle(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'stepCircle'))
             return;
         var _b = this, gl = _b.gl, _errorState = _b._errorState;
@@ -1200,6 +1224,12 @@ var GPUComposer = /** @class */ (function () {
      */
     GPUComposer.prototype.stepSegment = function (params) {
         var _a;
+        // Check params.
+        var validKeys = ['program', 'position1', 'position2', 'thickness', 'useOutputScale', 'input', 'output', 'endCaps', 'numCapSegments', 'blendAlpha'];
+        var requiredKeys = ['program', 'position1', 'position2', 'thickness'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.stepSegment(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.stepSegment(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'stepSegment'))
             return;
         var _b = this, gl = _b.gl, _errorState = _b._errorState;
@@ -1262,6 +1292,12 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.stepRect = function (params) {
+        // Check params.
+        var validKeys = ['program', 'position', 'size', 'useOutputScale', 'input', 'output', 'blendAlpha'];
+        var requiredKeys = ['program', 'position', 'size'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.stepRect(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.stepRect(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'stepRect'))
             return;
         var position1 = [params.position[0], params.position[1] + params.size[1] / 2];
@@ -1291,6 +1327,12 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
+    // // Check params.
+    // const validKeys = ['program', 'positions', 'thickness', 'input', 'output', 'closeLoop', 'includeUVs', 'includeNormals', 'blendAlpha'];
+    // const requiredKeys = ['program', 'positions', 'thickness'];
+    // const keys = Object.keys(params);
+    // checkValidKeys(keys, validKeys, 'GPUComposer.stepPolyline(params)');
+    // checkRequiredKeys(keys, requiredKeys, 'GPUComposer.stepPolyline(params)');
     // 	if (this._iterateOverOutputsIfNeeded(params, 'stepPolyline')) return;
     // 	const { gl, _width, _height, _errorState } = this;
     // 	const { program, input, output } = params;
@@ -1575,6 +1617,11 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.drawLayerAsPoints = function (params) {
+        var validKeys = ['layer', 'program', 'input', 'output', 'pointSize', 'count', 'color', 'wrapX', 'wrapY', 'blendAlpha'];
+        var requiredKeys = ['layer'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.drawLayerAsPoints(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.drawLayerAsPoints(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints'))
             return;
         var _a = this, gl = _a.gl, _pointIndexArray = _a._pointIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
@@ -1653,6 +1700,11 @@ var GPUComposer = /** @class */ (function () {
     // 		blendAlpha?: boolean,
     // 	},
     // ) {
+    // const validKeys = ['positions', 'indices', 'program', 'input', 'output', 'count', 'color', 'wrapX', 'wrapY', 'closeLoop', 'blendAlpha'];
+    // const requiredKeys = ['positions'];
+    // const keys = Object.keys(params);
+    // checkValidKeys(keys, validKeys, 'GPUComposer.drawLayerAsLines(params)');
+    // checkRequiredKeys(keys, requiredKeys, 'GPUComposer.drawLayerAsLines(params)');
     // 	if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsLines')) return;
     // 	const { gl, _width, _height, glslVersion, _errorState } = this;
     // 	const { positions, output } = params;
@@ -1741,6 +1793,11 @@ var GPUComposer = /** @class */ (function () {
      * @returns
      */
     GPUComposer.prototype.drawLayerAsVectorField = function (params) {
+        var validKeys = ['layer', 'program', 'input', 'output', 'vectorSpacing', 'vectorScale', 'color', 'blendAlpha'];
+        var requiredKeys = ['layer'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.drawLayerAsVectorField(params)');
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.drawLayerAsVectorField(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsVectorField'))
             return;
         var _a = this, gl = _a.gl, _vectorFieldIndexArray = _a._vectorFieldIndexArray, _width = _a._width, _height = _a._height, glslVersion = _a.glslVersion, _errorState = _a._errorState;
@@ -1819,6 +1876,9 @@ var GPUComposer = /** @class */ (function () {
     */
     GPUComposer.prototype.savePNG = function (params) {
         if (params === void 0) { params = {}; }
+        var validKeys = ['filename', 'dpi', 'callback'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.savePNG(params)');
         var canvas = this.canvas;
         var filename = params.filename || 'output';
         var callback = params.callback || saveAs; // Default to saving the image with FileSaver.
@@ -1864,6 +1924,17 @@ var GPUComposer = /** @class */ (function () {
             numTicks: this._numTicks,
         };
     };
+    Object.defineProperty(GPUComposer.prototype, "numTicks", {
+        /**
+         * Return the number of ticks of the simulation.
+         * Use GPUComposer.tick() to increment this value on each animation cycle.
+         */
+        get: function () {
+            return this._numTicks;
+        },
+        enumerable: false,
+        configurable: true
+    });
     /**
      * Deallocate GPUComposer instance and associated WebGL properties.
      */
@@ -2734,6 +2805,9 @@ var GPULayer = /** @class */ (function () {
     */
     GPULayer.prototype.savePNG = function (params) {
         if (params === void 0) { params = {}; }
+        var validKeys = ['filename', 'dpi', 'multiplier', 'callback'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.savePNG(params)');
         var values = this.getValues();
         var _a = this, width = _a.width, height = _a.height, type = _a.type, name = _a.name, numComponents = _a.numComponents;
         var callback = params.callback || file_saver_1.saveAs; // Default to saving the image with FileSaver.

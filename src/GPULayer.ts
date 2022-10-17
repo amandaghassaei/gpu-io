@@ -927,6 +927,10 @@ export class GPULayer {
 		multiplier?: number,
 		callback?: (blob: Blob, filename: string) => void,
 	} = {}) {
+		const validKeys = ['filename', 'dpi', 'multiplier', 'callback'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPULayer.savePNG(params)');
+		
 		const values = this.getValues();
 		const { width, height, type, name, numComponents } = this;
 		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.

@@ -37,6 +37,7 @@
 ### Accessors
 
 - [canvas](GPUComposer.md#canvas)
+- [numTicks](GPUComposer.md#numticks)
 
 ## Properties
 
@@ -426,3 +427,16 @@ Create a GPUComposer.
 #### Returns
 
 `HTMLCanvasElement`
+
+___
+
+### numTicks
+
+• `get` **numTicks**(): `number`
+
+Return the number of ticks of the simulation.
+Use GPUComposer.tick() to increment this value on each animation cycle.
+
+#### Returns
+
+`number`

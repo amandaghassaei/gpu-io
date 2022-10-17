@@ -589,6 +589,17 @@
 			});
 		});
 		describe('savePNG', () => {
+			it ('should throw error for invalid parameter', () => {
+				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67]});
+				assert.throws(() => {
+					layer1.savePNG({
+						filename: 'thing',
+						test: 'bad param',
+					}); },
+					'Invalid params key "test" passed to GPULayer.savePNG(params).  Valid keys are ["filename","dpi","multiplier","callback"].');
+
+				layer1.dispose();
+			});
 			it('should return Blob in callback', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67]});
 				layer1.savePNG({
