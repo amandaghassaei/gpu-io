@@ -96,7 +96,9 @@ const state = new GPULayer(composer, {
   numComponents: 1,
   type: FLOAT,
   filter: LINEAR,
-  numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
+  // Use 2 buffers so we can toggle read/write
+  // from one to the other.
+  numBuffers: 2,
   wrapX: REPEAT,
   wrapY: REPEAT,
   array: noise,
@@ -122,7 +124,8 @@ const diffuseProgram = new GPUProgram(composer, {
       float e = texture(u_state, v_uv + vec2(u_pxSize.x, 0)).x;
       float w = texture(u_state, v_uv - vec2(u_pxSize.x, 0)).x;
       const float diffusionRate = 0.1;
-      out_result = center + diffusionRate * (n + s + e + w - 4.0 * center);
+      out_result =
+        center + diffusionRate * (n + s + e + w - 4.0 * center);
     }
   `,
   uniforms: [
@@ -274,7 +277,8 @@ vec4 lookupSampler2(vec2 uv) {
 }
 
 vec4 lookupSampler(sampler2D sampler, vec2 uv) {
-  // At compile time it is hard to say which sampler is passed to texture().
+  // At compile time it is hard to say which sampler
+  // is passed to texture().
   // This will not be polyfilled, it will throw a warning.
   return texture(sampler, uv);
 }
