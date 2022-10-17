@@ -1,5 +1,4 @@
-// Main is called from ../common/wrapper.js
-function main({ gui, contextID, glslVersion }) {
+function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 	const {
 		GPUComposer,
 		GPUProgram,
@@ -11,12 +10,14 @@ function main({ gui, contextID, glslVersion }) {
 		copyProgram,
 		LINEAR,
 		NEAREST,
-		GLSL3,
+		WEBGL2,
+		GLSL1,
 	} = GPUIO;
 	const {
 		Scene,
 		PerspectiveCamera,
 		WebGLRenderer,
+		WebGL1Renderer,
 		BufferGeometry,
 		MeshBasicMaterial,
 		Mesh,
@@ -34,10 +35,6 @@ function main({ gui, contextID, glslVersion }) {
 		savePNG,
 		saveTexturePNG,
 	};
-
-	// I've put GLSL1 and WebGL1 code in a separate file to reduce confusion.
-	if (glslVersion !== GLSL3) return runWithOlderWebGLVersion({ gui, contextID, glslVersion });
-	// The rest of this file assumes WebGL2 and GLSL3.
 
 	// Size of the simulation.
 	const TEXTURE_DIM = [100, 100];
@@ -61,9 +58,10 @@ function main({ gui, contextID, glslVersion }) {
 	camera.zoom = 7;
 	camera.position.set(5, 5, 5);
 
-	const renderer = new WebGLRenderer({ antialias: true });
+	const canvas = document.createElement('canvas');
+	const context = canvas.getContext(contextID);
+	const renderer = contextID === WEBGL2 ? new WebGLRenderer({ context, context, antialias: true }) : new WebGL1Renderer({ canvas, context, antialias: true });
 	renderer.setSize(window.innerWidth, window.innerHeight);
-	const canvas = renderer.domElement;
 	document.body.appendChild(canvas);
 
 	const controls = new OrbitControls(camera, canvas);
@@ -80,6 +78,9 @@ function main({ gui, contextID, glslVersion }) {
 	// Init 3D grid surface rendering simulation as height.
 	const gridGeometry = new BufferGeometry();
 	const gridPositions = new Float32Array(3 * TEXTURE_DIM[0] * TEXTURE_DIM[1]);
+	// WebGL1 does not support gl_VertexID, so we need to pass in an extra attribute.
+	// This attribute has to be of type float bc WebGL1 does not support int attributes.
+	const gridVertexID = new Float32Array(TEXTURE_DIM[0] * TEXTURE_DIM[1]);
 	const gridIndices = new Uint32Array(2 * ((TEXTURE_DIM[0] - 1) * TEXTURE_DIM[1] + (TEXTURE_DIM[1] - 1) * TEXTURE_DIM[0]));
 	let gridSegmentIndex = 0;
 	for (let j = 0; j < TEXTURE_DIM[1]; j++) {
@@ -88,6 +89,7 @@ function main({ gui, contextID, glslVersion }) {
 			// Set the x and z values of gridPositions array (y is up).
 			gridPositions[3 * index] = (i - (TEXTURE_DIM[0] - 1) / 2) / TEXTURE_DIM[0];
 			gridPositions[3 * index + 2] = (j - (TEXTURE_DIM[1] - 1) / 2) / TEXTURE_DIM[1];
+			gridVertexID[index] = index;
 			// Form line segments of the grid mesh.
 			if (j < TEXTURE_DIM[1] - 1) {
 				gridIndices[2 * gridSegmentIndex] = index;
@@ -102,6 +104,7 @@ function main({ gui, contextID, glslVersion }) {
 		}
 	}
 	gridGeometry.setAttribute('position', new BufferAttribute(gridPositions, 3));
+	gridGeometry.setAttribute('vertexID', new BufferAttribute(gridVertexID, 1));
 	gridGeometry.setIndex(new BufferAttribute(gridIndices, 1));
 	const gridTexture = new Texture();
 	const gridMaterial = new THREE.ShaderMaterial( {
@@ -110,6 +113,7 @@ function main({ gui, contextID, glslVersion }) {
 			u_heightDimensions: { value: TEXTURE_DIM },
 		},
 		vertexShader: `
+			attribute float vertexID;
 			uniform sampler2D u_height;
 			uniform ivec2 u_heightDimensions;
 
@@ -126,20 +130,19 @@ function main({ gui, contextID, glslVersion }) {
 				vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
 				vec4 position = projectionMatrix * modelViewPosition;
 
-				vec2 uv = getTextureUV(gl_VertexID, u_heightDimensions);
+				vec2 uv = getTextureUV(${contextID === WEBGL2 ? 'gl_VertexID' : 'int(vertexID)'}, u_heightDimensions);
 				// Set height of grid mesh using data from simulation.
-				position.y += ${GRID_MESH_Y_SCALE.toFixed(6)} * texture(u_height, uv).x;
+				position.y += ${GRID_MESH_Y_SCALE.toFixed(6)} * texture2D(u_height, uv).x;
 
 				gl_Position = position;
 			}
 			`,
 		fragmentShader: `
-			out vec4 color;
 			void main() {
-				color = vec4(0.0, 0.0, 0.0, 1.0);
+				gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 			}
 			`,
-		glslVersion: THREE.GLSL3,
+		glslVersion: THREE.GLSL1,
 	});
 	grid = new LineSegments(gridGeometry, gridMaterial);
 	grid.scale.set(1, 1, 1);

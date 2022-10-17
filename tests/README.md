@@ -51,3 +51,4 @@ Here are some results I've gathered testing different combinations of hardware/b
 
 ### Android
 
+TODO: finish this.

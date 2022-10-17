@@ -187,7 +187,7 @@ More information about writing GLSL shaders for gpu-io can be found at [docs/GLS
 
 ## Compatibility with Threejs
 
-gpu-io shader a webgl context with threejs so that both libraries will be able to access shared memory on the gpu:
+gpu-io can share a webgl context with threejs so that both libraries will be able to access shared memory on the gpu:
 
 ```js
 import THREE from 'three';
@@ -215,15 +215,13 @@ const layer1 = new GPULayer(composer, {
   dimensions: [100, 100],
   type: FLOAT,
   numComponents: 1,
-  wrapX: CLAMP_TO_EDGE,
-  wrapY: CLAMP_TO_EDGE,
-  filter: LINEAR,
 });
 
 const texture = new THREE.Texture();
 // Link webgl texture to threejs object.
 layer1.attachToThreeTexture(texture);
 
+// Use texture in threejs scene.
 const mesh = new THREE.Mesh(
   new PlaneBufferGeometry(1, 1),
   new MeshBasicMaterial({
@@ -232,13 +230,24 @@ const mesh = new THREE.Mesh(
 );
 
 loop() {
-  // Updates to layer1 will propagate to mesh map without any
+  // Compute things with gpu-io, update layer1.
+  composer.step({
+    program: myProgram,
+    output: layer1,
+  });
+
+  ....
+
+  // Reset three state back to what threejs is expecting (otherwise we get WebGL errors).
+  composer.resetThreeState();
+  // Render threejs state.
+  // Updates to layer1 will propagate to mesh texture without any
   // additional needsUpdate flags.
-  renderer.render();
+  renderer.render(scene, camera);
 }
 ```
 
-More info about using gpu-io to update mesh positions data is coming soon.
+More info about using gpu-io with threejs can be found in the [ThreeJS Example](https://github.com/amandaghassaei/gpu-io/tree/main/examples/threejs).
 
 
 ## Limitations/Notes
