@@ -348,6 +348,18 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
+		// Render current height to colorMap.
+		composer.step({
+			program: renderColorMap,
+			input: height,
+			output: colorMap,
+		});
+		// Copy current height to heightMap.
+		composer.step({
+			program: copy,
+			input: height,
+			output: heightMap,
+		});
 		composer.resetThreeState();
 		renderer.render(scene, camera);
 		composer.savePNG({ filename: `threejs_scene` });

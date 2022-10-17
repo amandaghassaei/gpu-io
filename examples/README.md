@@ -20,6 +20,12 @@ This app simulates the network effects of a multicellular slime mold (Physarum p
 [![Fluid Simulation](./fluid/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/fluid/)  
 This simulation solves the <a href="https://en.wikipedia.org/wiki/Navier%E2%80%93Stokes_equations">Navier-Stokes equations</a> for incompressible fluids. The fluid visualization includes thousands of <a href="https://en.wikipedia.org/wiki/Lagrangian_particle_tracking">Lagrangian particles</a> that follow the velocity field and leave behind semi-transparent trails as they move.
 
+## ThreeJS
+
+### [2D Wave Equation](https://apps.amandaghassaei.com/gpu-io/examples/threejs/)
+[![2D Wave Equation](./threejs/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/threejs/)  
+This app simulates the [2D wave equation](https://en.wikipedia.org/wiki/Wave_equation) and renders the resulting height field as an RGB texture and as a 3D mesh geometry.  All computations are performed in gpu-io and the results are passed to [Threejs](https://threejs.org/) without ever leaving the GPU.
+
 ## Simple Examples
 
 ### [Conway's Game of Life](https://apps.amandaghassaei.com/gpu-io/examples/gol/)

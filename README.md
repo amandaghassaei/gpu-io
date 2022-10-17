@@ -15,7 +15,7 @@ Designed for WebGL 2.0 (if available), with fallbacks to support WebGL 1.0 - so 
 
 ### Motivation
 
-The main motivation behind gpu-io is to make it easier to compose GPU-accelerated applications without worrying too much about low-level WebGL details.  This library manages WebGL state, implements shader and program caching, and deals with issues of available WebGL versions or spec inconsistencies across different browsers/hardware.  It should significantly cut down on the amount of boilerplate code and state management you need to do in your applications.  At the same time, gpu-io gives you enough low-level control to write extremely efficient programs for demanding applications.
+The main motivation behind gpu-io is to make it easier to compose GPU-accelerated applications without worrying too much about low-level WebGL details.  This library manages WebGL state, implements shader and program caching, and deals with issues of available WebGL versions or spec inconsistencies across different browsers/hardware.  It should significantly cut down on the amount of boilerplate code and state management you need to do in your applications.  At the same time, gpu-io gives you enough low-level control to write extremely efficient programs for computationally demanding applications.
 
 [As of Feb 2022, WebGL2 has now been rolled out to all major platforms](https://www.khronos.org/blog/webgl-2-achieves-pervasive-support-from-all-major-web-browsers) (including mobile Safari and Microsoft Edge) - but even among WebGL2 implementations, there are differences in behavior across browsers (especially mobile).  Additionally, you may still come across non-WebGL2 enabled browsers in the wild for some time.  gpu-io rigorously checks for these gotchas and uses software polyfills to patch any issues so you don't have to worry about it.  gpu-io will also attempt to automatically [convert your GLSL3 shader code into GLSL1](https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md) so that they can run on WebGL1 in a pinch. See [tests/README.md](https://github.com/amandaghassaei/gpu-io/tree/main/tests#browser-support) for more information on browser support.
 
@@ -187,7 +187,7 @@ More information about writing GLSL shaders for gpu-io can be found at [docs/GLS
 
 ## Compatibility with Threejs
 
-gpu-io can share a webgl context with threejs so that both libraries will be able to access shared memory on the gpu:
+gpu-io can share a webgl context with Threejs so that both libraries will be able to access shared memory on the gpu:
 
 ```js
 import THREE from 'three';
@@ -207,7 +207,7 @@ renderer.autoClear = false;
 const composer = GPUComposer.initWithThreeRenderer(renderer);
 ```
 
-To bind a GPULayer to a Threejs Texture:
+Data is passed between gpu-io and Threejs via WebGLTextures.  To bind a GPULayer to a Threejs Texture:
 
 ```js
 const layer1 = new GPULayer(composer, {
@@ -230,7 +230,7 @@ const mesh = new THREE.Mesh(
 );
 
 loop() {
-  // Compute things with gpu-io, update layer1.
+  // Compute things with gpu-io, including updating layer1.
   composer.step({
     program: myProgram,
     output: layer1,
@@ -238,7 +238,8 @@ loop() {
 
   ....
 
-  // Reset three state back to what threejs is expecting (otherwise we get WebGL errors).
+  // Reset three state back to what threejs is expecting
+  // (otherwise we get WebGL errors).
   composer.resetThreeState();
   // Render threejs state.
   // Updates to layer1 will propagate to mesh texture without any
@@ -247,7 +248,7 @@ loop() {
 }
 ```
 
-More info about using gpu-io with threejs can be found in the [ThreeJS Example](https://github.com/amandaghassaei/gpu-io/tree/main/examples/threejs).
+More info about using gpu-io with Threejs can be found in the [Threejs Example](https://github.com/amandaghassaei/gpu-io/tree/main/examples/threejs).
 
 
 ## Limitations/Notes
@@ -255,8 +256,7 @@ More info about using gpu-io with threejs can be found in the [ThreeJS Example](
 
 ### Limitations
 
-- gpu-io currently only supports GPULayers with 1D or 2D arrays of dense data.  3D textures are not currently supported by the library.  You can still compute 3D simulations in gpu-io, you will just need to pass in your 3D position data as
-1D list to a GPULayer and then access it in the fragment shader using .xyz.  TODO: make example for this.
+- gpu-io currently only supports GPULayers with 1D or 2D arrays of dense data.  3D textures are not officially supported by the library.  You can still compute 3D simulations in gpu-io, you will just need to pass in your 3D position data as a 1D list to a GPULayer and then access it in the fragment shader using .xyz.  TODO: make example for this.
 - gpu-io does not currently allow you to pass in your own vertex shaders.  Currently all computation is happening in user-specified fragment shaders; vertex shaders are managed internally.
 - In order for the WRAP/FILTER polyfilling to work correctly, any calls to texture() must contain a direct reference to the sampler2D that it should operate on.  For example:
 
