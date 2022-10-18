@@ -418,7 +418,7 @@ export declare class GPUComposer {
      * @param params - PNG parameters.
      * @param params.filename - PNG filename (no extension).
      * @param params.dpi - PNG dpi (defaults to 72dpi).
-     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using file-saver.
     */
     savePNG(params?: {
         filename?: string;

@@ -1865,7 +1865,7 @@ export class GPUComposer {
 	 * @param params - PNG parameters.
 	 * @param params.filename - PNG filename (no extension).
 	 * @param params.dpi - PNG dpi (defaults to 72dpi).
-	 * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js. 
+	 * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using file-saver.
 	*/
 	savePNG(params: {
 		filename?: string,
@@ -1878,7 +1878,7 @@ export class GPUComposer {
 
 		const { canvas } = this;
 		const filename = params.filename || 'output';
-		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+		const callback = params.callback || saveAs; // Default to saving the image with file-saver.
 		// TODO: need to adjust the canvas size to get the correct px ratio from toBlob().
 		// const ratio = window.devicePixelRatio || 1;
 		canvas.toBlob((blob) => {

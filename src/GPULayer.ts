@@ -919,7 +919,7 @@ export class GPULayer {
 	 * @param params.filename - PNG filename (no extension, defaults to the name of the GPULayer).
 	 * @param params.dpi - PNG dpi (defaults to 72dpi).
 	 * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
-	 * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js. 
+	 * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using file-saver.
 	*/
 	savePNG(params: {
 		filename?: string,
@@ -933,7 +933,7 @@ export class GPULayer {
 		
 		const values = this.getValues();
 		const { width, height, type, name, numComponents } = this;
-		const callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+		const callback = params.callback || saveAs; // Default to saving the image with file-saver.
 		const filename = params.filename || name; // Default to the name of this layer.
 		const multiplier = params.multiplier ||
 			((type === FLOAT || type === HALF_FLOAT) ? 255 : 1);

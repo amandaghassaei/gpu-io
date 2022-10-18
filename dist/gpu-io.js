@@ -1887,7 +1887,7 @@ var GPUComposer = /** @class */ (function () {
      * @param params - PNG parameters.
      * @param params.filename - PNG filename (no extension).
      * @param params.dpi - PNG dpi (defaults to 72dpi).
-     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using file-saver.
     */
     GPUComposer.prototype.savePNG = function (params) {
         if (params === void 0) { params = {}; }
@@ -1896,7 +1896,7 @@ var GPUComposer = /** @class */ (function () {
         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer.savePNG(params)');
         var canvas = this.canvas;
         var filename = params.filename || 'output';
-        var callback = params.callback || saveAs; // Default to saving the image with FileSaver.
+        var callback = params.callback || saveAs; // Default to saving the image with file-saver.
         // TODO: need to adjust the canvas size to get the correct px ratio from toBlob().
         // const ratio = window.devicePixelRatio || 1;
         canvas.toBlob(function (blob) {
@@ -2816,7 +2816,7 @@ var GPULayer = /** @class */ (function () {
      * @param params.filename - PNG filename (no extension, defaults to the name of the GPULayer).
      * @param params.dpi - PNG dpi (defaults to 72dpi).
      * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
-     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using FileSaver.js.
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using file-saver.
     */
     GPULayer.prototype.savePNG = function (params) {
         if (params === void 0) { params = {}; }
@@ -2825,7 +2825,7 @@ var GPULayer = /** @class */ (function () {
         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.savePNG(params)');
         var values = this.getValues();
         var _a = this, width = _a.width, height = _a.height, type = _a.type, name = _a.name, numComponents = _a.numComponents;
-        var callback = params.callback || file_saver_1.saveAs; // Default to saving the image with FileSaver.
+        var callback = params.callback || file_saver_1.saveAs; // Default to saving the image with file-saver.
         var filename = params.filename || name; // Default to the name of this layer.
         var multiplier = params.multiplier ||
             ((type === constants_1.FLOAT || type === constants_1.HALF_FLOAT) ? 255 : 1);
