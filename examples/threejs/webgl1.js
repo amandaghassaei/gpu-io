@@ -145,7 +145,6 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 		glslVersion: THREE.GLSL1,
 	});
 	grid = new LineSegments(gridGeometry, gridMaterial);
-	grid.scale.set(1, 1, 1);
 	grid.position.y = 0.15;
 	scene.add(grid);
 
