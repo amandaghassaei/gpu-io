@@ -411,6 +411,7 @@ var conversions_1 = __webpack_require__(690);
 var Programs_1 = __webpack_require__(579);
 var checks_1 = __webpack_require__(707);
 var framebuffers_1 = __webpack_require__(798);
+var extensions_1 = __webpack_require__(581);
 var GPUComposer = /** @class */ (function () {
     /**
      * Create a GPUComposer.
@@ -556,6 +557,10 @@ var GPUComposer = /** @class */ (function () {
         // Unbind active buffer.
         if (this.isWebGL2)
             gl.bindVertexArray(null);
+        else {
+            var ext = (0, extensions_1.getExtension)(this, extensions_1.OES_VERTEX_ARRAY_OBJECT, true);
+            ext.bindVertexArrayOES(null);
+        }
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         // Canvas setup.
         this.resize([canvas.clientWidth, canvas.clientHeight]);
@@ -635,6 +640,10 @@ var GPUComposer = /** @class */ (function () {
         // Unbind any  VAOs.
         if (isWebGL2)
             gl.bindVertexArray(null);
+        else {
+            var ext = (0, extensions_1.getExtension)(this, extensions_1.OES_VERTEX_ARRAY_OBJECT, true);
+            ext.bindVertexArrayOES(null);
+        }
         var buffer = gl.createBuffer();
         if (!buffer) {
             _errorCallback('Unable to allocate gl buffer.');
@@ -771,8 +780,14 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexCompileConstants, fullscreenRender, input, output) {
         var _a = this, gl = _a.gl, _threeRenderer = _a._threeRenderer, isWebGL2 = _a.isWebGL2;
         // Unbind VAO for threejs compatibility.
-        if (_threeRenderer && isWebGL2)
-            gl.bindVertexArray(null);
+        if (_threeRenderer) {
+            if (isWebGL2)
+                gl.bindVertexArray(null);
+            else {
+                var ext = (0, extensions_1.getExtension)(this, extensions_1.OES_VERTEX_ARRAY_OBJECT, true);
+                ext.bindVertexArrayOES(null);
+            }
+        }
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
         // This line must come before this._setOutputLayer() as it depends on current internal state.
@@ -5450,7 +5465,7 @@ exports.glslComponentSelectionForNumComponents = glslComponentSelectionForNumCom
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getExtension = exports.EXT_COLOR_BUFFER_HALF_FLOAT = exports.EXT_COLOR_BUFFER_FLOAT = exports.WEBGL_DEPTH_TEXTURE = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
+exports.getExtension = exports.OES_VERTEX_ARRAY_OBJECT = exports.EXT_COLOR_BUFFER_HALF_FLOAT = exports.EXT_COLOR_BUFFER_FLOAT = exports.WEBGL_DEPTH_TEXTURE = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
 // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float
 // Float is provided by default in WebGL2 contexts.
 // This extension implicitly enables the WEBGL_color_buffer_float extension (if supported), which allows rendering to 32-bit floating-point color buffers.
@@ -5475,6 +5490,8 @@ exports.EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 // On WebGL 2, EXT_COLOR_BUFFER_HALF_FLOAT is an alternative to using the EXT_color_buffer_float extension on platforms
 // that support 16-bit floating point render targets but not 32-bit floating point render targets.
 exports.EXT_COLOR_BUFFER_HALF_FLOAT = 'EXT_color_buffer_half_float';
+// Vertex array extension is used by threejs.
+exports.OES_VERTEX_ARRAY_OBJECT = 'OES_vertex_array_object';
 function getExtension(composer, extensionName, optional) {
     if (optional === void 0) { optional = false; }
     // Check if we've already loaded the extension.

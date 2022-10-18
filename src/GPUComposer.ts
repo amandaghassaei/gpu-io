@@ -66,6 +66,7 @@ import {
 } from './Programs';
 import { checkRequiredKeys, checkValidKeys } from './checks';
 import { bindFrameBuffer } from './framebuffers';
+import { getExtension, OES_VERTEX_ARRAY_OBJECT } from './extensions';
 
 export class GPUComposer {
 	/**
@@ -336,6 +337,10 @@ export class GPUComposer {
 
 		// Unbind active buffer.
 		if (this.isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
+		else {
+			const ext = getExtension(this, OES_VERTEX_ARRAY_OBJECT, true);
+			ext.bindVertexArrayOES(null)
+		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
 		// Canvas setup.
@@ -398,6 +403,10 @@ export class GPUComposer {
 		const { _errorCallback, gl, isWebGL2 } = this;
 		// Unbind any  VAOs.
 		if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
+		else {
+			const ext = getExtension(this, OES_VERTEX_ARRAY_OBJECT, true);
+			ext.bindVertexArrayOES(null)
+		}
 		const buffer = gl.createBuffer();
 		if (!buffer) {
 			_errorCallback('Unable to allocate gl buffer.');
@@ -576,7 +585,13 @@ export class GPUComposer {
 		const { gl, _threeRenderer, isWebGL2 } = this;
 
 		// Unbind VAO for threejs compatibility.
-		if (_threeRenderer && isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
+		if (_threeRenderer) {
+			if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
+			else {
+				const ext = getExtension(this, OES_VERTEX_ARRAY_OBJECT, true);
+				ext.bindVertexArrayOES(null)
+			}
+		}
 
 		// CAUTION: the order of these next few lines is important.
 

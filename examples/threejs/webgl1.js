@@ -11,7 +11,7 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 		LINEAR,
 		NEAREST,
 		WEBGL2,
-		GLSL1,
+		WEBGL1,
 	} = GPUIO;
 	const {
 		Scene,
@@ -104,7 +104,7 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 		}
 	}
 	gridGeometry.setAttribute('position', new BufferAttribute(gridPositions, 3));
-	gridGeometry.setAttribute('vertexID', new BufferAttribute(gridVertexID, 1));
+	if (contextID === WEBGL1) gridGeometry.setAttribute('vertexID', new BufferAttribute(gridVertexID, 1));
 	gridGeometry.setIndex(new BufferAttribute(gridIndices, 1));
 	const gridTexture = new Texture();
 	const gridMaterial = new THREE.ShaderMaterial( {
