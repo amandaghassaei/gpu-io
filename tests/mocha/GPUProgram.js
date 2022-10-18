@@ -56,8 +56,11 @@
 					'Required params key "fragmentShader" was not passed to GPUProgram(composer, params) with name "test-program".');
 			});
 			it('should error if unknown params passed in', () => {
-				assert.throws(() => { new GPUProgram(composer, { name: 'test-program', fragmentShader: "", otherThing: 2 }); },
-					'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","compileTimeConstants"].');
+				const warnings = [];
+				console.warn = (message) => { warnings.push(message); }
+				new GPUProgram(composer, { name: 'test-program', fragmentShader: "", otherThing: 2 });
+				assert.equal(warnings.length, 1);
+				assert.equal(warnings[0], 'Invalid params key "otherThing" passed to GPUProgram(composer, params) with name "test-program".  Valid keys are ["name","fragmentShader","uniforms","compileTimeConstants"].');
 			});
 			it('should set parameters', () => {
 				const program = new GPUProgram(composer, { name: 'test-program', fragmentShader: setValueFragmentShader });

@@ -60,10 +60,12 @@
 					assert.equal(result.message, 'Required params key "url" was not passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".');
 				}));
 			});
-			it('should error if unknown params passed in', async () => {
-				await (GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', otherThing: 4 }).then(() => { throw new Error(`Promise should reject.`); }).catch(result => {
-					assert.equal(result.message, 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapX","wrapY","format","type"].');
-				}));
+			it('should warn if unknown params passed in', async () => {
+				const warnings = [];
+				console.warn = (message) => { warnings.push(message); }
+				await GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', otherThing: 4 });
+				assert.equal(warnings.length, 1);
+				assert.equal(warnings[0], 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapX","wrapY","format","type"].');
 			});
 			it('should error if invalid params passed in', async () => {
 				// Url.
@@ -158,9 +160,12 @@
 				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3 }); },
 					'Required params key "dimensions" was not passed to GPULayer(composer, params) with name "test-layer".');
 			});
-			it('should error if unknown params passed in', () => {
-				assert.throws(() => { new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], otherThing: 3 }); },
-					'Invalid params key "otherThing" passed to GPULayer(composer, params) with name "test-layer".  Valid keys are ["name","type","numComponents","dimensions","filter","wrapX","wrapY","numBuffers","clearValue","array"].');
+			it('should warn if unknown params passed in', () => {
+				const warnings = [];
+				console.warn = (message) => { warnings.push(message); }
+				new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 56], otherThing: 3 });
+				assert.equal(warnings.length, 1);
+				assert.equal(warnings[0], 'Invalid params key "otherThing" passed to GPULayer(composer, params) with name "test-layer".  Valid keys are ["name","type","numComponents","dimensions","filter","wrapX","wrapY","numBuffers","clearValue","array"].');
 			});
 			it('should error if invalid params passed in', () => {
 				// Num components.
@@ -589,15 +594,16 @@
 			});
 		});
 		describe('savePNG', () => {
-			it ('should throw error for invalid parameter', () => {
+			it ('should warn for invalid parameter', () => {
 				const layer1 = new GPULayer(composer1, { name: 'test-layer', type: FLOAT, numComponents: 3, dimensions: [34, 67]});
-				assert.throws(() => {
-					layer1.savePNG({
-						filename: 'thing',
-						test: 'bad param',
-					}); },
-					'Invalid params key "test" passed to GPULayer.savePNG(params).  Valid keys are ["filename","dpi","multiplier","callback"].');
-
+				const warnings = [];
+				console.warn = (message) => { warnings.push(message); }
+				layer1.savePNG({
+					filename: 'thing',
+					test: 'bad param',
+				});
+				assert.equal(warnings.length, 1);
+				assert.equal(warnings[0], 'Invalid params key "test" passed to GPULayer.savePNG(params).  Valid keys are ["filename","dpi","multiplier","callback"].');
 				layer1.dispose();
 			});
 			it('should return Blob in callback', () => {

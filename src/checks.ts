@@ -131,7 +131,7 @@ export function isNumberOfType(value: any, type: GPULayerType) {
 export function checkValidKeys(keys: string[], validKeys: string[], methodName: string, name?: string) {
 	keys.forEach(key => {
 		if (validKeys.indexOf(key) < 0) {
-			throw new Error(`Invalid params key "${key}" passed to ${methodName}${name ? ` with name "${name}"` : ''}.  Valid keys are ${JSON.stringify(validKeys)}.`);
+			console.warn(`Invalid params key "${key}" passed to ${methodName}${name ? ` with name "${name}"` : ''}.  Valid keys are ${JSON.stringify(validKeys)}.`);
 		}
 	});
 }

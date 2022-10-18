@@ -210,9 +210,13 @@
 		});
 		describe('checkValidKeys', () => {
 			it('should check for valid keys', () => {
-				assert.throws(() => { checkValidKeys(['1', '2', '3'], ['1', '2'], 'test'); },
-					'Invalid params key "3" passed to test.  Valid keys are ["1","2"].');
+				const warnings = [];
+				console.warn = (message) => { warnings.push(message); }
+				checkValidKeys(['1', '2', '3'], ['1', '2'], 'test');
+				assert.equal(warnings.length, 1);
+				assert.equal(warnings[0], 'Invalid params key "3" passed to test.  Valid keys are ["1","2"].');
 				assert.equal(checkValidKeys(['1', '2', '3'], ['1', '2', '3', '4'], 'test'), undefined);
+				assert.equal(warnings.length, 1);
 			});
 		});
 		describe('checkRequiredKeys', () => {

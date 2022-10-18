@@ -4936,7 +4936,7 @@ exports.isNumberOfType = isNumberOfType;
 function checkValidKeys(keys, validKeys, methodName, name) {
     keys.forEach(function (key) {
         if (validKeys.indexOf(key) < 0) {
-            throw new Error("Invalid params key \"".concat(key, "\" passed to ").concat(methodName).concat(name ? " with name \"".concat(name, "\"") : '', ".  Valid keys are ").concat(JSON.stringify(validKeys), "."));
+            console.warn("Invalid params key \"".concat(key, "\" passed to ").concat(methodName).concat(name ? " with name \"".concat(name, "\"") : '', ".  Valid keys are ").concat(JSON.stringify(validKeys), "."));
         }
     });
 }
