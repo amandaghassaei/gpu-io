@@ -600,6 +600,7 @@ Init GPUProgram to render signed amplitude of an input GPULayer to linearly inte
 | `params.component?` | ``"x"`` \| ``"y"`` \| ``"z"`` \| ``"w"`` | Component of input GPULayer to render, defaults to "x". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.scale?` | `number` | Scaling factor, defaults to 1.  Change this later using uniform "u_scale". |
+| `params.bias?` | `number` | Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias". |
 | `params.opacity?` | `number` | Opacity, defaults to 1.  Change this later using uniform "u_opacity". |
 | `params.colorNegative?` | `number`[] | RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative". |
 | `params.colorPositive?` | `number`[] | RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive". |

@@ -610,7 +610,7 @@ export class GPULayer {
 			}
 		}
 		let texture = _buffers[index];
-		if (_textureOverrides && _textureOverrides[index]) texture =  _textureOverrides[index]!;
+		if (_textureOverrides && _textureOverrides[index]) texture = _textureOverrides[index]!;
 		return {
 			texture,
 			layer: this,

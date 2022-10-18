@@ -4687,6 +4687,7 @@ exports.renderAmplitudeProgram = renderAmplitudeProgram;
  * @param params.type - The type of the input.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.bias - Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
  * @param params.colorNegative - RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative".
  * @param params.colorPositive - RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive".
@@ -4705,7 +4706,7 @@ function renderSignedAmplitudeProgram(composer, params) {
     var name = params.name || "renderAmplitude_".concat(glslType, "_").concat(component);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_colorNegative;\nuniform vec3 u_colorPositive;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_result;\nvoid main() {\n\tfloat signedAmplitude = u_scale * ").concat(castFloat ? '' : 'float', "(texture(u_state, v_uv).").concat(component, ");\n\tfloat amplitudeSign = sign(signedAmplitude);\n\tvec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);\n\tvec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);\n\tout_result = vec4(color, u_opacity);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform float u_bias;\nuniform vec3 u_colorNegative;\nuniform vec3 u_colorPositive;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_result;\nvoid main() {\n\tfloat signedAmplitude = u_scale * (").concat(castFloat ? '' : 'float', "(texture(u_state, v_uv).").concat(component, ") - u_bias);\n\tfloat amplitudeSign = sign(signedAmplitude);\n\tvec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);\n\tvec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);\n\tout_result = vec4(color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -4715,6 +4716,11 @@ function renderSignedAmplitudeProgram(composer, params) {
             {
                 name: 'u_scale',
                 value: params.scale !== undefined ? params.scale : 1,
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_bias',
+                value: params.bias || 0,
                 type: constants_1.FLOAT,
             },
             {

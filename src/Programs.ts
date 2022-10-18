@@ -394,6 +394,7 @@ void main() {
  * @param params.type - The type of the input.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.bias - Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
  * @param params.colorNegative - RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative".
  * @param params.colorPositive - RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive".
@@ -407,6 +408,7 @@ void main() {
 	component?: 'x' | 'y' | 'z' | 'w',
 	name?: string,
 	scale?: number,
+	bias?: number,
 	opacity?: number,
 	colorNegative?: number[],
 	colorPositive?: number[],
@@ -426,13 +428,14 @@ void main() {
 in vec2 v_uv;
 uniform float u_opacity;
 uniform float u_scale;
+uniform float u_bias;
 uniform vec3 u_colorNegative;
 uniform vec3 u_colorPositive;
 uniform vec3 u_colorZero;
 uniform ${precision} ${glslPrefix}sampler2D u_state;
 out vec4 out_result;
 void main() {
-	float signedAmplitude = u_scale * ${castFloat ? '' : 'float'}(texture(u_state, v_uv).${component});
+	float signedAmplitude = u_scale * (${castFloat ? '' : 'float'}(texture(u_state, v_uv).${component}) - u_bias);
 	float amplitudeSign = sign(signedAmplitude);
 	vec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);
 	vec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);
@@ -447,6 +450,11 @@ void main() {
 			{
 				name: 'u_scale',
 				value: params.scale !== undefined ? params.scale : 1,
+				type: FLOAT,
+			},
+			{
+				name: 'u_bias',
+				value: params.bias || 0,
 				type: FLOAT,
 			},
 			{

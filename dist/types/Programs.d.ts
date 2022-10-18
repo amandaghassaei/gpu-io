@@ -149,6 +149,7 @@ export declare function renderAmplitudeProgram(composer: GPUComposer, params: {
  * @param params.type - The type of the input.
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.bias - Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
  * @param params.colorNegative - RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative".
  * @param params.colorPositive - RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive".
@@ -162,6 +163,7 @@ export declare function renderSignedAmplitudeProgram(composer: GPUComposer, para
     component?: 'x' | 'y' | 'z' | 'w';
     name?: string;
     scale?: number;
+    bias?: number;
     opacity?: number;
     colorNegative?: number[];
     colorPositive?: number[];
