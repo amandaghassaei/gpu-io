@@ -8,6 +8,10 @@
 		isWebGL2Supported,
 	} = GPUIO;
 
+	// https://github.com/amandaghassaei/canvas-capture
+	const CanvasCapture = window.CanvasCapture.CanvasCapture;
+	const RECORD_FPS = 60;
+
 	// Init a simple gui.
 	const gui = new dat.GUI();
 
@@ -68,6 +72,15 @@
 		useGLSL3Toggle = settings.add(webGLSettings, 'GLSLVersion', webGLSettings.webGLVersion === 'WebGL 2' ? availableGLSLVersions : ['GLSL 1']).name('GLSL Version').onChange(reloadExampleWithNewParams);
 		title = `${webGLSettings.webGLVersion}`;
 		settings.name = title;
+
+		CanvasCapture.dispose();
+		CanvasCapture.init(canvas, { showRecDot: true, showDialogs: true, showAlerts: true, recDotCSS: { left: '0', right: 'auto' } });
+		CanvasCapture.bindKeyToVideoRecord('v', {
+			format: CanvasCapture.WEBM,
+			name: 'screen_recording',
+			fps: RECORD_FPS,
+			quality: 1,
+		});
 	}
 
 	// Add some settings to gui.
@@ -102,6 +115,8 @@
 		document.body.style.transform = scale;
 	}
 
+	let numFrames = 0;
+
 	function outerLoop() {
 		// Update fps counter.
 		const { fps, numTicks } = composer.tick();
@@ -111,6 +126,16 @@
 		window.requestAnimationFrame(outerLoop);
 		// Run example loop.
 		if (loop) loop();
+
+		// Screen recording.
+		CanvasCapture.checkHotkeys();
+		if (CanvasCapture.isRecording()) {
+			CanvasCapture.recordFrame();
+			numFrames++;
+			console.log(`Recording duration: ${(numFrames / RECORD_FPS).toFixed(2)} sec`);
+		} else {
+			numFrames = 0;
+		}
 	}
 	// Start loop.
 	outerLoop();

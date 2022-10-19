@@ -1,12 +1,14 @@
 <html>
 	<head>
 		<title>Julia Set</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<meta charset="utf-8"/>
 		<link rel="stylesheet" type="text/css" href="../common/dat.gui.css" />
 		<link rel="stylesheet" type="text/css" href="../common/micromodal.css" />
 		<link rel="stylesheet" type="text/css" href="../common/index.css" />
 		<script src="../common/dat.gui.min.js"></script>
 		<script src="../common/micromodal.min.js"></script>
+		<script src="../common/canvas-capture.min.js"></script>
 		<script src="../../dist/gpu-io.min.js"></script>
 	</head>
 	<body>
@@ -45,6 +47,7 @@
 				  <p>
 					Instructions: Zoom/scroll and pan to explore each fractal's structure.
 					Adjust "C Real" and "C Imaginary" to generate different Julia sets, and increase "Max Iters" to see more detail in the brightest regions.
+					Press "v" to record a video.
 				  </p>
 				  <p>
 					This page is part of a series of examples using <a href="https://apps.amandaghassaei.com/gpu-io/examples/">gpu-io</a>, a GPU-accelerated computing library for physics simulations and other mathematical calculations.

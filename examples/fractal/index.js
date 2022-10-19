@@ -8,7 +8,7 @@ function main({ gui, contextID, glslVersion}) {
 		renderAmplitudeProgram,
 	} = GPUIO;
 
-	const RADIUS = 1.25;
+	const RADIUS = 1.75;
 
 	// Calc initial bounds, which scale the entire fractal to fit inside the current window.
 	function calcInitialBounds() {
@@ -129,6 +129,22 @@ function main({ gui, contextID, glslVersion}) {
 				input: state,
 			});
 		}
+
+		// Uncomment these lines to auto zoom into a point.
+		// (for making animations)
+		// let [ minX, minY ] = bounds.min;
+		// let [ maxX, maxY ] = bounds.max;
+		// const [centerX, centerY] = [-0.049713415501200384, 0.027253891209121472];
+		// const factor = 0.995;
+		// let scaleX = factor * (maxY - minY);
+		// let scaleY = factor * (maxX - minX);
+		// bounds.min[0] = centerX - scaleY / 2;
+		// bounds.max[0] = centerX + scaleY / 2;
+		// bounds.min[1] = centerY - scaleX / 2;
+		// bounds.max[1] = centerY + scaleX / 2;
+		// fractalCompute.setUniform('u_boundsMin', bounds.min);
+		// fractalCompute.setUniform('u_boundsMax', bounds.max);
+		// needsCompute = true;
 	}
 
 	// Init simple GUI.
@@ -225,19 +241,19 @@ function main({ gui, contextID, glslVersion}) {
 		let [ maxX, maxY ] = bounds.max;
 		let scaleX = maxY - minY;
 		let scaleY = maxX - minX;
-		const fractionF = (canvas.height - e.clientY) / canvas.height;
-		const fractionK = e.clientX / canvas.width;
-		const centerF = fractionF * scaleX + minY;
-		const centerK = fractionK * scaleY + minX;
+		const fractionY = (canvas.height - e.clientY) / canvas.height;
+		const fractionX = e.clientX / canvas.width;
+		const centerY = fractionY * scaleX + minY;
+		const centerX = fractionX * scaleY + minX;
 		const scale = 1.0 + e.deltaY * factor;
 		const scaleLimit = 1e-4;
 		if (Math.min(scaleX * scale, scaleY * scale) < scaleLimit) return;
 		scaleX = scaleX * scale;
 		scaleY = scaleY * scale;
-		bounds.min[1] = centerF - scaleX * fractionF;
-		bounds.max[1] = centerF + scaleX * (1 - fractionF);
-		bounds.min[0] = centerK - scaleY * fractionK;
-		bounds.max[0] = centerK + scaleY * (1 - fractionK);
+		bounds.min[0] = centerX - scaleY * fractionX;
+		bounds.max[0] = centerX + scaleY * (1 - fractionX);
+		bounds.min[1] = centerY - scaleX * fractionY;
+		bounds.max[1] = centerY + scaleX * (1 - fractionY);
 		fractalCompute.setUniform('u_boundsMin', bounds.min);
 		fractalCompute.setUniform('u_boundsMax', bounds.max);
 		needsCompute = true;

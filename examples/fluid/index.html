@@ -1,12 +1,14 @@
 <html>
 	<head>
 		<title>Fluid Simulation</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<meta charset="utf-8"/>
 		<link rel="stylesheet" type="text/css" href="../common/dat.gui.css" />
 		<link rel="stylesheet" type="text/css" href="../common/micromodal.css" />
 		<link rel="stylesheet" type="text/css" href="../common/index.css" />
 		<script src="../common/dat.gui.min.js"></script>
 		<script src="../common/micromodal.min.js"></script>
+		<script src="../common/canvas-capture.min.js"></script>
 		<script src="../../dist/gpu-io.min.js"></script>
 	</head>
 	<body>
@@ -27,9 +29,10 @@
 					</p>
 					<p>
 						Instructions: Touch/mouseover to apply a force to the fluid.  Toggle between showing the underlying pressure and velocity fields using the controls on the right.
+						Press "v" to record a video.
 					</p>
 					<p>
-						To learn more about the math involved, check out the following sources: by
+						To learn more about the math involved, check out the following sources:
 					</p>
 					</p>
 						<a href="https://pdfs.semanticscholar.org/84b8/c7b7eecf90ebd9d54a51544ca0f8ff93c137.pdf">Real-time ink simulation using a grid-particle method</a> - mixing Eulerian and Lagrangian techniques for fluids.<br/>
