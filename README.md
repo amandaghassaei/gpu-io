@@ -93,9 +93,9 @@ noise.forEach((el, i) => noise[i] = Math.random());
 const state = new GPULayer(composer, {
   name: 'state',
   dimensions: [canvas.width, canvas.height],
-  numComponents: 1,
+  numComponents: 1, // Scalar state has one component.
   type: FLOAT,
-  filter: LINEAR,
+  filter: NEAREST,
   // Use 2 buffers so we can toggle read/write
   // from one to the other.
   numBuffers: 2,
@@ -205,7 +205,7 @@ import {
 const renderer = new THREE.WebGLRenderer();
 // Use renderer.autoClear = false if you want to overlay threejs stuff
 // on top of things rendered to the screen from gpu-io.
-renderer.autoClear = false;
+// renderer.autoClear = false;
 
 const composer = GPUComposer.initWithThreeRenderer(renderer);
 ```

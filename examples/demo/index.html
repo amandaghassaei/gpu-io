@@ -40,10 +40,10 @@ noise.forEach((el, i) => noise[i] = Math.random());
 const state = new GPULayer(composer, {
 	name: 'state',
 	dimensions: [canvas.width, canvas.height],
-	numComponents: 1,
+	numComponents: 1, // Scalar state has one component.
 	type: FLOAT,
-	filter: LINEAR,
-	numBuffers: 2,// Use 2 buffers so we can toggle read/write from one to the other.
+	filter: NEAREST,
+	numBuffers: 2, // Use 2 buffers so we can toggle read/write from one to the other.
 	wrapX: REPEAT,
 	wrapY: REPEAT,
 	array: noise,
