@@ -118,6 +118,7 @@ function main({ gui, contextID, glslVersion }) {
 			}
 		}
 	}
+	// Vertex shader pulls info stored in u_height texture and uses this to update vertex height.
 	const vertexShader = `
 		uniform sampler2D u_height;
 		uniform ivec2 u_heightDimensions;
@@ -136,7 +137,7 @@ function main({ gui, contextID, glslVersion }) {
 			vec4 position = projectionMatrix * modelViewPosition;
 
 			vec2 uv = getTextureUV(gl_VertexID, u_heightDimensions);
-			// Set height of grid mesh using data from simulation.
+			// Set height of grid mesh using data from gpu-io simulation.
 			position.y += ${GRID_MESH_Y_SCALE.toFixed(6)} * texture(u_height, uv).x;
 
 			gl_Position = position;
@@ -187,9 +188,7 @@ function main({ gui, contextID, glslVersion }) {
 	gridMesh.position.y = PARAMS.separation / TEXTURE_DIM[0] * 0.5;
 	scene.add(gridMesh);
 
-
 	const composer = GPUComposer.initWithThreeRenderer(renderer, { glslVersion });
-
 	// Undo any changes threejs has made to WebGL state.
 	composer.undoThreeState();
 
@@ -237,14 +236,15 @@ function main({ gui, contextID, glslVersion }) {
 	const lightMeshPositions = new GPULayer(composer, {
 		name: 'lightMeshPositions',
 		dimensions: TEXTURE_DIM,
-		numComponents: 2, // Store refraction in x and y.
+		numComponents: 2,
 		type: FLOAT,
 		filter: NEAREST,
 	});
 	// Init gpu-io buffer for triangle indices for this light wavefront mesh.
+	// We can reuse the same mesh indices we used for our threejs mesh.
 	const lightMeshIndices = composer.initIndexBuffer(gridMeshIndices);
 
-	// Init a program to apply wave function.
+	// Init a program to solve wave function.
 	const waveProgram = new GPUProgram(composer, {
 		name: 'wave',
 		fragmentShader: `
@@ -304,7 +304,7 @@ function main({ gui, contextID, glslVersion }) {
 			void main() {
 				// Calculate height so that it's tallest in the center and
 				// tapers down toward the outside of the circle.
-				// Use dist from center (0.5, 0.5) to compute this.
+				// Use dist from center (vec2(0.5)) to compute this.
 				vec2 vector = v_uv_local - vec2(0.5);
 				out_height = 1.0 - 2.0 * length(vector);
 			}
@@ -333,13 +333,15 @@ function main({ gui, contextID, glslVersion }) {
 				float w = texture(u_height, v_uv - onePxX).x;
 				vec2 normalXY = vec2(w - e, s - n) / 2.0;
 				// TODO: there seems to be a slight bug in the normal value along the y axis.
-				normalXY *= min(0.012 / length(normalXY), 1.0); // Clip normal amplitude to reduce noise.
+				// Clip normal amplitude to reduce effect of bug.
+				normalXY *= min(0.012 / length(normalXY), 1.0);
 				vec3 normal = normalize(vec3(normalXY, 1.0));
 				const vec3 incident = vec3(0, 0, -1);
 				// 1 / 1.33 = Air refractive index / water refractive index.
 				vec3 refractVector = refract(incident, normal, ${(1 / 1.33).toFixed(6)});
 				refractVector.xy /= abs(refractVector.z);
-				// Render this out slightly smaller so we can see raw edge.
+				// Render this out slightly smaller so we can see raw edge of caustic pattern.
+				// Also add a scaling factor of 1/7.5 to reduce caustic distortion.
 				out_position = (0.9 * (v_uv + refractVector.xy * u_separation / 7.5) + 0.05) * u_dimensions;
 			}
 		`,
@@ -349,17 +351,17 @@ function main({ gui, contextID, glslVersion }) {
 				value: 0,
 				type: INT,
 			},
-			{ // Calculate the size of a 1 px step in UV coordinates.
+			{ // Calculate the size of a 1 px step in UV coordinates of u_height.
 				name: 'u_pxSize',
 				value: [1 / TEXTURE_DIM[0], 1 / TEXTURE_DIM[1]],
 				type: FLOAT,
 			},
-			{
+			{ // Dimensions of output GPULayer.
 				name: 'u_dimensions',
 				value: [caustics.width, caustics.height],
 				type: FLOAT,
 			},
-			{
+			{ // Separation between water surface and caustics projection.
 				name: 'u_separation',
 				value: PARAMS.separation,
 				type: FLOAT,
@@ -381,7 +383,7 @@ function main({ gui, contextID, glslVersion }) {
 				// https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c
 				float oldArea = dFdx(v_uv_1d.x) * dFdy(v_uv_1d.y);
 				float newArea = dFdx(v_uv.x) * dFdy(v_uv.y);
-				float amplitude = oldArea / newArea * 0.75;
+				float amplitude = oldArea / newArea * 0.75; /// 0.75 is a small scaling factor of light intensity.
 				const vec3 background = vec3(${BACKGROUND_COLOR[0]}, ${BACKGROUND_COLOR[1]}, ${BACKGROUND_COLOR[2]});
 				out_color = vec4(background * amplitude, 1);
 			}
@@ -399,7 +401,6 @@ function main({ gui, contextID, glslVersion }) {
 	let numFramesUntilNextDrop = NUM_FRAMES_BETWEEN_DROPS;
 
 	function addDrop() {
-		if (paused) return;
 		// Initialize a circular region with a drop of height > 0 at a random position.
 		const position = [
 			(TEXTURE_DIM[0] - 2 * DROP_DIAMETER) * Math.random() + DROP_DIAMETER,
@@ -430,13 +431,13 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Simulation/render loop.
 	function loop() {
-		// Add a drop.
-		if (--numFramesUntilNextDrop <= 0) {
-			addDrop();
-		}
-
-		// Propagate wave and write result to height.
 		if (!paused) {
+			// Add a drop.
+			if (--numFramesUntilNextDrop <= 0) {
+				addDrop();
+			}
+
+			// Propagate wave and write result to height.
 			composer.step({
 				program: waveProgram,
 				input: [height.currentState, height.lastState],
@@ -489,15 +490,10 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
-		// TODO: render caustics.
-		// Copy current height to heightMap.
-		composer.step({
-			program: copy,
-			input: height,
-			output: heightMap,
-		});
-		composer.resetThreeState();
-		renderer.render(scene, camera);
+		let _paused = paused;
+		paused = true;
+		loop(); // Refresh rendering.
+		paused = _paused;
 		composer.savePNG({ filename: `threejs_scene` });
 	}
 	function saveTexturePNG() {
