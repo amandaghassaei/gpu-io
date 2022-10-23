@@ -149,7 +149,7 @@ export declare class GPUComposer {
      * Used for partial rendering to output, among other things.
      * @private
      */
-    private _copyProgramForType;
+    _copyProgramForType(type: GPULayerType): GPUProgram;
     /**
      * Init a buffer for vertex shader attributes.
      * @private
@@ -445,9 +445,12 @@ export declare class GPUComposer {
         color?: number[];
         blendAlpha?: boolean;
     }): void;
+    /**
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
+     */
     undoThreeState(): void;
     /**
-     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any gpu-io step or draw functions.
      */
     resetThreeState(): void;
     /**

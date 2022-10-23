@@ -439,6 +439,21 @@ export class GPULayer {
 		return !!(this._textureOverrides && this._textureOverrides[this.bufferIndex]);
 	}
 
+	/**
+	 * Copy contents of current state to another GPULayer.
+	 * TODO: Still testing this.
+	 * @private
+	 */
+	copyCurrentStateToGPULayer(layer: GPULayer) {
+		const { _composer } = this;
+		if (this === layer) throw new Error(`Can't call GPULayer.copyCurrentStateToGPULayer() on self.`);
+		const copyProgram = _composer._copyProgramForType(this._internalType);
+		_composer.step({
+			program: copyProgram,
+			input: this,
+			output: layer,
+		});
+	}
 	// saveCurrentStateToGPULayer(layer: GPULayer) {
 	// 	// A method for saving a copy of the current state without a draw call.
 	// 	// Draw calls are expensive, this optimization helps.

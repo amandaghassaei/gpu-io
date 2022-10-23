@@ -164,6 +164,12 @@ export declare class GPULayer {
      */
     _usingTextureOverrideForCurrentBuffer(): boolean;
     /**
+     * Copy contents of current state to another GPULayer.
+     * Still testing this.
+     * @private
+     */
+    copyCurrentStateToGPULayer(layer: GPULayer): void;
+    /**
      * Init GLTexture/GLFramebuffer pairs for reading/writing GPULayer data.
      * @private
      */

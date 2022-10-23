@@ -391,6 +391,8 @@ ___
 
 ▸ **undoThreeState**(): `void`
 
+If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
+
 #### Returns
 
 `void`
@@ -401,7 +403,7 @@ ___
 
 ▸ **resetThreeState**(): `void`
 
-If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
+If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any gpu-io step or draw functions.
 
 #### Returns
 

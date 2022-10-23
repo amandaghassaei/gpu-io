@@ -2001,6 +2001,9 @@ var GPUComposer = /** @class */ (function () {
         }
         this._drawFinish(params);
     };
+    /**
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
+     */
     GPUComposer.prototype.undoThreeState = function () {
         if (!this._threeRenderer) {
             throw new Error("Can't call undoThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().");
@@ -2009,7 +2012,7 @@ var GPUComposer = /** @class */ (function () {
         gl.disable(gl.BLEND);
     };
     /**
-     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
+     * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any gpu-io step or draw functions.
      */
     GPUComposer.prototype.resetThreeState = function () {
         if (!this._threeRenderer) {
@@ -2500,6 +2503,22 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype._usingTextureOverrideForCurrentBuffer = function () {
         return !!(this._textureOverrides && this._textureOverrides[this.bufferIndex]);
+    };
+    /**
+     * Copy contents of current state to another GPULayer.
+     * Still testing this.
+     * @private
+     */
+    GPULayer.prototype.copyCurrentStateToGPULayer = function (layer) {
+        var _composer = this._composer;
+        if (this === layer)
+            throw new Error("Can't call GPULayer.copyCurrentStateToGPULayer() on self.");
+        var copyProgram = _composer._copyProgramForType(this._internalType);
+        _composer.step({
+            program: copyProgram,
+            input: this,
+            output: layer,
+        });
     };
     // saveCurrentStateToGPULayer(layer: GPULayer) {
     // 	// A method for saving a copy of the current state without a draw call.

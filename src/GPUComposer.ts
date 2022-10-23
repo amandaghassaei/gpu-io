@@ -382,7 +382,7 @@ export class GPUComposer {
 	 * Used for partial rendering to output, among other things.
 	 * @private
 	 */
-	private _copyProgramForType(type: GPULayerType) {
+	_copyProgramForType(type: GPULayerType) {
 		const { _copyPrograms } = this;
 		const key = uniformTypeForType(type, this.glslVersion);
 		if (_copyPrograms[key] === undefined) {
