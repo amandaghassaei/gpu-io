@@ -2506,7 +2506,7 @@ var GPULayer = /** @class */ (function () {
     };
     /**
      * Copy contents of current state to another GPULayer.
-     * Still testing this.
+     * TODO: Still testing this.
      * @private
      */
     GPULayer.prototype.copyCurrentStateToGPULayer = function (layer) {
@@ -2516,7 +2516,7 @@ var GPULayer = /** @class */ (function () {
         var copyProgram = _composer._copyProgramForType(this._internalType);
         _composer.step({
             program: copyProgram,
-            input: this,
+            input: this.currentState,
             output: layer,
         });
     };
