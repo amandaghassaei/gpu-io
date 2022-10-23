@@ -41,7 +41,7 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Size of the simulation.
 	const TEXTURE_DIM = [100, 100];
-	const CAUSTICS_SCALE_FACTOR = 8;
+	const CAUSTICS_TEXTURE_SCALE_FACTOR = 8; // Increase in resolution of caustics texture from TEXTURE_DIM.
 	// Some simulation constants.
 	// https://beltoforion.de/en/recreational_mathematics/2d-wave-equation.php
 	const DT = 1;
@@ -222,7 +222,7 @@ function main({ gui, contextID, glslVersion }) {
 	// On each render cycle, compute caustics into an RGBA texture.
 	const caustics = new GPULayer(composer, {
 		name: 'caustics',
-		dimensions: [TEXTURE_DIM[0] * CAUSTICS_SCALE_FACTOR, TEXTURE_DIM[1] * CAUSTICS_SCALE_FACTOR],
+		dimensions: [TEXTURE_DIM[0] * CAUSTICS_TEXTURE_SCALE_FACTOR, TEXTURE_DIM[1] * CAUSTICS_TEXTURE_SCALE_FACTOR],
 		numComponents: 4, // RGBA
 		type: FLOAT,
 		filter: LINEAR,
@@ -431,12 +431,12 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Simulation/render loop.
 	function loop() {
+		// Update wave function simulation.
 		if (!paused) {
 			// Add a drop.
 			if (--numFramesUntilNextDrop <= 0) {
 				addDrop();
 			}
-
 			// Propagate wave and write result to height.
 			composer.step({
 				program: waveProgram,
@@ -444,8 +444,9 @@ function main({ gui, contextID, glslVersion }) {
 				output: height,
 			});
 		}
-
+		// TODO: remove this.
 		// Copy current height to heightMap.
+		// heightMap is sampled by the threejs gridSegments and gridMesh vertex shaders.
 		composer.step({
 			program: copy,
 			input: height,
@@ -453,13 +454,15 @@ function main({ gui, contextID, glslVersion }) {
 		});
 
 		// Compute caustics.
-		// Refract light mesh through water surface.
+		// Refract light wavefront mesh through water surface.
 		composer.step({
 			program: refractLight,
 			input: height,
 			output: lightMeshPositions,
 		});
 		caustics.clear();
+		// Render light wavefront mesh to caustics.
+		// caustics is already linked to threejs planeTexture.
 		composer.drawLayerAsMesh({
 			layer: lightMeshPositions,
 			indices: lightMeshIndices,
@@ -564,6 +567,8 @@ function main({ gui, contextID, glslVersion }) {
 
 		waveProgram.dispose();
 		dropProgram.dispose();
+		refractLight.dispose();
+		computeCaustics.dispose();
 		copy.dispose();
 		
 		composer.dispose();
