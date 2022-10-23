@@ -341,8 +341,8 @@ function main({ gui, contextID, glslVersion }) {
 				vec3 refractVector = refract(incident, normal, ${(1 / 1.33).toFixed(6)});
 				refractVector.xy /= abs(refractVector.z);
 				// Render this out slightly smaller so we can see raw edge of caustic pattern.
-				// Also add a scaling factor of 1/7.5 to reduce caustic distortion.
-				out_position = (0.9 * (v_uv + refractVector.xy * u_separation / 7.5) + 0.05) * u_dimensions;
+				// Also add a scaling factor of 0.15 to reduce caustic distortion.
+				out_position = (0.9 * (v_uv + refractVector.xy * u_separation * 0.15) + 0.05) * u_dimensions;
 			}
 		`,
 		uniforms: [
