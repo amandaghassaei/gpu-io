@@ -322,6 +322,10 @@ export const LAYER_LINES_PROGRAM_NAME = 'LAYER_LINES';
  * @private
  */
 export const LAYER_VECTOR_FIELD_PROGRAM_NAME = 'LAYER_VECTOR_FIELD';
+/**
+ * @private
+ */
+ export const LAYER_MESH_PROGRAM_NAME = 'LAYER_MESH';
 // Vertex shader compile time constants.
 /**
  * @private
@@ -356,7 +360,8 @@ export type PROGRAM_NAME_INTERNAL =
 	typeof SEGMENT_PROGRAM_NAME |
 	typeof LAYER_POINTS_PROGRAM_NAME |
 	typeof LAYER_LINES_PROGRAM_NAME |
-	typeof LAYER_VECTOR_FIELD_PROGRAM_NAME;
+	typeof LAYER_VECTOR_FIELD_PROGRAM_NAME |
+	typeof LAYER_MESH_PROGRAM_NAME;
 
 // Pass in #defines as strings to make it easier to control float vs int.
 /**
@@ -459,3 +464,10 @@ export const BOUNDARY_BOTTOM = 'BOUNDARY_BOTTOM';
 export const BOUNDARY_LEFT = 'BOUNDARY_LEFT';
 export const BOUNDARY_RIGHT = 'BOUNDARY_RIGHT';
 export type BoundaryEdge = typeof BOUNDARY_TOP | typeof BOUNDARY_BOTTOM | typeof BOUNDARY_LEFT | typeof BOUNDARY_RIGHT;
+
+export type IndexBuffer = {
+	buffer: WebGLBuffer,
+	count: number,
+	type: number,
+	dispose: () => void,
+}

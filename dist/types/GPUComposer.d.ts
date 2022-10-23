@@ -1,6 +1,6 @@
 import { GPULayer } from './GPULayer';
 import './GPULayerHelpers';
-import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
+import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge, IndexBuffer } from './constants';
 import { GPUProgram } from './GPUProgram';
 import type { WebGLRenderer, WebGL1Renderer } from 'three';
 export declare class GPUComposer {
@@ -367,6 +367,7 @@ export declare class GPUComposer {
      * @param params.input - Input GPULayers for GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
      * @param params.pointSize - Pixel size of points.
+     * @param params.useOutputScale - If true position and pointSize are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
      * @param params.count - How many points to draw, defaults to positions.length.
      * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
      * @param params.wrapX - Wrap points positions in X, defaults to false.
@@ -380,6 +381,7 @@ export declare class GPUComposer {
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer | GPULayer[];
         pointSize?: number;
+        useOutputScale?: boolean;
         count?: number;
         color?: number[];
         wrapX?: boolean;
@@ -409,6 +411,41 @@ export declare class GPUComposer {
         color?: number[];
         blendAlpha?: boolean;
     }): void;
+    /**
+     * Init an index buffer to use with GPUComposer.drawLayerAsMesh().
+     * @param indices - A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices.
+     * @returns
+     */
+    initIndexBuffer(indices: number[] | Uint8Array | Uint16Array | Uint32Array): {
+        buffer: WebGLBuffer | null;
+        count: number;
+        type: number | undefined;
+        dispose: () => void;
+    };
+    /**
+     * Draw 2D mesh to screen.
+     * @param params - Draw parameters.
+     * @param params.layer - GPULayer containing vector data.
+     * @param params.indices = IndexBuffer containing mesh index data, see GPUComposer.initIndexBuffer().
+     * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
+     * @param params.input - Input GPULayers for GPUProgram.
+     * @param params.output - Output GPULayer, will draw to screen if undefined.
+     * @param params.useOutputScale - If true positions are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
+     * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
+     * @param params.blendAlpha - Blend mode for draw, defaults to false.
+     * @returns
+     */
+    drawLayerAsMesh(params: {
+        layer: GPULayer;
+        indices?: IndexBuffer;
+        program?: GPUProgram;
+        input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
+        output?: GPULayer | GPULayer[];
+        useOutputScale?: boolean;
+        color?: number[];
+        blendAlpha?: boolean;
+    }): void;
+    undoThreeState(): void;
     /**
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
      */

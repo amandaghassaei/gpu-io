@@ -26,6 +26,10 @@ export const EXT_COLOR_BUFFER_FLOAT = 'EXT_color_buffer_float';
 export const EXT_COLOR_BUFFER_HALF_FLOAT = 'EXT_color_buffer_half_float';
 // Vertex array extension is used by threejs.
 export const OES_VERTEX_ARRAY_OBJECT = 'OES_vertex_array_object';
+// Extension to use int32 for indexed geometry for WebGL1.
+// According to WebGLStats nearly all devices support this extension.
+// Fallback to gl.UNSIGNED_SHORT if not available.
+export const OES_ELEMENT_INDEX_UINT = 'OES_element_index_uint';
 
 export function getExtension(
 	composer: GPUComposer,

@@ -60,6 +60,7 @@ gpu-io
 - [CompileTimeConstants](README.md#compiletimeconstants)
 - [ErrorCallback](README.md#errorcallback)
 - [BoundaryEdge](README.md#boundaryedge)
+- [IndexBuffer](README.md#indexbuffer)
 
 ### GPUProgram Helper Functions
 
@@ -462,6 +463,21 @@ ___
 ### BoundaryEdge
 
 Ƭ **BoundaryEdge**: typeof [`BOUNDARY_TOP`](README.md#boundary_top) \| typeof [`BOUNDARY_BOTTOM`](README.md#boundary_bottom) \| typeof [`BOUNDARY_LEFT`](README.md#boundary_left) \| typeof [`BOUNDARY_RIGHT`](README.md#boundary_right)
+
+___
+
+### IndexBuffer
+
+Ƭ **IndexBuffer**: `Object`
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `buffer` | `WebGLBuffer` |
+| `count` | `number` |
+| `type` | `number` |
+| `dispose` | () => `void` |
 
 ## GPUProgram Helper Functions
 

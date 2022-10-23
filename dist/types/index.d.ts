@@ -68,6 +68,7 @@ declare const _testing: {
     EXT_COLOR_BUFFER_FLOAT: "EXT_color_buffer_float";
     EXT_COLOR_BUFFER_HALF_FLOAT: "EXT_color_buffer_half_float";
     OES_VERTEX_ARRAY_OBJECT: "OES_vertex_array_object";
+    OES_ELEMENT_INDEX_UINT: "OES_element_index_uint";
     isFloatType: typeof utils.isFloatType;
     isUnsignedIntType: typeof utils.isUnsignedIntType;
     isSignedIntType: typeof utils.isSignedIntType;

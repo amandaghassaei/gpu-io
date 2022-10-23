@@ -233,6 +233,9 @@ const mesh = new THREE.Mesh(
 );
 
 loop() {
+  // Undo any changes threejs has made to WebGL state.
+  composer.undoThreeState();
+
   // Compute things with gpu-io.
   composer.step({
     program: myProgram,
@@ -241,7 +244,7 @@ loop() {
 
   ....
 
-  // Reset three state back to what threejs is expecting
+  // Reset WebGL state back to what threejs is expecting
   // (otherwise we get WebGL errors).
   composer.resetThreeState();
   // Render threejs scene.

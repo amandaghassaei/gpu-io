@@ -37,6 +37,8 @@ import {
 	BOUNDARY_RIGHT,
 	BOUNDARY_TOP,
 	BOUNDARY_BOTTOM,
+	LAYER_MESH_PROGRAM_NAME,
+	IndexBuffer,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -59,6 +61,7 @@ import { LAYER_LINES_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerLinesVertex
 import { SEGMENT_VERTEX_SHADER_SOURCE } from './glsl/vertex/SegmentVertexShader';
 import { LAYER_POINTS_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerPointsVertexShader';
 import { LAYER_VECTOR_FIELD_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerVectorFieldVertexShader';
+import { LAYER_MESH_VERTEX_SHADER_SOURCE } from './glsl/vertex/LayerMeshVertexShader';
 import { uniformTypeForType } from './conversions';
 import {
 	copyProgram,
@@ -66,7 +69,8 @@ import {
 } from './Programs';
 import { checkRequiredKeys, checkValidKeys } from './checks';
 import { bindFrameBuffer } from './framebuffers';
-import { getExtension, OES_VERTEX_ARRAY_OBJECT } from './extensions';
+import { getExtension, OES_ELEMENT_INDEX_UINT, OES_VERTEX_ARRAY_OBJECT } from './extensions';
+import { isTypedArray } from '@petamoriken/float16';
 
 export class GPUComposer {
 	/**
@@ -179,6 +183,10 @@ export class GPUComposer {
 		},
 		[LAYER_LINES_PROGRAM_NAME]: {
 			src: LAYER_LINES_VERTEX_SHADER_SOURCE,
+			compiledShaders: {},
+		},
+		[LAYER_MESH_PROGRAM_NAME]: {
+			src: LAYER_MESH_VERTEX_SHADER_SOURCE,
 			compiledShaders: {},
 		},
 	};
@@ -1558,6 +1566,7 @@ export class GPUComposer {
 	 * @param params.input - Input GPULayers for GPUProgram.
 	 * @param params.output - Output GPULayer, will draw to screen if undefined.
 	 * @param params.pointSize - Pixel size of points.
+	 * @param params.useOutputScale - If true position and pointSize are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
 	 * @param params.count - How many points to draw, defaults to positions.length.
 	 * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
 	 * @param params.wrapX - Wrap points positions in X, defaults to false.
@@ -1572,6 +1581,7 @@ export class GPUComposer {
 			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer | GPULayer[],
 			pointSize?: number,
+			useOutputScale?: boolean,
 			count?: number,
 			color?: number[],
 			wrapX?: boolean,
@@ -1579,36 +1589,36 @@ export class GPUComposer {
 			blendAlpha?: boolean,
 		},
 	) {
-		const validKeys = ['layer', 'program', 'input', 'output', 'pointSize', 'count', 'color', 'wrapX', 'wrapY', 'blendAlpha'];
+		const validKeys = ['layer', 'program', 'input', 'output', 'pointSize', 'useOutputScale', 'count', 'color', 'wrapX', 'wrapY', 'blendAlpha'];
 		const requiredKeys = ['layer'];
 		const keys = Object.keys(params);
 		checkValidKeys(keys, validKeys, 'GPUComposer.drawLayerAsPoints(params)');
 		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.drawLayerAsPoints(params)');
 
 		if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsPoints')) return;
-		const { gl, _pointIndexArray, _width, _height, glslVersion, _errorState } = this;
+		const { gl, _pointIndexArray, glslVersion, _errorState } = this;
 		const { layer, output } = params;
 
 		if (_errorState) return;
 
 		// Check that numPoints is valid.
 		if (layer.numComponents !== 2 && layer.numComponents !== 4) {
-			throw new Error(`GPUComposer.drawLayerAsPoints() must be passed a position GPULayer with either 2 or 4 components, got position GPULayer "${layer.name}" with ${layer.numComponents} components.`)
-		}
-		if (glslVersion === GLSL1 && layer.width * layer.height > MAX_FLOAT_INT) {
-			console.warn(`Points positions array length: ${layer.width * layer.height} is longer than what is supported by GLSL1 : ${MAX_FLOAT_INT}, expect index overflow.`);
+			throw new Error(`GPUComposer.drawLayerAsPoints() must be passed a layer parameter with either 2 or 4 components, got layer "${layer.name}" with ${layer.numComponents} components.`);
 		}
 		const { length } = layer;
 		const count = params.count || length;
 		if (count > length) {
-			throw new Error(`Invalid count ${count} for position GPULayer of length ${length}.`);
+			throw new Error(`Invalid count ${count} for layer parameter of length ${length}.`);
+		}
+		if (glslVersion === GLSL1 && count > MAX_FLOAT_INT) {
+			console.warn(`Points positions array length: ${count} is longer than what is supported by GLSL1 : ${MAX_FLOAT_INT}.`);
 		}
 
 		let program = params.program;
 		if (program === undefined) {
 			program = this._setValueProgramForType(FLOAT);
 			const color = params.color || [1, 0, 0]; // Default of red.
-			if (color.length !== 3) throw new Error(`color parameter must have length 3, got ${JSON.stringify(color)}.`);
+			if (color.length !== 3) throw new Error(`Color parameter must have length 3, got ${JSON.stringify(color)}.`);
 			program.setUniform('u_value', [...color, 1], FLOAT);
 		}
 
@@ -1627,7 +1637,12 @@ export class GPUComposer {
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_gpuio_positions', indexOfLayerInArray(layer, input), INT);
-		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / _width, 1 / _height], FLOAT);
+		let width = this._width;
+		let height = this._height;
+		if (params.useOutputScale) {
+			({ width, height } = this._widthHeightForOutput(program.name, output));
+		}
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / width, 1 / height], FLOAT);
 		// Set default pointSize.
 		const pointSize = params.pointSize || 1;
 		program._setVertexUniform(glProgram, 'u_gpuio_pointSize', pointSize, FLOAT);
@@ -1794,7 +1809,7 @@ export class GPUComposer {
 
 		// Check that field is valid.
 		if (layer.numComponents !== 2) {
-			throw new Error(`GPUComposer.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${layer.name}" with ${layer.numComponents} components.`)
+			throw new Error(`GPUComposer.drawLayerAsVectorField() must be passed a fieldLayer with 2 components, got fieldLayer "${layer.name}" with ${layer.numComponents} components.`);
 		}
 		// Check aspect ratio.
 		// const dimensions = [vectorLayer.width, vectorLayer.height];
@@ -1844,7 +1859,164 @@ export class GPUComposer {
 	}
 
 	/**
-	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any step or draw functions.
+	 * Init an index buffer to use with GPUComposer.drawLayerAsMesh().
+	 * @param indices - A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices.
+	 * @returns 
+	 */
+	initIndexBuffer(indices: number[] | Uint8Array | Uint16Array | Uint32Array) {
+		const { gl, isWebGL2 } = this;
+		
+		const indexBuffer = gl.createBuffer();
+		// Make index buffer the current ELEMENT_ARRAY_BUFFER.
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+		
+		if (!isTypedArray(indices)) {
+			indices = new Uint32Array(indices);
+		}
+		let type;
+		switch(indices.constructor) {
+			case Uint8Array:
+				type = gl.UNSIGNED_BYTE;
+				break;
+			case Uint16Array:
+				type = gl.UNSIGNED_SHORT;
+				break;
+			case Uint32Array:
+				if (!isWebGL2) {
+					const ext = getExtension(this, OES_ELEMENT_INDEX_UINT, true);
+					if (!ext) {
+						// Fall back to using gl.UNSIGNED_SHORT.
+						type = gl.UNSIGNED_SHORT;
+						indices = Uint16Array.from(indices);
+						break;
+					}
+				}
+				type = gl.UNSIGNED_INT;
+				break;
+		}
+		// Fill the current element array buffer with data.
+		gl.bufferData(
+			gl.ELEMENT_ARRAY_BUFFER,
+			indices,
+			gl.STATIC_DRAW
+		);
+		return {
+			buffer: indexBuffer,
+			count: indices.length,
+			type,
+			dispose: () => {
+				gl.deleteBuffer(indexBuffer);
+			},
+		}
+	}
+
+	/**
+	 * Draw 2D mesh to screen.
+	 * @param params - Draw parameters.
+	 * @param params.layer - GPULayer containing vector data.
+	 * @param params.indices = IndexBuffer containing mesh index data, see GPUComposer.initIndexBuffer().
+	 * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
+	 * @param params.input - Input GPULayers for GPUProgram.
+	 * @param params.output - Output GPULayer, will draw to screen if undefined.
+	 * @param params.useOutputScale - If true positions are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false.
+	 * @param params.color - (If no program passed in) RGB color in range [0, 1] to draw points.
+	 * @param params.blendAlpha - Blend mode for draw, defaults to false.
+	 * @returns 
+	 */
+	 drawLayerAsMesh(
+		params: {
+			layer: GPULayer,
+			indices?: IndexBuffer,
+			program?: GPUProgram,
+			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
+			output?: GPULayer | GPULayer[],
+			useOutputScale?: boolean,
+			color?: number[],
+			blendAlpha?: boolean,
+		},
+	) {
+		const validKeys = ['layer', 'indices', 'program', 'input', 'output', 'useOutputScale', 'color', 'blendAlpha'];
+		const requiredKeys = ['layer'];
+		const keys = Object.keys(params);
+		checkValidKeys(keys, validKeys, 'GPUComposer.drawLayerAsMesh(params)');
+		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.drawLayerAsMesh(params)');
+
+		if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsMesh')) return;
+		const { gl, _width, _height, glslVersion, _errorState } = this;
+		const { layer, output } = params;
+
+		if (_errorState) return;
+
+		// Check that layer is valid.
+		if (layer.numComponents !== 2 && layer.numComponents !== 4) {
+			throw new Error(`GPUComposer.drawLayerAsMesh() must be passed a layer parameter with either 2 or 4 components, got position GPULayer "${layer.name}" with ${layer.numComponents} components.`);
+		}
+
+		const positionsCount = layer.is1D() ? layer.length : layer.width * layer.height;
+		if (glslVersion === GLSL1 && positionsCount > MAX_FLOAT_INT) {
+			console.warn(`Mesh positions array length: ${positionsCount} is longer than what is supported by GLSL1 : ${MAX_FLOAT_INT}.`);
+		}
+
+		let program = params.program;
+		if (program === undefined) {
+			program = this._setValueProgramForType(FLOAT);
+			const color = params.color || [1, 0, 0]; // Default of red.
+			if (color.length !== 3) throw new Error(`Color parameter must have length 3, got ${JSON.stringify(color)}.`);
+			program.setUniform('u_value', [...color, 1], FLOAT);
+		}
+
+		// Add positions to end of input if needed.
+		const input = this._addLayerToInputs(layer, params.input);
+
+		const vertexShaderOptions: CompileTimeConstants = {};
+		// Tell whether we are using an absolute position (2 components),
+		// or position with accumulation buffer (4 components, better floating pt accuracy).
+		if (layer.numComponents === 4) vertexShaderOptions[GPUIO_VS_POSITION_W_ACCUM] = '1';
+
+		// Do setup - this must come first.
+		const glProgram = this._drawSetup(program, LAYER_MESH_PROGRAM_NAME, vertexShaderOptions, false, input, output);
+
+		// Update uniforms and buffers.
+		program._setVertexUniform(glProgram, 'u_gpuio_positions', indexOfLayerInArray(layer, input), INT);
+		let width = this._width;
+		let height = this._height;
+		if (params.useOutputScale) {
+			({ width, height } = this._widthHeightForOutput(program.name, output));
+		}
+		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / width, 1 / height], FLOAT);
+		const positionLayerDimensions = [layer.width, layer.height];
+		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
+
+		// Draw.
+		this._setBlendMode(params.blendAlpha);
+		if (params.indices) {
+			const { type, count, buffer } = params.indices;
+			// https://webglfundamentals.org/webgl/lessons/webgl-indexed-vertices.html
+			// Make index buffer the current ELEMENT_ARRAY_BUFFER.
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+			const offset = 0;
+			gl.drawElements(gl.TRIANGLES, count, type, offset);
+		} else {
+			// We are assuming that positions are already grouped into triangles.
+			gl.drawArrays(gl.TRIANGLES, 0, positionsCount);
+		}
+		this._drawFinish(params);
+	}
+
+	/**
+	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
+	 */
+	undoThreeState() {
+		if (!this._threeRenderer) {
+			throw new Error(`Can't call undoThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
+		}
+		const { gl } = this;
+		gl.disable(gl.BLEND);
+	}
+
+	/**
+	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any gpu-io step or draw functions.
 	 */
 	resetThreeState() {
 		if (!this._threeRenderer) {

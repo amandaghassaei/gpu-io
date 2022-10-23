@@ -25,6 +25,9 @@
 - [stepRect](GPUComposer.md#steprect)
 - [drawLayerAsPoints](GPUComposer.md#drawlayeraspoints)
 - [drawLayerAsVectorField](GPUComposer.md#drawlayerasvectorfield)
+- [initIndexBuffer](GPUComposer.md#initindexbuffer)
+- [drawLayerAsMesh](GPUComposer.md#drawlayerasmesh)
+- [undoThreeState](GPUComposer.md#undothreestate)
 - [resetThreeState](GPUComposer.md#resetthreestate)
 - [savePNG](GPUComposer.md#savepng)
 - [tick](GPUComposer.md#tick)
@@ -294,6 +297,7 @@ Draw the contents of a GPULayer as points.  This assumes the components of the G
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
 | `params.pointSize?` | `number` | Pixel size of points. |
+| `params.useOutputScale?` | `boolean` | If true position and pointSize are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
 | `params.count?` | `number` | How many points to draw, defaults to positions.length. |
 | `params.color?` | `number`[] | (If no program passed in) RGB color in range [0, 1] to draw points. |
 | `params.wrapX?` | `boolean` | Wrap points positions in X, defaults to false. |
@@ -325,6 +329,67 @@ Draw the contents of a 2 component GPULayer as a vector field.
 | `params.vectorScale?` | `number` | Scale factor to apply to vector lengths. |
 | `params.color?` | `number`[] | (If no program passed in) RGB color in range [0, 1] to draw points. |
 | `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
+
+#### Returns
+
+`void`
+
+___
+
+### initIndexBuffer
+
+▸ **initIndexBuffer**(`indices`): `Object`
+
+Init an index buffer to use with GPUComposer.drawLayerAsMesh().
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `indices` | `number`[] \| `Uint8Array` \| `Uint16Array` \| `Uint32Array` | A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices. |
+
+#### Returns
+
+`Object`
+
+| Name | Type |
+| :------ | :------ |
+| `buffer` | ``null`` \| `WebGLBuffer` |
+| `count` | `number` |
+| `type` | `undefined` \| `number` |
+| `dispose` | () => `void` |
+
+___
+
+### drawLayerAsMesh
+
+▸ **drawLayerAsMesh**(`params`): `void`
+
+Draw 2D mesh to screen.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params` | `Object` | Draw parameters. |
+| `params.layer` | [`GPULayer`](GPULayer.md) | GPULayer containing vector data. |
+| `params.indices?` | [`IndexBuffer`](../README.md#indexbuffer) | = IndexBuffer containing mesh index data, see GPUComposer.initIndexBuffer(). |
+| `params.program?` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run, defaults to drawing vector lines in red. |
+| `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
+| `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |
+| `params.useOutputScale?` | `boolean` | If true positions are scaled relative to the output dimensions, else they are scaled relative to the current canvas size, defaults to false. |
+| `params.color?` | `number`[] | (If no program passed in) RGB color in range [0, 1] to draw points. |
+| `params.blendAlpha?` | `boolean` | Blend mode for draw, defaults to false. |
+
+#### Returns
+
+`void`
+
+___
+
+### undoThreeState
+
+▸ **undoThreeState**(): `void`
 
 #### Returns
 

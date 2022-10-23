@@ -7,7 +7,6 @@ function main({ gui, contextID, glslVersion }) {
 		FLOAT,
 		INT,
 		REPEAT,
-		renderSignedAmplitudeProgram,
 		copyProgram,
 		LINEAR,
 		NEAREST,
@@ -29,37 +28,43 @@ function main({ gui, contextID, glslVersion }) {
 		PlaneGeometry,
 	} = THREE;
 
+	// I've put GLSL1 and WebGL1 code in a separate file to reduce confusion.
+	if (glslVersion !== GLSL3) return runWithOlderWebGLVersion({ gui, contextID, glslVersion });
+	// The rest of this file assumes WebGL2 and GLSL3.
+
 	const PARAMS = {
+		separation: 50,
 		reset,
 		savePNG,
 		saveTexturePNG,
 	};
 
-	// I've put GLSL1 and WebGL1 code in a separate file to reduce confusion.
-	if (glslVersion !== GLSL3) return runWithOlderWebGLVersion({ gui, contextID, glslVersion });
-	// The rest of this file assumes WebGL2 and GLSL3.
-
 	// Size of the simulation.
 	const TEXTURE_DIM = [100, 100];
+	const CAUSTICS_SCALE_FACTOR = 8;
 	// Some simulation constants.
 	// https://beltoforion.de/en/recreational_mathematics/2d-wave-equation.php
 	const DT = 1;
 	const DX = 1;
-	const C = 0.25; // Wave propagation speed.
+	const C = 0.15; // Wave propagation speed.
 	const ALPHA = (C * DT / DX) ** 2;
-	const DECAY = 0.01;
+	const DECAY = 0.005;
 	// Drop parameters.
-	const NUM_FRAMES_BETWEEN_DROPS = 75;
+	const NUM_FRAMES_BETWEEN_DROPS = 150;
 	const DROP_DIAMETER = 10;
 	// Grid mesh amplitude scale.
 	const GRID_MESH_Y_SCALE = 3;
+	// Colors.
+	const BACKGROUND_COLOR = [54/255, 122/255, 149/255]; // Turquoise color.
+
+	let paused = false;
 
 	// Init threejs objects.
 	const scene = new Scene();
-	scene.background = new Color(0xececec);
+	scene.background = new Color(0xdddddd);
 	const camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 	camera.zoom = 7;
-	camera.position.set(5, 5, 5);
+	camera.position.set(7, 7, 7);
 
 	const renderer = new WebGLRenderer({ antialias: true });
 	renderer.setSize(window.innerWidth, window.innerHeight);
@@ -71,17 +76,18 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Init a plane with texture containing the simulation rendered in color.
 	const planeTexture = new Texture();
-	const plane = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: planeTexture, side: DoubleSide }));
+	const plane = new Mesh(new PlaneGeometry(1.1, 1.1), new MeshBasicMaterial({ map: planeTexture, side: DoubleSide, transparent: true }));
 	plane.rotateX(-Math.PI / 2);
 	plane.rotateZ(-Math.PI / 2);
-	plane.position.y = -0.15;
+	plane.position.y = -PARAMS.separation / TEXTURE_DIM[0] * 0.5;
 	scene.add(plane);
 
 	// Init 3D grid surface rendering simulation as height.
-	const gridGeometry = new BufferGeometry();
 	const gridPositions = new Float32Array(3 * TEXTURE_DIM[0] * TEXTURE_DIM[1]);
-	const gridIndices = new Uint32Array(2 * ((TEXTURE_DIM[0] - 1) * TEXTURE_DIM[1] + (TEXTURE_DIM[1] - 1) * TEXTURE_DIM[0]));
+	const gridSegmentsIndices = new Uint16Array(2 * ((TEXTURE_DIM[0] - 1) * TEXTURE_DIM[1] + (TEXTURE_DIM[1] - 1) * TEXTURE_DIM[0]));
+	const gridMeshIndices = new Uint16Array(6 * (TEXTURE_DIM[0] - 1) * (TEXTURE_DIM[1] - 1));
 	let gridSegmentIndex = 0;
+	let gridMeshIndex = 0;
 	for (let j = 0; j < TEXTURE_DIM[1]; j++) {
 		for (let i = 0; i < TEXTURE_DIM[0]; i++){
 			const index = TEXTURE_DIM[0] * i + j;
@@ -90,62 +96,102 @@ function main({ gui, contextID, glslVersion }) {
 			gridPositions[3 * index + 2] = (j - (TEXTURE_DIM[1] - 1) / 2) / TEXTURE_DIM[1];
 			// Form line segments of the grid mesh.
 			if (j < TEXTURE_DIM[1] - 1) {
-				gridIndices[2 * gridSegmentIndex] = index;
-				gridIndices[2 * gridSegmentIndex + 1] = index + 1;
+				gridSegmentsIndices[2 * gridSegmentIndex] = index;
+				gridSegmentsIndices[2 * gridSegmentIndex + 1] = index + 1;
 				gridSegmentIndex += 1;
 			}
 			if (i < TEXTURE_DIM[0] - 1) {
-				gridIndices[2 * gridSegmentIndex] = index;
-				gridIndices[2 * gridSegmentIndex + 1] = index + TEXTURE_DIM[0];
+				gridSegmentsIndices[2 * gridSegmentIndex] = index;
+				gridSegmentsIndices[2 * gridSegmentIndex + 1] = index + TEXTURE_DIM[0];
 				gridSegmentIndex += 1;
+			}
+			if (i < TEXTURE_DIM[0] - 1 && j < TEXTURE_DIM[1] - 1) {
+				// Form triangles of grid mesh.
+				gridMeshIndices[3 * gridMeshIndex] = index;
+				gridMeshIndices[3 * gridMeshIndex + 1] = index + 1;
+				gridMeshIndices[3 * gridMeshIndex + 2] = index + TEXTURE_DIM[0];
+				gridMeshIndex += 1;
+				gridMeshIndices[3 * gridMeshIndex] = index + 1;
+				gridMeshIndices[3 * gridMeshIndex + 1] = index + TEXTURE_DIM[0] + 1;
+				gridMeshIndices[3 * gridMeshIndex + 2] = index + TEXTURE_DIM[0];
+				gridMeshIndex += 1;
 			}
 		}
 	}
-	gridGeometry.setAttribute('position', new BufferAttribute(gridPositions, 3));
-	gridGeometry.setIndex(new BufferAttribute(gridIndices, 1));
+	const vertexShader = `
+		uniform sampler2D u_height;
+		uniform ivec2 u_heightDimensions;
+
+		vec2 getTextureUV(const int vertexIndex, const ivec2 dimensions) {
+			int y = vertexIndex / dimensions.x;
+			int x = vertexIndex - dimensions.x * y;
+			float u = (float(x) + 0.5) / float(dimensions.x);
+			float v = (float(y) + 0.5) / float(dimensions.y);
+			return vec2(u, v);
+		}
+
+		void main() 
+		{
+			vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+			vec4 position = projectionMatrix * modelViewPosition;
+
+			vec2 uv = getTextureUV(gl_VertexID, u_heightDimensions);
+			// Set height of grid mesh using data from simulation.
+			position.y += ${GRID_MESH_Y_SCALE.toFixed(6)} * texture(u_height, uv).x;
+
+			gl_Position = position;
+		}
+	`;
+	// Init black line segments to visualize grid.
+	const gridSegmentsGeometry = new BufferGeometry();
+	gridSegmentsGeometry.setAttribute('position', new BufferAttribute(gridPositions, 3));
+	gridSegmentsGeometry.setIndex(new BufferAttribute(gridSegmentsIndices, 1));
 	const gridTexture = new Texture();
-	const gridMaterial = new THREE.ShaderMaterial( {
+	const gridSegmentsMaterial = new THREE.ShaderMaterial( {
 		uniforms: {
 			u_height: { value: gridTexture },
 			u_heightDimensions: { value: TEXTURE_DIM },
 		},
-		vertexShader: `
-			uniform sampler2D u_height;
-			uniform ivec2 u_heightDimensions;
-
-			vec2 getTextureUV(const int vertexIndex, const ivec2 dimensions) {
-				int y = vertexIndex / dimensions.x;
-				int x = vertexIndex - dimensions.x * y;
-				float u = (float(x) + 0.5) / float(dimensions.x);
-				float v = (float(y) + 0.5) / float(dimensions.y);
-				return vec2(u, v);
-			}
-
-			void main() 
-			{
-				vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
-				vec4 position = projectionMatrix * modelViewPosition;
-
-				vec2 uv = getTextureUV(gl_VertexID, u_heightDimensions);
-				// Set height of grid mesh using data from simulation.
-				position.y += ${GRID_MESH_Y_SCALE.toFixed(6)} * texture(u_height, uv).x;
-
-				gl_Position = position;
-			}
-			`,
+		vertexShader,
 		fragmentShader: `
-			out vec4 color;
+			out vec4 out_color;
 			void main() {
-				color = vec4(0.0, 0.0, 0.0, 1.0);
+				out_color = vec4(0, 0, 0, 1);
 			}
 			`,
 		glslVersion: THREE.GLSL3,
 	});
-	grid = new LineSegments(gridGeometry, gridMaterial);
-	grid.position.y = 0.15;
-	scene.add(grid);
+	const gridSegments = new LineSegments(gridSegmentsGeometry, gridSegmentsMaterial);
+	gridSegments.position.y = PARAMS.separation / TEXTURE_DIM[0] * 0.5;
+	scene.add(gridSegments);
+	// Init white semi-transparent mesh under grid.
+	const gridMeshGeometry = new BufferGeometry();
+	gridMeshGeometry.setAttribute('position', new BufferAttribute(gridPositions, 3));
+	gridMeshGeometry.setIndex(new BufferAttribute(gridMeshIndices, 1));
+	const gridMeshMaterial = new THREE.ShaderMaterial( {
+		uniforms: {
+			u_height: { value: gridTexture },
+			u_heightDimensions: { value: TEXTURE_DIM },
+		},
+		vertexShader,
+		fragmentShader: `
+			out vec4 out_color;
+			void main() {
+				out_color = vec4(1, 1, 1, 0.7);
+			}
+			`,
+		glslVersion: THREE.GLSL3,
+		transparent: true,
+	});
+	const gridMesh = new Mesh(gridMeshGeometry, gridMeshMaterial);
+	gridMesh.position.y = PARAMS.separation / TEXTURE_DIM[0] * 0.5;
+	scene.add(gridMesh);
+
 
 	const composer = GPUComposer.initWithThreeRenderer(renderer, { glslVersion });
+
+	// Undo any changes threejs has made to WebGL state.
+	composer.undoThreeState();
 
 	// Init a layer of float data to store height.
 	// I'm using a trick to use both the currentState and lastState of this GPULayer
@@ -161,19 +207,6 @@ function main({ gui, contextID, glslVersion }) {
 		wrapX: REPEAT,
 		wrapY: REPEAT,
 	});
-	
-	// On each render cycle, we will render a colored image based on height into this RGB object.
-	// This is what we will bind to a threejs texture mapped to the plane.
-	const colorMap = new GPULayer(composer, {
-		name: 'colorMap',
-		dimensions: TEXTURE_DIM,
-		numComponents: 3, // RGB
-		type: FLOAT,
-		// Use linear filtering for colorMap to avoid aliasing when textured object is small/far from threejs camera.
-		filter: LINEAR,
-	});
-	// Link colorMap's WebGLTexure to threejs Texture object.
-	colorMap.attachToThreeTexture(planeTexture);
 
 	// On each render cycle, we will render the height into a single channel texture.
 	// This is what we will bind to a threejs texture mapped to the mesh.
@@ -186,6 +219,30 @@ function main({ gui, contextID, glslVersion }) {
 	});
 	// Link heightMap's WebGLTexure to threejs Texture object.
 	heightMap.attachToThreeTexture(gridTexture);
+
+	// On each render cycle, compute caustics into an RGBA texture.
+	const caustics = new GPULayer(composer, {
+		name: 'caustics',
+		dimensions: [TEXTURE_DIM[0] * CAUSTICS_SCALE_FACTOR, TEXTURE_DIM[1] * CAUSTICS_SCALE_FACTOR],
+		numComponents: 4, // RGBA
+		type: FLOAT,
+		filter: LINEAR,
+	});
+	// Link caustics WebGLTexure to threejs Texture object.
+	caustics.attachToThreeTexture(planeTexture);
+	// In order to compute caustics intensity in realtime
+	// we use a 2D mesh to push a wavefront of light through the water's surface
+	// and measure the distortion in the mesh to compute the intensity of light hitting the bottom plane.
+	// See https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c
+	const lightMeshPositions = new GPULayer(composer, {
+		name: 'lightMeshPositions',
+		dimensions: TEXTURE_DIM,
+		numComponents: 2, // Store refraction in x and y.
+		type: FLOAT,
+		filter: NEAREST,
+	});
+	// Init gpu-io buffer for triangle indices for this light wavefront mesh.
+	const lightMeshIndices = composer.initIndexBuffer(gridMeshIndices);
 
 	// Init a program to apply wave function.
 	const waveProgram = new GPUProgram(composer, {
@@ -254,14 +311,81 @@ function main({ gui, contextID, glslVersion }) {
 		`,
 	});
 
-	// Init a program to render height to colorMap.
-	// See https://github.com/amandaghassaei/gpu-io/tree/main/docs#gpuprogram-helper-functions
-	// for more built-in GPUPrograms to use.
-	const renderColorMap = renderSignedAmplitudeProgram(composer, {
-		name: 'renderColorMap',
-		type: height.type,
-		components: 'x',
-		scale: 5,
+	const refractLight = new GPUProgram(composer, {
+		name: 'refractLight',
+		fragmentShader: `
+			in vec2 v_uv;
+
+			uniform sampler2D u_height;
+			uniform vec2 u_dimensions;
+			uniform float u_separation;
+			uniform vec2 u_pxSize;
+
+			out vec2 out_position;
+			void main() {
+				// Calculate a normal vector for height field.
+				vec2 onePxX = vec2(u_pxSize.x, 0);
+				vec2 onePxY = vec2(0, u_pxSize.y);
+				float center = texture(u_height, v_uv).x;
+				float n = texture(u_height, v_uv + onePxY).x;
+				float s = texture(u_height, v_uv - onePxY).x;
+				float e = texture(u_height, v_uv + onePxX).x;
+				float w = texture(u_height, v_uv - onePxX).x;
+				vec2 normalXY = vec2(w - e, s - n) / 2.0;
+				// TODO: there seems to be a slight bug in the normal value along the y axis.
+				normalXY *= min(0.012 / length(normalXY), 1.0); // Clip normal amplitude to reduce noise.
+				vec3 normal = normalize(vec3(normalXY, 1.0));
+				const vec3 incident = vec3(0, 0, -1);
+				// 1 / 1.33 = Air refractive index / water refractive index.
+				vec3 refractVector = refract(incident, normal, ${(1 / 1.33).toFixed(6)});
+				refractVector.xy /= abs(refractVector.z);
+				// Render this out slightly smaller so we can see raw edge.
+				out_position = (0.9 * (v_uv + refractVector.xy * u_separation / 7.5) + 0.05) * u_dimensions;
+			}
+		`,
+		uniforms: [
+			{ // Index of sampler2D uniform to assign to value "u_height".
+				name: 'u_height',
+				value: 0,
+				type: INT,
+			},
+			{ // Calculate the size of a 1 px step in UV coordinates.
+				name: 'u_pxSize',
+				value: [1 / TEXTURE_DIM[0], 1 / TEXTURE_DIM[1]],
+				type: FLOAT,
+			},
+			{
+				name: 'u_dimensions',
+				value: [caustics.width, caustics.height],
+				type: FLOAT,
+			},
+			{
+				name: 'u_separation',
+				value: PARAMS.separation,
+				type: FLOAT,
+			},
+		],
+	});
+
+	const computeCaustics = new GPUProgram(composer, {
+		name: 'computeCaustics',
+		fragmentShader: `
+			in vec2 v_uv;
+			in vec2 v_uv_1d;// TODO: rename this.
+
+			uniform vec2 u_pxSize;
+
+			out vec4 out_color;
+			void main() {
+				// Calculate change in area.
+				// https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c
+				float oldArea = dFdx(v_uv_1d.x) * dFdy(v_uv_1d.y);
+				float newArea = dFdx(v_uv.x) * dFdy(v_uv.y);
+				float amplitude = oldArea / newArea * 0.75;
+				const vec3 background = vec3(${BACKGROUND_COLOR[0]}, ${BACKGROUND_COLOR[1]}, ${BACKGROUND_COLOR[2]});
+				out_color = vec4(background * amplitude, 1);
+			}
+		`,
 	});
 
 	// Init a program to render height to heightMap.
@@ -275,6 +399,7 @@ function main({ gui, contextID, glslVersion }) {
 	let numFramesUntilNextDrop = NUM_FRAMES_BETWEEN_DROPS;
 
 	function addDrop() {
+		if (paused) return;
 		// Initialize a circular region with a drop of height > 0 at a random position.
 		const position = [
 			(TEXTURE_DIM[0] - 2 * DROP_DIAMETER) * Math.random() + DROP_DIAMETER,
@@ -311,18 +436,14 @@ function main({ gui, contextID, glslVersion }) {
 		}
 
 		// Propagate wave and write result to height.
-		composer.step({
-			program: waveProgram,
-			input: [height.currentState, height.lastState],
-			output: height,
-		});
+		if (!paused) {
+			composer.step({
+				program: waveProgram,
+				input: [height.currentState, height.lastState],
+				output: height,
+			});
+		}
 
-		// Render current height to colorMap.
-		composer.step({
-			program: renderColorMap,
-			input: height,
-			output: colorMap,
-		});
 		// Copy current height to heightMap.
 		composer.step({
 			program: copy,
@@ -330,26 +451,45 @@ function main({ gui, contextID, glslVersion }) {
 			output: heightMap,
 		});
 
+		// Compute caustics.
+		// Refract light mesh through water surface.
+		composer.step({
+			program: refractLight,
+			input: height,
+			output: lightMeshPositions,
+		});
+		caustics.clear();
+		composer.drawLayerAsMesh({
+			layer: lightMeshPositions,
+			indices: lightMeshIndices,
+			program: computeCaustics,
+			output: caustics,
+			useOutputScale: true, // Use the same px scale size as the output GPULayer (otherwise it uses screen px).
+		});
+
 		// Reset three state back to what threejs is expecting (otherwise we get WebGL errors).
 		composer.resetThreeState();
 		// Render threejs state.
 		renderer.render(scene, camera);
+		// Undo any changes threejs has made to WebGL state.
+		composer.undoThreeState();
 	}
 
 	// Init simple GUI.
 	const ui = [];
+	ui.push(gui.add(PARAMS, 'separation', 10, 100, 1).onChange((val) => {
+		refractLight.setUniform('u_separation', val);
+		plane.position.y = -val / TEXTURE_DIM[0] * 0.5;
+		gridSegments.position.y = val / TEXTURE_DIM[0] * 0.5;
+		gridMesh.position.y = val / TEXTURE_DIM[0] * 0.5;
+	}).name('Z Offset'));
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
-	ui.push(gui.add(PARAMS, 'saveTexturePNG').name('Save Texture PNG'));
+	ui.push(gui.add(PARAMS, 'saveTexturePNG').name('Save Caustics PNG'));
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
-		// Render current height to colorMap.
-		composer.step({
-			program: renderColorMap,
-			input: height,
-			output: colorMap,
-		});
+		// TODO: render caustics.
 		// Copy current height to heightMap.
 		composer.step({
 			program: copy,
@@ -361,12 +501,15 @@ function main({ gui, contextID, glslVersion }) {
 		composer.savePNG({ filename: `threejs_scene` });
 	}
 	function saveTexturePNG() {
-		colorMap.savePNG({ filename: `wave_colormap` });
+		caustics.savePNG({ filename: 'caustics' });
 	}
 	window.addEventListener('keydown', onKeydown);
 	function onKeydown(e) {
 		if (e.key === 'p') {
 			savePNG();
+		}
+		if (e.key === ' ') {
+			paused = !paused;
 		}
 	}
 
@@ -395,8 +538,10 @@ function main({ gui, contextID, glslVersion }) {
 		height.clear();
 		height.incrementBufferIndex();
 		height.clear();
-		// Add a drop.
-		addDrop();
+		// Add some drops.
+		for (let i = 0; i < 3; i++) {
+			addDrop();
+		}
 	}
 
 	function dispose() {
@@ -410,17 +555,19 @@ function main({ gui, contextID, glslVersion }) {
 		plane.geometry.dispose();
 		planeTexture.dispose();
 		plane.material.dispose();
-		grid.geometry.dispose();
+		gridSegments.geometry.dispose();
+		gridMesh.geometry.dispose();
 		gridTexture.dispose();
-		grid.material.dispose();
+		gridSegments.material.dispose();
+		gridMesh.material.dispose();
 
 		height.dispose();
-		colorMap.dispose();
 		heightMap.dispose();
+
+		lightMeshIndices.dispose();
 
 		waveProgram.dispose();
 		dropProgram.dispose();
-		renderColorMap.dispose();
 		copy.dispose();
 		
 		composer.dispose();
