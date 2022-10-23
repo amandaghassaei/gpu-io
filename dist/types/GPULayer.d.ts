@@ -28,6 +28,7 @@ export declare class GPULayer {
      */
     readonly wrapY: GPULayerWrap;
     private _clearValue;
+    private _clearValueVec4?;
     private _bufferIndex;
     readonly numBuffers: number;
     private readonly _buffers;
@@ -219,6 +220,7 @@ export declare class GPULayer {
      * Get the clearValue of the GPULayer.
      */
     get clearValue(): number | number[];
+    private get clearValueVec4();
     /**
      * Clear all data in GPULayer to GPULayer.clearValue.
      * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.

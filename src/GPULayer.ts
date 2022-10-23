@@ -86,6 +86,7 @@ export class GPULayer {
 	// Value to set when clear() is called, defaults to zero.
 	// Access with GPULayer.clearValue.
 	private _clearValue: number | number[] = 0;
+	private _clearValueVec4? : number[];
 
 	// Each GPULayer may contain a number of buffers to store different instances of the state.
 	// e.g [currentState, previousState]
@@ -567,16 +568,20 @@ export class GPULayer {
 	 * Increment buffer index by 1.
 	 */
 	incrementBufferIndex() {
+		const { numBuffers } = this;
+		if (numBuffers === 1) return;
 		// Increment bufferIndex.
-		this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+		this._bufferIndex = (this.bufferIndex + 1) % numBuffers;
 	}
 
 	/**
 	 * Decrement buffer index by 1.
 	 */
 	 decrementBufferIndex() {
+		const { numBuffers } = this;
+		if (numBuffers === 1) return;
 		// Decrement bufferIndex.
-		this._bufferIndex = (this.bufferIndex - 1 + this.numBuffers) % this.numBuffers;
+		this._bufferIndex = (this.bufferIndex - 1 + numBuffers) % numBuffers;
 	}
 
 	/**
@@ -711,6 +716,7 @@ export class GPULayer {
 		}
 		// Make deep copy if needed.
 		this._clearValue = isArray(clearValue) ? (clearValue as number[]).slice() : clearValue;
+		this._clearValueVec4 = undefined;
 	}
 
 	/**
@@ -721,28 +727,39 @@ export class GPULayer {
 	}
 
 	/**
+	 * Get the clearValue of the GPULayer as a vec4, pad with zeros as needed.
+	 */
+	private get clearValueVec4() {
+		let { _clearValueVec4 } = this;
+		if (!_clearValueVec4) {
+			const { clearValue } = this;
+			_clearValueVec4 = [];
+			if (isFiniteNumber(clearValue)) {
+				_clearValueVec4.push(clearValue as number, clearValue as number, clearValue as number, clearValue as number);
+			} else {
+				_clearValueVec4.push(...clearValue as number[]);
+				for (let j = _clearValueVec4.length; j < 4; j++) {
+					_clearValueVec4.push(0);
+				}
+			}
+			this._clearValueVec4 = _clearValueVec4;
+		}
+		return _clearValueVec4;
+	}
+
+	/**
 	 * Clear all data in GPULayer to GPULayer.clearValue.
 	 * @param applyToAllBuffers - Flag to apply to all buffers of GPULayer, or just the current output buffer.
 	 */
 	clear(applyToAllBuffers = false) {
-		const { name, _composer, clearValue, numBuffers, type } = this;
+		const { name, _composer, clearValueVec4, numBuffers, type } = this;
 		const { verboseLogging } = _composer;
 		if (verboseLogging) console.log(`Clearing GPULayer "${name}".`);
 
-		const value: number[] = [];
-		if (isFiniteNumber(clearValue)) {
-			value.push(clearValue as number, clearValue as number, clearValue as number, clearValue as number);
-		} else {
-			value.push(...clearValue as number[]);
-			for (let j = value.length; j < 4; j++) {
-				value.push(0);
-			}
-		}
-	
-		const endIndex = applyToAllBuffers ? numBuffers : 1;
 		const program = _composer._setValueProgramForType(type);
-		program.setUniform('u_value', value);
+		program.setUniform('u_value', clearValueVec4);
 		this.decrementBufferIndex(); // step() wil increment buffer index before draw, this way we clear in place.
+		const endIndex = applyToAllBuffers ? numBuffers : 1;
 		for (let i = 0; i < endIndex; i++) {
 			// Write clear value to buffers.
 			_composer.step({

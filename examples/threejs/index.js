@@ -41,7 +41,7 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Size of the simulation.
 	const TEXTURE_DIM = [100, 100];
-	const CAUSTICS_TEXTURE_SCALE_FACTOR = 8; // Increase in resolution of caustics texture from TEXTURE_DIM.
+	const CAUSTICS_TEXTURE_SCALE_FACTOR = 4; // Increase in resolution of caustics texture from TEXTURE_DIM.
 	// Some simulation constants.
 	// https://beltoforion.de/en/recreational_mathematics/2d-wave-equation.php
 	const DT = 1;

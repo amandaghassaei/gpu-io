@@ -2613,15 +2613,21 @@ var GPULayer = /** @class */ (function () {
      * Increment buffer index by 1.
      */
     GPULayer.prototype.incrementBufferIndex = function () {
+        var numBuffers = this.numBuffers;
+        if (numBuffers === 1)
+            return;
         // Increment bufferIndex.
-        this._bufferIndex = (this.bufferIndex + 1) % this.numBuffers;
+        this._bufferIndex = (this.bufferIndex + 1) % numBuffers;
     };
     /**
      * Decrement buffer index by 1.
      */
     GPULayer.prototype.decrementBufferIndex = function () {
+        var numBuffers = this.numBuffers;
+        if (numBuffers === 1)
+            return;
         // Decrement bufferIndex.
-        this._bufferIndex = (this.bufferIndex - 1 + this.numBuffers) % this.numBuffers;
+        this._bufferIndex = (this.bufferIndex - 1 + numBuffers) % numBuffers;
     };
     Object.defineProperty(GPULayer.prototype, "currentState", {
         /**
@@ -2756,6 +2762,30 @@ var GPULayer = /** @class */ (function () {
             }
             // Make deep copy if needed.
             this._clearValue = (0, type_checks_1.isArray)(clearValue) ? clearValue.slice() : clearValue;
+            this._clearValueVec4 = undefined;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GPULayer.prototype, "clearValueVec4", {
+        get: function () {
+            var _clearValueVec4 = this._clearValueVec4;
+            if (!_clearValueVec4) {
+                var clearValue = this.clearValue;
+                // Init a vec4 to clear with pad with zeros if needed.
+                _clearValueVec4 = [];
+                if ((0, type_checks_1.isFiniteNumber)(clearValue)) {
+                    _clearValueVec4.push(clearValue, clearValue, clearValue, clearValue);
+                }
+                else {
+                    _clearValueVec4.push.apply(_clearValueVec4, clearValue);
+                    for (var j = _clearValueVec4.length; j < 4; j++) {
+                        _clearValueVec4.push(0);
+                    }
+                }
+                this._clearValueVec4 = _clearValueVec4;
+            }
+            return _clearValueVec4;
         },
         enumerable: false,
         configurable: true
@@ -2766,24 +2796,14 @@ var GPULayer = /** @class */ (function () {
      */
     GPULayer.prototype.clear = function (applyToAllBuffers) {
         if (applyToAllBuffers === void 0) { applyToAllBuffers = false; }
-        var _a = this, name = _a.name, _composer = _a._composer, clearValue = _a.clearValue, numBuffers = _a.numBuffers, type = _a.type;
+        var _a = this, name = _a.name, _composer = _a._composer, clearValueVec4 = _a.clearValueVec4, numBuffers = _a.numBuffers, type = _a.type;
         var verboseLogging = _composer.verboseLogging;
         if (verboseLogging)
             console.log("Clearing GPULayer \"".concat(name, "\"."));
-        var value = [];
-        if ((0, type_checks_1.isFiniteNumber)(clearValue)) {
-            value.push(clearValue, clearValue, clearValue, clearValue);
-        }
-        else {
-            value.push.apply(value, clearValue);
-            for (var j = value.length; j < 4; j++) {
-                value.push(0);
-            }
-        }
-        var endIndex = applyToAllBuffers ? numBuffers : 1;
         var program = _composer._setValueProgramForType(type);
-        program.setUniform('u_value', value);
+        program.setUniform('u_value', clearValueVec4);
         this.decrementBufferIndex(); // step() wil increment buffer index before draw, this way we clear in place.
+        var endIndex = applyToAllBuffers ? numBuffers : 1;
         for (var i = 0; i < endIndex; i++) {
             // Write clear value to buffers.
             _composer.step({
