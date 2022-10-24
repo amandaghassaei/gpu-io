@@ -2516,7 +2516,7 @@ var GPULayer = /** @class */ (function () {
         var copyProgram = _composer._copyProgramForType(this._internalType);
         _composer.step({
             program: copyProgram,
-            input: this.currentState,
+            input: this,
             output: layer,
         });
     };

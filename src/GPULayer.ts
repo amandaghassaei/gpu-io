@@ -450,7 +450,7 @@ export class GPULayer {
 		const copyProgram = _composer._copyProgramForType(this._internalType);
 		_composer.step({
 			program: copyProgram,
-			input: this.currentState,// TODO: this isn't working with just this?
+			input: this,
 			output: layer,
 		});
 	}
