@@ -4071,6 +4071,7 @@ var utils_1 = __webpack_require__(593);
 var polyfills_1 = __webpack_require__(360);
 var type_checks_1 = __webpack_require__(566);
 var checks_1 = __webpack_require__(707);
+var extensions_1 = __webpack_require__(581);
 var GPUProgram = /** @class */ (function () {
     /**
      * Create a GPUProgram.
@@ -4122,7 +4123,7 @@ var GPUProgram = /** @class */ (function () {
         var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
-        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
+        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
         this._fragmentShaderSource = shaderSource;
         samplerUniforms.forEach(function (name, i) {
             _this._samplerUniformsIndices.push({
@@ -4145,7 +4146,9 @@ var GPUProgram = /** @class */ (function () {
         }
         // Save extension declarations.
         if (composer.glslVersion === constants_1.GLSL1 && (shaderSource.includes('dFdx') || shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
-            this._extensions = '#extension GL_OES_standard_derivatives : enable\n';
+            var ext = (0, extensions_1.getExtension)(composer, extensions_1.OES_STANDARD_DERIVATIVES, true);
+            if (ext)
+                this._extensions = '#extension GL_OES_standard_derivatives : enable\n';
         }
         // Set program uniforms.
         if (uniforms) {
@@ -6770,7 +6773,6 @@ exports.readPixelsAsync = exports.indexOfLayerInArray = exports.uniformInternalT
 var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
-var extensions_1 = __webpack_require__(581);
 var precision_1 = __webpack_require__(724);
 var polyfills_1 = __webpack_require__(360);
 var regex_1 = __webpack_require__(126);
@@ -7218,9 +7220,8 @@ exports.preprocessVertexShader = preprocessVertexShader;
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-function preprocessFragmentShader(shaderSource, composer, name) {
+function preprocessFragmentShader(shaderSource, glslVersion, name) {
     var _a;
-    var glslVersion = composer.glslVersion;
     shaderSource = preprocessShader(shaderSource);
     (0, regex_1.checkFragmentShaderForFragColor)(shaderSource, glslVersion, name);
     // Check if highp supported in fragment shaders.
@@ -7235,10 +7236,6 @@ function preprocessFragmentShader(shaderSource, composer, name) {
     var samplerUniforms;
     (_a = (0, polyfills_1.texturePolyfill)(shaderSource), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms);
     if (glslVersion !== constants_1.GLSL3) {
-        // Get derivative extension if needed.
-        if (glslVersion === constants_1.GLSL1 && (shaderSource.includes('dFdx') || shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
-            (0, extensions_1.getExtension)(composer, extensions_1.OES_STANDARD_DERIVATIVES, true);
-        }
         var sources = convertFragmentShaderToGLSL1(shaderSource, name);
         // If this shader has multiple outputs, it is split into multiple sources.
         for (var i = 0, numSources = sources.length; i < numSources; i++) {

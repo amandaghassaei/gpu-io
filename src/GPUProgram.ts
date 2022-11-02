@@ -50,11 +50,11 @@ import {
 	isFiniteNumber,
 	isInteger,
 	isNonNegativeInteger,
-	isNumber,
 	isObject,
 	isString,
 } from '@amandaghassaei/type-checks';
 import { checkRequiredKeys, checkValidKeys } from './checks';
+import { getExtension, OES_STANDARD_DERIVATIVES } from './extensions';
 
 export class GPUProgram {
 	// Keep a reference to GPUComposer.
@@ -142,7 +142,7 @@ export class GPUProgram {
 				fragmentShader as string :
 				(fragmentShader as string[]).join('\n');
 		const { shaderSource, samplerUniforms, additionalSources } = preprocessFragmentShader(
-			fragmentShaderSource, composer, name,
+			fragmentShaderSource, composer.glslVersion, name,
 		);
 		this._fragmentShaderSource = shaderSource;
 
@@ -168,7 +168,8 @@ export class GPUProgram {
 		}
 		// Save extension declarations.
 		if (composer.glslVersion === GLSL1 && (shaderSource.includes('dFdx') ||shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
-			this._extensions = '#extension GL_OES_standard_derivatives : enable\n';
+			const ext = getExtension(composer, OES_STANDARD_DERIVATIVES, true);
+			if (ext) this._extensions = '#extension GL_OES_standard_derivatives : enable\n';
 		}
 
 		// Set program uniforms.

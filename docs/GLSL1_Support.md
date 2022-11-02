@@ -210,6 +210,8 @@ Additionally, gpu-io adds the following line to the shader source to enable the 
 
 `#extension GL_OES_standard_derivatives : enable`
 
+Note: derivative functions are not available for WebGL 2 with GLSL1, please use GLSL3 instead.
+
 
 ## Other GLSL1 Gotchas
 

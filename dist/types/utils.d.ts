@@ -1,5 +1,4 @@
 import { CompileTimeConstants, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerState, GPULayerType, UniformType, UniformValue } from './constants';
-import type { GPUComposer } from './GPUComposer';
 import type { GPULayer } from './GPULayer';
 /**
  * Test whether a GPULayer type is a float type.
@@ -106,7 +105,7 @@ export declare function preprocessVertexShader(shaderSource: string, glslVersion
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-export declare function preprocessFragmentShader(shaderSource: string, composer: GPUComposer, name: string): {
+export declare function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string): {
     shaderSource: string;
     samplerUniforms: string[];
     additionalSources: string[];

@@ -52,7 +52,6 @@ import {
 	WEBGL2,
 } from './constants';
 import { intForPrecision } from './conversions';
-import { getExtension, OES_STANDARD_DERIVATIVES } from './extensions';
 import { PRECISION_SOURCE } from './glsl/common/precision';
 import type { GPUComposer } from './GPUComposer';
 import type { GPULayer } from './GPULayer';
@@ -646,8 +645,7 @@ export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVe
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-export function preprocessFragmentShader(shaderSource: string, composer: GPUComposer, name: string) {
-	const { glslVersion } = composer;
+export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string) {
 	shaderSource = preprocessShader(shaderSource);
 	checkFragmentShaderForFragColor(shaderSource, glslVersion, name);
 	// Check if highp supported in fragment shaders.
@@ -662,10 +660,6 @@ export function preprocessFragmentShader(shaderSource: string, composer: GPUComp
 	let samplerUniforms: string[];
 	({ shaderSource, samplerUniforms } = texturePolyfill(shaderSource));
 	if (glslVersion !== GLSL3) {
-		// Get derivative extension if needed.
-		if (glslVersion === GLSL1 && (shaderSource.includes('dFdx') || shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
-			getExtension(composer, OES_STANDARD_DERIVATIVES, true);
-		}
 		const sources = convertFragmentShaderToGLSL1(shaderSource, name);
 		// If this shader has multiple outputs, it is split into multiple sources.
 		for (let i = 0, numSources = sources.length; i < numSources; i++) {

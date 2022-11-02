@@ -29,7 +29,7 @@ function main({ gui, contextID, glslVersion }) {
 		PlaneGeometry,
 	} = THREE;
 
-	// I've put GLSL1 and WebGL1 code in a separate file to reduce confusion.
+	// I've put the WebGL1 code in a separate file to reduce confusion.
 	if (glslVersion !== GLSL3) return runWithOlderWebGLVersion({ gui, contextID, glslVersion });
 	// The rest of this file assumes WebGL2 and GLSL3.
 

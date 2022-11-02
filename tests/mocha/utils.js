@@ -370,6 +370,7 @@
 					'fragment-shader-test',
 					(message) => {console.log(message)},
 					{ GPUIO_INT: '1', [`${SAMPLER2D_FILTER}0`]: '0', [`${SAMPLER2D_WRAP_X}0`]: '0', [`${SAMPLER2D_WRAP_Y}0`]: '0' },
+					undefined,
 					true,
 				);
 				assert.typeOf(initGLProgram(
@@ -399,6 +400,7 @@
 					'fragment-shader-test',
 					(message) => {console.log(message)},
 					{ GPUIO_INT: '1', [`${SAMPLER2D_FILTER}0`]: '0', [`${SAMPLER2D_WRAP_X}0`]: '0', [`${SAMPLER2D_WRAP_Y}0`]: '0' },
+					undefined,
 					true,
 				);
 				assert.typeOf(initGLProgram(
@@ -431,6 +433,7 @@
 					'fragment-shader-test',
 					(message) => {console.log(message)},
 					{ GPUIO_INT: '1', [`${SAMPLER2D_FILTER}0`]: '0', [`${SAMPLER2D_WRAP_X}0`]: '0', [`${SAMPLER2D_WRAP_Y}0`]: '0' },
+					undefined,
 					true,
 				);
 				assert.typeOf(initGLProgram(
@@ -616,7 +619,7 @@ void main() {
 			});
 			it('should not mutate shader source', () => {
 				let processed = preprocessFragmentShader(simpleFragmentShader, GLSL3).shaderSource;
-				assert.notEqual(processed, simpleFragmentShaderCopy);
+				assert.equal(processed, simpleFragmentShaderCopy);
 				assert.equal(simpleFragmentShader, simpleFragmentShaderCopy);
 				processed = preprocessFragmentShader(simpleFragmentShader, GLSL1).shaderSource;
 				assert.notEqual(processed, simpleFragmentShaderCopy);
