@@ -78,6 +78,7 @@ import {
   INT,
   REPEAT,
   LINEAR,
+  NEAREST,
 } from 'gpu-io';
 
 // Init a canvas element.
