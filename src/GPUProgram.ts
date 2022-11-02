@@ -50,6 +50,7 @@ import {
 	isFiniteNumber,
 	isInteger,
 	isNonNegativeInteger,
+	isNumber,
 	isObject,
 	isString,
 } from '@amandaghassaei/type-checks';
@@ -71,6 +72,8 @@ export class GPUProgram {
 	protected _fragmentShaderSource!: string;
 	// #define variables for fragment shader program.
 	private readonly _compileTimeConstants: CompileTimeConstants = {};
+	// #extension declarations for fragment shader program.
+	private readonly _extensions?: string;
 	// Uniform locations, values, and types.
 	private readonly _uniforms: { [ key: string]: Uniform } = {};
 
@@ -139,9 +142,10 @@ export class GPUProgram {
 				fragmentShader as string :
 				(fragmentShader as string[]).join('\n');
 		const { shaderSource, samplerUniforms, additionalSources } = preprocessFragmentShader(
-			fragmentShaderSource, composer.glslVersion, name,
+			fragmentShaderSource, composer, name,
 		);
 		this._fragmentShaderSource = shaderSource;
+
 		samplerUniforms.forEach((name, i) => {
 			this._samplerUniformsIndices.push({
 				name,
@@ -161,6 +165,10 @@ export class GPUProgram {
 		// Save compile time constants.
 		if (compileTimeConstants) {
 			this._compileTimeConstants = { ...compileTimeConstants };
+		}
+		// Save extension declarations.
+		if (composer.glslVersion === GLSL1 && (shaderSource.includes('dFdx') ||shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
+			this._extensions = '#extension GL_OES_standard_derivatives : enable\n';
 		}
 
 		// Set program uniforms.
@@ -236,7 +244,7 @@ export class GPUProgram {
 			return _fragmentShaders[fragmentId];
 		}
 
-		const { _composer, name, _fragmentShaderSource, _compileTimeConstants } = this;
+		const { _composer, name, _fragmentShaderSource, _compileTimeConstants, _extensions } = this;
 		const {
 			gl,
 			_errorCallback,
@@ -264,6 +272,7 @@ export class GPUProgram {
 			name,
 			_errorCallback,
 			_compileTimeConstants,
+			_extensions,
 			Object.keys(_fragmentShaders).length === 0,
 		);
 		if (!shader) {
@@ -586,7 +595,7 @@ export class GPUProgram {
 			throw new Error(`Could not find valid programName for WebGLProgram in GPUProgram "${this.name}".`);
 		}
 
-		const indexLookup = new Array(_samplerUniformsIndices.length).fill(-1);
+		const indexLookup = new Array(Math.max(input.length, _samplerUniformsIndices.length)).fill(-1);
 		for (let i = 0, length = _samplerUniformsIndices.length; i < length; i++) {
 			const { inputIndex, shaderIndex } = _samplerUniformsIndices[i];
 			if (indexLookup[inputIndex] >= 0) {
@@ -706,6 +715,8 @@ export class GPUProgram {
 		delete this._fragmentShaderSource;
 		// @ts-ignore
 		delete this._compileTimeConstants;
+		// @ts-ignore
+		delete this._extensions;
 		// @ts-ignore
 		delete this._uniforms;
 		// @ts-ignore

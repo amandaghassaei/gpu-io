@@ -38,7 +38,6 @@ import {
 	BOUNDARY_TOP,
 	BOUNDARY_BOTTOM,
 	LAYER_MESH_PROGRAM_NAME,
-	IndexBuffer,
 } from './constants';
 import { GPUProgram } from './GPUProgram';
 // Just importing the types here.
@@ -69,8 +68,8 @@ import {
 } from './Programs';
 import { checkRequiredKeys, checkValidKeys } from './checks';
 import { bindFrameBuffer } from './framebuffers';
-import { getExtension, OES_ELEMENT_INDEX_UINT, OES_VERTEX_ARRAY_OBJECT } from './extensions';
-import { isTypedArray } from '@petamoriken/float16';
+import { getExtension, OES_VERTEX_ARRAY_OBJECT } from './extensions';
+import { GPUIndexBuffer } from './GPUIndexBuffer';
 
 export class GPUComposer {
 	/**
@@ -120,6 +119,8 @@ export class GPUComposer {
 	private _circlePositionsBuffer: { [key: number]: WebGLBuffer } = {};
 	private _pointIndexArray?: Float32Array;
 	private _pointIndexBuffer?: WebGLBuffer;
+	private _meshIndexArray?: Float32Array;
+	private _meshIndexBuffer?: WebGLBuffer;
 	private _vectorFieldIndexArray?: Float32Array;
 	private _vectorFieldIndexBuffer?: WebGLBuffer;
 	private _indexedLinesIndexBuffer?: WebGLBuffer;
@@ -550,6 +551,7 @@ export class GPUComposer {
 				programName,
 				_errorCallback,
 				vertexCompileConstants,
+				undefined,
 				true,
 			);
 			if (!shader) {
@@ -590,16 +592,7 @@ export class GPUComposer {
 		input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 		output?: GPULayer | GPULayer[],
 	) {
-		const { gl, _threeRenderer, isWebGL2 } = this;
-
-		// Unbind VAO for threejs compatibility.
-		if (_threeRenderer) {
-			if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
-			else {
-				const ext = getExtension(this, OES_VERTEX_ARRAY_OBJECT, true);
-				ext.bindVertexArrayOES(null)
-			}
-		}
+		const { gl } = this;
 
 		// CAUTION: the order of these next few lines is important.
 
@@ -1859,63 +1852,10 @@ export class GPUComposer {
 	}
 
 	/**
-	 * Init an index buffer to use with GPUComposer.drawLayerAsMesh().
-	 * @param indices - A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices.
-	 * @returns 
-	 */
-	initIndexBuffer(indices: number[] | Uint8Array | Uint16Array | Uint32Array) {
-		const { gl, isWebGL2 } = this;
-		
-		const indexBuffer = gl.createBuffer();
-		// Make index buffer the current ELEMENT_ARRAY_BUFFER.
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-		
-		if (!isTypedArray(indices)) {
-			indices = new Uint32Array(indices);
-		}
-		let type;
-		switch(indices.constructor) {
-			case Uint8Array:
-				type = gl.UNSIGNED_BYTE;
-				break;
-			case Uint16Array:
-				type = gl.UNSIGNED_SHORT;
-				break;
-			case Uint32Array:
-				if (!isWebGL2) {
-					const ext = getExtension(this, OES_ELEMENT_INDEX_UINT, true);
-					if (!ext) {
-						// Fall back to using gl.UNSIGNED_SHORT.
-						type = gl.UNSIGNED_SHORT;
-						indices = Uint16Array.from(indices);
-						break;
-					}
-				}
-				type = gl.UNSIGNED_INT;
-				break;
-		}
-		// Fill the current element array buffer with data.
-		gl.bufferData(
-			gl.ELEMENT_ARRAY_BUFFER,
-			indices,
-			gl.STATIC_DRAW
-		);
-		return {
-			buffer: indexBuffer,
-			count: indices.length,
-			type,
-			dispose: () => {
-				gl.deleteBuffer(indexBuffer);
-			},
-		}
-	}
-
-	/**
 	 * Draw 2D mesh to screen.
 	 * @param params - Draw parameters.
 	 * @param params.layer - GPULayer containing vector data.
-	 * @param params.indices = IndexBuffer containing mesh index data, see GPUComposer.initIndexBuffer().
+	 * @param params.indices - GPUIndexBuffer containing mesh index data.
 	 * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
 	 * @param params.input - Input GPULayers for GPUProgram.
 	 * @param params.output - Output GPULayer, will draw to screen if undefined.
@@ -1927,7 +1867,7 @@ export class GPUComposer {
 	 drawLayerAsMesh(
 		params: {
 			layer: GPULayer,
-			indices?: IndexBuffer,
+			indices?: GPUIndexBuffer,
 			program?: GPUProgram,
 			input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState,
 			output?: GPULayer | GPULayer[],
@@ -1943,7 +1883,7 @@ export class GPUComposer {
 		checkRequiredKeys(keys, requiredKeys, 'GPUComposer.drawLayerAsMesh(params)');
 
 		if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsMesh')) return;
-		const { gl, _width, _height, glslVersion, _errorState } = this;
+		const { gl, _width, _height, glslVersion, _errorState, _meshIndexBuffer, _meshIndexArray } = this;
 		const { layer, output } = params;
 
 		if (_errorState) return;
@@ -1979,24 +1919,35 @@ export class GPUComposer {
 
 		// Update uniforms and buffers.
 		program._setVertexUniform(glProgram, 'u_gpuio_positions', indexOfLayerInArray(layer, input), INT);
-		let width = this._width;
-		let height = this._height;
+		let width = _width;
+		let height = _height;
 		if (params.useOutputScale) {
 			({ width, height } = this._widthHeightForOutput(program.name, output));
 		}
 		program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / width, 1 / height], FLOAT);
 		const positionLayerDimensions = [layer.width, layer.height];
 		program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, FLOAT);
+		// We get this for free in GLSL3 with gl_VertexID.
+		if (glslVersion === GLSL1) {
+			if (_meshIndexBuffer === undefined || (_meshIndexArray && _meshIndexArray.length < positionsCount)) {
+				// Have to use float32 array bc int is not supported as a vertex attribute type.
+				const indices = initSequentialFloatArray(positionsCount);
+				this._meshIndexArray = indices;
+				this._meshIndexBuffer = this._initVertexBuffer(indices);
+			}
+			gl.bindBuffer(gl.ARRAY_BUFFER, this._meshIndexBuffer!);
+			this._setIndexAttribute(glProgram, program.name);
+		}
 
 		// Draw.
 		this._setBlendMode(params.blendAlpha);
 		if (params.indices) {
-			const { type, count, buffer } = params.indices;
+			const { glType, count, buffer } = params.indices;
 			// https://webglfundamentals.org/webgl/lessons/webgl-indexed-vertices.html
 			// Make index buffer the current ELEMENT_ARRAY_BUFFER.
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
 			const offset = 0;
-			gl.drawElements(gl.TRIANGLES, count, type, offset);
+			gl.drawElements(gl.TRIANGLES, count, glType, offset);
 		} else {
 			// We are assuming that positions are already grouped into triangles.
 			gl.drawArrays(gl.TRIANGLES, 0, positionsCount);
@@ -2008,27 +1959,39 @@ export class GPUComposer {
 	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
 	 */
 	undoThreeState() {
-		if (!this._threeRenderer) {
+		const { gl, _threeRenderer, isWebGL2 } = this;
+		if (!_threeRenderer) {
 			throw new Error(`Can't call undoThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 		}
-		const { gl } = this;
+		
+		// Disable blend mode.
 		gl.disable(gl.BLEND);
+
+		// Unbind VAO for threejs compatibility.
+		if (_threeRenderer) {
+			if (isWebGL2) (gl as WebGL2RenderingContext).bindVertexArray(null);
+			else {
+				const ext = getExtension(this, OES_VERTEX_ARRAY_OBJECT, true);
+				ext.bindVertexArrayOES(null);
+			}
+		}
 	}
 
 	/**
 	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any gpu-io step or draw functions.
 	 */
 	resetThreeState() {
-		if (!this._threeRenderer) {
+		const { gl, _threeRenderer } = this;
+		if (!_threeRenderer) {
 			throw new Error(`Can't call resetThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().`);
 		}
-		const { gl } = this;
+		
 		// Reset viewport.
-		const viewport = this._threeRenderer.getViewport(new ThreejsUtils.Vector4() as Vector4);
+		const viewport = _threeRenderer.getViewport(new ThreejsUtils.Vector4() as Vector4);
 		gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		// Unbind framebuffer (render to screen).
 		// Reset threejs WebGL bindings and state, this also unbinds the framebuffer.
-		this._threeRenderer.resetState();
+		_threeRenderer.resetState();
 	}
 
 	// TODO: params.callback is not generated in the docs.

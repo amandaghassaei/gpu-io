@@ -1,3 +1,4 @@
+import { GLSLVersion, GLSL1 } from './constants';
 import { getSampler2DsInProgram } from './regex';
 
 /**
@@ -228,56 +229,79 @@ function floatTypeForBoolType(type: TB): T {
 	throw new Error(`Unknown type ${type}.`);
 }
 
-let GLSL1_POLYFILLS: string;
+function abs(type: TI) { return `${type} abs(const ${type} a) { return ${type}(abs(${floatTypeForIntType(type)}(a))); }`; }
+function sign(type: TI) { return `${type} sign(const ${type} a) { return ${type}(sign(${floatTypeForIntType(type)}(a))); }`; }
+function trunc(type: T) { return `${type} trunc(const ${type} a) { return round(a - fract(a) * sign(a)); }`; }
+function round(type: T) { return `${type} round(const ${type} a) { return floor(a + 0.5); }`; }
+function roundEven(type: T) { return `${type} roundEven(const ${type} a) { return 2.0 * round(a / 2.0); }`; }
+function min(type1: TI, type2: TI) { return `${type1} min(const ${type1} a, const ${type2} b) { return ${type1}(min(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`; }
+function max(type1: TI, type2: TI) { return `${type1} max(const ${type1} a, const ${type2} b) { return ${type1}(max(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`; }
+function clamp(type1: TI, type2: TI) { return `${type1} clamp(const ${type1} a, const ${type2} min, const ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`; }
+function mix(type1: T, type2: TB) { return `${type1} mix(const ${type1} a, const ${type1} b, const ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`; }
+function det2(n: number, m: number, size: number) { return `a[${n}][${m}] * a[${(n + 1) % size}][${(m + 1) % size}] - a[${(n + 1) % size}][${m}] * a[${n}][${(m + 1) % size}]`; }
+// TODO: I don't think these are quite right yet.
+function det3(n: number, m: number, size: number) { return [0, 1, 2].map(offset => `a[${n}][${(m + offset) % size}] * (${det2((n + 1) % size, (m + 1 + offset) % size, size)})`).join(' + '); }
+function det4(n: number, m: number, size: number) { return [0, 1, 2, 3].map(offset => `a[${n}][${(m + offset) % size}] * (${det3((n + 1) % size, (m + 1 + offset) % size, size)})`).join(' + '); }
+
 /**
  * Polyfill common functions/operators that GLSL1 lacks.
  * @private
  */
-export function GLSL1Polyfills() {
-	if (GLSL1_POLYFILLS) return GLSL1_POLYFILLS;
-
-	const abs = (type: TI) => `${type} abs(const ${type} a) { return ${type}(abs(${floatTypeForIntType(type)}(a))); }`;
-	const sign = (type: TI) => `${type} sign(const ${type} a) { return ${type}(sign(${floatTypeForIntType(type)}(a))); }`;
-	const trunc = (type: T) => `${type} trunc(const ${type} a) { return round(a - fract(a) * sign(a)); }`;
-	const round = (type: T) => `${type} round(const ${type} a) { return floor(a + 0.5); }`;
-	const roundEven = (type: T) => `${type} roundEven(const ${type} a) { return 2.0 * round(a / 2.0); }`;
-	const min = (type1: TI, type2: TI) => `${type1} min(const ${type1} a, const ${type2} b) { return ${type1}(min(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
-	const max = (type1: TI, type2: TI) => `${type1} max(const ${type1} a, const ${type2} b) { return ${type1}(max(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(b))); }`;
-	const clamp = (type1: TI, type2: TI) => `${type1} clamp(const ${type1} a, const ${type2} min, const ${type2} max) { return ${type1}(clamp(${floatTypeForIntType(type1)}(a), ${floatTypeForIntType(type2)}(min), ${floatTypeForIntType(type2)}(max))); }`;
-	const mix = (type1: T, type2: TB) => `${type1} mix(const ${type1} a, const ${type1} b, const ${type2} c) { return mix(a, b, ${floatTypeForBoolType(type2)}(c)); }`;
-	const det2 = (n: number, m: number, size: number) => `a[${n}][${m}] * a[${(n + 1) % size}][${(m + 1) % size}] - a[${(n + 1) % size}][${m}] * a[${n}][${(m + 1) % size}]`;
-	// TODO: I don't think these are quite right yet.
-	const det3 = (n: number, m: number, size: number) => [0, 1, 2].map(offset => `a[${n}][${(m + offset) % size}] * (${det2((n + 1) % size, (m + 1 + offset) % size, size)})`).join(' + ');
-	const det4 = (n: number, m: number, size: number) => [0, 1, 2, 3].map(offset => `a[${n}][${(m + offset) % size}] * (${det3((n + 1) % size, (m + 1 + offset) % size, size)})`).join(' + ');
+export function GLSL1Polyfills(shaderSource: string) {
+	// We'll attempt to just add in what we need, but no worries if we add extraneous functions.
+	// They will be removed by compiler.
+	let GLSL1_POLYFILLS = '';
 
 	// We don't need to create unsigned int polyfills, bc unsigned int is not a supported type in GLSL1.
 	// All unsigned int variables will be cast as int and be caught by the signed int polyfills.
-	GLSL1_POLYFILLS = `
+
+	if (shaderSource.includes('abs')) {
+		GLSL1_POLYFILLS += `\n\n
 ${abs('int')}
 ${abs('ivec2')}
 ${abs('ivec3')}
 ${abs('ivec4')}
+`;
+	}
 
+	if (shaderSource.includes('sign')) {
+		GLSL1_POLYFILLS += `\n\n
 ${sign('int')}
 ${sign('ivec2')}
 ${sign('ivec3')}
 ${sign('ivec4')}
+`;
+	}
 
+	if (shaderSource.includes('round')) {
+		GLSL1_POLYFILLS += `\n\n
 ${round('float')}
 ${round('vec2')}
 ${round('vec3')}
 ${round('vec4')}
+`;
+	}
 
+	if (shaderSource.includes('trunc')) {
+		GLSL1_POLYFILLS += `\n\n
 ${trunc('float')}
 ${trunc('vec2')}
 ${trunc('vec3')}
 ${trunc('vec4')}
+`;
+	}
 
+	if (shaderSource.includes('roundEven')) {
+		GLSL1_POLYFILLS += `\n\n
 ${roundEven('float')}
 ${roundEven('vec2')}
 ${roundEven('vec3')}
 ${roundEven('vec4')}
+`;
+	}
 
+	if (shaderSource.includes('min')) {
+		GLSL1_POLYFILLS += `\n\n
 ${min('int', 'int')}
 ${min('ivec2', 'ivec2')}
 ${min('ivec3', 'ivec3')}
@@ -285,7 +309,11 @@ ${min('ivec4', 'ivec4')}
 ${min('ivec2', 'int')}
 ${min('ivec3', 'int')}
 ${min('ivec4', 'int')}
+`;
+	}
 
+	if (shaderSource.includes('max')) {
+		GLSL1_POLYFILLS += `\n\n
 ${max('int', 'int')}
 ${max('ivec2', 'ivec2')}
 ${max('ivec3', 'ivec3')}
@@ -293,7 +321,11 @@ ${max('ivec4', 'ivec4')}
 ${max('ivec2', 'int')}
 ${max('ivec3', 'int')}
 ${max('ivec4', 'int')}
+`;
+	}
 
+	if (shaderSource.includes('clamp')) {
+		GLSL1_POLYFILLS += `\n\n
 ${clamp('int', 'int')}
 ${clamp('ivec2', 'ivec2')}
 ${clamp('ivec3', 'ivec3')}
@@ -301,12 +333,20 @@ ${clamp('ivec4', 'ivec4')}
 ${clamp('ivec2', 'int')}
 ${clamp('ivec3', 'int')}
 ${clamp('ivec4', 'int')}
+`;
+	}
 
+	if (shaderSource.includes('mix')) {
+		GLSL1_POLYFILLS += `\n\n
 ${mix('float', 'bool')}
 ${mix('vec2', 'bvec2')}
 ${mix('vec3', 'bvec3')}
 ${mix('vec4', 'bvec4')}
+`;
+	}
 
+	if (shaderSource.includes('outerProduct')) {
+		GLSL1_POLYFILLS += `\n\n
 mat2 outerProduct(const vec2 a, const vec2 b) {
 	return mat2(
 		a.x * b.x, a.x * b.y,
@@ -328,6 +368,11 @@ mat4 outerProduct(const vec4 a, const vec4 b) {
 		a.w * b.x, a.w * b.y, a.w * b.z, a.w * b.w
 	);
 }
+`;
+	}
+
+	if (shaderSource.includes('transpose')) {
+		GLSL1_POLYFILLS += `\n\n
 mat2 transpose(mat2 a) {
 	float temp = a[0][1];
 	a[0][1] = a[1][0];
@@ -367,7 +412,11 @@ mat4 transpose(mat4 a) {
 	a[3][2] = temp;
 	return a;
 }
+`;
+	}
 
+	if (shaderSource.includes('determinant')) {
+		GLSL1_POLYFILLS += `\n\n
 float determinant(const mat2 a) {
 	return ${ det2(0, 0, 2) };
 }
@@ -377,43 +426,61 @@ float determinant(const mat3 a) {
 float determinant(const mat4 a) {
 	return ${ det4(0, 0, 4) };
 }
-` + 
-// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
-`
-float cosh(const float x) {
-	return (pow(${Math.E}, x) + pow(${Math.E}, -x)) / 2.0; 
-}
+`;
+	}
+
+	// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+	if (shaderSource.includes('sinh')) {
+		GLSL1_POLYFILLS += `\n\n
 float sinh(const float x) {
 	return (pow(${Math.E}, x) - pow(${Math.E}, -x)) / 2.0;
 }
+`;
+	}
+	if (shaderSource.includes('cosh')) {
+		GLSL1_POLYFILLS += `\n\n
+float cosh(const float x) {
+	return (pow(${Math.E}, x) + pow(${Math.E}, -x)) / 2.0; 
+}
+`;
+	}
+	if (shaderSource.includes('tanh')) {
+		GLSL1_POLYFILLS += `\n\n
 float tanh(const float x) {
 	float e = exp(2.0 * x);
 	return (e - 1.0) / (e + 1.0);
 }
+`;
+	}
+	if (shaderSource.includes('asinh')) {
+		GLSL1_POLYFILLS += `\n\n
 float asinh(const float x) {
 	return log(x + sqrt(x * x + 1.0));
 }
+`;
+	}
+	if (shaderSource.includes('asinh')) {
+		GLSL1_POLYFILLS += `\n\n
 float acosh(const float x) {
 	return log(x + sqrt(x * x - 1.0));
 }
+`;
+	}
+	if (shaderSource.includes('asinh')) {
+		GLSL1_POLYFILLS += `\n\n
 float atanh(float x) {
 	x = (x + 1.0) / (x - 1.0);
 	return 0.5 * log(x * sign(x));
-}`;
+}
+`;
+	}
+
 	return GLSL1_POLYFILLS;
 }
 
-let FRAGMENT_SHADER_POLYFILLS: string;
-/**
- * Polyfills to be make available for both GLSL1 and GLSL3 fragment shaders.
- * @private
- */
-export function fragmentShaderPolyfills() {
-	if (FRAGMENT_SHADER_POLYFILLS) return FRAGMENT_SHADER_POLYFILLS;
-
-	const modi = (type1: TI | TU, type2: TI | TU) => `${type1} modi(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`;
-	const stepi = (type1: TI | TU, type2: TI | TU) => `${type2} stepi(const ${type1} x, const ${type2} y) { return ${type2}(step(${floatTypeForIntType(type1)}(x), ${floatTypeForIntType(type2)}(y))); }`;
-	const bitshiftLeft = (type1: TI | TU, type2: TI | TU) => {
+function modi(type1: TI | TU, type2: TI | TU) { return `${type1} modi(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`; }
+function stepi(type1: TI | TU, type2: TI | TU) { return `${type2} stepi(const ${type1} x, const ${type2} y) { return ${type2}(step(${floatTypeForIntType(type1)}(x), ${floatTypeForIntType(type2)}(y))); }`; }
+function bitshiftLeft(type1: TI | TU, type2: TI | TU) {
 return`${type1} bitshiftLeft(const ${type1} a, const ${type2} b) {
 	#if (__VERSION__ == 300)
 		return a << b;
@@ -421,19 +488,18 @@ return`${type1} bitshiftLeft(const ${type1} a, const ${type2} b) {
 		return a * ${type1}(pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b)));
 	#endif
 }`;
-	}
-	const bitshiftRight = (type1: TI | TU, type2: TI | TU) => {
+}
+function bitshiftRight(type1: TI | TU, type2: TI | TU) {
 return `${type1} bitshiftRight(const ${type1} a, const ${type2} b) {
 	#if (__VERSION__ == 300)
 		return a >> b;
 	#else
 		return ${type1}(round(${floatTypeForIntType(type1)}(a) / pow(${floatTypeForIntType(type2)}(2.0), ${floatTypeForIntType(type2)}(b))));
 	#endif
-}`;
-	}
-	// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
-	// Seems like these could be optimized.
-	const bitwiseOr = (numBits: 8 | 16 | 32) => {
+}`; }
+// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+// Seems like these could be optimized.
+function bitwiseOr(numBits: 8 | 16 | 32) {
 return `int bitwiseOr${numBits === 32 ? '' : numBits}(int a, int b) {
 	#if (__VERSION__ == 300)
 		return a | b;
@@ -455,7 +521,7 @@ return `int bitwiseOr${numBits === 32 ? '' : numBits}(int a, int b) {
 		return result;
 	#endif
 }`; };
-const bitwiseXOR = (numBits: 8 | 16 | 32) => {
+function bitwiseXOR(numBits: 8 | 16 | 32) {
 return `int bitwiseXOR${numBits === 32 ? '' : numBits}(int a, int b) {
 	#if (__VERSION__ == 300)
 		return a ^ b;
@@ -477,7 +543,7 @@ return `int bitwiseXOR${numBits === 32 ? '' : numBits}(int a, int b) {
 		return result;
 	#endif
 }`; }
-	const bitwiseAnd = (numBits: 8 | 16 | 32) => {
+function bitwiseAnd(numBits: 8 | 16 | 32) {
 return `int bitwiseAnd${numBits === 32 ? '' : numBits}(int a, int b) {
 	#if (__VERSION__ == 300)
 		return a & b;
@@ -498,7 +564,7 @@ return `int bitwiseAnd${numBits === 32 ? '' : numBits}(int a, int b) {
 		return result;
 	#endif
 }`; };
-	const bitwiseNot = (numBits: 8 | 16 | 32) => {
+function bitwiseNot(numBits: 8 | 16 | 32) {
 return `int bitwiseNot${numBits === 32 ? '' : numBits}(int a) {
 	#if (__VERSION__ == 300)
 		return ~a;
@@ -517,7 +583,18 @@ return `int bitwiseNot${numBits === 32 ? '' : numBits}(int a) {
 	#endif
 }`; }
 
-	FRAGMENT_SHADER_POLYFILLS = `
+/**
+ * Polyfills to be make available for both GLSL1 and GLSL3 fragment shaders.
+ * @private
+ */
+export function fragmentShaderPolyfills(shaderSource: string, glslVersion: GLSLVersion) {
+	// We'll attempt to just add in what we need, but no worries if we add extraneous functions.
+	// They will be removed by compiler.
+	let FRAGMENT_SHADER_POLYFILLS = '';
+
+	// modi is called from GLSL1 bitwise polyfills.
+	if (shaderSource.includes('modi') || (glslVersion === GLSL1 && shaderSource.includes('bitwise'))) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
 ${modi('int', 'int')}
 ${modi('ivec2', 'ivec2')}
 ${modi('ivec3', 'ivec3')}
@@ -534,7 +611,10 @@ ${modi('uvec2', 'uint')}
 ${modi('uvec3', 'uint')}
 ${modi('uvec4', 'uint')}
 #endif
-
+`;
+	}
+	if (shaderSource.includes('stepi')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
 ${stepi('int', 'int')}
 ${stepi('ivec2', 'ivec2')}
 ${stepi('ivec3', 'ivec3')}
@@ -551,7 +631,11 @@ ${stepi('uint', 'uvec2')}
 ${stepi('uint', 'uvec3')}
 ${stepi('uint', 'uvec4')}
 #endif
+`;
+	}
 
+	if (shaderSource.includes('bitshiftLeft')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
 ${bitshiftLeft('int', 'int')}
 ${bitshiftLeft('ivec2', 'ivec2')}
 ${bitshiftLeft('ivec3', 'ivec3')}
@@ -568,7 +652,11 @@ ${bitshiftLeft('uvec2', 'uint')}
 ${bitshiftLeft('uvec3', 'uint')}
 ${bitshiftLeft('uvec4', 'uint')}
 #endif
+`;
+	}
 
+	if (shaderSource.includes('bitshiftRight')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
 ${bitshiftRight('int', 'int')}
 ${bitshiftRight('ivec2', 'ivec2')}
 ${bitshiftRight('ivec3', 'ivec3')}
@@ -585,40 +673,72 @@ ${bitshiftRight('uvec2', 'uint')}
 ${bitshiftRight('uvec3', 'uint')}
 ${bitshiftRight('uvec4', 'uint')}
 #endif
+`;
+	}
 
+	if (shaderSource.includes('bitwiseOr')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
 ${bitwiseOr(8)}
 ${bitwiseOr(16)}
 ${bitwiseOr(32)}
-
-${bitwiseXOR(8)}
-${bitwiseXOR(16)}
-${bitwiseXOR(32)}
-
-${bitwiseAnd(8)}
-${bitwiseAnd(16)}
-${bitwiseAnd(32)}
-
-${bitwiseNot(8)}
-${bitwiseNot(16)}
-${bitwiseNot(32)}
-
 #if (__VERSION__ == 300)
 ${ [8, 16, ''].map(suffix => {
 return `
 uint bitwiseOr${suffix}(uint a, uint b) {
 	return uint(bitwiseOr${suffix}(int(a), int(b)));
-}
-uint bitwiseXOR${suffix}(uint a, uint b) {
-	return uint(bitwiseXOR${suffix}(int(a), int(b)));
-}
-uint bitwiseAnd${suffix}(uint a, uint b) {
-	return uint(bitwiseAnd${suffix}(int(a), int(b)));
-}
-uint bitwiseNot${suffix}(uint a) {
-	return uint(bitwiseNot${suffix}(int(a)));
-}` }).join('\n')}
-
+}`;
+}).join('\n') }
 #endif
 `;
+	}
+
+	if (shaderSource.includes('bitwiseXOR')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
+${bitwiseXOR(8)}
+${bitwiseXOR(16)}
+${bitwiseXOR(32)}
+#if (__VERSION__ == 300)
+${ [8, 16, ''].map(suffix => {
+return `
+uint bitwiseXOR${suffix}(uint a, uint b) {
+	return uint(bitwiseXOR${suffix}(int(a), int(b)));
+}`;
+}).join('\n') }
+#endif
+`;
+	}
+
+	if (shaderSource.includes('bitwiseAnd')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
+${bitwiseAnd(8)}
+${bitwiseAnd(16)}
+${bitwiseAnd(32)}
+#if (__VERSION__ == 300)
+${ [8, 16, ''].map(suffix => {
+return `
+uint bitwiseAnd${suffix}(uint a, uint b) {
+	return uint(bitwiseAnd${suffix}(int(a), int(b)));
+}`;
+}).join('\n') }
+#endif
+`;
+	}
+
+	if (shaderSource.includes('bitwiseNot')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
+${bitwiseNot(8)}
+${bitwiseNot(16)}
+${bitwiseNot(32)}
+#if (__VERSION__ == 300)
+${ [8, 16, ''].map(suffix => {
+return `
+uint bitwiseNot${suffix}(uint a) {
+	return uint(bitwiseNot${suffix}(int(a)));
+}`;
+}).join('\n') }
+#endif
+`;
+	}
+
 	return FRAGMENT_SHADER_POLYFILLS;
 }

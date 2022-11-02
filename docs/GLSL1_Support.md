@@ -200,11 +200,15 @@ The following GLSL3 functions are currently NOT available to GLSL1 fragment shad
 
 ### Fragment Processing Functions
 
-The following functions are not polyfilled by this library, but they may still be available to GLSL1 via the [OES_standard_derivatives](https://developer.mozilla.org/en-US/docs/Web/API/OES_standard_derivatives) extension:
+gpu-io automatically enables [OES_standard_derivatives](https://developer.mozilla.org/en-US/docs/Web/API/OES_standard_derivatives) extension when the following functions are detected in a GPUProgram's source:
 
 - `dFdx`
 - `dFdy`
 - `fwidth`
+
+Additionally, gpu-io adds the following line to the shader source to enable the extension:
+
+`#extension GL_OES_standard_derivatives : enable`
 
 
 ## Other GLSL1 Gotchas

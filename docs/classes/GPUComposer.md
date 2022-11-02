@@ -25,7 +25,6 @@
 - [stepRect](GPUComposer.md#steprect)
 - [drawLayerAsPoints](GPUComposer.md#drawlayeraspoints)
 - [drawLayerAsVectorField](GPUComposer.md#drawlayerasvectorfield)
-- [initIndexBuffer](GPUComposer.md#initindexbuffer)
 - [drawLayerAsMesh](GPUComposer.md#drawlayerasmesh)
 - [undoThreeState](GPUComposer.md#undothreestate)
 - [resetThreeState](GPUComposer.md#resetthreestate)
@@ -336,31 +335,6 @@ Draw the contents of a 2 component GPULayer as a vector field.
 
 ___
 
-### initIndexBuffer
-
-▸ **initIndexBuffer**(`indices`): `Object`
-
-Init an index buffer to use with GPUComposer.drawLayerAsMesh().
-
-#### Parameters
-
-| Name | Type | Description |
-| :------ | :------ | :------ |
-| `indices` | `number`[] \| `Uint8Array` \| `Uint16Array` \| `Uint32Array` | A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices. |
-
-#### Returns
-
-`Object`
-
-| Name | Type |
-| :------ | :------ |
-| `buffer` | ``null`` \| `WebGLBuffer` |
-| `count` | `number` |
-| `type` | `undefined` \| `number` |
-| `dispose` | () => `void` |
-
-___
-
 ### drawLayerAsMesh
 
 ▸ **drawLayerAsMesh**(`params`): `void`
@@ -373,7 +347,7 @@ Draw 2D mesh to screen.
 | :------ | :------ | :------ |
 | `params` | `Object` | Draw parameters. |
 | `params.layer` | [`GPULayer`](GPULayer.md) | GPULayer containing vector data. |
-| `params.indices?` | [`IndexBuffer`](../README.md#indexbuffer) | = IndexBuffer containing mesh index data, see GPUComposer.initIndexBuffer(). |
+| `params.indices?` | [`GPUIndexBuffer`](GPUIndexBuffer.md) | GPUIndexBuffer containing mesh index data. |
 | `params.program?` | [`GPUProgram`](GPUProgram.md) | GPUProgram to run, defaults to drawing vector lines in red. |
 | `params.input?` | [`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate) \| ([`GPULayer`](GPULayer.md) \| [`GPULayerState`](../README.md#gpulayerstate))[] | Input GPULayers for GPUProgram. |
 | `params.output?` | [`GPULayer`](GPULayer.md) \| [`GPULayer`](GPULayer.md)[] | Output GPULayer, will draw to screen if undefined. |

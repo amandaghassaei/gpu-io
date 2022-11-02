@@ -4,6 +4,7 @@ function main({ gui, contextID, glslVersion }) {
 		GPUComposer,
 		GPUProgram,
 		GPULayer,
+		GPUIndexBuffer,
 		FLOAT,
 		INT,
 		REPEAT,
@@ -33,7 +34,8 @@ function main({ gui, contextID, glslVersion }) {
 	// The rest of this file assumes WebGL2 and GLSL3.
 
 	const PARAMS = {
-		separation: 50,
+		separation: 50, // Separation between wave surface and caustics projection.
+		c: 0.15, // Wave propagation speed.
 		reset,
 		savePNG,
 		saveTexturePNG,
@@ -41,13 +43,11 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Size of the simulation.
 	const TEXTURE_DIM = [100, 100];
-	const CAUSTICS_TEXTURE_SCALE_FACTOR = 4; // Increase in resolution of caustics texture from TEXTURE_DIM.
+	const CAUSTICS_TEXTURE_SCALE_FACTOR = 6; // Increase in resolution of caustics texture from TEXTURE_DIM.
 	// Some simulation constants.
 	// https://beltoforion.de/en/recreational_mathematics/2d-wave-equation.php
 	const DT = 1;
 	const DX = 1;
-	const C = 0.15; // Wave propagation speed.
-	const ALPHA = (C * DT / DX) ** 2;
 	const DECAY = 0.005;
 	// Drop parameters.
 	const NUM_FRAMES_BETWEEN_DROPS = 150;
@@ -71,7 +71,7 @@ function main({ gui, contextID, glslVersion }) {
 	const canvas = renderer.domElement;
 	document.body.appendChild(canvas);
 
-	const controls = new OrbitControls(camera, canvas);
+	const controls = new OrbitControls(camera, canvas); 
 	controls.panSpeed = 1 / camera.zoom;
 
 	// Init a plane with texture containing the simulation rendered in color.
@@ -167,7 +167,7 @@ function main({ gui, contextID, glslVersion }) {
 	scene.add(gridSegments);
 	// Init white semi-transparent mesh under grid.
 	const gridMeshGeometry = new BufferGeometry();
-	gridMeshGeometry.setAttribute('position', new BufferAttribute(gridPositions, 3));
+	gridMeshGeometry.setAttribute('position', gridSegmentsGeometry.getAttribute('position'));
 	gridMeshGeometry.setIndex(new BufferAttribute(gridMeshIndices, 1));
 	const gridMeshMaterial = new THREE.ShaderMaterial( {
 		uniforms: {
@@ -242,7 +242,7 @@ function main({ gui, contextID, glslVersion }) {
 	});
 	// Init gpu-io buffer for triangle indices for this light wavefront mesh.
 	// We can reuse the same mesh indices we used for our threejs mesh.
-	const lightMeshIndices = composer.initIndexBuffer(gridMeshIndices);
+	const lightMeshIndices = new GPUIndexBuffer(composer, { indices: gridMeshIndices });
 
 	// Init a program to solve wave function.
 	const waveProgram = new GPUProgram(composer, {
@@ -253,6 +253,7 @@ function main({ gui, contextID, glslVersion }) {
 			uniform sampler2D u_height;
 			uniform sampler2D u_lastHeight;
 			uniform vec2 u_pxSize;
+			uniform float u_alpha;
 
 			out float out_result;
 
@@ -270,7 +271,7 @@ function main({ gui, contextID, glslVersion }) {
 				// Solve discrete wave equation.
 				float laplacian = n + s + e + w - 4.0 * current;
 				// Add a decay factor slightly less than 1 to dampen.
-				out_result = ${(1 - DECAY).toFixed(6)} * (${ALPHA.toFixed(6)} * laplacian + 2.0 * current - last);
+				out_result = ${(1 - DECAY).toFixed(6)} * (u_alpha * laplacian + 2.0 * current - last);
 			}
 		`,
 		uniforms: [
@@ -287,6 +288,11 @@ function main({ gui, contextID, glslVersion }) {
 			{ // Calculate the size of a 1 px step in UV coordinates.
 				name: 'u_pxSize',
 				value: [1 / TEXTURE_DIM[0], 1 / TEXTURE_DIM[1]],
+				type: FLOAT,
+			},
+			{ // Constant that controls wave propagation speed.
+				name: 'u_alpha',
+				value: (PARAMS.c * DT / DX) ** 2,
 				type: FLOAT,
 			},
 		],
@@ -332,9 +338,8 @@ function main({ gui, contextID, glslVersion }) {
 				float e = texture(u_height, v_uv + onePxX).x;
 				float w = texture(u_height, v_uv - onePxX).x;
 				vec2 normalXY = vec2(w - e, s - n) / 2.0;
-				// TODO: there seems to be a slight bug in the normal value along the y axis.
-				// Clip normal amplitude to reduce effect of bug.
-				normalXY *= min(0.012 / length(normalXY), 1.0);
+				// Clip normal amplitude to prevent triangle overlap / issues with triangle rendering order.
+				normalXY *= min(0.0075 / length(normalXY), 1.0);
 				vec3 normal = normalize(vec3(normalXY, 1.0));
 				const vec3 incident = vec3(0, 0, -1);
 				// 1 / 1.33 = Air refractive index / water refractive index.
@@ -373,7 +378,7 @@ function main({ gui, contextID, glslVersion }) {
 		name: 'computeCaustics',
 		fragmentShader: `
 			in vec2 v_uv;
-			in vec2 v_uv_1d;// TODO: rename this.
+			in vec2 v_uv_position;
 
 			uniform vec2 u_pxSize;
 
@@ -381,7 +386,7 @@ function main({ gui, contextID, glslVersion }) {
 			void main() {
 				// Calculate change in area.
 				// https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c
-				float oldArea = dFdx(v_uv_1d.x) * dFdy(v_uv_1d.y);
+				float oldArea = dFdx(v_uv_position.x) * dFdy(v_uv_position.y);
 				float newArea = dFdx(v_uv.x) * dFdy(v_uv.y);
 				float amplitude = oldArea / newArea * 0.75; /// 0.75 is a small scaling factor of light intensity.
 				const vec3 background = vec3(${BACKGROUND_COLOR[0]}, ${BACKGROUND_COLOR[1]}, ${BACKGROUND_COLOR[2]});
@@ -443,33 +448,32 @@ function main({ gui, contextID, glslVersion }) {
 				input: [height.currentState, height.lastState],
 				output: height,
 			});
-		}
-		// TODO: remove this.
-		// Copy current height to heightMap.
-		// heightMap is sampled by the threejs gridSegments and gridMesh vertex shaders.
-		composer.step({
-			program: copy,
-			input: height,
-			output: heightMap,
-		});
+			// Copy current height to heightMap.
+			// heightMap is sampled by the threejs gridSegments and gridMesh vertex shaders.
+			composer.step({
+				program: copy,
+				input: height,
+				output: heightMap,
+			});
 
-		// Compute caustics.
-		// Refract light wavefront mesh through water surface.
-		composer.step({
-			program: refractLight,
-			input: height,
-			output: lightMeshPositions,
-		});
-		caustics.clear();
-		// Render light wavefront mesh to caustics.
-		// caustics is already linked to threejs planeTexture.
-		composer.drawLayerAsMesh({
-			layer: lightMeshPositions,
-			indices: lightMeshIndices,
-			program: computeCaustics,
-			output: caustics,
-			useOutputScale: true, // Use the same px scale size as the output GPULayer (otherwise it uses screen px).
-		});
+			// Compute caustics.
+			// Refract light wavefront mesh through water surface.
+			composer.step({
+				program: refractLight,
+				input: height,
+				output: lightMeshPositions,
+			});
+			caustics.clear();
+			// Render light wavefront mesh to caustics.
+			// caustics is already linked to threejs planeTexture.
+			composer.drawLayerAsMesh({
+				layer: lightMeshPositions,
+				indices: lightMeshIndices,
+				program: computeCaustics,
+				output: caustics,
+				useOutputScale: true, // Use the same px scale size as the output GPULayer (otherwise it uses screen px).
+			});
+		}
 
 		// Reset three state back to what threejs is expecting (otherwise we get WebGL errors).
 		composer.resetThreeState();
@@ -481,6 +485,9 @@ function main({ gui, contextID, glslVersion }) {
 
 	// Init simple GUI.
 	const ui = [];
+	ui.push(gui.add(PARAMS, 'c', 0.1, 0.5, 0.01).onChange((val) => {
+		waveProgram.setUniform('u_alpha', (val * DT / DX) ** 2);
+	}).name('Wave Speed'));
 	ui.push(gui.add(PARAMS, 'separation', 10, 100, 1).onChange((val) => {
 		refractLight.setUniform('u_separation', val);
 		plane.position.y = -val / TEXTURE_DIM[0] * 0.5;

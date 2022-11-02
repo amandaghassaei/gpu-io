@@ -52,7 +52,9 @@ import {
 	WEBGL2,
 } from './constants';
 import { intForPrecision } from './conversions';
+import { getExtension, OES_STANDARD_DERIVATIVES } from './extensions';
 import { PRECISION_SOURCE } from './glsl/common/precision';
+import type { GPUComposer } from './GPUComposer';
 import type { GPULayer } from './GPULayer';
 import { fragmentShaderPolyfills, GLSL1Polyfills, texturePolyfill } from './polyfills';
 import {
@@ -142,6 +144,7 @@ export function makeShaderHeader(
 	intPrecision: GLSLPrecision,
 	floatPrecision: GLSLPrecision,
 	compileTimeConstants?: CompileTimeConstants,
+	extensions?: string,
 ) {
 	const versionSource = glslVersion === GLSL3 ? `#version ${GLSL3}\n` : '';
 	const compileTimeConstantsSource = compileTimeConstants ? convertCompileTimeConstantsToString(compileTimeConstants) : '';
@@ -149,7 +152,7 @@ export function makeShaderHeader(
 		[GPUIO_INT_PRECISION]: `${intForPrecision(intPrecision)}`,
 		[GPUIO_FLOAT_PRECISION]: `${intForPrecision(floatPrecision)}`,
 	});
-	return `${versionSource}${compileTimeConstantsSource}${precisionConstantsSource}${PRECISION_SOURCE}`;
+	return `${versionSource}${extensions ? extensions : ''}${compileTimeConstantsSource}${precisionConstantsSource}${PRECISION_SOURCE}`;
 }
 
 /**
@@ -168,6 +171,7 @@ export function compileShader(
 	programName: string,
 	errorCallback: ErrorCallback,
 	compileTimeConstants?: CompileTimeConstants,
+	extensions?: string,
 	checkCompileStatus = false,
 ) {
 	// Create the shader object
@@ -183,6 +187,7 @@ export function compileShader(
 		intPrecision,
 		floatPrecision,
 		compileTimeConstants,
+		extensions,
 	);
 	const fullShaderSource = `${shaderHeader}${shaderSource}`;
 	gl.shaderSource(shader, fullShaderSource);
@@ -641,7 +646,8 @@ export function preprocessVertexShader(shaderSource: string, glslVersion: GLSLVe
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string) {
+export function preprocessFragmentShader(shaderSource: string, composer: GPUComposer, name: string) {
+	const { glslVersion } = composer;
 	shaderSource = preprocessShader(shaderSource);
 	checkFragmentShaderForFragColor(shaderSource, glslVersion, name);
 	// Check if highp supported in fragment shaders.
@@ -651,16 +657,20 @@ export function preprocessFragmentShader(shaderSource: string, glslVersion: GLSL
 		shaderSource = highpToMediump(shaderSource);
 	}
 	// Add function/operator polyfills.
-	shaderSource = fragmentShaderPolyfills() + shaderSource;
+	shaderSource = fragmentShaderPolyfills(shaderSource, glslVersion) + shaderSource;
 	// Add texture() polyfills.
 	let samplerUniforms: string[];
 	({ shaderSource, samplerUniforms } = texturePolyfill(shaderSource));
 	if (glslVersion !== GLSL3) {
+		// Get derivative extension if needed.
+		if (glslVersion === GLSL1 && (shaderSource.includes('dFdx') || shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
+			getExtension(composer, OES_STANDARD_DERIVATIVES, true);
+		}
 		const sources = convertFragmentShaderToGLSL1(shaderSource, name);
 		// If this shader has multiple outputs, it is split into multiple sources.
 		for (let i = 0, numSources = sources.length; i < numSources; i++) {
 			// Add glsl1 specific polyfills.
-			sources[i] = GLSL1Polyfills() + sources[i];
+			sources[i] = GLSL1Polyfills(sources[i]) + sources[i];
 		}
 		shaderSource = sources.shift()!;
 		if (sources.length) {

@@ -1,8 +1,9 @@
 import { GPULayer } from './GPULayer';
 import './GPULayerHelpers';
-import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge, IndexBuffer } from './constants';
+import { GPULayerType, GLSLVersion, WEBGL2, WEBGL1, EXPERIMENTAL_WEBGL, PROGRAM_NAME_INTERNAL, CompileTimeConstants, ErrorCallback, GLSLPrecision, GPULayerState, EXPERIMENTAL_WEBGL2, BoundaryEdge } from './constants';
 import { GPUProgram } from './GPUProgram';
 import type { WebGLRenderer, WebGL1Renderer } from 'three';
+import { GPUIndexBuffer } from './GPUIndexBuffer';
 export declare class GPUComposer {
     /**
      * The WebGL context associated with this GPUcomposer.
@@ -46,6 +47,8 @@ export declare class GPUComposer {
     private _circlePositionsBuffer;
     private _pointIndexArray?;
     private _pointIndexBuffer?;
+    private _meshIndexArray?;
+    private _meshIndexBuffer?;
     private _vectorFieldIndexArray?;
     private _vectorFieldIndexBuffer?;
     private _indexedLinesIndexBuffer?;
@@ -412,21 +415,10 @@ export declare class GPUComposer {
         blendAlpha?: boolean;
     }): void;
     /**
-     * Init an index buffer to use with GPUComposer.drawLayerAsMesh().
-     * @param indices - A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices.
-     * @returns
-     */
-    initIndexBuffer(indices: number[] | Uint8Array | Uint16Array | Uint32Array): {
-        buffer: WebGLBuffer | null;
-        count: number;
-        type: number | undefined;
-        dispose: () => void;
-    };
-    /**
      * Draw 2D mesh to screen.
      * @param params - Draw parameters.
      * @param params.layer - GPULayer containing vector data.
-     * @param params.indices = IndexBuffer containing mesh index data, see GPUComposer.initIndexBuffer().
+     * @param params.indices - GPUIndexBuffer containing mesh index data.
      * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
      * @param params.input - Input GPULayers for GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
@@ -437,7 +429,7 @@ export declare class GPUComposer {
      */
     drawLayerAsMesh(params: {
         layer: GPULayer;
-        indices?: IndexBuffer;
+        indices?: GPUIndexBuffer;
         program?: GPUProgram;
         input?: (GPULayer | GPULayerState)[] | GPULayer | GPULayerState;
         output?: GPULayer | GPULayer[];

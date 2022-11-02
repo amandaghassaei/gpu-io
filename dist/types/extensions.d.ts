@@ -8,4 +8,5 @@ export declare const EXT_COLOR_BUFFER_FLOAT = "EXT_color_buffer_float";
 export declare const EXT_COLOR_BUFFER_HALF_FLOAT = "EXT_color_buffer_half_float";
 export declare const OES_VERTEX_ARRAY_OBJECT = "OES_vertex_array_object";
 export declare const OES_ELEMENT_INDEX_UINT = "OES_element_index_uint";
+export declare const OES_STANDARD_DERIVATIVES = "OES_standard_derivatives";
 export declare function getExtension(composer: GPUComposer, extensionName: string, optional?: boolean): any;

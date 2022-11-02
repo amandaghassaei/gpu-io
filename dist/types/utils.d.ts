@@ -1,4 +1,5 @@
 import { CompileTimeConstants, ErrorCallback, GLSLPrecision, GLSLVersion, GPULayerState, GPULayerType, UniformType, UniformValue } from './constants';
+import type { GPUComposer } from './GPUComposer';
 import type { GPULayer } from './GPULayer';
 /**
  * Test whether a GPULayer type is a float type.
@@ -25,14 +26,14 @@ export declare function isIntType(type: GPULayerType): boolean;
  * Export this for testing purposes.
  * @private
  */
-export declare function makeShaderHeader(glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, compileTimeConstants?: CompileTimeConstants): string;
+export declare function makeShaderHeader(glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, compileTimeConstants?: CompileTimeConstants, extensions?: string): string;
 /**
  * Compile vertex or fragment shaders.
  * Fragment shaders may be compiled on the fly, so keep this efficient.
  * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
  * @private
  */
-export declare function compileShader(gl: WebGLRenderingContext | WebGL2RenderingContext, glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, shaderSource: string, shaderType: number, programName: string, errorCallback: ErrorCallback, compileTimeConstants?: CompileTimeConstants, checkCompileStatus?: boolean): WebGLShader | null;
+export declare function compileShader(gl: WebGLRenderingContext | WebGL2RenderingContext, glslVersion: GLSLVersion, intPrecision: GLSLPrecision, floatPrecision: GLSLPrecision, shaderSource: string, shaderType: number, programName: string, errorCallback: ErrorCallback, compileTimeConstants?: CompileTimeConstants, extensions?: string, checkCompileStatus?: boolean): WebGLShader | null;
 /**
  * Init a WebGL program from vertex and fragment shaders.
  * GLPrograms may be inited on the fly, so keep this efficient.
@@ -105,7 +106,7 @@ export declare function preprocessVertexShader(shaderSource: string, glslVersion
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-export declare function preprocessFragmentShader(shaderSource: string, glslVersion: GLSLVersion, name: string): {
+export declare function preprocessFragmentShader(shaderSource: string, composer: GPUComposer, name: string): {
     shaderSource: string;
     samplerUniforms: string[];
     additionalSources: string[];

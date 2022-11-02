@@ -220,6 +220,9 @@ export declare class GPULayer {
      * Get the clearValue of the GPULayer.
      */
     get clearValue(): number | number[];
+    /**
+     * Get the clearValue of the GPULayer as a vec4, pad with zeros as needed.
+     */
     private get clearValueVec4();
     /**
      * Clear all data in GPULayer to GPULayer.clearValue.

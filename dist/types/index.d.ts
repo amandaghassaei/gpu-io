@@ -2,6 +2,7 @@ import * as utils from './utils';
 import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import { GPUProgram } from './GPUProgram';
+import { GPUIndexBuffer } from './GPUIndexBuffer';
 import * as Programs from './Programs';
 /**
  * @private
@@ -17,8 +18,8 @@ declare const _testing: {
         shaderSource: string;
         samplerUniforms: string[];
     };
-    GLSL1Polyfills(): string;
-    fragmentShaderPolyfills(): string;
+    GLSL1Polyfills(shaderSource: string): string;
+    fragmentShaderPolyfills(shaderSource: string, glslVersion: import("./constants").GLSLVersion): string;
     SAMPLER2D_WRAP_X: "GPUIO_WRAP_X";
     SAMPLER2D_WRAP_Y: "GPUIO_WRAP_Y";
     SAMPLER2D_CAST_INT: "GPUIO_CAST_INT";
@@ -69,6 +70,7 @@ declare const _testing: {
     EXT_COLOR_BUFFER_HALF_FLOAT: "EXT_color_buffer_half_float";
     OES_VERTEX_ARRAY_OBJECT: "OES_vertex_array_object";
     OES_ELEMENT_INDEX_UINT: "OES_element_index_uint";
+    OES_STANDARD_DERIVATIVES: "OES_standard_derivatives";
     isFloatType: typeof utils.isFloatType;
     isUnsignedIntType: typeof utils.isUnsignedIntType;
     isSignedIntType: typeof utils.isSignedIntType;
@@ -87,5 +89,5 @@ declare const _testing: {
 };
 declare const isWebGL2: typeof utils.isWebGL2, isWebGL2Supported: typeof utils.isWebGL2Supported, isHighpSupportedInVertexShader: typeof utils.isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader: typeof utils.isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision: typeof utils.getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision: typeof utils.getFragmentShaderMediumpPrecision;
 declare const copyProgram: typeof Programs.copyProgram, addLayersProgram: typeof Programs.addLayersProgram, addValueProgram: typeof Programs.addValueProgram, multiplyValueProgram: typeof Programs.multiplyValueProgram, renderAmplitudeProgram: typeof Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram: typeof Programs.renderSignedAmplitudeProgram, setValueProgram: typeof Programs.setValueProgram, setColorProgram: typeof Programs.setColorProgram;
-export { GPUComposer, GPULayer, GPUProgram, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, copyProgram, addLayersProgram, addValueProgram, multiplyValueProgram, renderAmplitudeProgram, renderSignedAmplitudeProgram, setValueProgram, setColorProgram, _testing, };
+export { GPUComposer, GPULayer, GPUProgram, GPUIndexBuffer, isWebGL2, isWebGL2Supported, isHighpSupportedInVertexShader, isHighpSupportedInFragmentShader, getVertexShaderMediumpPrecision, getFragmentShaderMediumpPrecision, copyProgram, addLayersProgram, addValueProgram, multiplyValueProgram, renderAmplitudeProgram, renderSignedAmplitudeProgram, setValueProgram, setColorProgram, _testing, };
 export * from './constants';

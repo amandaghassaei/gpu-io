@@ -9,6 +9,7 @@ export declare class GPUProgram {
     private _fragmentShaders;
     protected _fragmentShaderSource: string;
     private readonly _compileTimeConstants;
+    private readonly _extensions?;
     private readonly _uniforms;
     private readonly _programs;
     private readonly _programsKeyLookup;

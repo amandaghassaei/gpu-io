@@ -464,10 +464,3 @@ export const BOUNDARY_BOTTOM = 'BOUNDARY_BOTTOM';
 export const BOUNDARY_LEFT = 'BOUNDARY_LEFT';
 export const BOUNDARY_RIGHT = 'BOUNDARY_RIGHT';
 export type BoundaryEdge = typeof BOUNDARY_TOP | typeof BOUNDARY_BOTTOM | typeof BOUNDARY_LEFT | typeof BOUNDARY_RIGHT;
-
-export type IndexBuffer = {
-	buffer: WebGLBuffer,
-	count: number,
-	type: number,
-	dispose: () => void,
-}

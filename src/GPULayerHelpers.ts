@@ -671,6 +671,7 @@ void main() {
 			offset: `vec2(${offset / width}, ${offset / height})`,
 			[isUnsignedIntType(internalType) ? 'GPUIO_UINT' : (isIntType(internalType) ? 'GPUIO_INT': 'GPUIO_FLOAT')]: '1',
 		},
+		undefined,
 		true,
 	);
 

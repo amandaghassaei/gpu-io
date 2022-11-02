@@ -30,6 +30,8 @@ export const OES_VERTEX_ARRAY_OBJECT = 'OES_vertex_array_object';
 // According to WebGLStats nearly all devices support this extension.
 // Fallback to gl.UNSIGNED_SHORT if not available.
 export const OES_ELEMENT_INDEX_UINT = 'OES_element_index_uint';
+// Derivatives extensions.
+export const OES_STANDARD_DERIVATIVES = 'OES_standard_derivatives';
 
 export function getExtension(
 	composer: GPUComposer,

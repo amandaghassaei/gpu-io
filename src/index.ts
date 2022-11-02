@@ -3,6 +3,7 @@ import { GPUComposer } from './GPUComposer';
 import { GPULayer } from './GPULayer';
 import * as GPULayerHelpers from './GPULayerHelpers';
 import { GPUProgram } from './GPUProgram';
+import { GPUIndexBuffer } from './GPUIndexBuffer';
 import * as checks from './checks';
 import * as regex from './regex';
 import * as extensions from './extensions';
@@ -62,6 +63,7 @@ export {
 	GPUComposer,
 	GPULayer,
 	GPUProgram,
+	GPUIndexBuffer,
 	isWebGL2,
 	isWebGL2Supported,
 	isHighpSupportedInVertexShader,

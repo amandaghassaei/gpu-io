@@ -1,3 +1,4 @@
+import { GLSLVersion } from './constants';
 /**
  * Wrap type to use in polyfill.
  * (0) Default behavior (no polyfill).
@@ -47,9 +48,9 @@ export declare function texturePolyfill(shaderSource: string): {
  * Polyfill common functions/operators that GLSL1 lacks.
  * @private
  */
-export declare function GLSL1Polyfills(): string;
+export declare function GLSL1Polyfills(shaderSource: string): string;
 /**
  * Polyfills to be make available for both GLSL1 and GLSL3 fragment shaders.
  * @private
  */
-export declare function fragmentShaderPolyfills(): string;
+export declare function fragmentShaderPolyfills(shaderSource: string, glslVersion: GLSLVersion): string;

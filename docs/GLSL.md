@@ -12,10 +12,10 @@ There may be additional inputs available depending on how the fragment shader pr
 
   - `in vec2 v_uv_local` - The local UV coordinates of of the patch being stepped.  This value is identical to `v_uv` when calling `step()`.  For `stepSegment()` with rounded endcaps enabled, `v_uv_local.x` equals 0.5 for the entirety of the middle section.
 
-- For programs run by `drawLayerAsPoints()`:
+- For programs run by `drawLayerAsPoints()` and `drawLayerAsMesh()`:
 
   - `in int v_index` - The index of the current point.
-  - `in vec2 v_uv_1d` - The UV coordinates of this point within the 1D GPULayer containing    point position data.  This may be helpful if there are other point attributes stored in 1D     GPULayers that you would like to access.
+  - `in vec2 v_uv_position` - The UV coordinates of this point within the 1D GPULayer containing point position data.  This may be helpful if there are other point attributes stored in 1D GPULayers that you would like to access.
   - `in vec2 v_position` - Position of the current point.
 
 - For programs run by `drawLayerAsVectorField()`:

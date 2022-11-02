@@ -413,7 +413,6 @@ var Programs_1 = __webpack_require__(579);
 var checks_1 = __webpack_require__(707);
 var framebuffers_1 = __webpack_require__(798);
 var extensions_1 = __webpack_require__(581);
-var float16_1 = __webpack_require__(650);
 var GPUComposer = /** @class */ (function () {
     /**
      * Create a GPUComposer.
@@ -753,7 +752,7 @@ var GPUComposer = /** @class */ (function () {
                 throw new Error("Error compiling GPUProgram \"".concat(programName, "\": no source for vertex shader with name \"").concat(name, "\"."));
             }
             var preprocessedSrc = (0, utils_1.preprocessVertexShader)(src, glslVersion);
-            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexCompileConstants, true);
+            var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, preprocessedSrc, gl.VERTEX_SHADER, programName, _errorCallback, vertexCompileConstants, undefined, true);
             if (!shader) {
                 _errorCallback("Unable to compile \"".concat(name).concat(vertexID, "\" vertex shader for GPUProgram \"").concat(programName, "\"."));
                 return;
@@ -784,16 +783,7 @@ var GPUComposer = /** @class */ (function () {
      * @private
      */
     GPUComposer.prototype._drawSetup = function (gpuProgram, programName, vertexCompileConstants, fullscreenRender, input, output) {
-        var _a = this, gl = _a.gl, _threeRenderer = _a._threeRenderer, isWebGL2 = _a.isWebGL2;
-        // Unbind VAO for threejs compatibility.
-        if (_threeRenderer) {
-            if (isWebGL2)
-                gl.bindVertexArray(null);
-            else {
-                var ext = (0, extensions_1.getExtension)(this, extensions_1.OES_VERTEX_ARRAY_OBJECT, true);
-                ext.bindVertexArrayOES(null);
-            }
-        }
+        var gl = this.gl;
         // CAUTION: the order of these next few lines is important.
         // Get a shallow copy of current textures.
         // This line must come before this._setOutputLayer() as it depends on current internal state.
@@ -1880,55 +1870,10 @@ var GPUComposer = /** @class */ (function () {
         this._drawFinish(params);
     };
     /**
-     * Init an index buffer to use with GPUComposer.drawLayerAsMesh().
-     * @param indices - A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices.
-     * @returns
-     */
-    GPUComposer.prototype.initIndexBuffer = function (indices) {
-        var _a = this, gl = _a.gl, isWebGL2 = _a.isWebGL2;
-        var indexBuffer = gl.createBuffer();
-        // Make index buffer the current ELEMENT_ARRAY_BUFFER.
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        if (!(0, float16_1.isTypedArray)(indices)) {
-            indices = new Uint32Array(indices);
-        }
-        var type;
-        switch (indices.constructor) {
-            case Uint8Array:
-                type = gl.UNSIGNED_BYTE;
-                break;
-            case Uint16Array:
-                type = gl.UNSIGNED_SHORT;
-                break;
-            case Uint32Array:
-                if (!isWebGL2) {
-                    var ext = (0, extensions_1.getExtension)(this, extensions_1.OES_ELEMENT_INDEX_UINT, true);
-                    if (!ext) {
-                        // Fall back to using gl.UNSIGNED_SHORT.
-                        type = gl.UNSIGNED_SHORT;
-                        indices = Uint16Array.from(indices);
-                        break;
-                    }
-                }
-                type = gl.UNSIGNED_INT;
-                break;
-        }
-        // Fill the current element array buffer with data.
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-        return {
-            buffer: indexBuffer,
-            count: indices.length,
-            type: type,
-            dispose: function () {
-                gl.deleteBuffer(indexBuffer);
-            },
-        };
-    };
-    /**
      * Draw 2D mesh to screen.
      * @param params - Draw parameters.
      * @param params.layer - GPULayer containing vector data.
-     * @param params.indices = IndexBuffer containing mesh index data, see GPUComposer.initIndexBuffer().
+     * @param params.indices - GPUIndexBuffer containing mesh index data.
      * @param params.program - GPUProgram to run, defaults to drawing vector lines in red.
      * @param params.input - Input GPULayers for GPUProgram.
      * @param params.output - Output GPULayer, will draw to screen if undefined.
@@ -1946,7 +1891,7 @@ var GPUComposer = /** @class */ (function () {
         (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUComposer.drawLayerAsMesh(params)');
         if (this._iterateOverOutputsIfNeeded(params, 'drawLayerAsMesh'))
             return;
-        var _b = this, gl = _b.gl, _width = _b._width, _height = _b._height, glslVersion = _b.glslVersion, _errorState = _b._errorState;
+        var _b = this, gl = _b.gl, _width = _b._width, _height = _b._height, glslVersion = _b.glslVersion, _errorState = _b._errorState, _meshIndexBuffer = _b._meshIndexBuffer, _meshIndexArray = _b._meshIndexArray;
         var layer = params.layer, output = params.output;
         if (_errorState)
             return;
@@ -1977,23 +1922,34 @@ var GPUComposer = /** @class */ (function () {
         var glProgram = this._drawSetup(program, constants_1.LAYER_MESH_PROGRAM_NAME, vertexShaderOptions, false, input, output);
         // Update uniforms and buffers.
         program._setVertexUniform(glProgram, 'u_gpuio_positions', (0, utils_1.indexOfLayerInArray)(layer, input), constants_1.INT);
-        var width = this._width;
-        var height = this._height;
+        var width = _width;
+        var height = _height;
         if (params.useOutputScale) {
             (_a = this._widthHeightForOutput(program.name, output), width = _a.width, height = _a.height);
         }
         program._setVertexUniform(glProgram, 'u_gpuio_scale', [1 / width, 1 / height], constants_1.FLOAT);
         var positionLayerDimensions = [layer.width, layer.height];
         program._setVertexUniform(glProgram, 'u_gpuio_positionsDimensions', positionLayerDimensions, constants_1.FLOAT);
+        // We get this for free in GLSL3 with gl_VertexID.
+        if (glslVersion === constants_1.GLSL1) {
+            if (_meshIndexBuffer === undefined || (_meshIndexArray && _meshIndexArray.length < positionsCount)) {
+                // Have to use float32 array bc int is not supported as a vertex attribute type.
+                var indices = (0, utils_1.initSequentialFloatArray)(positionsCount);
+                this._meshIndexArray = indices;
+                this._meshIndexBuffer = this._initVertexBuffer(indices);
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._meshIndexBuffer);
+            this._setIndexAttribute(glProgram, program.name);
+        }
         // Draw.
         this._setBlendMode(params.blendAlpha);
         if (params.indices) {
-            var _c = params.indices, type = _c.type, count = _c.count, buffer = _c.buffer;
+            var _c = params.indices, glType = _c.glType, count = _c.count, buffer = _c.buffer;
             // https://webglfundamentals.org/webgl/lessons/webgl-indexed-vertices.html
             // Make index buffer the current ELEMENT_ARRAY_BUFFER.
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
             var offset = 0;
-            gl.drawElements(gl.TRIANGLES, count, type, offset);
+            gl.drawElements(gl.TRIANGLES, count, glType, offset);
         }
         else {
             // We are assuming that positions are already grouped into triangles.
@@ -2005,26 +1961,36 @@ var GPUComposer = /** @class */ (function () {
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
      */
     GPUComposer.prototype.undoThreeState = function () {
-        if (!this._threeRenderer) {
+        var _a = this, gl = _a.gl, _threeRenderer = _a._threeRenderer, isWebGL2 = _a.isWebGL2;
+        if (!_threeRenderer) {
             throw new Error("Can't call undoThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().");
         }
-        var gl = this.gl;
+        // Disable blend mode.
         gl.disable(gl.BLEND);
+        // Unbind VAO for threejs compatibility.
+        if (_threeRenderer) {
+            if (isWebGL2)
+                gl.bindVertexArray(null);
+            else {
+                var ext = (0, extensions_1.getExtension)(this, extensions_1.OES_VERTEX_ARRAY_OBJECT, true);
+                ext.bindVertexArrayOES(null);
+            }
+        }
     };
     /**
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call resetThreeState() in render loop after performing any gpu-io step or draw functions.
      */
     GPUComposer.prototype.resetThreeState = function () {
-        if (!this._threeRenderer) {
+        var _a = this, gl = _a.gl, _threeRenderer = _a._threeRenderer;
+        if (!_threeRenderer) {
             throw new Error("Can't call resetThreeState() on a GPUComposer that was not inited with GPUComposer.initWithThreeRenderer().");
         }
-        var gl = this.gl;
         // Reset viewport.
-        var viewport = this._threeRenderer.getViewport(new ThreejsUtils.Vector4());
+        var viewport = _threeRenderer.getViewport(new ThreejsUtils.Vector4());
         gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         // Unbind framebuffer (render to screen).
         // Reset threejs WebGL bindings and state, this also unbinds the framebuffer.
-        this._threeRenderer.resetState();
+        _threeRenderer.resetState();
     };
     // TODO: params.callback is not generated in the docs.
     /**
@@ -2206,6 +2172,100 @@ var GPUComposer = /** @class */ (function () {
     return GPUComposer;
 }());
 exports.GPUComposer = GPUComposer;
+
+
+/***/ }),
+
+/***/ 981:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GPUIndexBuffer = void 0;
+var type_checks_1 = __webpack_require__(566);
+var float16_1 = __webpack_require__(650);
+var checks_1 = __webpack_require__(707);
+var extensions_1 = __webpack_require__(581);
+var GPUIndexBuffer = /** @class */ (function () {
+    /**
+     * Init a GPUIndexBuffer to use with GPUComposer.drawLayerAsMesh().
+     * @param composer - The current GPUComposer instance.
+     * @param params - GPUIndexBuffer parameters.
+     * @param params.indices - A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices.
+     * @param params.name - Name of GPUIndexBuffer, used for error logging.
+     * @returns
+     */
+    function GPUIndexBuffer(composer, params) {
+        this._composer = composer;
+        if (!params) {
+            throw new Error('Error initing GPUIndexBuffer: must pass params to GPUIndexBuffer(composer, params).');
+        }
+        if (!(0, type_checks_1.isObject)(params)) {
+            throw new Error("Error initing GPUIndexBuffer: must pass valid params object to GPUIndexBuffer(composer, params), got ".concat(JSON.stringify(params), "."));
+        }
+        // Check params.
+        var validKeys = ['indices', 'name'];
+        var requiredKeys = ['indices'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUIndexBuffer(composer, params)', params.name);
+        (0, checks_1.checkRequiredKeys)(keys, requiredKeys, 'GPUIndexBuffer(composer, params)', params.name);
+        var indices = params.indices;
+        var gl = composer.gl, isWebGL2 = composer.isWebGL2;
+        var indexBuffer = gl.createBuffer();
+        // Make index buffer the current ELEMENT_ARRAY_BUFFER.
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        // Cast indices to correct type.
+        if (!(0, float16_1.isTypedArray)(indices)) {
+            indices = new Uint32Array(indices);
+        }
+        var glType;
+        switch (indices.constructor) {
+            case Uint8Array:
+                glType = gl.UNSIGNED_BYTE;
+                break;
+            case Uint16Array:
+                glType = gl.UNSIGNED_SHORT;
+                break;
+            case Uint32Array:
+                if (!isWebGL2) {
+                    var ext = (0, extensions_1.getExtension)(composer, extensions_1.OES_ELEMENT_INDEX_UINT, true);
+                    if (!ext) {
+                        // Fall back to using gl.UNSIGNED_SHORT.
+                        glType = gl.UNSIGNED_SHORT;
+                        indices = Uint16Array.from(indices);
+                        break;
+                    }
+                }
+                glType = gl.UNSIGNED_INT;
+                break;
+        }
+        // Fill the current element array buffer with data.
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+        this.buffer = indexBuffer;
+        this.glType = glType;
+        this.count = indices.length;
+    }
+    /**
+     * Deallocate GPUIndexBuffer instance and associated WebGL properties.
+     */
+    GPUIndexBuffer.prototype.dispose = function () {
+        var _a = this, _composer = _a._composer, buffer = _a.buffer;
+        _composer.gl.deleteBuffer(buffer);
+        // Delete all references.
+        // @ts-ignore
+        delete this._composer;
+        // @ts-ignore
+        delete this.buffer;
+        // Delete these too (for easier testing of deallocations).
+        // @ts-ignore
+        delete this.glType;
+        // @ts-ignore
+        delete this.count;
+    };
+    return GPUIndexBuffer;
+}());
+exports.GPUIndexBuffer = GPUIndexBuffer;
 
 
 /***/ }),
@@ -2768,11 +2828,13 @@ var GPULayer = /** @class */ (function () {
         configurable: true
     });
     Object.defineProperty(GPULayer.prototype, "clearValueVec4", {
+        /**
+         * Get the clearValue of the GPULayer as a vec4, pad with zeros as needed.
+         */
         get: function () {
             var _clearValueVec4 = this._clearValueVec4;
             if (!_clearValueVec4) {
                 var clearValue = this.clearValue;
-                // Init a vec4 to clear with pad with zeros if needed.
                 _clearValueVec4 = [];
                 if ((0, type_checks_1.isFiniteNumber)(clearValue)) {
                     _clearValueVec4.push(clearValue, clearValue, clearValue, clearValue);
@@ -3664,7 +3726,7 @@ function testFilterWrap(composer, internalType, filter, wrap) {
             offset: "vec2(".concat(offset / width, ", ").concat(offset / height, ")")
         },
         _a[(0, utils_1.isUnsignedIntType)(internalType) ? 'GPUIO_UINT' : ((0, utils_1.isIntType)(internalType) ? 'GPUIO_INT' : 'GPUIO_FLOAT')] = '1',
-        _a), true);
+        _a), undefined, true);
     function wrapValue(val, max) {
         if (wrap === constants_1.CLAMP_TO_EDGE)
             return Math.max(0, Math.min(max - 1, val));
@@ -4060,7 +4122,7 @@ var GPUProgram = /** @class */ (function () {
         var fragmentShaderSource = (0, type_checks_1.isString)(fragmentShader) ?
             fragmentShader :
             fragmentShader.join('\n');
-        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer.glslVersion, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
+        var _a = (0, utils_1.preprocessFragmentShader)(fragmentShaderSource, composer, name), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms, additionalSources = _a.additionalSources;
         this._fragmentShaderSource = shaderSource;
         samplerUniforms.forEach(function (name, i) {
             _this._samplerUniformsIndices.push({
@@ -4080,6 +4142,10 @@ var GPUProgram = /** @class */ (function () {
         // Save compile time constants.
         if (compileTimeConstants) {
             this._compileTimeConstants = __assign({}, compileTimeConstants);
+        }
+        // Save extension declarations.
+        if (composer.glslVersion === constants_1.GLSL1 && (shaderSource.includes('dFdx') || shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
+            this._extensions = '#extension GL_OES_standard_derivatives : enable\n';
         }
         // Set program uniforms.
         if (uniforms) {
@@ -4145,7 +4211,7 @@ var GPUProgram = /** @class */ (function () {
             // No need to recompile.
             return _fragmentShaders[fragmentId];
         }
-        var _a = this, _composer = _a._composer, name = _a.name, _fragmentShaderSource = _a._fragmentShaderSource, _compileTimeConstants = _a._compileTimeConstants;
+        var _a = this, _composer = _a._composer, name = _a.name, _fragmentShaderSource = _a._fragmentShaderSource, _compileTimeConstants = _a._compileTimeConstants, _extensions = _a._extensions;
         var gl = _composer.gl, _errorCallback = _composer._errorCallback, verboseLogging = _composer.verboseLogging, glslVersion = _composer.glslVersion, floatPrecision = _composer.floatPrecision, intPrecision = _composer.intPrecision;
         // Update compile time constants.
         var keys = Object.keys(internalCompileTimeConstants);
@@ -4155,7 +4221,7 @@ var GPUProgram = /** @class */ (function () {
         }
         if (verboseLogging)
             console.log("Compiling fragment shader for GPUProgram \"".concat(name, "\" with compile time constants: ").concat(JSON.stringify(_compileTimeConstants)));
-        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _compileTimeConstants, Object.keys(_fragmentShaders).length === 0);
+        var shader = (0, utils_1.compileShader)(gl, glslVersion, intPrecision, floatPrecision, _fragmentShaderSource, gl.FRAGMENT_SHADER, name, _errorCallback, _compileTimeConstants, _extensions, Object.keys(_fragmentShaders).length === 0);
         if (!shader) {
             _errorCallback("Unable to compile fragment shader for GPUProgram \"".concat(name, "\"."));
             return;
@@ -4455,7 +4521,7 @@ var GPUProgram = /** @class */ (function () {
         if (!programName) {
             throw new Error("Could not find valid programName for WebGLProgram in GPUProgram \"".concat(this.name, "\"."));
         }
-        var indexLookup = new Array(_samplerUniformsIndices.length).fill(-1);
+        var indexLookup = new Array(Math.max(input.length, _samplerUniformsIndices.length)).fill(-1);
         for (var i = 0, length_4 = _samplerUniformsIndices.length; i < length_4; i++) {
             var _b = _samplerUniformsIndices[i], inputIndex = _b.inputIndex, shaderIndex = _b.shaderIndex;
             if (indexLookup[inputIndex] >= 0) {
@@ -4555,6 +4621,8 @@ var GPUProgram = /** @class */ (function () {
         delete this._fragmentShaderSource;
         // @ts-ignore
         delete this._compileTimeConstants;
+        // @ts-ignore
+        delete this._extensions;
         // @ts-ignore
         delete this._uniforms;
         // @ts-ignore
@@ -5650,7 +5718,7 @@ exports.glslComponentSelectionForNumComponents = glslComponentSelectionForNumCom
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getExtension = exports.OES_ELEMENT_INDEX_UINT = exports.OES_VERTEX_ARRAY_OBJECT = exports.EXT_COLOR_BUFFER_HALF_FLOAT = exports.EXT_COLOR_BUFFER_FLOAT = exports.WEBGL_DEPTH_TEXTURE = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
+exports.getExtension = exports.OES_STANDARD_DERIVATIVES = exports.OES_ELEMENT_INDEX_UINT = exports.OES_VERTEX_ARRAY_OBJECT = exports.EXT_COLOR_BUFFER_HALF_FLOAT = exports.EXT_COLOR_BUFFER_FLOAT = exports.WEBGL_DEPTH_TEXTURE = exports.OES_TEXTURE_HAlF_FLOAT_LINEAR = exports.OES_TEXTURE_FLOAT_LINEAR = exports.OES_TEXTURE_HALF_FLOAT = exports.OES_TEXTURE_FLOAT = void 0;
 // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float
 // Float is provided by default in WebGL2 contexts.
 // This extension implicitly enables the WEBGL_color_buffer_float extension (if supported), which allows rendering to 32-bit floating-point color buffers.
@@ -5681,6 +5749,8 @@ exports.OES_VERTEX_ARRAY_OBJECT = 'OES_vertex_array_object';
 // According to WebGLStats nearly all devices support this extension.
 // Fallback to gl.UNSIGNED_SHORT if not available.
 exports.OES_ELEMENT_INDEX_UINT = 'OES_element_index_uint';
+// Derivatives extensions.
+exports.OES_STANDARD_DERIVATIVES = 'OES_standard_derivatives';
 function getExtension(composer, extensionName, optional) {
     if (optional === void 0) { optional = false; }
     // Check if we've already loaded the extension.
@@ -5865,7 +5935,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_MESH_VERTEX_SHADER_SOURCE = void 0;
 var constants_1 = __webpack_require__(601);
 var VertexShaderHelpers_1 = __webpack_require__(324);
-exports.LAYER_MESH_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_pointSize;\n\nout vec2 v_uv;\nout vec2 v_uv_1d;\nout vec2 v_position;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tv_uv_1d = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tv_uv_1d = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, v_uv_1d);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_position = positionData.rg + positionData.ba;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#else\n\t\tv_position = texture(u_gpuio_positions, v_uv_1d).rg;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
+exports.LAYER_MESH_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\n\nout vec2 v_uv;\nout vec2 v_uv_position;\nout vec2 v_position;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tv_uv_position = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tv_uv_position = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, v_uv_position);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_position = positionData.rg + positionData.ba;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#else\n\t\tv_position = texture(u_gpuio_positions, v_uv_position).rg;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),
@@ -5879,7 +5949,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = void 0;
 var constants_1 = __webpack_require__(601);
 var VertexShaderHelpers_1 = __webpack_require__(324);
-exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_pointSize;\n\nout vec2 v_uv;\nout vec2 v_uv_1d;\nout vec2 v_position;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tv_uv_1d = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tv_uv_1d = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, v_uv_1d);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_position = positionData.rg + positionData.ba;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#else\n\t\tv_position = texture(u_gpuio_positions, v_uv_1d).rg;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tv_uv.x = fract(v_uv.x + ceil(abs(v_uv.x)));\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tv_uv.y = fract(v_uv.y + ceil(abs(v_uv.y)));\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_PointSize = u_gpuio_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}");
+exports.LAYER_POINTS_VERTEX_SHADER_SOURCE = "\n".concat(VertexShaderHelpers_1.VERTEX_SHADER_HELPERS_SOURCE, "\n\n#if (__VERSION__ != 300)\n\t// Cannot use int vertex attributes.\n\t// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer\n\tin float a_gpuio_index;\n#endif\n\nuniform sampler2D u_gpuio_positions; // Texture lookup with position data.\nuniform vec2 u_gpuio_positionsDimensions;\nuniform vec2 u_gpuio_scale;\nuniform float u_gpuio_pointSize;\n\nout vec2 v_uv;\nout vec2 v_uv_position;\nout vec2 v_position;\nflat out int v_index;\n\nvoid main() {\n\t// Calculate a uv based on the point's index attribute.\n\t#if (__VERSION__ == 300)\n\t\tv_uv_position = uvFromIndex(gl_VertexID, u_gpuio_positionsDimensions);\n\t\tv_index = gl_VertexID;\n\t#else\n\t\tv_uv_position = uvFromIndex(a_gpuio_index, u_gpuio_positionsDimensions);\n\t\tv_index = int(a_gpuio_index);\n\t#endif\n\n\t// Calculate a global uv for the viewport.\n\t// Lookup vertex position and scale to [0, 1] range.\n\t#ifdef ").concat(constants_1.GPUIO_VS_POSITION_W_ACCUM, "\n\t\t// We have packed a 2D displacement with the position.\n\t\tvec4 positionData = texture(u_gpuio_positions, v_uv_position);\n\t\t// position = first two components plus last two components (optional accumulation buffer).\n\t\tv_position = positionData.rg + positionData.ba;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#else\n\t\tv_position = texture(u_gpuio_positions, v_uv_position).rg;\n\t\tv_uv = v_position * u_gpuio_scale;\n\t#endif\n\n\t// Wrap if needed.\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_X, "\n\t\tv_uv.x = fract(v_uv.x + ceil(abs(v_uv.x)));\n\t#endif\n\t#ifdef ").concat(constants_1.GPUIO_VS_WRAP_Y, "\n\t\tv_uv.y = fract(v_uv.y + ceil(abs(v_uv.y)));\n\t#endif\n\n\t// Calculate position in [-1, 1] range.\n\tvec2 position = v_uv * 2.0 - 1.0;\n\n\tgl_PointSize = u_gpuio_pointSize;\n\tgl_Position = vec4(position, 0, 1);\n}");
 
 
 /***/ }),
@@ -5952,7 +6022,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.setColorProgram = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.setColorProgram = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUIndexBuffer = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils = __webpack_require__(593);
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
@@ -5961,6 +6031,8 @@ Object.defineProperty(exports, "GPULayer", ({ enumerable: true, get: function ()
 var GPULayerHelpers = __webpack_require__(191);
 var GPUProgram_1 = __webpack_require__(664);
 Object.defineProperty(exports, "GPUProgram", ({ enumerable: true, get: function () { return GPUProgram_1.GPUProgram; } }));
+var GPUIndexBuffer_1 = __webpack_require__(981);
+Object.defineProperty(exports, "GPUIndexBuffer", ({ enumerable: true, get: function () { return GPUIndexBuffer_1.GPUIndexBuffer; } }));
 var checks = __webpack_require__(707);
 var regex = __webpack_require__(126);
 var extensions = __webpack_require__(581);
@@ -6002,6 +6074,7 @@ __exportStar(__webpack_require__(601), exports);
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.fragmentShaderPolyfills = exports.GLSL1Polyfills = exports.texturePolyfill = exports.SAMPLER2D_DIMENSIONS_UNIFORM = exports.SAMPLER2D_HALF_PX_UNIFORM = exports.SAMPLER2D_FILTER = exports.SAMPLER2D_CAST_INT = exports.SAMPLER2D_WRAP_Y = exports.SAMPLER2D_WRAP_X = void 0;
+var constants_1 = __webpack_require__(601);
 var regex_1 = __webpack_require__(126);
 /**
  * Wrap type to use in polyfill.
@@ -6128,68 +6201,152 @@ function floatTypeForBoolType(type) {
     }
     throw new Error("Unknown type ".concat(type, "."));
 }
-var GLSL1_POLYFILLS;
+function abs(type) { return "".concat(type, " abs(const ").concat(type, " a) { return ").concat(type, "(abs(").concat(floatTypeForIntType(type), "(a))); }"); }
+function sign(type) { return "".concat(type, " sign(const ").concat(type, " a) { return ").concat(type, "(sign(").concat(floatTypeForIntType(type), "(a))); }"); }
+function trunc(type) { return "".concat(type, " trunc(const ").concat(type, " a) { return round(a - fract(a) * sign(a)); }"); }
+function round(type) { return "".concat(type, " round(const ").concat(type, " a) { return floor(a + 0.5); }"); }
+function roundEven(type) { return "".concat(type, " roundEven(const ").concat(type, " a) { return 2.0 * round(a / 2.0); }"); }
+function min(type1, type2) { return "".concat(type1, " min(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(min(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); }
+function max(type1, type2) { return "".concat(type1, " max(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(max(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); }
+function clamp(type1, type2) { return "".concat(type1, " clamp(const ").concat(type1, " a, const ").concat(type2, " min, const ").concat(type2, " max) { return ").concat(type1, "(clamp(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(min), ").concat(floatTypeForIntType(type2), "(max))); }"); }
+function mix(type1, type2) { return "".concat(type1, " mix(const ").concat(type1, " a, const ").concat(type1, " b, const ").concat(type2, " c) { return mix(a, b, ").concat(floatTypeForBoolType(type2), "(c)); }"); }
+function det2(n, m, size) { return "a[".concat(n, "][").concat(m, "] * a[").concat((n + 1) % size, "][").concat((m + 1) % size, "] - a[").concat((n + 1) % size, "][").concat(m, "] * a[").concat(n, "][").concat((m + 1) % size, "]"); }
+// TODO: I don't think these are quite right yet.
+function det3(n, m, size) { return [0, 1, 2].map(function (offset) { return "a[".concat(n, "][").concat((m + offset) % size, "] * (").concat(det2((n + 1) % size, (m + 1 + offset) % size, size), ")"); }).join(' + '); }
+function det4(n, m, size) { return [0, 1, 2, 3].map(function (offset) { return "a[".concat(n, "][").concat((m + offset) % size, "] * (").concat(det3((n + 1) % size, (m + 1 + offset) % size, size), ")"); }).join(' + '); }
 /**
  * Polyfill common functions/operators that GLSL1 lacks.
  * @private
  */
-function GLSL1Polyfills() {
-    if (GLSL1_POLYFILLS)
-        return GLSL1_POLYFILLS;
-    var abs = function (type) { return "".concat(type, " abs(const ").concat(type, " a) { return ").concat(type, "(abs(").concat(floatTypeForIntType(type), "(a))); }"); };
-    var sign = function (type) { return "".concat(type, " sign(const ").concat(type, " a) { return ").concat(type, "(sign(").concat(floatTypeForIntType(type), "(a))); }"); };
-    var trunc = function (type) { return "".concat(type, " trunc(const ").concat(type, " a) { return round(a - fract(a) * sign(a)); }"); };
-    var round = function (type) { return "".concat(type, " round(const ").concat(type, " a) { return floor(a + 0.5); }"); };
-    var roundEven = function (type) { return "".concat(type, " roundEven(const ").concat(type, " a) { return 2.0 * round(a / 2.0); }"); };
-    var min = function (type1, type2) { return "".concat(type1, " min(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(min(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); };
-    var max = function (type1, type2) { return "".concat(type1, " max(const ").concat(type1, " a, const ").concat(type2, " b) { return ").concat(type1, "(max(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(b))); }"); };
-    var clamp = function (type1, type2) { return "".concat(type1, " clamp(const ").concat(type1, " a, const ").concat(type2, " min, const ").concat(type2, " max) { return ").concat(type1, "(clamp(").concat(floatTypeForIntType(type1), "(a), ").concat(floatTypeForIntType(type2), "(min), ").concat(floatTypeForIntType(type2), "(max))); }"); };
-    var mix = function (type1, type2) { return "".concat(type1, " mix(const ").concat(type1, " a, const ").concat(type1, " b, const ").concat(type2, " c) { return mix(a, b, ").concat(floatTypeForBoolType(type2), "(c)); }"); };
-    var det2 = function (n, m, size) { return "a[".concat(n, "][").concat(m, "] * a[").concat((n + 1) % size, "][").concat((m + 1) % size, "] - a[").concat((n + 1) % size, "][").concat(m, "] * a[").concat(n, "][").concat((m + 1) % size, "]"); };
-    // TODO: I don't think these are quite right yet.
-    var det3 = function (n, m, size) { return [0, 1, 2].map(function (offset) { return "a[".concat(n, "][").concat((m + offset) % size, "] * (").concat(det2((n + 1) % size, (m + 1 + offset) % size, size), ")"); }).join(' + '); };
-    var det4 = function (n, m, size) { return [0, 1, 2, 3].map(function (offset) { return "a[".concat(n, "][").concat((m + offset) % size, "] * (").concat(det3((n + 1) % size, (m + 1 + offset) % size, size), ")"); }).join(' + '); };
+function GLSL1Polyfills(shaderSource) {
+    // We'll attempt to just add in what we need, but no worries if we add extraneous functions.
+    // They will be removed by compiler.
+    var GLSL1_POLYFILLS = '';
     // We don't need to create unsigned int polyfills, bc unsigned int is not a supported type in GLSL1.
     // All unsigned int variables will be cast as int and be caught by the signed int polyfills.
-    GLSL1_POLYFILLS = "\n".concat(abs('int'), "\n").concat(abs('ivec2'), "\n").concat(abs('ivec3'), "\n").concat(abs('ivec4'), "\n\n").concat(sign('int'), "\n").concat(sign('ivec2'), "\n").concat(sign('ivec3'), "\n").concat(sign('ivec4'), "\n\n").concat(round('float'), "\n").concat(round('vec2'), "\n").concat(round('vec3'), "\n").concat(round('vec4'), "\n\n").concat(trunc('float'), "\n").concat(trunc('vec2'), "\n").concat(trunc('vec3'), "\n").concat(trunc('vec4'), "\n\n").concat(roundEven('float'), "\n").concat(roundEven('vec2'), "\n").concat(roundEven('vec3'), "\n").concat(roundEven('vec4'), "\n\n").concat(min('int', 'int'), "\n").concat(min('ivec2', 'ivec2'), "\n").concat(min('ivec3', 'ivec3'), "\n").concat(min('ivec4', 'ivec4'), "\n").concat(min('ivec2', 'int'), "\n").concat(min('ivec3', 'int'), "\n").concat(min('ivec4', 'int'), "\n\n").concat(max('int', 'int'), "\n").concat(max('ivec2', 'ivec2'), "\n").concat(max('ivec3', 'ivec3'), "\n").concat(max('ivec4', 'ivec4'), "\n").concat(max('ivec2', 'int'), "\n").concat(max('ivec3', 'int'), "\n").concat(max('ivec4', 'int'), "\n\n").concat(clamp('int', 'int'), "\n").concat(clamp('ivec2', 'ivec2'), "\n").concat(clamp('ivec3', 'ivec3'), "\n").concat(clamp('ivec4', 'ivec4'), "\n").concat(clamp('ivec2', 'int'), "\n").concat(clamp('ivec3', 'int'), "\n").concat(clamp('ivec4', 'int'), "\n\n").concat(mix('float', 'bool'), "\n").concat(mix('vec2', 'bvec2'), "\n").concat(mix('vec3', 'bvec3'), "\n").concat(mix('vec4', 'bvec4'), "\n\nmat2 outerProduct(const vec2 a, const vec2 b) {\n\treturn mat2(\n\t\ta.x * b.x, a.x * b.y,\n\t\ta.y * b.x, a.y * b.y\n\t);\n}\nmat3 outerProduct(const vec3 a, const vec3 b) {\n\treturn mat3(\n\t\ta.x * b.x, a.x * b.y, a.x * b.z,\n\t\ta.y * b.x, a.y * b.y, a.y * b.z,\n\t\ta.z * b.x, a.z * b.y, a.z * b.z\n\t);\n}\nmat4 outerProduct(const vec4 a, const vec4 b) {\n\treturn mat4(\n\t\ta.x * b.x, a.x * b.y, a.x * b.z, a.x * b.w,\n\t\ta.y * b.x, a.y * b.y, a.y * b.z, a.y * b.w,\n\t\ta.z * b.x, a.z * b.y, a.z * b.z, a.z * b.w,\n\t\ta.w * b.x, a.w * b.y, a.w * b.z, a.w * b.w\n\t);\n}\nmat2 transpose(mat2 a) {\n\tfloat temp = a[0][1];\n\ta[0][1] = a[1][0];\n\ta[1][0] = temp;\n\treturn a;\n}\nmat3 transpose(mat3 a) {\n\tfloat temp = a[0][2];\n\ta[0][2] = a[2][0];\n\ta[2][0] = temp;\n\ttemp = a[0][1];\n\ta[0][1] = a[1][0];\n\ta[1][0] = temp;\n\ttemp = a[1][2];\n\ta[1][2] = a[2][1];\n\ta[2][1] = temp;\n\treturn a;\n}\nmat4 transpose(mat4 a) {\n\tfloat temp = a[0][3];\n\ta[0][3] = a[3][0];\n\ta[3][0] = temp;\n\ttemp = a[0][2];\n\ta[0][2] = a[2][0];\n\ta[2][0] = temp;\n\ttemp = a[2][3];\n\ta[2][3] = a[3][2];\n\ta[3][2] = temp;\n\ttemp = a[0][1];\n\ta[0][1] = a[1][0];\n\ta[1][0] = temp;\n\ttemp = a[1][2];\n\ta[1][2] = a[2][1];\n\ta[2][1] = temp;\n\ttemp = a[2][3];\n\ta[2][3] = a[3][2];\n\ta[3][2] = temp;\n\treturn a;\n}\n\nfloat determinant(const mat2 a) {\n\treturn ").concat(det2(0, 0, 2), ";\n}\nfloat determinant(const mat3 a) {\n\treturn ").concat(det3(0, 0, 3), ";\n}\nfloat determinant(const mat4 a) {\n\treturn ").concat(det4(0, 0, 4), ";\n}\n") +
-        // Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
-        "\nfloat cosh(const float x) {\n\treturn (pow(".concat(Math.E, ", x) + pow(").concat(Math.E, ", -x)) / 2.0; \n}\nfloat sinh(const float x) {\n\treturn (pow(").concat(Math.E, ", x) - pow(").concat(Math.E, ", -x)) / 2.0;\n}\nfloat tanh(const float x) {\n\tfloat e = exp(2.0 * x);\n\treturn (e - 1.0) / (e + 1.0);\n}\nfloat asinh(const float x) {\n\treturn log(x + sqrt(x * x + 1.0));\n}\nfloat acosh(const float x) {\n\treturn log(x + sqrt(x * x - 1.0));\n}\nfloat atanh(float x) {\n\tx = (x + 1.0) / (x - 1.0);\n\treturn 0.5 * log(x * sign(x));\n}");
+    if (shaderSource.includes('abs')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(abs('int'), "\n").concat(abs('ivec2'), "\n").concat(abs('ivec3'), "\n").concat(abs('ivec4'), "\n");
+    }
+    if (shaderSource.includes('sign')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(sign('int'), "\n").concat(sign('ivec2'), "\n").concat(sign('ivec3'), "\n").concat(sign('ivec4'), "\n");
+    }
+    if (shaderSource.includes('round')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(round('float'), "\n").concat(round('vec2'), "\n").concat(round('vec3'), "\n").concat(round('vec4'), "\n");
+    }
+    if (shaderSource.includes('trunc')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(trunc('float'), "\n").concat(trunc('vec2'), "\n").concat(trunc('vec3'), "\n").concat(trunc('vec4'), "\n");
+    }
+    if (shaderSource.includes('roundEven')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(roundEven('float'), "\n").concat(roundEven('vec2'), "\n").concat(roundEven('vec3'), "\n").concat(roundEven('vec4'), "\n");
+    }
+    if (shaderSource.includes('min')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(min('int', 'int'), "\n").concat(min('ivec2', 'ivec2'), "\n").concat(min('ivec3', 'ivec3'), "\n").concat(min('ivec4', 'ivec4'), "\n").concat(min('ivec2', 'int'), "\n").concat(min('ivec3', 'int'), "\n").concat(min('ivec4', 'int'), "\n");
+    }
+    if (shaderSource.includes('max')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(max('int', 'int'), "\n").concat(max('ivec2', 'ivec2'), "\n").concat(max('ivec3', 'ivec3'), "\n").concat(max('ivec4', 'ivec4'), "\n").concat(max('ivec2', 'int'), "\n").concat(max('ivec3', 'int'), "\n").concat(max('ivec4', 'int'), "\n");
+    }
+    if (shaderSource.includes('clamp')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(clamp('int', 'int'), "\n").concat(clamp('ivec2', 'ivec2'), "\n").concat(clamp('ivec3', 'ivec3'), "\n").concat(clamp('ivec4', 'ivec4'), "\n").concat(clamp('ivec2', 'int'), "\n").concat(clamp('ivec3', 'int'), "\n").concat(clamp('ivec4', 'int'), "\n");
+    }
+    if (shaderSource.includes('mix')) {
+        GLSL1_POLYFILLS += "\n\n\n".concat(mix('float', 'bool'), "\n").concat(mix('vec2', 'bvec2'), "\n").concat(mix('vec3', 'bvec3'), "\n").concat(mix('vec4', 'bvec4'), "\n");
+    }
+    if (shaderSource.includes('outerProduct')) {
+        GLSL1_POLYFILLS += "\n\n\nmat2 outerProduct(const vec2 a, const vec2 b) {\n\treturn mat2(\n\t\ta.x * b.x, a.x * b.y,\n\t\ta.y * b.x, a.y * b.y\n\t);\n}\nmat3 outerProduct(const vec3 a, const vec3 b) {\n\treturn mat3(\n\t\ta.x * b.x, a.x * b.y, a.x * b.z,\n\t\ta.y * b.x, a.y * b.y, a.y * b.z,\n\t\ta.z * b.x, a.z * b.y, a.z * b.z\n\t);\n}\nmat4 outerProduct(const vec4 a, const vec4 b) {\n\treturn mat4(\n\t\ta.x * b.x, a.x * b.y, a.x * b.z, a.x * b.w,\n\t\ta.y * b.x, a.y * b.y, a.y * b.z, a.y * b.w,\n\t\ta.z * b.x, a.z * b.y, a.z * b.z, a.z * b.w,\n\t\ta.w * b.x, a.w * b.y, a.w * b.z, a.w * b.w\n\t);\n}\n";
+    }
+    if (shaderSource.includes('transpose')) {
+        GLSL1_POLYFILLS += "\n\n\nmat2 transpose(mat2 a) {\n\tfloat temp = a[0][1];\n\ta[0][1] = a[1][0];\n\ta[1][0] = temp;\n\treturn a;\n}\nmat3 transpose(mat3 a) {\n\tfloat temp = a[0][2];\n\ta[0][2] = a[2][0];\n\ta[2][0] = temp;\n\ttemp = a[0][1];\n\ta[0][1] = a[1][0];\n\ta[1][0] = temp;\n\ttemp = a[1][2];\n\ta[1][2] = a[2][1];\n\ta[2][1] = temp;\n\treturn a;\n}\nmat4 transpose(mat4 a) {\n\tfloat temp = a[0][3];\n\ta[0][3] = a[3][0];\n\ta[3][0] = temp;\n\ttemp = a[0][2];\n\ta[0][2] = a[2][0];\n\ta[2][0] = temp;\n\ttemp = a[2][3];\n\ta[2][3] = a[3][2];\n\ta[3][2] = temp;\n\ttemp = a[0][1];\n\ta[0][1] = a[1][0];\n\ta[1][0] = temp;\n\ttemp = a[1][2];\n\ta[1][2] = a[2][1];\n\ta[2][1] = temp;\n\ttemp = a[2][3];\n\ta[2][3] = a[3][2];\n\ta[3][2] = temp;\n\treturn a;\n}\n";
+    }
+    if (shaderSource.includes('determinant')) {
+        GLSL1_POLYFILLS += "\n\n\nfloat determinant(const mat2 a) {\n\treturn ".concat(det2(0, 0, 2), ";\n}\nfloat determinant(const mat3 a) {\n\treturn ").concat(det3(0, 0, 3), ";\n}\nfloat determinant(const mat4 a) {\n\treturn ").concat(det4(0, 0, 4), ";\n}\n");
+    }
+    // Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+    if (shaderSource.includes('sinh')) {
+        GLSL1_POLYFILLS += "\n\n\nfloat sinh(const float x) {\n\treturn (pow(".concat(Math.E, ", x) - pow(").concat(Math.E, ", -x)) / 2.0;\n}\n");
+    }
+    if (shaderSource.includes('cosh')) {
+        GLSL1_POLYFILLS += "\n\n\nfloat cosh(const float x) {\n\treturn (pow(".concat(Math.E, ", x) + pow(").concat(Math.E, ", -x)) / 2.0; \n}\n");
+    }
+    if (shaderSource.includes('tanh')) {
+        GLSL1_POLYFILLS += "\n\n\nfloat tanh(const float x) {\n\tfloat e = exp(2.0 * x);\n\treturn (e - 1.0) / (e + 1.0);\n}\n";
+    }
+    if (shaderSource.includes('asinh')) {
+        GLSL1_POLYFILLS += "\n\n\nfloat asinh(const float x) {\n\treturn log(x + sqrt(x * x + 1.0));\n}\n";
+    }
+    if (shaderSource.includes('asinh')) {
+        GLSL1_POLYFILLS += "\n\n\nfloat acosh(const float x) {\n\treturn log(x + sqrt(x * x - 1.0));\n}\n";
+    }
+    if (shaderSource.includes('asinh')) {
+        GLSL1_POLYFILLS += "\n\n\nfloat atanh(float x) {\n\tx = (x + 1.0) / (x - 1.0);\n\treturn 0.5 * log(x * sign(x));\n}\n";
+    }
     return GLSL1_POLYFILLS;
 }
 exports.GLSL1Polyfills = GLSL1Polyfills;
-var FRAGMENT_SHADER_POLYFILLS;
+function modi(type1, type2) { return "".concat(type1, " modi(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); }
+function stepi(type1, type2) { return "".concat(type2, " stepi(const ").concat(type1, " x, const ").concat(type2, " y) { return ").concat(type2, "(step(").concat(floatTypeForIntType(type1), "(x), ").concat(floatTypeForIntType(type2), "(y))); }"); }
+function bitshiftLeft(type1, type2) {
+    return "".concat(type1, " bitshiftLeft(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a << b;\n\t#else\n\t\treturn a * ").concat(type1, "(pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b)));\n\t#endif\n}");
+}
+function bitshiftRight(type1, type2) {
+    return "".concat(type1, " bitshiftRight(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a >> b;\n\t#else\n\t\treturn ").concat(type1, "(round(").concat(floatTypeForIntType(type1), "(a) / pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b))));\n\t#endif\n}");
+}
+// Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
+// Seems like these could be optimized.
+function bitwiseOr(numBits) {
+    return "int bitwiseOr".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a | b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) || (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+}
+;
+function bitwiseXOR(numBits) {
+    return "int bitwiseXOR".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a ^ b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) != (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+}
+function bitwiseAnd(numBits) {
+    return "int bitwiseAnd".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a & b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) && (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 && b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+}
+;
+function bitwiseNot(numBits) {
+    return "int bitwiseNot".concat(numBits === 32 ? '' : numBits, "(int a) {\n\t#if (__VERSION__ == 300)\n\t\treturn ~a;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif (modi(a, 2) == 0) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tn = n * 2;\n\t\t}\n\t\treturn result;\n\t#endif\n}");
+}
 /**
  * Polyfills to be make available for both GLSL1 and GLSL3 fragment shaders.
  * @private
  */
-function fragmentShaderPolyfills() {
-    if (FRAGMENT_SHADER_POLYFILLS)
-        return FRAGMENT_SHADER_POLYFILLS;
-    var modi = function (type1, type2) { return "".concat(type1, " modi(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); };
-    var stepi = function (type1, type2) { return "".concat(type2, " stepi(const ").concat(type1, " x, const ").concat(type2, " y) { return ").concat(type2, "(step(").concat(floatTypeForIntType(type1), "(x), ").concat(floatTypeForIntType(type2), "(y))); }"); };
-    var bitshiftLeft = function (type1, type2) {
-        return "".concat(type1, " bitshiftLeft(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a << b;\n\t#else\n\t\treturn a * ").concat(type1, "(pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b)));\n\t#endif\n}");
-    };
-    var bitshiftRight = function (type1, type2) {
-        return "".concat(type1, " bitshiftRight(const ").concat(type1, " a, const ").concat(type2, " b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a >> b;\n\t#else\n\t\treturn ").concat(type1, "(round(").concat(floatTypeForIntType(type1), "(a) / pow(").concat(floatTypeForIntType(type2), "(2.0), ").concat(floatTypeForIntType(type2), "(b))));\n\t#endif\n}");
-    };
-    // Copied from https://github.com/gpujs/gpu.js/blob/master/src/backend/web-gl/fragment-shader.js
-    // Seems like these could be optimized.
-    var bitwiseOr = function (numBits) {
-        return "int bitwiseOr".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a | b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) || (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
-    };
-    var bitwiseXOR = function (numBits) {
-        return "int bitwiseXOR".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a ^ b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\t\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) != (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 || b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
-    };
-    var bitwiseAnd = function (numBits) {
-        return "int bitwiseAnd".concat(numBits === 32 ? '' : numBits, "(int a, int b) {\n\t#if (__VERSION__ == 300)\n\t\treturn a & b;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif ((modi(a, 2) == 1) && (modi(b, 2) == 1)) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tb = b / 2;\n\t\t\tn = n * 2;\n\t\t\tif(!(a > 0 && b > 0)) {\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\treturn result;\n\t#endif\n}");
-    };
-    var bitwiseNot = function (numBits) {
-        return "int bitwiseNot".concat(numBits === 32 ? '' : numBits, "(int a) {\n\t#if (__VERSION__ == 300)\n\t\treturn ~a;\n\t#else\n\t\tint result = 0;\n\t\tint n = 1;\n\n\t\tfor (int i = 0; i < ").concat(numBits, "; i++) {\n\t\t\tif (modi(a, 2) == 0) {\n\t\t\t\tresult += n;\n\t\t\t}\n\t\t\ta = a / 2;\n\t\t\tn = n * 2;\n\t\t}\n\t\treturn result;\n\t#endif\n}");
-    };
-    FRAGMENT_SHADER_POLYFILLS = "\n".concat(modi('int', 'int'), "\n").concat(modi('ivec2', 'ivec2'), "\n").concat(modi('ivec3', 'ivec3'), "\n").concat(modi('ivec4', 'ivec4'), "\n").concat(modi('ivec2', 'int'), "\n").concat(modi('ivec3', 'int'), "\n").concat(modi('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(modi('uint', 'uint'), "\n").concat(modi('uvec2', 'uvec2'), "\n").concat(modi('uvec3', 'uvec3'), "\n").concat(modi('uvec4', 'uvec4'), "\n").concat(modi('uvec2', 'uint'), "\n").concat(modi('uvec3', 'uint'), "\n").concat(modi('uvec4', 'uint'), "\n#endif\n\n").concat(stepi('int', 'int'), "\n").concat(stepi('ivec2', 'ivec2'), "\n").concat(stepi('ivec3', 'ivec3'), "\n").concat(stepi('ivec4', 'ivec4'), "\n").concat(stepi('int', 'ivec2'), "\n").concat(stepi('int', 'ivec3'), "\n").concat(stepi('int', 'ivec4'), "\n#if (__VERSION__ == 300)\n").concat(stepi('uint', 'uint'), "\n").concat(stepi('uvec2', 'uvec2'), "\n").concat(stepi('uvec3', 'uvec3'), "\n").concat(stepi('uvec4', 'uvec4'), "\n").concat(stepi('uint', 'uvec2'), "\n").concat(stepi('uint', 'uvec3'), "\n").concat(stepi('uint', 'uvec4'), "\n#endif\n\n").concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n\n").concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n\n").concat(bitwiseOr(8), "\n").concat(bitwiseOr(16), "\n").concat(bitwiseOr(32), "\n\n").concat(bitwiseXOR(8), "\n").concat(bitwiseXOR(16), "\n").concat(bitwiseXOR(32), "\n\n").concat(bitwiseAnd(8), "\n").concat(bitwiseAnd(16), "\n").concat(bitwiseAnd(32), "\n\n").concat(bitwiseNot(8), "\n").concat(bitwiseNot(16), "\n").concat(bitwiseNot(32), "\n\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
-        return "\nuint bitwiseOr".concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseOr").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseXOR").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseXOR").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseAnd").concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseAnd").concat(suffix, "(int(a), int(b)));\n}\nuint bitwiseNot").concat(suffix, "(uint a) {\n\treturn uint(bitwiseNot").concat(suffix, "(int(a)));\n}");
-    }).join('\n'), "\n\n#endif\n");
+function fragmentShaderPolyfills(shaderSource, glslVersion) {
+    // We'll attempt to just add in what we need, but no worries if we add extraneous functions.
+    // They will be removed by compiler.
+    var FRAGMENT_SHADER_POLYFILLS = '';
+    // modi is called from GLSL1 bitwise polyfills.
+    if (shaderSource.includes('modi') || (glslVersion === constants_1.GLSL1 && shaderSource.includes('bitwise'))) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(modi('int', 'int'), "\n").concat(modi('ivec2', 'ivec2'), "\n").concat(modi('ivec3', 'ivec3'), "\n").concat(modi('ivec4', 'ivec4'), "\n").concat(modi('ivec2', 'int'), "\n").concat(modi('ivec3', 'int'), "\n").concat(modi('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(modi('uint', 'uint'), "\n").concat(modi('uvec2', 'uvec2'), "\n").concat(modi('uvec3', 'uvec3'), "\n").concat(modi('uvec4', 'uvec4'), "\n").concat(modi('uvec2', 'uint'), "\n").concat(modi('uvec3', 'uint'), "\n").concat(modi('uvec4', 'uint'), "\n#endif\n");
+    }
+    if (shaderSource.includes('stepi')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(stepi('int', 'int'), "\n").concat(stepi('ivec2', 'ivec2'), "\n").concat(stepi('ivec3', 'ivec3'), "\n").concat(stepi('ivec4', 'ivec4'), "\n").concat(stepi('int', 'ivec2'), "\n").concat(stepi('int', 'ivec3'), "\n").concat(stepi('int', 'ivec4'), "\n#if (__VERSION__ == 300)\n").concat(stepi('uint', 'uint'), "\n").concat(stepi('uvec2', 'uvec2'), "\n").concat(stepi('uvec3', 'uvec3'), "\n").concat(stepi('uvec4', 'uvec4'), "\n").concat(stepi('uint', 'uvec2'), "\n").concat(stepi('uint', 'uvec3'), "\n").concat(stepi('uint', 'uvec4'), "\n#endif\n");
+    }
+    if (shaderSource.includes('bitshiftLeft')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(bitshiftLeft('int', 'int'), "\n").concat(bitshiftLeft('ivec2', 'ivec2'), "\n").concat(bitshiftLeft('ivec3', 'ivec3'), "\n").concat(bitshiftLeft('ivec4', 'ivec4'), "\n").concat(bitshiftLeft('ivec2', 'int'), "\n").concat(bitshiftLeft('ivec3', 'int'), "\n").concat(bitshiftLeft('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftLeft('uint', 'uint'), "\n").concat(bitshiftLeft('uvec2', 'uvec2'), "\n").concat(bitshiftLeft('uvec3', 'uvec3'), "\n").concat(bitshiftLeft('uvec4', 'uvec4'), "\n").concat(bitshiftLeft('uvec2', 'uint'), "\n").concat(bitshiftLeft('uvec3', 'uint'), "\n").concat(bitshiftLeft('uvec4', 'uint'), "\n#endif\n");
+    }
+    if (shaderSource.includes('bitshiftRight')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(bitshiftRight('int', 'int'), "\n").concat(bitshiftRight('ivec2', 'ivec2'), "\n").concat(bitshiftRight('ivec3', 'ivec3'), "\n").concat(bitshiftRight('ivec4', 'ivec4'), "\n").concat(bitshiftRight('ivec2', 'int'), "\n").concat(bitshiftRight('ivec3', 'int'), "\n").concat(bitshiftRight('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(bitshiftRight('uint', 'uint'), "\n").concat(bitshiftRight('uvec2', 'uvec2'), "\n").concat(bitshiftRight('uvec3', 'uvec3'), "\n").concat(bitshiftRight('uvec4', 'uvec4'), "\n").concat(bitshiftRight('uvec2', 'uint'), "\n").concat(bitshiftRight('uvec3', 'uint'), "\n").concat(bitshiftRight('uvec4', 'uint'), "\n#endif\n");
+    }
+    if (shaderSource.includes('bitwiseOr')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(bitwiseOr(8), "\n").concat(bitwiseOr(16), "\n").concat(bitwiseOr(32), "\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
+            return "\nuint bitwiseOr".concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseOr").concat(suffix, "(int(a), int(b)));\n}");
+        }).join('\n'), "\n#endif\n");
+    }
+    if (shaderSource.includes('bitwiseXOR')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(bitwiseXOR(8), "\n").concat(bitwiseXOR(16), "\n").concat(bitwiseXOR(32), "\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
+            return "\nuint bitwiseXOR".concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseXOR").concat(suffix, "(int(a), int(b)));\n}");
+        }).join('\n'), "\n#endif\n");
+    }
+    if (shaderSource.includes('bitwiseAnd')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(bitwiseAnd(8), "\n").concat(bitwiseAnd(16), "\n").concat(bitwiseAnd(32), "\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
+            return "\nuint bitwiseAnd".concat(suffix, "(uint a, uint b) {\n\treturn uint(bitwiseAnd").concat(suffix, "(int(a), int(b)));\n}");
+        }).join('\n'), "\n#endif\n");
+    }
+    if (shaderSource.includes('bitwiseNot')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(bitwiseNot(8), "\n").concat(bitwiseNot(16), "\n").concat(bitwiseNot(32), "\n#if (__VERSION__ == 300)\n").concat([8, 16, ''].map(function (suffix) {
+            return "\nuint bitwiseNot".concat(suffix, "(uint a) {\n\treturn uint(bitwiseNot").concat(suffix, "(int(a)));\n}");
+        }).join('\n'), "\n#endif\n");
+    }
     return FRAGMENT_SHADER_POLYFILLS;
 }
 exports.fragmentShaderPolyfills = fragmentShaderPolyfills;
@@ -6613,6 +6770,7 @@ exports.readPixelsAsync = exports.indexOfLayerInArray = exports.uniformInternalT
 var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
+var extensions_1 = __webpack_require__(581);
 var precision_1 = __webpack_require__(724);
 var polyfills_1 = __webpack_require__(360);
 var regex_1 = __webpack_require__(126);
@@ -6681,7 +6839,7 @@ function convertCompileTimeConstantsToString(compileTimeConstants) {
  * Export this for testing purposes.
  * @private
  */
-function makeShaderHeader(glslVersion, intPrecision, floatPrecision, compileTimeConstants) {
+function makeShaderHeader(glslVersion, intPrecision, floatPrecision, compileTimeConstants, extensions) {
     var _a;
     var versionSource = glslVersion === constants_1.GLSL3 ? "#version ".concat(constants_1.GLSL3, "\n") : '';
     var compileTimeConstantsSource = compileTimeConstants ? convertCompileTimeConstantsToString(compileTimeConstants) : '';
@@ -6689,7 +6847,7 @@ function makeShaderHeader(glslVersion, intPrecision, floatPrecision, compileTime
         _a[constants_1.GPUIO_INT_PRECISION] = "".concat((0, conversions_1.intForPrecision)(intPrecision)),
         _a[constants_1.GPUIO_FLOAT_PRECISION] = "".concat((0, conversions_1.intForPrecision)(floatPrecision)),
         _a));
-    return "".concat(versionSource).concat(compileTimeConstantsSource).concat(precisionConstantsSource).concat(precision_1.PRECISION_SOURCE);
+    return "".concat(versionSource).concat(extensions ? extensions : '').concat(compileTimeConstantsSource).concat(precisionConstantsSource).concat(precision_1.PRECISION_SOURCE);
 }
 exports.makeShaderHeader = makeShaderHeader;
 /**
@@ -6698,7 +6856,7 @@ exports.makeShaderHeader = makeShaderHeader;
  * Copied from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
  * @private
  */
-function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, errorCallback, compileTimeConstants, checkCompileStatus) {
+function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSource, shaderType, programName, errorCallback, compileTimeConstants, extensions, checkCompileStatus) {
     if (checkCompileStatus === void 0) { checkCompileStatus = false; }
     // Create the shader object
     var shader = gl.createShader(shaderType);
@@ -6707,7 +6865,7 @@ function compileShader(gl, glslVersion, intPrecision, floatPrecision, shaderSour
         return null;
     }
     // Set the shader source code.
-    var shaderHeader = makeShaderHeader(glslVersion, intPrecision, floatPrecision, compileTimeConstants);
+    var shaderHeader = makeShaderHeader(glslVersion, intPrecision, floatPrecision, compileTimeConstants, extensions);
     var fullShaderSource = "".concat(shaderHeader).concat(shaderSource);
     gl.shaderSource(shader, fullShaderSource);
     // Compile the shader
@@ -7060,8 +7218,9 @@ exports.preprocessVertexShader = preprocessVertexShader;
  * This is called once on initialization of GPUProgram, so doesn't need to be extremely efficient.
  * @private
  */
-function preprocessFragmentShader(shaderSource, glslVersion, name) {
+function preprocessFragmentShader(shaderSource, composer, name) {
     var _a;
+    var glslVersion = composer.glslVersion;
     shaderSource = preprocessShader(shaderSource);
     (0, regex_1.checkFragmentShaderForFragColor)(shaderSource, glslVersion, name);
     // Check if highp supported in fragment shaders.
@@ -7071,16 +7230,20 @@ function preprocessFragmentShader(shaderSource, glslVersion, name) {
         shaderSource = (0, regex_1.highpToMediump)(shaderSource);
     }
     // Add function/operator polyfills.
-    shaderSource = (0, polyfills_1.fragmentShaderPolyfills)() + shaderSource;
+    shaderSource = (0, polyfills_1.fragmentShaderPolyfills)(shaderSource, glslVersion) + shaderSource;
     // Add texture() polyfills.
     var samplerUniforms;
     (_a = (0, polyfills_1.texturePolyfill)(shaderSource), shaderSource = _a.shaderSource, samplerUniforms = _a.samplerUniforms);
     if (glslVersion !== constants_1.GLSL3) {
+        // Get derivative extension if needed.
+        if (glslVersion === constants_1.GLSL1 && (shaderSource.includes('dFdx') || shaderSource.includes('dFdy') || shaderSource.includes('fwidth'))) {
+            (0, extensions_1.getExtension)(composer, extensions_1.OES_STANDARD_DERIVATIVES, true);
+        }
         var sources = convertFragmentShaderToGLSL1(shaderSource, name);
         // If this shader has multiple outputs, it is split into multiple sources.
         for (var i = 0, numSources = sources.length; i < numSources; i++) {
             // Add glsl1 specific polyfills.
-            sources[i] = (0, polyfills_1.GLSL1Polyfills)() + sources[i];
+            sources[i] = (0, polyfills_1.GLSL1Polyfills)(sources[i]) + sources[i];
         }
         shaderSource = sources.shift();
         if (sources.length) {
