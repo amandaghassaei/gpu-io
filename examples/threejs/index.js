@@ -42,15 +42,15 @@ function main({ gui, contextID, glslVersion }) {
 	};
 
 	// Size of the simulation.
-	const TEXTURE_DIM = [100, 100];
-	const CAUSTICS_TEXTURE_SCALE_FACTOR = 6; // Increase in resolution of caustics texture from TEXTURE_DIM.
+	const TEXTURE_DIM = [200, 200];
+	const CAUSTICS_TEXTURE_SCALE_FACTOR = 10; // Increase in resolution of caustics texture from TEXTURE_DIM.
 	// Some simulation constants.
 	// https://beltoforion.de/en/recreational_mathematics/2d-wave-equation.php
 	const DT = 1;
 	const DX = 1;
 	const DECAY = 0.005;
 	// Drop parameters.
-	const NUM_FRAMES_BETWEEN_DROPS = 150;
+	const NUM_FRAMES_BETWEEN_DROPS = 100;
 	const DROP_DIAMETER = 10;
 	// Grid mesh amplitude scale.
 	const GRID_MESH_Y_SCALE = 3;
