@@ -2566,7 +2566,7 @@ var GPULayer = /** @class */ (function () {
     };
     /**
      * Copy contents of current state to another GPULayer.
-     * Still testing this.
+     * TODO: Still testing this.
      * @private
      */
     GPULayer.prototype.copyCurrentStateToGPULayer = function (layer) {
