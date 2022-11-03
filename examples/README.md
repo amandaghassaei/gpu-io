@@ -24,7 +24,7 @@ This simulation solves the <a href="https://en.wikipedia.org/wiki/Navier%E2%80%9
 
 ### [2D Wave Equation](https://apps.amandaghassaei.com/gpu-io/examples/threejs/)
 [![2D Wave Equation](./threejs/main.png)](https://apps.amandaghassaei.com/gpu-io/examples/threejs/)  
-This app simulates the [2D wave equation](https://en.wikipedia.org/wiki/Wave_equation) and renders the resulting height field as an RGB texture and as a 3D mesh.  All computations are performed in gpu-io and the results are passed to [Threejs](https://threejs.org/) without ever leaving the GPU.
+This app simulates the [2D wave equation](https://en.wikipedia.org/wiki/Wave_equation) and renders the resulting height field as a 3D mesh  Additionally, it simulates realtime [caustics](https://en.wikipedia.org/wiki/Caustic_(optics)) formed by light shining through the 3D surface and renders the result as a texture ([method described in more detail by Evan Wallace](https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c)).  All computations are performed in gpu-io and the results are passed to [Threejs](https://threejs.org/) without ever leaving the GPU.
 
 ## Simple Examples
 

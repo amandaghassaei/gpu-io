@@ -25,11 +25,12 @@
 				</header>
 				<main class="modal__content" id="modal-1-content">
 				  <p>
-					This app simulates the <a href="https://en.wikipedia.org/wiki/Wave_equation">2D wave equation</a> and renders the resulting height field as an RGB texture and as a 3D mesh.
+					This app simulates the <a href="https://en.wikipedia.org/wiki/Wave_equation">2D wave equation</a> and renders the resulting height field as a 3D mesh.
+					Additionally, it simulates realtime <a href="https://en.wikipedia.org/wiki/Caustic_(optics)">caustics</a> formed by light shining through the 3D surface and renders the result as a texture (<a href="https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c">method described in more detail by Evan Wallace</a>).
 					All computations are performed in <a href="https://apps.amandaghassaei.com/gpu-io/examples/">gpu-io</a> and the results are passed to <a href="https://threejs.org/">threejs</a> without ever leaving the GPU.  Written by <a href="https://amandaghassaei.com/">Amanda Ghassaei</a>.
 				  </p>
 				  <p>
-					Instructions: Drag to rotate, Pinch/Scroll to zoom.
+					Instructions: Drag to rotate, Pinch/Scroll to zoom.  Adjust the wave propagation speed and the distance between the 3D surface and the caustics projection.
 					Press "v" to record a video.
 				  </p>
 				  <p>
