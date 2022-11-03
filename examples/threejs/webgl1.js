@@ -12,6 +12,7 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 		NEAREST,
 		WEBGL2,
 		WEBGL1,
+		GLSL3,
 	} = GPUIO;
 	const {
 		Scene,
@@ -189,6 +190,8 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 	gridMesh.position.y = PARAMS.separation / TEXTURE_DIM[0] * 0.5;
 	scene.add(gridMesh);
 
+	// Derivative extensions are not supported in WebGL2 + GLSL1.
+	if (contextID === WEBGL2) glslVersion = GLSL3;
 	const composer = GPUComposer.initWithThreeRenderer(renderer, { glslVersion });
 	// Undo any changes threejs has made to WebGL state.
 	composer.undoThreeState();
