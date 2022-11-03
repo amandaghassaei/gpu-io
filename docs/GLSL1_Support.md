@@ -143,6 +143,20 @@ void main() {
 }
 ```
 
+### Derivative Functions
+
+gpu-io automatically enables [OES_standard_derivatives](https://developer.mozilla.org/en-US/docs/Web/API/OES_standard_derivatives) extension when the following functions are detected in a GPUProgram's source:
+
+- `dFdx`
+- `dFdy`
+- `fwidth`
+
+Additionally, gpu-io adds the following line to the shader source to enable the extension:
+
+`#extension GL_OES_standard_derivatives : enable`
+
+Note: derivative functions are not available for WebGL 2 with GLSL1, please use GLSL3 instead.
+
 
 # Unsupported GLSL3 Features
 
@@ -197,20 +211,6 @@ The following GLSL3 functions are currently NOT available to GLSL1 fragment shad
 ### Texture Lookup Functions
 
 - All texture lookup functions other than `[i|u]vec4 texture([i|u]sampler2D, vec2 uv)` are not officially supported by this library.  Most of them probably still work, but none of have been tested.  See the [WebGL1 Reference Card](https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) to find out what is supported in GLSL1.
-
-### Fragment Processing Functions
-
-gpu-io automatically enables [OES_standard_derivatives](https://developer.mozilla.org/en-US/docs/Web/API/OES_standard_derivatives) extension when the following functions are detected in a GPUProgram's source:
-
-- `dFdx`
-- `dFdy`
-- `fwidth`
-
-Additionally, gpu-io adds the following line to the shader source to enable the extension:
-
-`#extension GL_OES_standard_derivatives : enable`
-
-Note: derivative functions are not available for WebGL 2 with GLSL1, please use GLSL3 instead.
 
 
 ## Other GLSL1 Gotchas
