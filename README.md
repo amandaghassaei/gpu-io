@@ -77,7 +77,6 @@ import {
   FLOAT,
   INT,
   REPEAT,
-  LINEAR,
   NEAREST,
 } from 'gpu-io';
 
