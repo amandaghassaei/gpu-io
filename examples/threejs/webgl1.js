@@ -71,7 +71,7 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 	document.body.appendChild(canvas);
 
 	const controls = new OrbitControls(camera, canvas); 
-	controls.panSpeed = 1 / camera.zoom;
+	controls.enablePan = false;
 
 	// Init a plane with texture containing the simulation rendered in color.
 	const planeTexture = new Texture();

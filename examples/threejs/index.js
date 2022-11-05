@@ -71,8 +71,8 @@ function main({ gui, contextID, glslVersion }) {
 	const canvas = renderer.domElement;
 	document.body.appendChild(canvas);
 
-	const controls = new OrbitControls(camera, canvas); 
-	controls.panSpeed = 1 / camera.zoom;
+	const controls = new OrbitControls(camera, canvas);
+	controls.enablePan = false;
 
 	// Init a plane with texture containing the simulation rendered in color.
 	const planeTexture = new Texture();
