@@ -6025,7 +6025,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports._testing = exports.setColorProgram = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUIndexBuffer = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
+exports._testing = exports.zeroProgram = exports.setColorProgram = exports.setValueProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = exports.getFragmentShaderMediumpPrecision = exports.getVertexShaderMediumpPrecision = exports.isHighpSupportedInFragmentShader = exports.isHighpSupportedInVertexShader = exports.isWebGL2Supported = exports.isWebGL2 = exports.GPUIndexBuffer = exports.GPUProgram = exports.GPULayer = exports.GPUComposer = void 0;
 var utils = __webpack_require__(593);
 var GPUComposer_1 = __webpack_require__(484);
 Object.defineProperty(exports, "GPUComposer", ({ enumerable: true, get: function () { return GPUComposer_1.GPUComposer; } }));
@@ -6056,15 +6056,16 @@ exports.isHighpSupportedInVertexShader = isHighpSupportedInVertexShader;
 exports.isHighpSupportedInFragmentShader = isHighpSupportedInFragmentShader;
 exports.getVertexShaderMediumpPrecision = getVertexShaderMediumpPrecision;
 exports.getFragmentShaderMediumpPrecision = getFragmentShaderMediumpPrecision;
-var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, multiplyValueProgram = Programs.multiplyValueProgram, renderAmplitudeProgram = Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram = Programs.renderSignedAmplitudeProgram, setValueProgram = Programs.setValueProgram, setColorProgram = Programs.setColorProgram;
+var copyProgram = Programs.copyProgram, addLayersProgram = Programs.addLayersProgram, addValueProgram = Programs.addValueProgram, multiplyValueProgram = Programs.multiplyValueProgram, setValueProgram = Programs.setValueProgram, setColorProgram = Programs.setColorProgram, zeroProgram = Programs.zeroProgram, renderAmplitudeProgram = Programs.renderAmplitudeProgram, renderSignedAmplitudeProgram = Programs.renderSignedAmplitudeProgram;
 exports.copyProgram = copyProgram;
 exports.addLayersProgram = addLayersProgram;
 exports.addValueProgram = addValueProgram;
 exports.multiplyValueProgram = multiplyValueProgram;
-exports.renderAmplitudeProgram = renderAmplitudeProgram;
-exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 exports.setValueProgram = setValueProgram;
 exports.setColorProgram = setColorProgram;
+exports.zeroProgram = zeroProgram;
+exports.renderAmplitudeProgram = renderAmplitudeProgram;
+exports.renderSignedAmplitudeProgram = renderSignedAmplitudeProgram;
 __exportStar(__webpack_require__(601), exports);
 
 

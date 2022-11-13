@@ -53,10 +53,11 @@ const {
 	addLayersProgram,
 	addValueProgram,
 	multiplyValueProgram,
-	renderAmplitudeProgram,
-	renderSignedAmplitudeProgram,
 	setValueProgram,
 	setColorProgram,
+	zeroProgram,
+	renderAmplitudeProgram,
+	renderSignedAmplitudeProgram,
 } = Programs;
 
 export {
@@ -78,6 +79,7 @@ export {
 	renderSignedAmplitudeProgram,
 	setValueProgram,
 	setColorProgram,
+	zeroProgram,
 	_testing,
 }
 export * from './constants';
