@@ -44,11 +44,12 @@ Here are some results I've gathered testing different combinations of hardware/b
 
 ### Windows
 
-- Windows 11.0 + Edge (Chromium) v105.0.0.0 [results](results/READWRITE_Chrome_v105.0.0.0_Windows_v11.0.png)
+- Windows v11.0 + Edge (Chromium) v105.0.0.0 [results](results/READWRITE_Chrome_v105.0.0.0_Windows_v11.0.png)
     - Surface Laptop 4, Galaxy Book2 Pro, Galaxy Book Flex2 Alpha
     - Note: Microsoft Edge is running Chromium internally, which is why it shows up as Chrome.
 
 
 ### Android
 
-TODO: finish this.
+- Android v12 + Chrome for Android v107.0.0.0 [results](results/READWRITE_Chrome_for_Android_v107.0.0.0_Android_v12.png)
+    - Pixel 5
