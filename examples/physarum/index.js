@@ -475,13 +475,6 @@ function main({ gui, glslVersion, contextID }) {
 	const ui = [];
 	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
 	const particlesOrigName = particlesGUI.name; // We need this in order to delete the folder, see dispose().
-	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
-		// Init new particles when particle density changes.
-		const { positions, heading, numParticles } = initParticlesArrays();
-		particlesPositions.resize(numParticles, positions);
-		particlesHeading.resize(numParticles, heading);
-		particlesGUI.name = getParticlesFolderTitle();
-	}).name('Particle Density');
 	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).onChange((value) => {
 		updateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
 	}).name('Sensor Angle');
@@ -494,6 +487,13 @@ function main({ gui, glslVersion, contextID }) {
 	particlesGUI.add(PARAMS, 'stepSize', 0.01, 3, 0.01).onChange((value) => {
 		updateParticles.setUniform('u_stepSize', value);
 	}).name('Step Size');
+	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
+		// Init new particles when particle density changes.
+		const { positions, heading, numParticles } = initParticlesArrays();
+		particlesPositions.resize(numParticles, positions);
+		particlesHeading.resize(numParticles, heading);
+		particlesGUI.name = getParticlesFolderTitle();
+	}).name('Particle Density');
 	particlesGUI.open();
 	const trailsGUI = gui.addFolder('Trails');
 	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
