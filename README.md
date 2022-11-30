@@ -256,7 +256,7 @@ loop() {
 }
 ```
 
-More info about using gpu-io with Threejs can be found in the [Threejs Example](https://github.com/amandaghassaei/gpu-io/tree/main/examples/threejs).
+More info about using gpu-io with Threejs can be found in the [Threejs Example](https://github.com/amandaghassaei/gpu-io/tree/main/examples/wave2d).
 
 
 ## Limitations/Notes
