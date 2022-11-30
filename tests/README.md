@@ -52,4 +52,4 @@ Here are some results I've gathered testing different combinations of hardware/b
 ### Android
 
 - Android v12 + Chrome for Android v107.0.0.0 [results](results/READWRITE_Chrome_for_Android_v107.0.0.0_Android_v12.png)
-    - Pixel 5
+    - Pixel 5, Motorola Edge
