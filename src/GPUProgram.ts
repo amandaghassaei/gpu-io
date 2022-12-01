@@ -516,6 +516,7 @@ export class GPUProgram {
 	 * Set fragment shader uniform for GPUProgram.
 	 * @param name - Uniform name as it appears in fragment shader.
 	 * @param value - Uniform value.
+	 * @param type - Uniform type.
 	 */
 	setUniform(
 		name: string,

@@ -4453,6 +4453,7 @@ var GPUProgram = /** @class */ (function () {
      * Set fragment shader uniform for GPUProgram.
      * @param name - Uniform name as it appears in fragment shader.
      * @param value - Uniform value.
+     * @param type - Uniform type.
      */
     GPUProgram.prototype.setUniform = function (name, value, type) {
         var _a;

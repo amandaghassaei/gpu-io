@@ -47,7 +47,7 @@
 
 • `Readonly` **gl**: `WebGLRenderingContext` \| `WebGL2RenderingContext`
 
-The WebGL context associated with this GPUcomposer.
+The WebGL context associated with this GPUComposer.
 
 ___
 

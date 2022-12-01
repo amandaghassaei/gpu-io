@@ -6,7 +6,7 @@ import type { WebGLRenderer, WebGL1Renderer } from 'three';
 import { GPUIndexBuffer } from './GPUIndexBuffer';
 export declare class GPUComposer {
     /**
-     * The WebGL context associated with this GPUcomposer.
+     * The WebGL context associated with this GPUComposer.
      */
     readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
     /**

@@ -115,7 +115,7 @@ Create a GPULayer from an image url.
 | `composer` | [`GPUComposer`](GPUComposer.md) | The current GPUComposer instance. |
 | `params` | `Object` | GPULayer parameters. |
 | `params.name` | `string` | Name of GPULayer, used for error logging. |
-| `params.url` | `string` | URL of the image source.  * |
+| `params.url` | `string` | URL of the image source. |
 | `params.type?` | [`ImageType`](../README.md#imagetype) | Data type represented by GPULayer. |
 | `params.format?` | [`ImageFormat`](../README.md#imageformat) | Image format, either RGB or RGBA. |
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST. |
@@ -362,7 +362,7 @@ Create a GPULayer.
 | :------ | :------ | :------ |
 | `composer` | [`GPUComposer`](GPUComposer.md) | The current GPUComposer instance. |
 | `params` | `Object` | GPULayer parameters. |
-| `params.name` | `string` | Name of GPULayer, used for error logging.  * |
+| `params.name` | `string` | Name of GPULayer, used for error logging. |
 | `params.type` | [`GPULayerType`](../README.md#gpulayertype) | Data type represented by GPULayer. |
 | `params.numComponents` | [`GPULayerNumComponents`](../README.md#gpulayernumcomponents) | Number of RGBA elements represented by each pixel in the GPULayer (1-4). |
 | `params.dimensions` | `number` \| `number`[] | Dimensions of 1D or 2D GPULayer. |

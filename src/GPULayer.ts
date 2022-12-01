@@ -177,7 +177,7 @@ export class GPULayer {
 	 * @param params  - GPULayer parameters.
 	 * @param params.name - Name of GPULayer, used for error logging.
 	 * @param params.url - URL of the image source.
- 	 * @param params.type - Data type represented by GPULayer.
+	 * @param params.type - Data type represented by GPULayer.
 	 * @param params.format - Image format, either RGB or RGBA.
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
 	 * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
@@ -251,7 +251,7 @@ export class GPULayer {
 	 * @param composer - The current GPUComposer instance.
 	 * @param params  - GPULayer parameters.
 	 * @param params.name - Name of GPULayer, used for error logging.
- 	 * @param params.type - Data type represented by GPULayer.
+	 * @param params.type - Data type represented by GPULayer.
 	 * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
 	 * @param params.dimensions - Dimensions of 1D or 2D GPULayer.
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST.
