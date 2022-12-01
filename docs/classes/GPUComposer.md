@@ -87,7 +87,7 @@ ___
 
 • **verboseLogging**: `boolean` = `false`
 
-Flag to set GPUcomposer for verbose logging, defaults to false.
+Flag to set GPUComposer for verbose logging, defaults to false.
 
 ## Methods
 
@@ -450,7 +450,7 @@ Create a GPUComposer.
 | :------ | :------ | :------ |
 | `params` | `Object` | GPUComposer parameters. |
 | `params.canvas` | `HTMLCanvasElement` | HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself). |
-| `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` | Pass in a WebGL context for the GPUcomposer to user. |
+| `params.context?` | `WebGLRenderingContext` \| `WebGL2RenderingContext` | Pass in a WebGL context for the GPUComposer to user. |
 | `params.contextID?` | `string` | Set the contextID to use when initing a new WebGL context. |
 | `params.contextAttributes?` | `Object` | Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more information). |
 | `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |

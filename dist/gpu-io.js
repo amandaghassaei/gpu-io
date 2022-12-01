@@ -418,7 +418,7 @@ var GPUComposer = /** @class */ (function () {
      * Create a GPUComposer.
      * @param params - GPUComposer parameters.
      * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
-     * @param params.context - Pass in a WebGL context for the GPUcomposer to user.
+     * @param params.context - Pass in a WebGL context for the GPUComposer to user.
      * @param params.contextID - Set the contextID to use when initing a new WebGL context.
      * @param params.contextAttributes - Options to pass to WebGL context on initialization (see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more information).
      * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
@@ -484,7 +484,7 @@ var GPUComposer = /** @class */ (function () {
             },
             _a);
         /**
-         * Flag to set GPUcomposer for verbose logging, defaults to false.
+         * Flag to set GPUComposer for verbose logging, defaults to false.
          */
         this.verboseLogging = false;
         this._numTicks = 0;
