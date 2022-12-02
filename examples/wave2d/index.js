@@ -74,7 +74,7 @@ function main({ gui, contextID, glslVersion }) {
 	const controls = new OrbitControls(camera, canvas);
 	controls.enablePan = false;
 
-	// Init a plane with texture containing the simulation rendered in color.
+	// Init a plane with texture containing the caustics simulation rendered in color.
 	const planeTexture = new Texture();
 	const plane = new Mesh(new PlaneGeometry(1.1, 1.1), new MeshBasicMaterial({ map: planeTexture, side: DoubleSide, transparent: true }));
 	plane.rotateX(-Math.PI / 2);
@@ -474,6 +474,12 @@ function main({ gui, contextID, glslVersion }) {
 				useOutputScale: true, // Use the same px scale size as the output GPULayer (otherwise it uses screen px).
 			});
 		}
+
+		// // Slowly rotate the sim.
+		// const rotationSpeed = 0.0025;
+		// plane.rotateZ(rotationSpeed);
+		// gridMesh.rotateY(rotationSpeed);
+		// gridSegments.rotateY(rotationSpeed);
 
 		// Reset three state back to what threejs is expecting (otherwise we get WebGL errors).
 		composer.resetThreeState();
