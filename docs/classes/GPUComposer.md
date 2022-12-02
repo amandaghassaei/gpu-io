@@ -398,7 +398,7 @@ Save the current state of the canvas to png.
 | `params` | `Object` | PNG parameters. |
 | `params.filename?` | `string` | PNG filename (no extension). |
 | `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
-| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
+| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | Optional callback when Blob is ready, default behavior saves the PNG using file-saver. |
 
 #### Returns
 

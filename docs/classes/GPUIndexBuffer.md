@@ -56,7 +56,7 @@ Init a GPUIndexBuffer to use with GPUComposer.drawLayerAsMesh().
 | :------ | :------ | :------ |
 | `composer` | [`GPUComposer`](GPUComposer.md) | The current GPUComposer instance. |
 | `params` | `Object` | GPUIndexBuffer parameters. |
-| `params.indices` | `number`[] \| `Uint8Array` \| `Uint16Array` \| `Uint32Array` | A 1D array containing indexed geometry.  For a mesh, this would be an array of triangle indices. |
+| `params.indices` | `number`[] \| `Uint8Array` \| `Uint16Array` \| `Uint32Array` | A 1D array containing indexed geometry. For a mesh, this would be an array of triangle indices. |
 | `params.name?` | `string` | Name of GPUIndexBuffer, used for error logging. |
 
 ## Methods

@@ -56,7 +56,7 @@ Create a GPUProgram.
 | `params` | `Object` | GPUProgram parameters. |
 | `params.name` | `string` | Name of GPUProgram, used for error logging. |
 | `params.fragmentShader` | `string` \| `string`[] | Fragment shader source or array of sources to be joined. |
-| `params.uniforms?` | [`UniformParams`](../README.md#uniformparams)[] | Array of uniforms to initialize with GPUProgram.  More uniforms can be added later with GPUProgram.setUniform(). |
+| `params.uniforms?` | [`UniformParams`](../README.md#uniformparams)[] | Array of uniforms to initialize with GPUProgram. More uniforms can be added later with GPUProgram.setUniform(). |
 | `params.compileTimeConstants?` | [`CompileTimeConstants`](../README.md#compiletimeconstants) | Compile time #define constants to include with fragment shader. |
 
 ## Methods

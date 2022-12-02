@@ -292,7 +292,7 @@ Save the current state of this GPULayer to png.
 | `params.filename?` | `string` | PNG filename (no extension, defaults to the name of the GPULayer). |
 | `params.dpi?` | `number` | PNG dpi (defaults to 72dpi). |
 | `params.multiplier?` | `number` | Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1). |
-| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | - |
+| `params.callback?` | (`blob`: `Blob`, `filename`: `string`) => `void` | Optional callback when Blob is ready, default behavior saves the PNG using file-saver. |
 
 #### Returns
 
@@ -370,7 +370,7 @@ Create a GPULayer.
 | `params.filter?` | [`GPULayerFilter`](../README.md#gpulayerfilter) | Interpolation filter for GPULayer, defaults to LINEAR for 2D FLOAT/HALF_FLOAT GPULayers, otherwise defaults to NEAREST. |
 | `params.wrapX?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
 | `params.wrapY?` | [`GPULayerWrap`](../README.md#gpulayerwrap) | Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE. |
-| `params.numBuffers?` | `number` | How may buffers to allocate, defaults to 1.  If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers. |
+| `params.numBuffers?` | `number` | How may buffers to allocate, defaults to 1. If you intend to use the current state of this GPULayer as an input to generate a new state, you will need at least 2 buffers. |
 | `params.clearValue?` | `number` \| `number`[] | Value to write to GPULayer when GPULayer.clear() is called. |
 
 ## Accessors

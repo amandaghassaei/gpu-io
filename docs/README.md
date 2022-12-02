@@ -526,7 +526,7 @@ Init GPUProgram to add uniform "u_value" to a GPULayer.
 | `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output (we assume "u_value" has the same type). |
-| `params.value` | `number` \| `number`[] | Initial value to add, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
+| `params.value` | `number` \| `number`[] | Initial value to add, if value has length 1 it will be applied to all components of GPULayer. Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input/output/"u_value". |
 
@@ -549,7 +549,7 @@ Init GPUProgram to multiply uniform "u_value" to a GPULayer.
 | `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input/output (we assume "u_value" has the same type). |
-| `params.value` | `number` \| `number`[] | Initial value to multiply, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
+| `params.value` | `number` \| `number`[] | Initial value to multiply, if value has length 1 it will be applied to all components of GPULayer. Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input/output/"u_value". |
 
@@ -572,7 +572,7 @@ Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
 | `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the output (we assume "u_value" has same type). |
-| `params.value` | `number` \| `number`[] | Initial value to set, if value has length 1 it will be applied to all components of GPULayer.  Change this later using uniform "u_value". |
+| `params.value` | `number` \| `number`[] | Initial value to set, if value has length 1 it will be applied to all components of GPULayer. Change this later using uniform "u_value". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the output/"u_value". |
 
@@ -595,8 +595,8 @@ Init GPUProgram to set all elements in a GPULayer to uniform "u_value".
 | `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the output. |
-| `params.color?` | `number`[] | Initial color as RGB in range [0, 1], defaults to [0, 0, 0].  Change this later using uniform "u_color". |
-| `params.opacity?` | `number` | Initial opacity in range [0, 1], defaults to 1.  Change this later using uniform "u_opacity". |
+| `params.color?` | `number`[] | Initial color as RGB in range [0, 1], defaults to [0, 0, 0]. Change this later using uniform "u_color". |
+| `params.opacity?` | `number` | Initial opacity in range [0, 1], defaults to 1. Change this later using uniform "u_opacity". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the output/uniforms. |
 
@@ -641,10 +641,10 @@ Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defa
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
 | `params.components?` | `string` | Component(s) of input GPULayer to render, defaults to 'xyzw'. |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
-| `params.scale?` | `number` | Scaling factor, defaults to 1.  Change this later using uniform "u_scale". |
-| `params.opacity?` | `number` | Opacity, defaults to 1.  Change this later using uniform "u_opacity". |
-| `params.colorMax?` | `number`[] | RGB color for amplitude === scale, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorMax". |
-| `params.colorMin` | `number`[] | RGB color for amplitude === 0, scaled to [0,1] range, defaults to black.  Change this later using uniform "u_colorMin". |
+| `params.scale?` | `number` | Scaling factor, defaults to 1. Change this later using uniform "u_scale". |
+| `params.opacity?` | `number` | Opacity, defaults to 1. Change this later using uniform "u_opacity". |
+| `params.colorMax?` | `number`[] | RGB color for amplitude === scale, scaled to [0,1] range, defaults to white. Change this later using uniform "u_colorMax". |
+| `params.colorMin` | `number`[] | RGB color for amplitude === 0, scaled to [0,1] range, defaults to black. Change this later using uniform "u_colorMin". |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns
@@ -668,12 +668,12 @@ Init GPUProgram to render signed amplitude of an input GPULayer to linearly inte
 | `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
 | `params.component?` | ``"x"`` \| ``"y"`` \| ``"z"`` \| ``"w"`` | Component of input GPULayer to render, defaults to "x". |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
-| `params.scale?` | `number` | Scaling factor, defaults to 1.  Change this later using uniform "u_scale". |
-| `params.bias?` | `number` | Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias". |
-| `params.opacity?` | `number` | Opacity, defaults to 1.  Change this later using uniform "u_opacity". |
-| `params.colorMax?` | `number`[] | RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to red.  Change this later using uniform "u_colorMax". |
-| `params.colorMin?` | `number`[] | RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to blue.  Change this later using uniform "u_colorMin". |
-| `params.colorCenter?` | `number`[] | RGB color for amplitude === bias, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorCenter". |
+| `params.scale?` | `number` | Scaling factor, defaults to 1. Change this later using uniform "u_scale". |
+| `params.bias?` | `number` | Bias for center point of color range, defaults to 0. Change this later using uniform "u_bias". |
+| `params.opacity?` | `number` | Opacity, defaults to 1. Change this later using uniform "u_opacity". |
+| `params.colorMax?` | `number`[] | RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to red. Change this later using uniform "u_colorMax". |
+| `params.colorMin?` | `number`[] | RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to blue. Change this later using uniform "u_colorMin". |
+| `params.colorCenter?` | `number`[] | RGB color for amplitude === bias, scaled to [0,1] range, defaults to white. Change this later using uniform "u_colorCenter". |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns
