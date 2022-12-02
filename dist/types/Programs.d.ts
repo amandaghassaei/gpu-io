@@ -117,6 +117,25 @@ export declare function zeroProgram(composer: GPUComposer, params: {
     name?: string;
 }): GPUProgram;
 /**
+ * Init GPUProgram to render 3 component GPULayer as RGB.
+ * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
+ * @param params - Program parameters.
+ * @param params.type - The type of the input.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.precision - Optionally specify the precision of the input.
+ * @returns
+ */
+export declare function renderRGBProgram(composer: GPUComposer, params: {
+    type: GPULayerType;
+    name?: string;
+    scale?: number;
+    opacity?: number;
+    precision?: GLSLPrecision;
+}): GPUProgram;
+/**
  * Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
  * @category GPUProgram Helper
  * @param composer - The current GPUComposer.
@@ -126,8 +145,8 @@ export declare function zeroProgram(composer: GPUComposer, params: {
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
- * @param params.color - RGB color for non-zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_color".
- * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to black.  Change this later using uniform "u_colorZero".
+ * @param params.colorMax - RGB color for amplitude === scale, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorMax".
+ * @param params.colorMin - RGB color for amplitude === 0, scaled to [0,1] range, defaults to black.  Change this later using uniform "u_colorMin".
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
@@ -137,8 +156,8 @@ export declare function renderAmplitudeProgram(composer: GPUComposer, params: {
     name?: string;
     scale?: number;
     opacity?: number;
-    color?: number[];
-    colorZero: number[];
+    colorMax?: number[];
+    colorMin: number[];
     precision?: GLSLPrecision;
 }): GPUProgram;
 /**
@@ -151,9 +170,9 @@ export declare function renderAmplitudeProgram(composer: GPUComposer, params: {
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
  * @param params.bias - Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
- * @param params.colorNegative - RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative".
- * @param params.colorPositive - RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive".
- * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_colorZero".
+ * @param params.colorMax - RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to red.  Change this later using uniform "u_colorMax".
+ * @param params.colorMin - RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to blue.  Change this later using uniform "u_colorMin".
+ * @param params.colorCenter - RGB color for amplitude === bias, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorCenter".
  * @param params.component - Component of input GPULayer to render, defaults to "x".
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
@@ -165,9 +184,9 @@ export declare function renderSignedAmplitudeProgram(composer: GPUComposer, para
     scale?: number;
     bias?: number;
     opacity?: number;
-    colorNegative?: number[];
-    colorPositive?: number[];
-    colorZero?: number[];
+    colorMax?: number[];
+    colorMin?: number[];
+    colorCenter?: number[];
     precision?: GLSLPrecision;
 }): GPUProgram;
 /**

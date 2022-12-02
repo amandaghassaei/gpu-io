@@ -11,7 +11,6 @@ function main({ gui, contextID, glslVersion}) {
 		NEAREST,
 		LINEAR,
 		renderSignedAmplitudeProgram,
-		renderAmplitudeProgram,
 	} = GPUIO;
 
 	const PARAMS = {

@@ -4662,7 +4662,7 @@ var GPUProgramChild = /** @class */ (function (_super) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.zeroProgram = exports.setColorProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
+exports.wrappedLineColorProgram = exports.renderSignedAmplitudeProgram = exports.renderAmplitudeProgram = exports.renderRGBProgram = exports.zeroProgram = exports.setColorProgram = exports.setValueProgram = exports.multiplyValueProgram = exports.addValueProgram = exports.addLayersProgram = exports.copyProgram = void 0;
 var type_checks_1 = __webpack_require__(566);
 var constants_1 = __webpack_require__(601);
 var conversions_1 = __webpack_require__(690);
@@ -4890,6 +4890,50 @@ function zeroProgram(composer, params) {
 }
 exports.zeroProgram = zeroProgram;
 /**
+ * Init GPUProgram to render 3 component GPULayer as RGB.
+ * @category GPUProgram Helper
+ * @param composer - The current GPUComposer.
+ * @param params - Program parameters.
+ * @param params.type - The type of the input.
+ * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
+ * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
+ * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
+ * @param params.precision - Optionally specify the precision of the input.
+ * @returns
+ */
+function renderRGBProgram(composer, params) {
+    var type = params.type;
+    var precision = params.precision || '';
+    var numComponents = 3;
+    var glslType = (0, conversions_1.glslTypeForType)(type, numComponents);
+    var glslFloatType = (0, conversions_1.glslTypeForType)(constants_1.FLOAT, numComponents);
+    var glslPrefix = (0, conversions_1.glslPrefixForType)(type);
+    var shouldCast = glslFloatType === glslType;
+    var name = params.name || "renderRGB_".concat(glslType);
+    return new GPUProgram_1.GPUProgram(composer, {
+        name: name,
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_result;\nvoid main() {\n\tvec3 color = u_scale * (").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv).rgb));\n\tout_result = vec4(color, u_opacity);\n}"),
+        uniforms: [
+            {
+                name: 'u_state',
+                value: 0,
+                type: constants_1.INT,
+            },
+            {
+                name: 'u_scale',
+                value: params.scale !== undefined ? params.scale : 1,
+                type: constants_1.FLOAT,
+            },
+            {
+                name: 'u_opacity',
+                value: params.opacity !== undefined ? params.opacity : 1,
+                type: constants_1.FLOAT,
+            },
+        ],
+    });
+}
+exports.renderRGBProgram = renderRGBProgram;
+/**
  * Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defaults to grayscale rendering and works for scalar and vector fields.
  * @category GPUProgram Helper
  * @param composer - The current GPUComposer.
@@ -4899,8 +4943,8 @@ exports.zeroProgram = zeroProgram;
  * @param params.name - Optionally pass in a GPUProgram name, used for error logging.
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
- * @param params.color - RGB color for non-zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_color".
- * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to black.  Change this later using uniform "u_colorZero".
+ * @param params.colorMax - RGB color for amplitude === scale, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorMax".
+ * @param params.colorMin - RGB color for amplitude === 0, scaled to [0,1] range, defaults to black.  Change this later using uniform "u_colorMin".
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
  */
@@ -4916,7 +4960,7 @@ function renderAmplitudeProgram(composer, params) {
     var name = params.name || "renderAmplitude_".concat(glslType, "_w_").concat(numComponents, "_components");
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_color;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_result;\nvoid main() {\n\tfloat amplitude = u_scale * ").concat(numComponents === 1 ? 'abs' : 'length', "(").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(components === 'xyzw' || components === 'rgba' || components === 'stpq' ? '' : ".".concat(components), "));\n\tvec3 color = mix(u_colorZero, u_color, amplitude);\n\tout_result = vec4(color, u_opacity);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform vec3 u_colorMax;\nuniform vec3 u_colorMin;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_result;\nvoid main() {\n\tfloat amplitude = u_scale * ").concat(numComponents === 1 ? 'abs' : 'length', "(").concat(shouldCast ? '' : glslFloatType, "(texture(u_state, v_uv)").concat(components === 'xyzw' || components === 'rgba' || components === 'stpq' ? '' : ".".concat(components), "));\n\tvec3 color = mix(u_colorMin, u_colorMax, amplitude);\n\tout_result = vec4(color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -4934,13 +4978,13 @@ function renderAmplitudeProgram(composer, params) {
                 type: constants_1.FLOAT,
             },
             {
-                name: 'u_color',
-                value: params.color || [1, 1, 1],
+                name: 'u_colorMax',
+                value: params.colorMax || [1, 1, 1],
                 type: constants_1.FLOAT,
             },
             {
-                name: 'u_colorZero',
-                value: params.colorZero || [0, 0, 0],
+                name: 'u_colorMin',
+                value: params.colorMin || [0, 0, 0],
                 type: constants_1.FLOAT,
             },
         ],
@@ -4957,9 +5001,9 @@ exports.renderAmplitudeProgram = renderAmplitudeProgram;
  * @param params.scale - Scaling factor, defaults to 1.  Change this later using uniform "u_scale".
  * @param params.bias - Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias".
  * @param params.opacity - Opacity, defaults to 1.  Change this later using uniform "u_opacity".
- * @param params.colorNegative - RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative".
- * @param params.colorPositive - RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive".
- * @param params.colorZero - RGB color for zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_colorZero".
+ * @param params.colorMax - RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to red.  Change this later using uniform "u_colorMax".
+ * @param params.colorMin - RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to blue.  Change this later using uniform "u_colorMin".
+ * @param params.colorCenter - RGB color for amplitude === bias, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorCenter".
  * @param params.component - Component of input GPULayer to render, defaults to "x".
  * @param params.precision - Optionally specify the precision of the input.
  * @returns
@@ -4974,7 +5018,7 @@ function renderSignedAmplitudeProgram(composer, params) {
     var name = params.name || "renderAmplitude_".concat(glslType, "_").concat(component);
     return new GPUProgram_1.GPUProgram(composer, {
         name: name,
-        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform float u_bias;\nuniform vec3 u_colorNegative;\nuniform vec3 u_colorPositive;\nuniform vec3 u_colorZero;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_result;\nvoid main() {\n\tfloat signedAmplitude = u_scale * (").concat(castFloat ? '' : 'float', "(texture(u_state, v_uv).").concat(component, ") - u_bias);\n\tfloat amplitudeSign = sign(signedAmplitude);\n\tvec3 interpColor = mix(u_colorNegative, u_colorPositive, amplitudeSign / 2.0 + 0.5);\n\tvec3 color = mix(u_colorZero, interpColor, signedAmplitude * amplitudeSign);\n\tout_result = vec4(color, u_opacity);\n}"),
+        fragmentShader: "\nin vec2 v_uv;\nuniform float u_opacity;\nuniform float u_scale;\nuniform float u_bias;\nuniform vec3 u_colorMin;\nuniform vec3 u_colorMax;\nuniform vec3 u_colorCenter;\nuniform ".concat(precision, " ").concat(glslPrefix, "sampler2D u_state;\nout vec4 out_result;\nvoid main() {\n\tfloat signedAmplitude = u_scale * (").concat(castFloat ? '' : 'float', "(texture(u_state, v_uv).").concat(component, ") - u_bias);\n\tfloat amplitudeSign = sign(signedAmplitude);\n\tvec3 interpColor = mix(u_colorMin, u_colorMax, amplitudeSign / 2.0 + 0.5);\n\tvec3 color = mix(u_colorCenter, interpColor, signedAmplitude * amplitudeSign);\n\tout_result = vec4(color, u_opacity);\n}"),
         uniforms: [
             {
                 name: 'u_state',
@@ -4997,18 +5041,18 @@ function renderSignedAmplitudeProgram(composer, params) {
                 type: constants_1.FLOAT,
             },
             {
-                name: 'u_colorNegative',
-                value: params.colorNegative || [0, 0, 1],
+                name: 'u_colorMin',
+                value: params.colorMin || [0, 0, 1],
                 type: constants_1.FLOAT,
             },
             {
-                name: 'u_colorPositive',
-                value: params.colorPositive || [1, 0, 0],
+                name: 'u_colorMax',
+                value: params.colorMax || [1, 0, 0],
                 type: constants_1.FLOAT,
             },
             {
-                name: 'u_colorZero',
-                value: params.colorZero || [1, 1, 1],
+                name: 'u_colorCenter',
+                value: params.colorCenter || [1, 1, 1],
                 type: constants_1.FLOAT,
             },
         ],

@@ -643,8 +643,8 @@ Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defa
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
 | `params.scale?` | `number` | Scaling factor, defaults to 1.  Change this later using uniform "u_scale". |
 | `params.opacity?` | `number` | Opacity, defaults to 1.  Change this later using uniform "u_opacity". |
-| `params.color?` | `number`[] | RGB color for non-zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_color". |
-| `params.colorZero` | `number`[] | RGB color for zero amplitudes, scaled to [-0,1] range, defaults to black.  Change this later using uniform "u_colorZero". |
+| `params.colorMax?` | `number`[] | RGB color for amplitude === scale, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorMax". |
+| `params.colorMin` | `number`[] | RGB color for amplitude === 0, scaled to [0,1] range, defaults to black.  Change this later using uniform "u_colorMin". |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns
@@ -671,9 +671,9 @@ Init GPUProgram to render signed amplitude of an input GPULayer to linearly inte
 | `params.scale?` | `number` | Scaling factor, defaults to 1.  Change this later using uniform "u_scale". |
 | `params.bias?` | `number` | Bias for center point of color range, defaults to 0.  Change this later using uniform "u_bias". |
 | `params.opacity?` | `number` | Opacity, defaults to 1.  Change this later using uniform "u_opacity". |
-| `params.colorNegative?` | `number`[] | RGB color for negative amplitudes, scaled to [-0,1] range, defaults to blue.  Change this later using uniform "u_colorNegative". |
-| `params.colorPositive?` | `number`[] | RGB color for positive amplitudes, scaled to [-0,1] range, defaults to red.  Change this later using uniform "u_colorPositive". |
-| `params.colorZero?` | `number`[] | RGB color for zero amplitudes, scaled to [-0,1] range, defaults to white.  Change this later using uniform "u_colorZero". |
+| `params.colorMax?` | `number`[] | RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to red.  Change this later using uniform "u_colorMax". |
+| `params.colorMin?` | `number`[] | RGB color for amplitude === bias + scale, scaled to [0,1] range, defaults to blue.  Change this later using uniform "u_colorMin". |
+| `params.colorCenter?` | `number`[] | RGB color for amplitude === bias, scaled to [0,1] range, defaults to white.  Change this later using uniform "u_colorCenter". |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns
