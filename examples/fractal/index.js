@@ -166,9 +166,10 @@ function main({ gui, contextID, glslVersion}) {
 		needsCompute = true;
 	}).name('Max Iters'));
 	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	const pngScaleFactorUI = gui.add(PARAMS, 'pngScaleFactor', 1, 20, 1).name('PNG Scale Factor');
-	ui.push(pngScaleFactorUI);
 	ui.push(gui.add(PARAMS, 'savePNG').name('Save HD PNG (p)'));
+	const pngScaleFactorUI = gui.add(PARAMS, 'pngScaleFactor', 1, 20, 1).name('HD Scale Factor');
+	ui.push(pngScaleFactorUI);
+	
 
 	function savePNG() {
 		try {
