@@ -377,11 +377,11 @@ function test1PxCalc(
 	gl.enableVertexAttribArray(positionLocation);
 	gl.vertexAttribPointer(
 		positionLocation,
-		1,                // pull 1 value per vertex shader iteration from buffer
+		1, // pull 1 value per vertex shader iteration from buffer
 		gl.UNSIGNED_BYTE, // type of data in buffer,
-		false,            // don't normalize
-		0,                // bytes to advance per iteration (0 = compute from size and type)
-		0,                // offset into buffer
+		false, // don't normalize
+		0, // bytes to advance per iteration (0 = compute from size and type)
+		0, // offset into buffer
 	);
 
 	gl.viewport(0, 0, 1, 1);

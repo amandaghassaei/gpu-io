@@ -241,8 +241,8 @@ export class GPUComposer {
 	}
 
 	/**
-     * Create a GPUComposer.
-     * @param params - GPUComposer parameters.
+	 * Create a GPUComposer.
+	 * @param params - GPUComposer parameters.
 	 * @param params.canvas - HTMLCanvasElement associated with this GPUComposer (you must add to DOM yourself).
 	 * @param params.context - Pass in a WebGL context for the GPUComposer to user.
 	 * @param params.contextID - Set the contextID to use when initing a new WebGL context.
@@ -252,7 +252,7 @@ export class GPUComposer {
 	 * @param params.floatPrecision - Set the global float precision in shader programs.
 	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
 	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
-     */
+	 */
 	constructor(
 		params: {
 			canvas: HTMLCanvasElement,

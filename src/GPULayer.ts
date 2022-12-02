@@ -972,7 +972,7 @@ export class GPULayer {
 
 		const canvas = document.createElement('canvas');
 		canvas.width = width;
-    	canvas.height = height;
+		canvas.height = height;
 		const context = canvas.getContext('2d')!;
 		const imageData = context.getImageData(0, 0, width, height);
 		const buffer = imageData.data;
