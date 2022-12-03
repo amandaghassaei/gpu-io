@@ -16,7 +16,7 @@ function main({ gui, contextID, glslVersion}) {
 
 	const PARAMS = {
 		survivalRules: Number.parseInt('00000110', 2),
-		s1: false,
+		s1: false, // Split up the rules into a bunch of booleans so we can display with dat.gui
 		s2: true,
 		s3: true,
 		s4: false,
@@ -33,7 +33,7 @@ function main({ gui, contextID, glslVersion}) {
 		b6: false,
 		b7: false,
 		b8: false,
-		seedRatio: 0.12,
+		seedRatio: 0.12,// Fraction of 'on' px at startup.
 		reset: onResize,
 		savePNG: savePNG,
 	}
@@ -65,6 +65,7 @@ function main({ gui, contextID, glslVersion}) {
 			out lowp int out_state;
 
 			void main() {
+				// u_state has only one component in it, located in the red 'r' channel.
 				lowp int state = int(texture(u_state, v_uv).r);
 				lowp int n = int(texture(u_state, v_uv + vec2(0, u_pxSize[1])).r);
 				lowp int s = int(texture(u_state, v_uv + vec2(0, -u_pxSize[1])).r);
@@ -90,7 +91,7 @@ function main({ gui, contextID, glslVersion}) {
 				// 	}
 				// }
 				// The following lines give the same result without conditionals.
-				// Using bitwiseAnd8() rather than & operator for GLSL1 support:
+				// Using bitwiseAnd8() and bitshiftLeft() rather than & and << operators for GLSL1 support:
 				// https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md#operators
 				lowp uint mask = bitwiseAnd8((u_survivalRules * uint(state) + u_birthRules * uint(1 - state)), uint(bitshiftLeft(1, numLiving - 1)));
 				state = min(int(mask), 1);
