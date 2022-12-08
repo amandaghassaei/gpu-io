@@ -478,6 +478,16 @@ float atanh(float x) {
 	return GLSL1_POLYFILLS;
 }
 
+function index1DToUV(type1: 'int' | 'uint', type2: 'ivec2' | 'uvec2' | 'vec2') {
+return`vec2 index1DToUV(const ${type1} index1D, const ${type2} dimensions) {
+	${type1} width = ${type1}(dimensions.x);
+	${type1} y = index1D / width;
+	${type1} x = index1D - width * y;
+	float u = (float(x) + 0.5) / float(dimensions.x);
+	float v = (float(y) + 0.5) / float(dimensions.y);
+	return vec2(u, v);
+}`;
+}
 function modi(type1: TI | TU, type2: TI | TU) { return `${type1} modi(const ${type1} x, const ${type2} y) { return x - y * (x / y); }`; }
 function stepi(type1: TI | TU, type2: TI | TU) { return `${type2} stepi(const ${type1} x, const ${type2} y) { return ${type2}(step(${floatTypeForIntType(type1)}(x), ${floatTypeForIntType(type2)}(y))); }`; }
 function bitshiftLeft(type1: TI | TU, type2: TI | TU) {
@@ -591,6 +601,20 @@ export function fragmentShaderPolyfills(shaderSource: string, glslVersion: GLSLV
 	// We'll attempt to just add in what we need, but no worries if we add extraneous functions.
 	// They will be removed by compiler.
 	let FRAGMENT_SHADER_POLYFILLS = '';
+
+	// index1DToUV gives UV coords for 1D indices (for 1D GPULayers).
+	if (shaderSource.includes('index1DToUV')) {
+		FRAGMENT_SHADER_POLYFILLS += `\n
+${index1DToUV('int', 'ivec2')}
+${index1DToUV('int', 'vec2')}
+#if (__VERSION__ == 300)
+${index1DToUV('int', 'uvec2')}
+${index1DToUV('uint', 'uvec2')}
+${index1DToUV('uint', 'ivec2')}
+${index1DToUV('uint', 'vec2')}
+#endif
+`;
+	}
 
 	// modi is called from GLSL1 bitwise polyfills.
 	if (shaderSource.includes('modi') || (glslVersion === GLSL1 && shaderSource.includes('bitwise'))) {

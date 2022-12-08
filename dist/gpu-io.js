@@ -6331,6 +6331,9 @@ function GLSL1Polyfills(shaderSource) {
     return GLSL1_POLYFILLS;
 }
 exports.GLSL1Polyfills = GLSL1Polyfills;
+function index1DToUV(type1, type2) {
+    return "vec2 index1DToUV(const ".concat(type1, " index1D, const ").concat(type2, " dimensions) {\n\t").concat(type1, " width = ").concat(type1, "(dimensions.x);\n\t").concat(type1, " y = index1D / width;\n\t").concat(type1, " x = index1D - width * y;\n\tfloat u = (float(x) + 0.5) / float(dimensions.x);\n\tfloat v = (float(y) + 0.5) / float(dimensions.y);\n\treturn vec2(u, v);\n}");
+}
 function modi(type1, type2) { return "".concat(type1, " modi(const ").concat(type1, " x, const ").concat(type2, " y) { return x - y * (x / y); }"); }
 function stepi(type1, type2) { return "".concat(type2, " stepi(const ").concat(type1, " x, const ").concat(type2, " y) { return ").concat(type2, "(step(").concat(floatTypeForIntType(type1), "(x), ").concat(floatTypeForIntType(type2), "(y))); }"); }
 function bitshiftLeft(type1, type2) {
@@ -6363,6 +6366,10 @@ function fragmentShaderPolyfills(shaderSource, glslVersion) {
     // We'll attempt to just add in what we need, but no worries if we add extraneous functions.
     // They will be removed by compiler.
     var FRAGMENT_SHADER_POLYFILLS = '';
+    // index1DToUV gives UV coords for 1D indices (for 1D GPULayers).
+    if (shaderSource.includes('index1DToUV')) {
+        FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(index1DToUV('int', 'ivec2'), "\n").concat(index1DToUV('int', 'vec2'), "\n#if (__VERSION__ == 300)\n").concat(index1DToUV('int', 'uvec2'), "\n").concat(index1DToUV('uint', 'uvec2'), "\n").concat(index1DToUV('uint', 'ivec2'), "\n").concat(index1DToUV('uint', 'vec2'), "\n#endif\n");
+    }
     // modi is called from GLSL1 bitwise polyfills.
     if (shaderSource.includes('modi') || (glslVersion === constants_1.GLSL1 && shaderSource.includes('bitwise'))) {
         FRAGMENT_SHADER_POLYFILLS += "\n\n".concat(modi('int', 'int'), "\n").concat(modi('ivec2', 'ivec2'), "\n").concat(modi('ivec3', 'ivec3'), "\n").concat(modi('ivec4', 'ivec4'), "\n").concat(modi('ivec2', 'int'), "\n").concat(modi('ivec3', 'int'), "\n").concat(modi('ivec4', 'int'), "\n#if (__VERSION__ == 300)\n").concat(modi('uint', 'uint'), "\n").concat(modi('uvec2', 'uvec2'), "\n").concat(modi('uvec3', 'uvec3'), "\n").concat(modi('uvec4', 'uvec4'), "\n").concat(modi('uvec2', 'uint'), "\n").concat(modi('uvec3', 'uint'), "\n").concat(modi('uvec4', 'uint'), "\n#endif\n");
