@@ -4,7 +4,7 @@
 [![NPM Package](https://img.shields.io/npm/v/gpu-io)](https://www.npmjs.com/package/gpu-io)
 [![Build Size](https://img.shields.io/bundlephobia/min/gpu-io)](https://bundlephobia.com/result?p=gpu-io)
 [![NPM Downloads](https://img.shields.io/npm/dw/gpu-io)](https://www.npmtrends.com/gpu-io)
-[![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE)
+[![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE.txt)
 
 **A GPU-accelerated computing library for physics simulations and other mathematical calculations**
 
@@ -417,7 +417,7 @@ Other resources:
 
 ## License
 
-This work is distributed under an MIT license.  Note that gpu-io depends on a few npm packages:
+This work is distributed under an [MIT license](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE.txt).  Note that gpu-io depends on a few npm packages:
 
 - [@amandaghassaei/type-checks](https://www.npmjs.com/package/@amandaghassaei/type-checks) - MIT license, no dependencies.
 - [@petamoriken/float16](https://www.npmjs.com/package/@petamoriken/float16) - MIT license, no dependencies.
