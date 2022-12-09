@@ -531,7 +531,6 @@ export class GPULayer {
 		let validatedArrayOrImage: GPULayerArray | HTMLImageElement | null = null;
 		if (isArray(arrayOrImage)) validatedArrayOrImage = GPULayer.validateGPULayerArray(arrayOrImage as GPULayerArray | number[], this);
 		else if (arrayOrImage?.constructor === HTMLImageElement) validatedArrayOrImage = arrayOrImage;
-
 		// Init a texture for each buffer.
 		for (let i = 0; i < numBuffers; i++) {
 			const texture = gl.createTexture();
@@ -1024,7 +1023,7 @@ export class GPULayer {
 		// Link webgl texture to threejs object.
 		// This is not officially supported by threejs.
 		if (numBuffers > 1) {
-			throw new Error(`GPULayer "${name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.`);
+			throw new Error(`GPULayer "${name}" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.  You can copy the current state of this GPULayer to a single buffer GPULayer during your render loop.`);
 		}
 		const offsetTextureProperties = _threeRenderer.properties.get(texture);
 		gl.deleteTexture(offsetTextureProperties.__webglTexture);

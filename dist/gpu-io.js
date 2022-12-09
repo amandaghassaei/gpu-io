@@ -3125,7 +3125,7 @@ var GPULayer = /** @class */ (function () {
         // Link webgl texture to threejs object.
         // This is not officially supported by threejs.
         if (numBuffers > 1) {
-            throw new Error("GPULayer \"".concat(name, "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer."));
+            throw new Error("GPULayer \"".concat(name, "\" contains multiple WebGL textures (one for each buffer) that are flip-flopped during compute cycles, please choose a GPULayer with one buffer.  You can copy the current state of this GPULayer to a single buffer GPULayer during your render loop."));
         }
         var offsetTextureProperties = _threeRenderer.properties.get(texture);
         gl.deleteTexture(offsetTextureProperties.__webglTexture);
