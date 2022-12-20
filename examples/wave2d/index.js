@@ -170,6 +170,9 @@ function main({ gui, contextID, glslVersion }) {
 	gridMeshGeometry.setAttribute('position', gridSegmentsGeometry.getAttribute('position'));
 	gridMeshGeometry.setIndex(new BufferAttribute(gridMeshIndices, 1));
 	const gridMeshMaterial = new THREE.ShaderMaterial( {
+		polygonOffset: true,
+		polygonOffsetFactor: 1,
+		polygonOffsetUnits: 1,
 		uniforms: {
 			u_height: { value: gridTexture },
 			u_heightDimensions: { value: TEXTURE_DIM },
@@ -188,7 +191,7 @@ function main({ gui, contextID, glslVersion }) {
 	gridMesh.position.y = PARAMS.separation / TEXTURE_DIM[0] * 0.5;
 	scene.add(gridMesh);
 
-	const composer = GPUComposer.initWithThreeRenderer(renderer, { glslVersion });
+	const composer = GPUComposer.initWithThreeRenderer(renderer);
 	// Undo any changes threejs has made to WebGL state.
 	composer.undoThreeState();
 
