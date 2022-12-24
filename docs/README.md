@@ -71,6 +71,7 @@ gpu-io
 - [setValueProgram](README.md#setvalueprogram)
 - [setColorProgram](README.md#setcolorprogram)
 - [zeroProgram](README.md#zeroprogram)
+- [renderRGBProgram](README.md#renderrgbprogram)
 - [renderAmplitudeProgram](README.md#renderamplitudeprogram)
 - [renderSignedAmplitudeProgram](README.md#rendersignedamplitudeprogram)
 
@@ -619,6 +620,30 @@ Init GPUProgram to zero output GPULayer.
 | `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
 | `params` | `Object` | Program parameters. |
 | `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
+
+#### Returns
+
+[`GPUProgram`](classes/GPUProgram.md)
+
+___
+
+### renderRGBProgram
+
+▸ **renderRGBProgram**(`composer`, `params`): [`GPUProgram`](classes/GPUProgram.md)
+
+Init GPUProgram to render 3 component GPULayer as RGB.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `composer` | [`GPUComposer`](classes/GPUComposer.md) | The current GPUComposer. |
+| `params` | `Object` | Program parameters. |
+| `params.type` | [`GPULayerType`](README.md#gpulayertype) | The type of the input. |
+| `params.name?` | `string` | Optionally pass in a GPUProgram name, used for error logging. |
+| `params.scale?` | `number` | Scaling factor, defaults to 1. Change this later using uniform "u_scale". |
+| `params.opacity?` | `number` | Opacity, defaults to 1. Change this later using uniform "u_opacity". |
+| `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns
 

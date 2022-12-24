@@ -56,6 +56,7 @@ const {
 	setValueProgram,
 	setColorProgram,
 	zeroProgram,
+	renderRGBProgram,
 	renderAmplitudeProgram,
 	renderSignedAmplitudeProgram,
 } = Programs;
@@ -80,6 +81,7 @@ export {
 	setValueProgram,
 	setColorProgram,
 	zeroProgram,
+	renderRGBProgram,
 	_testing,
 }
 export * from './constants';
