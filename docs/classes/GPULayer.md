@@ -27,6 +27,7 @@
 - [clear](GPULayer.md#clear)
 - [getValues](GPULayer.md#getvalues)
 - [getValuesAsync](GPULayer.md#getvaluesasync)
+- [getImage](GPULayer.md#getimage)
 - [savePNG](GPULayer.md#savepng)
 - [attachToThreeTexture](GPULayer.md#attachtothreetexture)
 - [clone](GPULayer.md#clone)
@@ -275,6 +276,25 @@ This only works for WebGL2 contexts, will fall back to getValues() if WebGL1 con
 `Promise`<[`GPULayerArray`](../README.md#gpulayerarray)\>
 
 - A TypedArray containing current state of GPULayer.
+
+___
+
+### getImage
+
+▸ **getImage**(`params?`): `HTMLImageElement`
+
+Get the current state of this GPULayer as an Image.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `params?` | `Object` | Image parameters. |
+| `params.multiplier?` | `number` | Multiplier to apply to data (defaults to 255 for FLOAT and HALF_FLOAT types, else 1). |
+
+#### Returns
+
+`HTMLImageElement`
 
 ___
 

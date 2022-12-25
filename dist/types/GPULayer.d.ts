@@ -242,6 +242,15 @@ export declare class GPULayer {
      * @returns - A TypedArray containing current state of GPULayer.
      */
     getValuesAsync(): Promise<GPULayerArray>;
+    private _getCanvasWithImageData;
+    /**
+     * Get the current state of this GPULayer as an Image.
+     * @param params - Image parameters.
+     * @param params.multiplier - Multiplier to apply to data (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
+    */
+    getImage(params?: {
+        multiplier?: number;
+    }): HTMLImageElement;
     /**
      * Save the current state of this GPULayer to png.
      * @param params - PNG parameters.

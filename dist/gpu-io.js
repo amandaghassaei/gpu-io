@@ -3052,25 +3052,10 @@ var GPULayer = /** @class */ (function () {
             });
         });
     };
-    // TODO: params.callback is not generated in the docs.
-    /**
-     * Save the current state of this GPULayer to png.
-     * @param params - PNG parameters.
-     * @param params.filename - PNG filename (no extension, defaults to the name of the GPULayer).
-     * @param params.dpi - PNG dpi (defaults to 72dpi).
-     * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
-     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using file-saver.
-    */
-    GPULayer.prototype.savePNG = function (params) {
-        if (params === void 0) { params = {}; }
-        var validKeys = ['filename', 'dpi', 'multiplier', 'callback'];
-        var keys = Object.keys(params);
-        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.savePNG(params)');
+    GPULayer.prototype._getCanvasWithImageData = function (multiplier) {
         var values = this.getValues();
-        var _a = this, width = _a.width, height = _a.height, type = _a.type, name = _a.name, numComponents = _a.numComponents;
-        var callback = params.callback || file_saver_1.saveAs; // Default to saving the image with file-saver.
-        var filename = params.filename || name; // Default to the name of this layer.
-        var multiplier = params.multiplier ||
+        var _a = this, width = _a.width, height = _a.height, numComponents = _a.numComponents, type = _a.type;
+        multiplier = multiplier ||
             ((type === constants_1.FLOAT || type === constants_1.HALF_FLOAT) ? 255 : 1);
         var canvas = document.createElement('canvas');
         canvas.width = width;
@@ -3097,6 +3082,41 @@ var GPULayer = /** @class */ (function () {
             }
         }
         context.putImageData(imageData, 0, 0);
+        return canvas;
+    };
+    /**
+     * Get the current state of this GPULayer as an Image.
+     * @param params - Image parameters.
+     * @param params.multiplier - Multiplier to apply to data (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
+    */
+    GPULayer.prototype.getImage = function (params) {
+        if (params) {
+            var validKeys = ['multiplier'];
+            var keys = Object.keys(params);
+            (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.getImage(params)');
+        }
+        var canvas = this._getCanvasWithImageData(params && params.multiplier);
+        var image = new Image();
+        image.src = canvas.toDataURL();
+        return image;
+    };
+    /**
+     * Save the current state of this GPULayer to png.
+     * @param params - PNG parameters.
+     * @param params.filename - PNG filename (no extension, defaults to the name of the GPULayer).
+     * @param params.dpi - PNG dpi (defaults to 72dpi).
+     * @param params.multiplier - Multiplier to apply to data before saving PNG (defaults to 255 for FLOAT and HALF_FLOAT types, else 1).
+     * @param params.callback - Optional callback when Blob is ready, default behavior saves the PNG using file-saver.
+    */
+    GPULayer.prototype.savePNG = function (params) {
+        if (params === void 0) { params = {}; }
+        var validKeys = ['filename', 'dpi', 'multiplier', 'callback'];
+        var keys = Object.keys(params);
+        (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.savePNG(params)');
+        var name = this.name;
+        var callback = params.callback || file_saver_1.saveAs; // Default to saving the image with file-saver.
+        var filename = params.filename || name; // Default to the name of this layer.
+        var canvas = this._getCanvasWithImageData(params.multiplier);
         canvas.toBlob(function (blob) {
             if (!blob) {
                 console.warn("Problem saving PNG from GPULayer \"".concat(name, "\", unable to init blob."));
