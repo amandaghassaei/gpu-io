@@ -3,5 +3,6 @@ node_modules/
 examples/shells/*
 examples/fdtd/*
 examples/drawing/*
+examples/soft-body/*
 docs/main-image.psd
 docs/main-image.png
