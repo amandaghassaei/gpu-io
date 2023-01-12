@@ -1,4 +1,4 @@
-function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
+function runWithOlderWebGLVersion({ pane, contextID, glslVersion }) {
 	const {
 		GPUComposer,
 		GPUProgram,
@@ -34,9 +34,6 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 	const PARAMS = {
 		separation: 50, // Separation between wave surface and caustics projection.
 		c: 0.15, // Wave propagation speed.
-		reset,
-		savePNG,
-		saveTexturePNG,
 	};
 
 	// Size of the simulation.
@@ -489,18 +486,19 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 
 	// Init simple GUI.
 	const ui = [];
-	ui.push(gui.add(PARAMS, 'c', 0.1, 0.5, 0.01).onChange((val) => {
-		waveProgram.setUniform('u_alpha', (val * DT / DX) ** 2);
-	}).name('Wave Speed'));
-	ui.push(gui.add(PARAMS, 'separation', 10, 100, 1).onChange((val) => {
+	ui.push(pane.addInput(PARAMS, 'c', { min: 0.1, max: 0.5, step: 0.01, label: 'Wave Speed' }).on('change', (e) => {
+		waveProgram.setUniform('u_alpha', (PARAMS.c * DT / DX) ** 2);
+	}));
+	ui.push(pane.addInput(PARAMS, 'separation', { min: 10, max: 100, step: 1, label: 'Z Offset' }).on('change', (e) => {
+		const val = PARAMS.separation;
 		refractLight.setUniform('u_separation', val);
 		plane.position.y = -val / TEXTURE_DIM[0] * 0.5;
 		gridSegments.position.y = val / TEXTURE_DIM[0] * 0.5;
 		gridMesh.position.y = val / TEXTURE_DIM[0] * 0.5;
-	}).name('Z Offset'));
-	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
-	ui.push(gui.add(PARAMS, 'saveTexturePNG').name('Save Caustics PNG'));
+	}));
+	ui.push(pane.addButton({ title: 'Reset' }).on('click', reset));
+	ui.push(pane.addButton({ title: 'Save PNG (p)' }).on('click', savePNG));
+	ui.push(pane.addButton({ title: 'Save Caustics PNG' }).on('click', saveTexturePNG));
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
@@ -584,7 +582,7 @@ function runWithOlderWebGLVersion({ gui, contextID, glslVersion }) {
 		
 		composer.dispose();
 		ui.forEach(el => {
-			gui.remove(el);
+			pane.remove(el);
 		});
 	}
 

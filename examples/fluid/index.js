@@ -1,5 +1,5 @@
 // Main is called from ../common/wrapper.js
-function main({ gui, contextID, glslVersion}) {
+function main({ pane, contextID, glslVersion}) {
 	const {
 		GPUComposer,
 		GPUProgram,
@@ -16,8 +16,6 @@ function main({ gui, contextID, glslVersion}) {
 	const PARAMS = {
 		trailLength: 15,
 		render: 'Fluid',
-		reset: onResize,
-		savePNG: savePNG,
 	};
 	// Scaling factor for touch interactions.
 	const TOUCH_FORCE_SCALE = 2;
@@ -591,14 +589,19 @@ function main({ gui, contextID, glslVersion}) {
 	canvas.addEventListener('pointercancel', onPointerStop);
 
 	const ui = [];
-	ui.push(gui.add(PARAMS, 'trailLength', 0, 100, 1).onChange((value) => {
-		fadeTrails.setUniform('u_increment', -1 / value);
-	}).name('Trail Length'));
-	ui.push(gui.add(PARAMS, 'render', ['Fluid', 'Pressure', 'Velocity']).name('Render').onChange(() => {
-		
+	ui.push(pane.addInput(PARAMS, 'trailLength', { min: 0, max: 100, step: 1, label: 'Trail Length' }).on('change', () => {
+		fadeTrails.setUniform('u_increment', -1 / PARAMS.trailLength);
 	}));
-	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
+	ui.push(pane.addInput(PARAMS, 'render', {
+		options: {
+			Fluid: 'Fluid',
+			Pressure: 'Pressure',
+			Velocity: 'Velocity',
+		},
+		label: 'Render',
+	}));
+	ui.push(pane.addButton({ title: 'Reset' }).on('click', onResize));
+	ui.push(pane.addButton({ title: 'Save PNG (p)' }).on('click', savePNG));
 
 	// Add 'p' hotkey to print screen.
 	function savePNG() {
@@ -682,8 +685,9 @@ function main({ gui, contextID, glslVersion}) {
 		touch.dispose();
 		composer.dispose();
 		ui.forEach(el => {
-			gui.remove(el);
+			pane.remove(el);
 		});
+		ui.length = 0;
 	}
 
 	return {

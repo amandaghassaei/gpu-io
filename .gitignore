@@ -4,5 +4,6 @@ examples/shells/*
 examples/fdtd/*
 examples/drawing/*
 examples/soft-body/*
+examples/smoothlife/*
 docs/main-image.psd
 docs/main-image.png

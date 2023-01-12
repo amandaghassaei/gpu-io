@@ -1,5 +1,7 @@
 // Main is called from ../common/wrapper.js
-function main({ gui, contextID, glslVersion}) {
+function main({ pane, contextID, glslVersion}) {
+	pane.registerPlugin(TweakpaneEssentialsPlugin);
+
 	const {
 		GPUComposer,
 		GPUProgram,
@@ -16,13 +18,15 @@ function main({ gui, contextID, glslVersion}) {
 		diffusionA: 0.2097,
 		diffusionB: 0.105,
 		renderLayer: 'Chemical B',
-		feedRateMin: 0.016,
-		feedRateMax: 0.044,
-		removalRateMin: 0.05,
-		removalRateMax: 0.066,
-		reset: reset,
-		savePNG: savePNG,
-	}
+		removalRate: {
+			min: 0.05,
+			max: 0.066,
+		},
+		feedRate: {
+			min: 0.016,
+			max: 0.044,
+		},
+	};
 
 	const canvas = document.createElement('canvas');
 	document.body.appendChild(canvas);
@@ -86,12 +90,12 @@ function main({ gui, contextID, glslVersion}) {
 			},
 			{
 				name: 'u_feedRateBounds',
-				value: [PARAMS.feedRateMin, PARAMS.feedRateMax],
+				value: [PARAMS.feedRate.min, PARAMS.feedRate.max],
 				type: FLOAT,
 			},
 			{
 				name: 'u_removalRateBounds',
-				value: [PARAMS.removalRateMin, PARAMS.removalRateMax],
+				value: [PARAMS.removalRate.min, PARAMS.removalRate.max],
 				type: FLOAT,
 			},
 			{
@@ -176,47 +180,60 @@ function main({ gui, contextID, glslVersion}) {
 
 	function reset() {
 		// Zoom back to original settings.
-		PARAMS.feedRateMin = 0.016;
-		PARAMS.feedRateMax = 0.044;
-		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
-		PARAMS.removalRateMin = 0.05;
-		PARAMS.removalRateMax = 0.066;
-		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+		PARAMS.feedRate.min = 0.016;
+		PARAMS.feedRate.max = 0.044;
+		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRate.min, PARAMS.feedRate.max]);
+		PARAMS.removalRate.min = 0.05;
+		PARAMS.removalRate.max = 0.066;
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRate.min, PARAMS.removalRate.max]);
 		updateGUI();
 		onResize(); // Re-init state.
 	}
 
 	// Init simple GUI.
 	const ui = [];
-	const diffusion = gui.addFolder('Diffusion Rates');
-	diffusion.add(PARAMS, 'diffusionA', 0.05, 0.22, 0.01).name('Diffusion A').onChange((val) => {
-		rxnDiffusion.setUniform('u_diffusionA', val);
+	const diffusion = pane.addFolder({
+		expanded: false,
+ 		title: 'Diffusion Rates',
 	});
-	diffusion.add(PARAMS, 'diffusionB', 0.05, 0.2, 0.01).name('Diffusion B').onChange((val) => {
-		rxnDiffusion.setUniform('u_diffusionB', val);
+	diffusion.addInput(PARAMS, 'diffusionA', { min: 0.05, max: 0.22, step: 0.01, label: 'Diffusion A' }).on('change', () => {
+		rxnDiffusion.setUniform('u_diffusionA', PARAMS.diffusionA);
 	});
-	const range = gui.addFolder('Parameter Ranges');
-	range.add(PARAMS, 'removalRateMin', 0, 0.1, 0.001).name('K Min').onChange(() => {
-		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+	diffusion.addInput(PARAMS, 'diffusionB', { min: 0.05, max: 0.2, step: 0.01, label: 'Diffusion B' }).on('change', () => {
+		rxnDiffusion.setUniform('u_diffusionB', PARAMS.diffusionB);
 	});
-	range.add(PARAMS, 'removalRateMax', 0, 0.1, 0.001).name('K Max').onChange(() => {
-		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+	const range = pane.addFolder({
+		expanded: false,
+ 		title: 'Parameter Ranges',
 	});
-	range.add(PARAMS, 'feedRateMin', 0, 0.1, 0.001).name('F Min').onChange(() => {
-		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
+	range.addInput(PARAMS, 'removalRate', {
+		min: 0,
+		max: 0.1,
+		step: 0.001,
+		label: 'K',
+	}).on('change', () => {
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRate.min, PARAMS.removalRate.max]);
 	});
-	range.add(PARAMS, 'feedRateMax', 0, 0.1, 0.001).name('F Max').onChange(() => {
-		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
+	range.addInput(PARAMS, 'feedRate', {
+		min: 0,
+		max: 0.1,
+		step: 0.001,
+		label: 'F',
+	}).on('change', () => {
+		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRate.min, PARAMS.feedRate.max]);
 	});
-	// range.open();
-	ui.push(gui.add(PARAMS, 'renderLayer', ['Chemical A', 'Chemical B']).name('Render Layer'));
-	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
+	ui.push(pane.addInput(PARAMS, 'renderLayer', {
+		options: {
+			['Chemical A']: 'Chemical A',
+			['Chemical B']: 'Chemical B',
+		},
+		label: 'Render Layer',
+	}));
+	ui.push(pane.addButton({ title: 'Reset' }).on('click', reset));
+	ui.push(pane.addButton({ title: 'Save PNG (p)' }).on('click', savePNG));
 
 	function updateGUI() {
-		for (let i in range.__controllers) {
-			range.__controllers[i].updateDisplay();
-		}
+		range.children.forEach(child => child.refresh());
 	}
 
 	const applyTransform = new GPUProgram(composer, {
@@ -263,22 +280,22 @@ function main({ gui, contextID, glslVersion}) {
 		if (e.preventDefault) e.preventDefault();
 		// Calculate new bounds for feed/removal rate.
 		const factor = e.ctrlKey ? 0.005 : 0.001;
-		let scaleF = PARAMS.feedRateMax - PARAMS.feedRateMin;
-		let scaleK = PARAMS.removalRateMax - PARAMS.removalRateMin;
+		let scaleF = PARAMS.feedRate.max - PARAMS.feedRate.min;
+		let scaleK = PARAMS.removalRate.max - PARAMS.removalRate.min;
 		const fractionF = (canvas.height - e.clientY) / canvas.height;
 		const fractionK = e.clientX / canvas.width;
-		const centerF = fractionF * scaleF + PARAMS.feedRateMin;
-		const centerK = fractionK * scaleK + PARAMS.removalRateMin;
+		const centerF = fractionF * scaleF + PARAMS.feedRate.min;
+		const centerK = fractionK * scaleK + PARAMS.removalRate.min;
 		const scale = 1.0 + e.deltaY * factor;
 		const scaleLimit = 1e-6;
 		scaleF = Math.max(scaleF * scale, scaleLimit);
 		scaleK = Math.max(scaleK * scale, scaleLimit);
-		PARAMS.feedRateMin = centerF - scaleF * fractionF;
-		PARAMS.feedRateMax = centerF + scaleF * (1 - fractionF);
-		PARAMS.removalRateMin = centerK - scaleK * fractionK;
-		PARAMS.removalRateMax = centerK + scaleK * (1 - fractionK);
-		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
-		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+		PARAMS.feedRate.min = centerF - scaleF * fractionF;
+		PARAMS.feedRate.max = centerF + scaleF * (1 - fractionF);
+		PARAMS.removalRate.min = centerK - scaleK * fractionK;
+		PARAMS.removalRate.max = centerK + scaleK * (1 - fractionK);
+		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRate.min, PARAMS.feedRate.max]);
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRate.min, PARAMS.removalRate.max]);
 		applyTransform.setUniform('u_scale', scale);
 		applyTransform.setUniform('u_offset', [(1 - scale) * fractionK, (1 - scale) * fractionF]);
 		composer.step({
@@ -294,16 +311,16 @@ function main({ gui, contextID, glslVersion}) {
 
 	function onPan(e) {
 		const { deltaX, deltaY } = e;
-		const scaleF = PARAMS.feedRateMax - PARAMS.feedRateMin;
-		const scaleK = PARAMS.removalRateMax - PARAMS.removalRateMin;
+		const scaleF = PARAMS.feedRate.max - PARAMS.feedRate.min;
+		const scaleK = PARAMS.removalRate.max - PARAMS.removalRate.min;
 		const scaledDeltaX = deltaX / canvas.width;
 		const scaledDeltaY = -deltaY / canvas.height;
-		PARAMS.feedRateMin -= scaleF * scaledDeltaY;
-		PARAMS.feedRateMax -= scaleF * scaledDeltaY;
-		PARAMS.removalRateMin -= scaleK * scaledDeltaX;
-		PARAMS.removalRateMax -= scaleK * scaledDeltaX;
-		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRateMin, PARAMS.feedRateMax]);
-		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRateMin, PARAMS.removalRateMax]);
+		PARAMS.feedRate.min -= scaleF * scaledDeltaY;
+		PARAMS.feedRate.max -= scaleF * scaledDeltaY;
+		PARAMS.removalRate.min -= scaleK * scaledDeltaX;
+		PARAMS.removalRate.max -= scaleK * scaledDeltaX;
+		rxnDiffusion.setUniform('u_feedRateBounds', [PARAMS.feedRate.min, PARAMS.feedRate.max]);
+		rxnDiffusion.setUniform('u_removalRateBounds', [PARAMS.removalRate.min, PARAMS.removalRate.max]);
 		applyTransform.setUniform('u_scale', 1);
 		applyTransform.setUniform('u_offset', [-scaledDeltaX, -scaledDeltaY]);
 		composer.step({
@@ -419,10 +436,10 @@ function main({ gui, contextID, glslVersion}) {
 		applyTransform.dispose();
 		state.dispose();
 		composer.dispose();
-		gui.removeFolder(diffusion);
-		gui.removeFolder(range);
+		pane.remove(diffusion);
+		pane.remove(range);
 		ui.forEach(el => {
-			gui.remove(el);
+			pane.remove(el);
 		});
 	}
 

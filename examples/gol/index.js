@@ -1,5 +1,5 @@
 // Main is called from ../common/wrapper.js
-function main({ gui, contextID, glslVersion}) {
+function main({ pane, contextID, glslVersion}) {
 	const {
 		GPUComposer,
 		GPUProgram,
@@ -16,7 +16,7 @@ function main({ gui, contextID, glslVersion}) {
 
 	const PARAMS = {
 		survivalRules: Number.parseInt('00000110', 2),
-		s1: false, // Split up the rules into a bunch of booleans so we can display with dat.gui
+		s1: false, // Split up the rules into a bunch of booleans so we can display with pane.
 		s2: true,
 		s3: true,
 		s4: false,
@@ -34,8 +34,6 @@ function main({ gui, contextID, glslVersion}) {
 		b7: false,
 		b8: false,
 		seedRatio: 0.12,// Fraction of 'on' px at startup.
-		reset: onResize,
-		savePNG: savePNG,
 	}
 
 	const canvas = document.createElement('canvas');
@@ -197,64 +195,33 @@ function main({ gui, contextID, glslVersion}) {
 	}
 
 	// Init simple GUI.
-	const survival = gui.addFolder('Survival Rules');
-	survival.add(PARAMS, 's1').onChange((val) => {
-		changeBit('survivalRules', val, 0);
+	const survival = pane.addFolder({
+		expanded: false,
+ 		title: 'Survival Rules',
 	});
-	survival.add(PARAMS, 's2').onChange((val) => {
-		changeBit('survivalRules', val, 1);
+	for (let i = 0; i < 8; i++) {
+		const key = `s${i + 1}`;
+		survival.addInput(PARAMS, key).on('change', () => {
+			changeBit('survivalRules', PARAMS[key], i);
+		});
+	}
+	const birth = pane.addFolder({
+		expanded: false,
+ 		title: 'Birth Rules',
 	});
-	survival.add(PARAMS, 's3').onChange((val) => {
-		changeBit('survivalRules', val, 2);
-	});
-	survival.add(PARAMS, 's4').onChange((val) => {
-		changeBit('survivalRules', val, 3);
-	});
-	survival.add(PARAMS, 's5').onChange((val) => {
-		changeBit('survivalRules', val, 4);
-	});
-	survival.add(PARAMS, 's6').onChange((val) => {
-		changeBit('survivalRules', val, 5);
-	});
-	survival.add(PARAMS, 's7').onChange((val) => {
-		changeBit('survivalRules', val, 6);
-	});
-	survival.add(PARAMS, 's8').onChange((val) => {
-		changeBit('survivalRules', val, 7);
-	});
-	// survival.open();
-	const birth = gui.addFolder('Birth Rules');
-	birth.add(PARAMS, 'b1').onChange((val) => {
-		changeBit('birthRules', val, 0);
-	});
-	birth.add(PARAMS, 'b2').onChange((val) => {
-		changeBit('birthRules', val, 1);
-	});
-	birth.add(PARAMS, 'b3').onChange((val) => {
-		changeBit('birthRules', val, 2);
-	});
-	birth.add(PARAMS, 'b4').onChange((val) => {
-		changeBit('birthRules', val, 3);
-	});
-	birth.add(PARAMS, 'b5').onChange((val) => {
-		changeBit('birthRules', val, 4);
-	});
-	birth.add(PARAMS, 'b6').onChange((val) => {
-		changeBit('birthRules', val, 5);
-	});
-	birth.add(PARAMS, 'b7').onChange((val) => {
-		changeBit('birthRules', val, 6);
-	});
-	birth.add(PARAMS, 'b8').onChange((val) => {
-		changeBit('birthRules', val, 7);
-	});
-	// birth.open();
+	for (let i = 0; i < 8; i++) {
+		const key = `b${i + 1}`;
+		birth.addInput(PARAMS, key).on('change', () => {
+			changeBit('birthRules', PARAMS[key], i);
+		});
+	}
 	const ui = [];
-	ui.push(gui.add(PARAMS, 'seedRatio', 0, 1, 0.01).onFinishChange(() => {
+	ui.push(pane.addInput(PARAMS, 'seedRatio', { min: 0, max: 1, step: 0.01, label: 'Seed Ratio' }).on('change', (e) => {
+		if (e && !e.last) return; // Only update on slider finish.
 		onResize();
-	}).name('Seed Ratio'));
-	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
+	}));
+	ui.push(pane.addButton({ title: 'Reset' }).on('click', onResize));
+	ui.push(pane.addButton({ title: 'Save PNG (p)' }).on('click', savePNG));
 
 	function getRulesString(rule) {
 		let rules = `_${rule.toUpperCase()}`;
@@ -316,10 +283,10 @@ function main({ gui, contextID, glslVersion}) {
 		state.dispose();
 		noise.dispose();
 		composer.dispose();
-		gui.removeFolder(survival);
-		gui.removeFolder(birth);
+		pane.remove(survival);
+		pane.remove(birth);
 		ui.forEach(el => {
-			gui.remove(el);
+			pane.remove(el);
 		});
 	}
 

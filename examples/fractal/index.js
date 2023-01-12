@@ -1,5 +1,5 @@
 // Main is called from ../common/wrapper.js
-function main({ gui, contextID, glslVersion}) {
+function main({ pane, contextID, glslVersion}) {
 	const {
 		GPUComposer,
 		GPULayer,
@@ -24,8 +24,6 @@ function main({ gui, contextID, glslVersion}) {
 		cReal: 0.38,
 		cImaginary: -0.23,
 		maxIters: 500,
-		reset,
-		savePNG,
 		pngScaleFactor: 10,
 	};
 	// Flag to trigger recompute.
@@ -149,27 +147,26 @@ function main({ gui, contextID, glslVersion}) {
 
 	// Init simple GUI.
 	const ui = [];
-	ui.push(gui.add(PARAMS, 'cReal', -2, 2, 0.01).onChange((val) => {
-		fractalCompute.setUniform('u_cReal', val);
+	ui.push(pane.addInput(PARAMS, 'cReal', { min: -2, max: 2, step: 0.01, label: 'C Real' }).on('change', () => {
+		fractalCompute.setUniform('u_cReal', PARAMS.cReal);
 		needsCompute = true;
 		// reset();
-	}).name('C Real'));
-	ui.push(gui.add(PARAMS, 'cImaginary', -2, 2, 0.01).onChange((val) => {
-		fractalCompute.setUniform('u_cImaginary', val);
+	}));
+	ui.push(pane.addInput(PARAMS, 'cImaginary', { min: -2, max: 2, step: 0.01, label: 'C Imaginary' }).on('change', () => {
+		fractalCompute.setUniform('u_cImaginary', PARAMS.cImaginary);
 		needsCompute = true;
 		// reset();
-	}).name('C Imaginary'));
-	ui.push(gui.add(PARAMS, 'maxIters', 1, 1000, 1).onChange((val) => {
+	}));
+	ui.push(pane.addInput(PARAMS, 'maxIters', { min: 1, max: 1000, step: 1, label: 'Max Iters' }).on('change', () => {
 		// Use compile-time variables to set loop parameter.
 		// See https://github.com/amandaghassaei/gpu-io/blob/main/docs/GLSL1_Support.md#other-glsl1-gotchas
-		fractalCompute.recompile({ MAX_ITERS: `${val}` });
+		fractalCompute.recompile({ MAX_ITERS: `${PARAMS.maxIters}` });
 		needsCompute = true;
-	}).name('Max Iters'));
-	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	ui.push(gui.add(PARAMS, 'savePNG').name('Save HD PNG (p)'));
-	const pngScaleFactorUI = gui.add(PARAMS, 'pngScaleFactor', 1, 20, 1).name('HD Scale Factor');
+	}));
+	ui.push(pane.addButton({ title: 'Reset' }).on('click', reset));
+	ui.push(pane.addButton({ title: 'Save HD PNG (p)' }).on('click', savePNG));
+	let pngScaleFactorUI = pane.addInput(PARAMS, 'pngScaleFactor', { min: 1, max: 20, step: 1, label: 'HD Scale Factor' });
 	ui.push(pngScaleFactorUI);
-	
 
 	function savePNG() {
 		try {
@@ -224,9 +221,14 @@ function main({ gui, contextID, glslVersion}) {
 		// Check the max texture size and set an upper bound to the PNG export.
 		// Subtract 1 from the abs max value to create headroom bc there have been buffer allocation issues.
 		const maxPNGScale = Math.floor(composer.gl.getParameter(composer.gl.MAX_TEXTURE_SIZE) / Math.max(width, height)) - 1;
-		pngScaleFactorUI.max(maxPNGScale);
+		if (pngScaleFactorUI) {
+			pane.remove(pngScaleFactorUI);
+			ui.splice(ui.indexOf(pngScaleFactorUI), 1);
+		}
+		pngScaleFactorUI = pane.addInput(PARAMS, 'pngScaleFactor', { min: 1, max: maxPNGScale, step: 1, label: 'HD Scale Factor' });
+		ui.push(pngScaleFactorUI);
 		if (PARAMS.pngScaleFactor > maxPNGScale) PARAMS.pngScaleFactor = maxPNGScale;
-		pngScaleFactorUI.updateDisplay();
+		pngScaleFactorUI.refresh();
 	}
 	onResize();
 
@@ -369,7 +371,7 @@ function main({ gui, contextID, glslVersion}) {
 		fractalRender.dispose();
 		state.dispose();
 		composer.dispose();
-		ui.forEach(el => gui.remove(el));
+		ui.forEach(el => pane.remove(el));
 		ui.length = 0;
 	}
 

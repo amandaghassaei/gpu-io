@@ -362,7 +362,7 @@ export class GPUComposer {
 	}
 
 	get canvas() {
-		return this.gl.canvas;
+		return this.gl.canvas as HTMLCanvasElement;
 	}
 
 	/**

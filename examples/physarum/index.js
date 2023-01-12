@@ -1,4 +1,4 @@
-function main({ gui, glslVersion, contextID }) {
+function main({ pane, glslVersion, contextID }) {
 	const {
 		GPUComposer,
 		GPUProgram,
@@ -90,8 +90,6 @@ function main({ gui, glslVersion, contextID }) {
 			};
 			setPreset(settings);
 		},
-		reset,
-		savePNG: savePNG,
 	};
 
 	const canvas = document.createElement('canvas');
@@ -473,60 +471,68 @@ function main({ gui, glslVersion, contextID }) {
 		return `Particles (${particlesPositions.length.toLocaleString("en-US")})`;
 	}
 	const ui = [];
-	const particlesGUI = gui.addFolder(getParticlesFolderTitle());
-	const particlesOrigName = particlesGUI.name; // We need this in order to delete the folder, see dispose().
-	particlesGUI.add(PARAMS, 'sensorAngle', 0, 180, 0.01).onChange((value) => {
-		updateParticles.setUniform('u_sensorAngle', value * Math.PI / 180);
-	}).name('Sensor Angle');
-	particlesGUI.add(PARAMS, 'sensorDistance', 1, 30, 0.01).onChange((value) => {
-		updateParticles.setUniform('u_sensorDistance', value);
-	}).name('Sensor Distance');
-	particlesGUI.add(PARAMS, 'rotationAngle', -90, 90, 0.01).onChange((value) => {
-		updateParticles.setUniform('u_rotationAngle', value * Math.PI / 180);
-	}).name('Rotation Angle');
-	particlesGUI.add(PARAMS, 'stepSize', 0.01, 3, 0.01).onChange((value) => {
-		updateParticles.setUniform('u_stepSize', value);
-	}).name('Step Size');
-	particlesGUI.add(PARAMS, 'particleDensity', 0.01, 1, 0.01).onFinishChange(() => {
+	const particlesGUI = pane.addFolder({
+		expanded: true,
+ 		title: getParticlesFolderTitle(),
+	});
+	particlesGUI.addInput(PARAMS, 'sensorAngle', { min: 0, max: 180, step: 0.01, label: 'Sensor Angle' }).on('change', (e) => {
+		updateParticles.setUniform('u_sensorAngle', PARAMS.sensorAngle * Math.PI / 180);
+	});
+	particlesGUI.addInput(PARAMS, 'sensorDistance', { min: 1, max: 30, step: 0.01, label: 'Sensor Distance' }).on('change', (e) => {
+		updateParticles.setUniform('u_sensorDistance', PARAMS.sensorDistance);
+	});
+	particlesGUI.addInput(PARAMS, 'rotationAngle', { min: -90, max: 90, step: 0.01, label: 'Rotation Angle' }).on('change', (e) => {
+		updateParticles.setUniform('u_rotationAngle', PARAMS.rotationAngle * Math.PI / 180);
+	});
+	particlesGUI.addInput(PARAMS, 'stepSize', { min: 0.01, max: 3, step: 0.01, label: 'Step Size' }).on('change', (e) => {
+		updateParticles.setUniform('u_stepSize', PARAMS.stepSize);
+	});
+	particlesGUI.addInput(PARAMS, 'particleDensity', { min: 0.01, max: 1, step: 0.01, label: 'Particle Density' }).on('change', (e) => {
 		// Init new particles when particle density changes.
 		const { positions, heading, numParticles } = initParticlesArrays();
 		particlesPositions.resize(numParticles, positions);
 		particlesHeading.resize(numParticles, heading);
-		particlesGUI.name = getParticlesFolderTitle();
-	}).name('Particle Density');
-	particlesGUI.open();
-	const trailsGUI = gui.addFolder('Trails');
-	trailsGUI.add(PARAMS, 'depositAmount', 0, 10, 0.01).onChange((value) => {
-		deposit.setUniform('u_value', value);
-	}).name('Deposit Amount');
-	trailsGUI.add(PARAMS, 'decayFactor', 0, 1, 0.01).onChange((value) => {
-		diffuseAndDecay.setUniform('u_decayFactor', value);
-	}).name('Decay Factor');
-	const renderGUI = gui.addFolder('Render Settings');
-	renderGUI.add(PARAMS, 'renderAmplitude', 0, 1, 0.01).onChange((value) => {
-		render.setUniform('u_scale', value);
-	}).name('Amplitude');
+		particlesGUI.title = getParticlesFolderTitle();
+	});
+	const trailsGUI = pane.addFolder({
+		expanded: false,
+ 		title: 'Trails',
+	});
+	trailsGUI.addInput(PARAMS, 'stepSize', { min: 0, max: 10, step: 0.01, label: 'Deposit Amount' }).on('change', (e) => {
+		deposit.setUniform('u_value', PARAMS.stepSize);
+	});
+	trailsGUI.addInput(PARAMS, 'decayFactor', { min: 0, max: 1, step: 0.01, label: 'Decay Factor' }).on('change', (e) => {
+		diffuseAndDecay.setUniform('u_decayFactor', PARAMS.decayFactor);
+	});
+	const renderGUI = pane.addFolder({
+		expanded: false,
+ 		title: 'Render Settings',
+	});
+	renderGUI.addInput(PARAMS, 'renderAmplitude', { min: 0, max: 1, step: 0.01, label: 'Amplitude' }).on('change', (e) => {
+		render.setUniform('u_scale', PARAMS.renderAmplitude);
+	});
 	// Interesting presets to try out.
-	ui.push(gui.add(PARAMS, 'currentPreset', [
-		'Net',
-		'Dots',
-		'Honeycomb',
-		'Fingerprint',
-		'Fibers',
-	]).name('Presets').onChange(() => {
+	ui.push(pane.addInput(PARAMS, 'currentPreset', {
+		options: {
+			Net: 'Net',
+			Dots: 'Dots',
+			Honeycomb: 'Honeycomb',
+			Fingerprint: 'Fingerprint',
+			Fibers: 'Fibers',
+		},
+		label: 'Presets',
+	}).on('change', () => {
 		PARAMS[`set${PARAMS.currentPreset}`]();
 	}));
 	function setPreset(settings) {
 		for (let key in settings) {
 			PARAMS[key] = settings[key];
 		}
-		for (let i in particlesGUI.__controllers) {
-			particlesGUI.__controllers[i].updateDisplay();
-		}
+		particlesGUI.children.forEach(child => child.refresh());
 		reset();
 	}
-	ui.push(gui.add(PARAMS, 'reset').name('Reset'));
-	ui.push(gui.add(PARAMS, 'savePNG').name('Save PNG (p)'));
+	ui.push(pane.addButton({ title: 'Reset' }).on('click', reset));
+	ui.push(pane.addButton({ title: 'Save PNG (p)' }).on('click', savePNG));
 
 	// Resize if needed.
 	window.addEventListener('resize', onResize);
@@ -583,17 +589,11 @@ function main({ gui, glslVersion, contextID }) {
 		diffuseAndDecay.dispose();
 		render.dispose();
 		composer.dispose();
-
-		// Set the name of the folder back to what it was when first inited.
-		// There is a bug in dat.gui that is preventing folder from being deleted
-		// Unless we do this.
-		particlesGUI.name = particlesOrigName;
-		gui.removeFolder(particlesGUI);
-
-		gui.removeFolder(trailsGUI);
-		gui.removeFolder(renderGUI);
+		pane.remove(particlesGUI);
+		pane.remove(trailsGUI);
+		pane.remove(renderGUI);
 		ui.forEach(el => {
-			gui.remove(el);
+			pane.remove(el);
 		});
 	}
 	return {

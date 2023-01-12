@@ -13,13 +13,13 @@
 	const RECORD_FPS = 60;
 
 	// Init a simple gui.
-	const gui = new dat.GUI();
+	const pane = new Tweakpane.Pane();
 
 	// Init info dialog.
 	MicroModal.init();
 
 	// Init an overlay to prevent click events from bubbling through
-	// modal to dat.gui or canvas.
+	// modal to gui or canvas.
 	// Show/hide overlay when modal is opened/closed.
 	const overlay = document.createElement('div');
 	overlay.id = 'touchOverlay';
@@ -35,33 +35,33 @@
 		webGLVersion: isWebGL2Supported() ? 'WebGL 2' : 'WebGL 1',
 		GLSLVersion: isWebGL2Supported() ? 'GLSL 3' : 'GLSL 1',
 	};
-	const availableWebGLVersions = ['WebGL 1'];
-	const availableGLSLVersions = ['GLSL 1'];
+	const availableWebGLVersions = { webgl1: 'WebGL 1' };
+	const availableGLSLVersions = { glsl1: 'GLSL 1' };
 	if (isWebGL2Supported()) {
-		availableWebGLVersions.unshift('WebGL 2');
-		availableGLSLVersions.unshift('GLSL 3');
+		availableWebGLVersions.webgl2 = 'WebGL 2';
+		availableGLSLVersions.glsl3 = 'GLSL 3';
 	}
 	
 	// Global variables to get from example app.
 	let loop, dispose, composer, canvas;
 	// Other global ui variables.
-	let title;
+	let title = webGLSettings.webGLVersion;
 	let useGLSL3Toggle;
 
 	function reloadExampleWithNewParams() {
 		if (useGLSL3Toggle) {
-			settings.remove(useGLSL3Toggle);
+			useGLSL3Toggle.dispose();
 			useGLSL3Toggle = undefined;
-			if (canvas) {
-				canvas.addEventListener('gesturestart', disableZoom);
-				canvas.addEventListener('gesturechange', disableZoom); 
-				canvas.addEventListener('gestureend', disableZoom);
-			}
+		}
+		if (canvas) {
+			canvas.addEventListener('gesturestart', disableZoom);
+			canvas.addEventListener('gesturechange', disableZoom); 
+			canvas.addEventListener('gestureend', disableZoom);
 		}
 		if (webGLSettings.webGLVersion === 'WebGL 1') webGLSettings.GLSLVersion = 'GLSL 1';
 		if (dispose) dispose();
 		({ loop, composer, dispose, canvas } = main({
-			gui,
+			pane,
 			contextID: webGLSettings.webGLVersion === 'WebGL 2' ? WEBGL2 : WEBGL1,
 			glslVersion: webGLSettings.GLSLVersion === 'GLSL 3' ? GLSL3 : GLSL1,
 		}));
@@ -69,9 +69,19 @@
 		canvas.addEventListener('gesturechange', disableZoom); 
 		canvas.addEventListener('gestureend', disableZoom);
 		
-		useGLSL3Toggle = settings.add(webGLSettings, 'GLSLVersion', webGLSettings.webGLVersion === 'WebGL 2' ? availableGLSLVersions : ['GLSL 1']).name('GLSL Version').onChange(reloadExampleWithNewParams);
+		useGLSL3Toggle = settings.addInput(
+			webGLSettings,
+			'GLSLVersion',
+			{
+				options: webGLSettings.webGLVersion === 'WebGL 2' ? availableGLSLVersions : { glsl1: 'GLSL 1' },
+				label: 'GLSL Version',
+			}).on('change', () => {
+				// Some weird issue with calling dispose() inside change callback is throwing error in Tweakpane.
+				// Use timeout to fix it.
+				setTimeout(reloadExampleWithNewParams, 10);
+			});
 		title = `${webGLSettings.webGLVersion}`;
-		settings.name = title;
+		settings.title = title;
 
 		CanvasCapture.dispose();
 		CanvasCapture.init(canvas, { showRecDot: true, showDialogs: true, showAlerts: true, recDotCSS: { left: '0', right: 'auto' } });
@@ -84,8 +94,14 @@
 	}
 
 	// Add some settings to gui.
-	const settings = gui.addFolder(title);
-	settings.add(webGLSettings, 'webGLVersion', availableWebGLVersions).name('WebGL Version').onChange(reloadExampleWithNewParams);
+	const settings = pane.addFolder({
+		title,
+		expanded: false,
+	});
+	settings.addInput(webGLSettings, 'webGLVersion', {
+		options: availableWebGLVersions,
+		label: 'WebGL Version',
+	}).on('change', reloadExampleWithNewParams);
 
 	// Add info modal.
 	const modalOptions = {
@@ -98,8 +114,8 @@
 			document.getElementById('sourceCode').click();
 		},
 	}
-	gui.add(modalOptions, 'showModal').name('About');
-	gui.add(modalOptions, 'sourceCode').name('View Code');
+	pane.addButton({ title: 'About'}).on('click', modalOptions.showModal);
+	pane.addButton({ title: 'View Code'}).on('click', modalOptions.sourceCode);
 
 	// Load example app.
 	reloadExampleWithNewParams();
@@ -121,7 +137,7 @@
 		// Update fps counter.
 		const { fps, numTicks } = composer.tick();
 		if (numTicks % 10 === 0) {
-			settings.name = `${title} (${fps.toFixed(1)} FPS)`;
+			settings.title = `${title} (${fps.toFixed(1)} FPS)`;
 		}
 		window.requestAnimationFrame(outerLoop);
 		// Run example loop.
