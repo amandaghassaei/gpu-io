@@ -389,7 +389,7 @@ void main() {
 	scale?: number,
 	opacity?: number,
 	colorMax?: number[],
-	colorMin: number[],
+	colorMin?: number[],
 	precision?: GLSLPrecision,
 }) {
 	const { type } = params;
