@@ -17,6 +17,10 @@
     "image processing",
     "cellular automata"
   ],
+  "files": [
+    "dist",
+	"src"
+  ],
   "main": "dist/gpu-io.js",
   "types": "dist/types/index.d.ts",
   "homepage": "https://apps.amandaghassaei.com/gpu-io/examples/",
