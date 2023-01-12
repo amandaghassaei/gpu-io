@@ -669,7 +669,7 @@ Init GPUProgram to render RGBA amplitude of an input GPULayer's components, defa
 | `params.scale?` | `number` | Scaling factor, defaults to 1. Change this later using uniform "u_scale". |
 | `params.opacity?` | `number` | Opacity, defaults to 1. Change this later using uniform "u_opacity". |
 | `params.colorMax?` | `number`[] | RGB color for amplitude === scale, scaled to [0,1] range, defaults to white. Change this later using uniform "u_colorMax". |
-| `params.colorMin` | `number`[] | RGB color for amplitude === 0, scaled to [0,1] range, defaults to black. Change this later using uniform "u_colorMin". |
+| `params.colorMin?` | `number`[] | RGB color for amplitude === 0, scaled to [0,1] range, defaults to black. Change this later using uniform "u_colorMin". |
 | `params.precision?` | [`GLSLPrecision`](README.md#glslprecision) | Optionally specify the precision of the input. |
 
 #### Returns

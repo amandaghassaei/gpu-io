@@ -157,7 +157,7 @@ export declare function renderAmplitudeProgram(composer: GPUComposer, params: {
     scale?: number;
     opacity?: number;
     colorMax?: number[];
-    colorMin: number[];
+    colorMin?: number[];
     precision?: GLSLPrecision;
 }): GPUProgram;
 /**
