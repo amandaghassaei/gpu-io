@@ -154,7 +154,7 @@ export class GPUComposer {
 	// Other util programs.
 	/**
 	 * Cache some generic programs for setting value from uniform.
-	 * These are used by GOUComposer.clear() GPULayer.clear(), among other things
+	 * These are used by GOUComposer.clear() and GPULayer.clear(), among other things
 	 */
 	private readonly _setValuePrograms: {
 		[FLOAT]?: GPUProgram,
@@ -380,7 +380,7 @@ export class GPUComposer {
 
 	/**
 	 * Gets (and caches) generic set value programs for several input types.
-	 * Used for GPULayer.clear(), among other things.
+	 * Used for GPUComposer.clear() and GPULayer.clear(), among other things.
 	 * @private
 	 */
 	_setValueProgramForType(type: GPULayerType) {
