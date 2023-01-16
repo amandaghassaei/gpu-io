@@ -1,6 +1,6 @@
 {
   "name": "gpu-io",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A GPU-accelerated computing library for physics simulations and other mathematical calculations",
   "keywords": [
     "gpgpu",
@@ -19,7 +19,7 @@
   ],
   "files": [
     "dist",
-	"src"
+    "src"
   ],
   "main": "dist/gpu-io.js",
   "types": "dist/types/index.d.ts",
