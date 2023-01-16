@@ -424,6 +424,7 @@ var GPUComposer = /** @class */ (function () {
      * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.clearValue - Value to write to canvas when GPUComposer.clear() is called.
      * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
      * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
      */
@@ -442,6 +443,9 @@ var GPUComposer = /** @class */ (function () {
          * @private
          */
         this._extensions = {};
+        // Value to set when clear() is called, defaults to zero.
+        // Access with GPUComposer.clearValue.
+        this._clearValue = 0;
         /**
          * Cache some generic programs for copying data.
          * These are needed for rendering partial screen geometries.
@@ -450,7 +454,7 @@ var GPUComposer = /** @class */ (function () {
         // Other util programs.
         /**
          * Cache some generic programs for setting value from uniform.
-         * These are used by GPULayer.clear(), among other things
+         * These are used by GOUComposer.clear() GPULayer.clear(), among other things
          */
         this._setValuePrograms = {};
         /**
@@ -489,7 +493,7 @@ var GPUComposer = /** @class */ (function () {
         this.verboseLogging = false;
         this._numTicks = 0;
         // Check params.
-        var validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'intPrecision', 'floatPrecision', 'verboseLogging', 'errorCallback'];
+        var validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'intPrecision', 'floatPrecision', 'clearValue', 'verboseLogging', 'errorCallback'];
         var requiredKeys = ['canvas'];
         var keys = Object.keys(params);
         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPUComposer(params)');
@@ -567,6 +571,9 @@ var GPUComposer = /** @class */ (function () {
             ext.bindVertexArrayOES(null);
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        if (params.clearValue !== undefined) {
+            this.clearValue = params.clearValue;
+        }
         // Canvas setup.
         this.resize([canvas.clientWidth, canvas.clientHeight]);
         if (this.verboseLogging) {
@@ -582,6 +589,7 @@ var GPUComposer = /** @class */ (function () {
      * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.clearValue - Value to write to canvas when GPUComposer.clear() is called.
      * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
      * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
      * @returns
@@ -1957,6 +1965,68 @@ var GPUComposer = /** @class */ (function () {
         }
         this._drawFinish(params);
     };
+    Object.defineProperty(GPUComposer.prototype, "clearValue", {
+        /**
+         * Get the clearValue of the GPUComposer.
+         */
+        get: function () {
+            return this._clearValue;
+        },
+        /**
+         * Set the clearValue of the GPUComposer, which is applied during GPUComposer.clear().
+         */
+        set: function (clearValue) {
+            var type = constants_1.FLOAT;
+            var numComponents = 4;
+            if (!(0, checks_1.isValidClearValue)(clearValue, numComponents, type)) {
+                throw new Error("Invalid clearValue: ".concat(JSON.stringify(clearValue), " for GPUComposer, expected ").concat(type, " or array of ").concat(type, " of length ").concat(numComponents, "."));
+            }
+            // Make deep copy if needed.
+            this._clearValue = (0, type_checks_1.isArray)(clearValue) ? clearValue.slice() : clearValue;
+            this._clearValueVec4 = undefined;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GPUComposer.prototype, "clearValueVec4", {
+        /**
+         * Get the clearValue of the GPUComposer as a vec4, pad with zeros as needed.
+         */
+        get: function () {
+            var _clearValueVec4 = this._clearValueVec4;
+            if (!_clearValueVec4) {
+                var clearValue = this.clearValue;
+                _clearValueVec4 = [];
+                if ((0, type_checks_1.isFiniteNumber)(clearValue)) {
+                    _clearValueVec4.push(clearValue, clearValue, clearValue, clearValue);
+                }
+                else {
+                    _clearValueVec4.push.apply(_clearValueVec4, clearValue);
+                    for (var j = _clearValueVec4.length; j < 4; j++) {
+                        _clearValueVec4.push(0);
+                    }
+                }
+                this._clearValueVec4 = _clearValueVec4;
+            }
+            return _clearValueVec4;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Clear all data in canvas to GPUComposer.clearValue.
+     */
+    GPUComposer.prototype.clear = function () {
+        var _a = this, verboseLogging = _a.verboseLogging, clearValueVec4 = _a.clearValueVec4;
+        if (verboseLogging)
+            console.log("Clearing GPUComoser.");
+        var program = this._setValueProgramForType(constants_1.FLOAT);
+        program.setUniform('u_value', clearValueVec4);
+        // Write clear value to canvas.
+        this.step({
+            program: program,
+        });
+    };
     /**
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
      */
@@ -2168,6 +2238,9 @@ var GPUComposer = /** @class */ (function () {
         delete this._width;
         // @ts-ignore;
         delete this._height;
+        // @ts-ignore
+        delete this._clearValue;
+        delete this._clearValueVec4;
     };
     return GPUComposer;
 }());
@@ -2327,7 +2400,7 @@ var GPULayer = /** @class */ (function () {
     /**
      * Create a GPULayer.
      * @param composer - The current GPUComposer instance.
-     * @param params  - GPULayer parameters.
+     * @param params - GPULayer parameters.
      * @param params.name - Name of GPULayer, used for error logging.
      * @param params.type - Data type represented by GPULayer.
      * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
@@ -2440,7 +2513,7 @@ var GPULayer = /** @class */ (function () {
             throw new Error("Invalid numBuffers: ".concat(JSON.stringify(numBuffers), " for GPULayer \"").concat(name, "\", must be positive integer."));
         }
         this.numBuffers = numBuffers;
-        // Wait until after type has been set to set clearValue.
+        // Wait until after type and numComponents has been set to set clearValue.
         if (params.clearValue !== undefined) {
             this.clearValue = params.clearValue; // Setter can only be called after this.numComponents has been set.
         }
@@ -2457,6 +2530,7 @@ var GPULayer = /** @class */ (function () {
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
      * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
      */
     GPULayer.initFromImageURL = function (composer, params) {
         return __awaiter(this, void 0, void 0, function () {
@@ -2469,7 +2543,7 @@ var GPULayer = /** @class */ (function () {
                             throw new Error("Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got ".concat(JSON.stringify(params), "."));
                         }
                         // Check params.
-                        var validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type'];
+                        var validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type', 'clearValue'];
                         var requiredKeys = ['name', 'url'];
                         var keys = Object.keys(params);
                         (0, checks_1.checkValidKeys)(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
@@ -2488,12 +2562,13 @@ var GPULayer = /** @class */ (function () {
                         var layer = new GPULayer(composer, {
                             name: name,
                             type: type || constants_1.FLOAT,
+                            numComponents: format ? format.length : 4,
+                            dimensions: [1, 1],
                             filter: filter,
                             wrapX: wrapX,
                             wrapY: wrapY,
-                            numComponents: format ? format.length : 4,
-                            dimensions: [1, 1],
                             numBuffers: 1,
+                            clearValue: params.clearValue,
                         });
                         // Load image.
                         var image = new Image();

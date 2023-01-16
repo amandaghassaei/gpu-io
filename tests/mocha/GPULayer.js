@@ -65,7 +65,7 @@
 				console.warn = (message) => { warnings.push(message); }
 				await GPULayer.initFromImageURL(composer1, { name: 'test-layer', url: 'base/tests/common/test_img.png', otherThing: 4 });
 				assert.equal(warnings.length, 1);
-				assert.equal(warnings[0], 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapX","wrapY","format","type"].');
+				assert.equal(warnings[0], 'Invalid params key "otherThing" passed to GPULayer.initFromImageURL(composer, params) with name "test-layer".  Valid keys are ["name","url","filter","wrapX","wrapY","format","type","clearValue"].');
 			});
 			it('should error if invalid params passed in', async () => {
 				// Url.

@@ -26,6 +26,7 @@
 - [drawLayerAsPoints](GPUComposer.md#drawlayeraspoints)
 - [drawLayerAsVectorField](GPUComposer.md#drawlayerasvectorfield)
 - [drawLayerAsMesh](GPUComposer.md#drawlayerasmesh)
+- [clear](GPUComposer.md#clear)
 - [undoThreeState](GPUComposer.md#undothreestate)
 - [resetThreeState](GPUComposer.md#resetthreestate)
 - [savePNG](GPUComposer.md#savepng)
@@ -39,6 +40,7 @@
 ### Accessors
 
 - [canvas](GPUComposer.md#canvas)
+- [clearValue](GPUComposer.md#clearvalue)
 - [numTicks](GPUComposer.md#numticks)
 
 ## Properties
@@ -106,6 +108,7 @@ Create a GPUComposer from an existing THREE.WebGLRenderer that shares a single W
 | `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
 | `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
 | `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global float precision in shader programs. |
+| `params.clearValue?` | `number` \| `number`[] | Value to write to canvas when GPUComposer.clear() is called. |
 | `params.verboseLogging?` | `boolean` | Set the verbosity of GPUComposer logging (defaults to false). |
 | `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) | Custom error handler, defaults to throwing an Error with message. |
 
@@ -361,6 +364,18 @@ Draw 2D mesh to screen.
 
 ___
 
+### clear
+
+▸ **clear**(): `void`
+
+Clear all data in canvas to GPUComposer.clearValue.
+
+#### Returns
+
+`void`
+
+___
+
 ### undoThreeState
 
 ▸ **undoThreeState**(): `void`
@@ -456,6 +471,7 @@ Create a GPUComposer.
 | `params.glslVersion?` | [`GLSLVersion`](../README.md#glslversion) | Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts. |
 | `params.intPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global integer precision in shader programs. |
 | `params.floatPrecision?` | [`GLSLPrecision`](../README.md#glslprecision) | Set the global float precision in shader programs. |
+| `params.clearValue?` | `number` \| `number`[] | Value to write to canvas when GPUComposer.clear() is called. |
 | `params.verboseLogging?` | `boolean` | Set the verbosity of GPUComposer logging (defaults to false). |
 | `params.errorCallback?` | [`ErrorCallback`](../README.md#errorcallback) | Custom error handler, defaults to throwing an Error with message. |
 
@@ -468,6 +484,32 @@ Create a GPUComposer.
 #### Returns
 
 `HTMLCanvasElement`
+
+___
+
+### clearValue
+
+• `get` **clearValue**(): `number` \| `number`[]
+
+Get the clearValue of the GPUComposer.
+
+#### Returns
+
+`number` \| `number`[]
+
+• `set` **clearValue**(`clearValue`): `void`
+
+Set the clearValue of the GPUComposer, which is applied during GPUComposer.clear().
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `clearValue` | `number` \| `number`[] |
+
+#### Returns
+
+`void`
 
 ___
 

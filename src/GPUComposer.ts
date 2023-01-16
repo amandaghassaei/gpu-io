@@ -1,6 +1,6 @@
 // @ts-ignore
 import { changeDpiBlob } from 'changedpi';
-import { isArray } from '@amandaghassaei/type-checks';
+import { isArray, isFiniteNumber } from '@amandaghassaei/type-checks';
 import { GPULayer } from './GPULayer';
 import './GPULayerHelpers';
 import {
@@ -66,7 +66,7 @@ import {
 	copyProgram,
 	setValueProgram,
 } from './Programs';
-import { checkRequiredKeys, checkValidKeys } from './checks';
+import { checkRequiredKeys, checkValidKeys, isValidClearValue } from './checks';
 import { bindFrameBuffer } from './framebuffers';
 import { getExtension, OES_VERTEX_ARRAY_OBJECT } from './extensions';
 import { GPUIndexBuffer } from './GPUIndexBuffer';
@@ -136,6 +136,11 @@ export class GPUComposer {
 	 */
 	readonly _extensions: { [key: string]: any } = {};
 
+	// Value to set when clear() is called, defaults to zero.
+	// Access with GPUComposer.clearValue.
+	private _clearValue: number | number[] = 0;
+	private _clearValueVec4? : number[];
+
 	/**
 	 * Cache some generic programs for copying data.
 	 * These are needed for rendering partial screen geometries.
@@ -149,7 +154,7 @@ export class GPUComposer {
 	// Other util programs.
 	/**
 	 * Cache some generic programs for setting value from uniform.
-	 * These are used by GPULayer.clear(), among other things
+	 * These are used by GOUComposer.clear() GPULayer.clear(), among other things
 	 */
 	private readonly _setValuePrograms: {
 		[FLOAT]?: GPUProgram,
@@ -211,6 +216,7 @@ export class GPUComposer {
 	 * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
 	 * @param params.intPrecision - Set the global integer precision in shader programs.
 	 * @param params.floatPrecision - Set the global float precision in shader programs.
+	 * @param params.clearValue - Value to write to canvas when GPUComposer.clear() is called.
 	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
 	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
 	 * @returns 
@@ -221,6 +227,7 @@ export class GPUComposer {
 			glslVersion?: GLSLVersion,
 			intPrecision?: GLSLPrecision,
 			floatPrecision?: GLSLPrecision,
+			clearValue?: number | number[],
 			verboseLogging?: boolean,
 			errorCallback?: ErrorCallback,
 		},
@@ -250,6 +257,7 @@ export class GPUComposer {
 	 * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
 	 * @param params.intPrecision - Set the global integer precision in shader programs.
 	 * @param params.floatPrecision - Set the global float precision in shader programs.
+	 * @param params.clearValue - Value to write to canvas when GPUComposer.clear() is called.
 	 * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
 	 * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
 	 */
@@ -264,6 +272,7 @@ export class GPUComposer {
 			glslVersion?: GLSLVersion,
 			intPrecision?: GLSLPrecision,
 			floatPrecision?: GLSLPrecision,
+			clearValue?: number | number[],
 			verboseLogging?: boolean,
 			// Optionally pass in an error callback in case we want to handle errors related to webgl support.
 			// e.g. throw up a modal telling user this will not work on their device.
@@ -271,7 +280,7 @@ export class GPUComposer {
 		},
 	) {
 		// Check params.
-		const validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'intPrecision', 'floatPrecision', 'verboseLogging', 'errorCallback'];
+		const validKeys = ['canvas', 'context', 'contextID', 'contextAttributes', 'glslVersion', 'intPrecision', 'floatPrecision', 'clearValue', 'verboseLogging', 'errorCallback'];
 		const requiredKeys = ['canvas'];
 		const keys = Object.keys(params);
 		checkValidKeys(keys, validKeys, 'GPUComposer(params)');
@@ -351,6 +360,10 @@ export class GPUComposer {
 			ext.bindVertexArrayOES(null)
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+		if (params.clearValue !== undefined) {
+			this.clearValue = params.clearValue;
+		}
 
 		// Canvas setup.
 		this.resize([canvas.clientWidth, canvas.clientHeight]);
@@ -1956,6 +1969,62 @@ export class GPUComposer {
 	}
 
 	/**
+	 * Set the clearValue of the GPUComposer, which is applied during GPUComposer.clear().
+	 */
+	set clearValue(clearValue: number | number[]) {
+		const type = FLOAT;
+		const numComponents = 4;
+		if (!isValidClearValue(clearValue, numComponents, type)) {
+			throw new Error(`Invalid clearValue: ${JSON.stringify(clearValue)} for GPUComposer, expected ${type} or array of ${type} of length ${numComponents}.`);
+		}
+		// Make deep copy if needed.
+		this._clearValue = isArray(clearValue) ? (clearValue as number[]).slice() : clearValue;
+		this._clearValueVec4 = undefined;
+	}
+
+	/**
+	 * Get the clearValue of the GPUComposer.
+	 */
+	get clearValue() {
+		return this._clearValue;
+	}
+
+	/**
+	 * Get the clearValue of the GPUComposer as a vec4, pad with zeros as needed.
+	 */
+	private get clearValueVec4() {
+		let { _clearValueVec4 } = this;
+		if (!_clearValueVec4) {
+			const { clearValue } = this;
+			_clearValueVec4 = [];
+			if (isFiniteNumber(clearValue)) {
+				_clearValueVec4.push(clearValue as number, clearValue as number, clearValue as number, clearValue as number);
+			} else {
+				_clearValueVec4.push(...clearValue as number[]);
+				for (let j = _clearValueVec4.length; j < 4; j++) {
+					_clearValueVec4.push(0);
+				}
+			}
+			this._clearValueVec4 = _clearValueVec4;
+		}
+		return _clearValueVec4;
+	}
+
+	/**
+	 * Clear all data in canvas to GPUComposer.clearValue.
+	 */
+	clear() {
+		const { verboseLogging, clearValueVec4 } = this;
+		if (verboseLogging) console.log(`Clearing GPUComoser.`);
+		const program = this._setValueProgramForType(FLOAT);
+		program.setUniform('u_value', clearValueVec4);
+		// Write clear value to canvas.
+		this.step({
+			program,
+		});
+	}
+
+	/**
 	 * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
 	 */
 	undoThreeState() {
@@ -2176,5 +2245,8 @@ export class GPUComposer {
 		delete this._width;
 		// @ts-ignore;
 		delete this._height;
+		// @ts-ignore
+		delete this._clearValue;
+		delete this._clearValueVec4;
 	}
 }

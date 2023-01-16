@@ -102,6 +102,30 @@
 				assert.equal(numTicks, 2);
 			});
 		});
+		describe('set clearValue, get clearValue, clear', () => {
+			it('should set/get clear value and clear to value', () => {
+				const composer1 = new GPUComposer({ canvas: document.createElement('canvas'), clearValue: -3 });
+				assert.equal(composer1.clearValue, -3);
+				composer1.clearValue = 10.4;
+				assert.equal(composer1.clearValue, 10.4);
+				composer1.clearValue = [4, -6, 56, 20.5];
+				assert.deepEqual(composer1.clearValue, [4, -6, 56, 20.5]);
+				composer1.dispose();
+				// Clear value defaults to 0.
+				assert.equal(composer.clearValue, 0);
+			});
+			it('should throw errors for bad clear values', () => {
+				// Wrong length.
+				assert.throws(() => { composer.clearValue = [4, -97.5]; },
+					'Invalid clearValue: [4,-97.5] for GPUComposer, expected FLOAT or array of FLOAT of length 4.');
+				assert.throws(() => { composer.clearValue = [4, -97.5, 3.4]; },
+					'Invalid clearValue: [4,-97.5,3.4] for GPUComposer, expected FLOAT or array of FLOAT of length 4.');
+			});
+			it('should clear canvas', () => {
+				composer.clear();
+				// TODO: check this.
+			});
+		});
 		describe('dispose', () => {
 			it('should delete all keys', () => {
 				const testComposer = new GPUComposer({ canvas: document.createElement('canvas') });

@@ -100,6 +100,7 @@ export declare class GPULayer {
      * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
      * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
      * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+     * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
      */
     static initFromImageURL(composer: GPUComposer, params: {
         name: string;
@@ -109,11 +110,12 @@ export declare class GPULayer {
         filter?: GPULayerFilter;
         wrapX?: GPULayerWrap;
         wrapY?: GPULayerWrap;
+        clearValue?: number | number[];
     }): Promise<GPULayer>;
     /**
      * Create a GPULayer.
      * @param composer - The current GPUComposer instance.
-     * @param params  - GPULayer parameters.
+     * @param params - GPULayer parameters.
      * @param params.name - Name of GPULayer, used for error logging.
      * @param params.type - Data type represented by GPULayer.
      * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).

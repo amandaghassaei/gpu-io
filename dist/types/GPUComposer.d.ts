@@ -63,6 +63,8 @@ export declare class GPUComposer {
     readonly _extensions: {
         [key: string]: any;
     };
+    private _clearValue;
+    private _clearValueVec4?;
     /**
      * Cache some generic programs for copying data.
      * These are needed for rendering partial screen geometries.
@@ -70,7 +72,7 @@ export declare class GPUComposer {
     private readonly _copyPrograms;
     /**
      * Cache some generic programs for setting value from uniform.
-     * These are used by GPULayer.clear(), among other things
+     * These are used by GOUComposer.clear() GPULayer.clear(), among other things
      */
     private readonly _setValuePrograms;
     private _wrappedLineColorProgram?;
@@ -103,6 +105,7 @@ export declare class GPUComposer {
      * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.clearValue - Value to write to canvas when GPUComposer.clear() is called.
      * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
      * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
      * @returns
@@ -111,6 +114,7 @@ export declare class GPUComposer {
         glslVersion?: GLSLVersion;
         intPrecision?: GLSLPrecision;
         floatPrecision?: GLSLPrecision;
+        clearValue?: number | number[];
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     }): GPUComposer;
@@ -124,6 +128,7 @@ export declare class GPUComposer {
      * @param params.glslVersion - Set the GLSL version to use, defaults to GLSL3 for WebGL2 contexts.
      * @param params.intPrecision - Set the global integer precision in shader programs.
      * @param params.floatPrecision - Set the global float precision in shader programs.
+     * @param params.clearValue - Value to write to canvas when GPUComposer.clear() is called.
      * @param params.verboseLogging - Set the verbosity of GPUComposer logging (defaults to false).
      * @param params.errorCallback - Custom error handler, defaults to throwing an Error with message.
      */
@@ -137,6 +142,7 @@ export declare class GPUComposer {
         glslVersion?: GLSLVersion;
         intPrecision?: GLSLPrecision;
         floatPrecision?: GLSLPrecision;
+        clearValue?: number | number[];
         verboseLogging?: boolean;
         errorCallback?: ErrorCallback;
     });
@@ -437,6 +443,22 @@ export declare class GPUComposer {
         color?: number[];
         blendAlpha?: boolean;
     }): void;
+    /**
+     * Set the clearValue of the GPUComposer, which is applied during GPUComposer.clear().
+     */
+    set clearValue(clearValue: number | number[]);
+    /**
+     * Get the clearValue of the GPUComposer.
+     */
+    get clearValue(): number | number[];
+    /**
+     * Get the clearValue of the GPUComposer as a vec4, pad with zeros as needed.
+     */
+    private get clearValueVec4();
+    /**
+     * Clear all data in canvas to GPUComposer.clearValue.
+     */
+    clear(): void;
     /**
      * If this GPUComposer has been inited via GPUComposer.initWithThreeRenderer(), call undoThreeState() in render loop before performing any gpu-io step or draw functions.
      */

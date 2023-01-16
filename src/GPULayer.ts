@@ -182,6 +182,7 @@ export class GPULayer {
 	 * @param params.filter - Interpolation filter for GPULayer, defaults to LINEAR for FLOAT/HALF_FLOAT Images, otherwise defaults to NEAREST.
 	 * @param params.wrapX - Horizontal wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
 	 * @param params.wrapY - Vertical wrapping style for GPULayer, defaults to CLAMP_TO_EDGE.
+	 * @param params.clearValue - Value to write to GPULayer when GPULayer.clear() is called.
 	 */
 	static async initFromImageURL(composer: GPUComposer,
 		params: {
@@ -192,6 +193,7 @@ export class GPULayer {
 			filter?: GPULayerFilter,
 			wrapX?: GPULayerWrap,
 			wrapY?: GPULayerWrap,
+			clearValue?: number | number[],
 		},
 	) {
 		return new Promise<GPULayer>((resolve, reject) => {
@@ -202,7 +204,7 @@ export class GPULayer {
 				throw new Error(`Error initing GPULayer: must pass valid params object to GPULayer.initFromImageURL(composer, params), got ${JSON.stringify(params)}.`);
 			}
 			// Check params.
-			const validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type'];
+			const validKeys = ['name', 'url', 'filter', 'wrapX', 'wrapY', 'format', 'type', 'clearValue'];
 			const requiredKeys = ['name', 'url'];
 			const keys = Object.keys(params);
 			checkValidKeys(keys, validKeys, 'GPULayer.initFromImageURL(composer, params)', params.name);
@@ -223,15 +225,15 @@ export class GPULayer {
 			const layer = new GPULayer(composer, {
 				name,
 				type: type || FLOAT,
+				numComponents: format ? format.length as GPULayerNumComponents : 4,
+				dimensions: [1, 1], // Init as 1 px to start.
 				filter,
 				wrapX,
 				wrapY,
-				numComponents: format ? format.length as GPULayerNumComponents : 4,
-				dimensions: [1, 1], // Init as 1 px to start.
 				numBuffers: 1,
+				clearValue: params.clearValue,
 			});
 
-		
 			// Load image.
 			const image = new Image();
 			image.onload = () => {
@@ -249,7 +251,7 @@ export class GPULayer {
 	/**
 	 * Create a GPULayer.
 	 * @param composer - The current GPUComposer instance.
-	 * @param params  - GPULayer parameters.
+	 * @param params - GPULayer parameters.
 	 * @param params.name - Name of GPULayer, used for error logging.
 	 * @param params.type - Data type represented by GPULayer.
 	 * @param params.numComponents - Number of RGBA elements represented by each pixel in the GPULayer (1-4).
@@ -384,7 +386,7 @@ export class GPULayer {
 		}
 		this.numBuffers = numBuffers;
 
-		// Wait until after type has been set to set clearValue.
+		// Wait until after type and numComponents has been set to set clearValue.
 		if (params.clearValue !== undefined) {
 			this.clearValue = params.clearValue; // Setter can only be called after this.numComponents has been set.
 		}
