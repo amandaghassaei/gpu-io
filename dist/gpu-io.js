@@ -454,7 +454,7 @@ var GPUComposer = /** @class */ (function () {
         // Other util programs.
         /**
          * Cache some generic programs for setting value from uniform.
-         * These are used by GOUComposer.clear() GPULayer.clear(), among other things
+         * These are used by GOUComposer.clear() and GPULayer.clear(), among other things
          */
         this._setValuePrograms = {};
         /**
@@ -610,7 +610,7 @@ var GPUComposer = /** @class */ (function () {
     });
     /**
      * Gets (and caches) generic set value programs for several input types.
-     * Used for GPULayer.clear(), among other things.
+     * Used for GPUComposer.clear() and GPULayer.clear(), among other things.
      * @private
      */
     GPUComposer.prototype._setValueProgramForType = function (type) {
