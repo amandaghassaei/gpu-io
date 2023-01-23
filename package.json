@@ -1,6 +1,6 @@
 {
   "name": "gpu-io",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A GPU-accelerated computing library for physics simulations and other mathematical calculations",
   "keywords": [
     "gpgpu",
