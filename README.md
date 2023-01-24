@@ -66,6 +66,8 @@ const { GPUComposer, GPULayer, GPUProgram } = GPUIO;
 
 ## Use
 
+If you have questions about how to use gpu-io: feel free to start a new [discussion thread](https://github.com/amandaghassaei/gpu-io/discussions).
+
 A simple example of how to use gpu-io to simulate 2D diffusion:
 
 ```js
@@ -179,7 +181,7 @@ loop(); // Start animation loop.
 Check out the [Examples page](https://apps.amandaghassaei.com/gpu-io/examples/) to really understand how gpu-io works and how to easily create touch interactions in your application.
 Source code for all examples can be found in the [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples) folder.
 
-Please let me know if you have something that you would like to add to the examples page!
+Please [let me know](https://amandaghassaei.com/about/) if you have something that you would like to add to the examples page!  Feel free to also post a link in the [Show and Tell](https://github.com/amandaghassaei/gpu-io/discussions/5) discussions thread.
 
 ## API
 
