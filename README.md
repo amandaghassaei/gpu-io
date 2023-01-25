@@ -430,9 +430,9 @@ This work is distributed under an [MIT license](https://github.com/amandaghassae
 
 ## Development
 
-Update 10/2022:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but can't be super involved in helping to debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues), but don't expect a super prompt response! See the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more info about how to use this library.
+Update 10/2022:  I'm switching gears a bit to focus on some new projects, but I'll be continuing to use gpu-io as the foundation for almost everything I'm working on.  I expect that some new features will be added to this over the next six months or so, but I can't guarantee I'll have time to help debug issues you may run into.  Feel free to log [issues](https://github.com/amandaghassaei/gpu-io/issues) or ask [questions](https://github.com/amandaghassaei/gpu-io/discussions), but don't expect a super prompt response! See the [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more info about how to use this library.
 
-Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://twitter.com/amandaghassaei) if you end up using this, I'd love to see what you're making!  
+Pull requests welcome! I hope this library is useful to others, but I also realize that I have some very specific needs that have influenced the direction of this code – so we'll see what happens.  Please [let me know](https://amandaghassaei.com/about/) if you end up using this, I'd love to see what you're making!  
 
 
 ### Compiling with Webpack
