@@ -35,7 +35,7 @@ gpu-io makes the following helper functions available to GLSL1 and GLSL3 fragmen
 - `TI|TU modi(TI|TU x, int|uint y)` - Integer version of `mod()`.
 - `TI|TU stepi(TI|TU x, TI|TU y)` - Integer version of `step()`.
 - `TI|TU stepi(int|uint x, TI|TU y)` - Integer version of `step()`.
-- `vec2 index1DToUV(int|uint indexID, ivec2|uvec2|vec2 dimensions)` - Lookup uv coordinates of 1D GPULayer given a 1D index and the [width, height] of the GPULayer.  Even though GPULayers can be inited as flat lists, internally they are represented as 2D textures in WebGL, so this help function is necessary for translating 1D -> 2D.
+- `vec2 index1DToUV(int|uint index1D, ivec2|uvec2|vec2 dimensions)` - Lookup uv coordinates of 1D GPULayer given a 1D index and the [width, height] of the GPULayer.  Even though GPULayers can be inited as flat lists, internally they are represented as 2D textures in WebGL, so this helper function is necessary for translating 1D -> 2D.
 
 Type annotations used in function descriptions:
 
