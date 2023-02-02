@@ -235,10 +235,10 @@ const mesh = new THREE.Mesh(
   }),
 );
 
-// After threejs initialization - undo any changes threejs has made to WebGL state.
-composer.undoThreeState();
-
 loop() {
+  // Undo any changes threejs has made to global WebGL state.
+  composer.undoThreeState();
+
   // Compute things with gpu-io.
   composer.step({
     program: myProgram,
@@ -247,15 +247,13 @@ loop() {
 
   ....
 
-  // Reset WebGL state back to what threejs is expecting
+  // Reset global WebGL state back to what threejs is expecting
   // (otherwise we get WebGL errors).
   composer.resetThreeState();
   // Render threejs scene.
   // Updates to layer1 will propagate to texture without any
   // additional needsUpdate flags.
   renderer.render(scene, camera);
-  // Undo any changes threejs has made to WebGL state.
-  composer.undoThreeState();
 }
 ```
 
