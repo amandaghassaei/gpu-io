@@ -181,7 +181,7 @@ loop(); // Start animation loop.
 Check out the [Examples page](https://apps.amandaghassaei.com/gpu-io/examples/) to really understand how gpu-io works and how to easily create touch interactions in your application.
 Source code for all examples can be found in the [examples/](https://github.com/amandaghassaei/gpu-io/tree/main/examples) folder.
 
-Please [let me know](https://amandaghassaei.com/about/) if you made somethings with gpu-io!  Feel free to also post a link in the [Show and Tell](https://github.com/amandaghassaei/gpu-io/discussions/5) discussions thread.  I'll periodically add some of these to the Examples page as well.
+Please [let me know](https://amandaghassaei.com/about/) if you made something with gpu-io!  Feel free to also post a link in the [Show and Tell](https://github.com/amandaghassaei/gpu-io/discussions/5) discussions thread.  I'll periodically add some of these to the Examples page as well.
 
 
 ## API
