@@ -1,6 +1,6 @@
 // @ts-ignore
 import { changeDpiBlob } from 'changedpi';
-import { isArray, isFiniteNumber, isPositiveInteger } from '@amandaghassaei/type-checks';
+import { isArray, isFiniteNumber, isNonNegativeInteger } from '@amandaghassaei/type-checks';
 import { GPULayer } from './GPULayer';
 import './GPULayerHelpers';
 import {
@@ -584,7 +584,7 @@ export class GPUComposer {
 	resize(dimensions: [number, number]) {
 		const { canvas } = this;
 		const [width, height] = dimensions;
-		if (!isPositiveInteger(width) || !isPositiveInteger(height)) {
+		if (!isNonNegativeInteger(width) || !isNonNegativeInteger(height)) {
 			if (!isArray(dimensions)) throw new Error(`Invalid dimensions parameter supplied to GPUComposer.resize(), expected dimensions array of length 2, got: ${JSON.stringify(dimensions)}`);
 			else throw new Error(`Invalid dimensions parameter supplied to GPUComposer.resize(), expected positive integers, got: ${width}, ${height}`);
 		}

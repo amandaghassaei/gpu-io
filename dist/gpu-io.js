@@ -777,7 +777,7 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.resize = function (dimensions) {
         var canvas = this.canvas;
         var width = dimensions[0], height = dimensions[1];
-        if (!(0, type_checks_1.isPositiveInteger)(width) || !(0, type_checks_1.isPositiveInteger)(height)) {
+        if (!(0, type_checks_1.isNonNegativeInteger)(width) || !(0, type_checks_1.isNonNegativeInteger)(height)) {
             if (!(0, type_checks_1.isArray)(dimensions))
                 throw new Error("Invalid dimensions parameter supplied to GPUComposer.resize(), expected dimensions array of length 2, got: ".concat(JSON.stringify(dimensions)));
             else
