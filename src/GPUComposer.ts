@@ -1,6 +1,6 @@
 // @ts-ignore
 import { changeDpiBlob } from 'changedpi';
-import { isArray, isFiniteNumber } from '@amandaghassaei/type-checks';
+import { isArray, isFiniteNumber, isPositiveInteger } from '@amandaghassaei/type-checks';
 import { GPULayer } from './GPULayer';
 import './GPULayerHelpers';
 import {
@@ -584,6 +584,10 @@ export class GPUComposer {
 	resize(dimensions: [number, number]) {
 		const { canvas } = this;
 		const [width, height] = dimensions;
+		if (!isPositiveInteger(width) || !isPositiveInteger(height)) {
+			if (!isArray(dimensions)) throw new Error(`Invalid dimensions parameter supplied to GPUComposer.resize(), expected dimensions array of length 2, got: ${JSON.stringify(dimensions)}`);
+			else throw new Error(`Invalid dimensions parameter supplied to GPUComposer.resize(), expected positive integers, got: ${width}, ${height}`);
+		}
 		// Set correct canvas pixel size.
 		// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
 		canvas.width = width;
@@ -722,7 +726,7 @@ export class GPUComposer {
 			if (input && ((input === output || (input as GPULayerState).layer === output) ||
 				(isArray(input) && indexOfLayerInArray(outputLayer, input as (GPULayer | GPULayerState)[]) >= 0))) {
 				if (outputLayer.numBuffers === 1) {
-					throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
+					throw new Error(`Cannot use same buffer "${outputLayer.name}" for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.`);
 				}
 				if (fullscreenRender) {
 					// Render and increment buffer.

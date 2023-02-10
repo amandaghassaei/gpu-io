@@ -777,6 +777,12 @@ var GPUComposer = /** @class */ (function () {
     GPUComposer.prototype.resize = function (dimensions) {
         var canvas = this.canvas;
         var width = dimensions[0], height = dimensions[1];
+        if (!(0, type_checks_1.isPositiveInteger)(width) || !(0, type_checks_1.isPositiveInteger)(height)) {
+            if (!(0, type_checks_1.isArray)(dimensions))
+                throw new Error("Invalid dimensions parameter supplied to GPUComposer.resize(), expected dimensions array of length 2, got: ".concat(JSON.stringify(dimensions)));
+            else
+                throw new Error("Invalid dimensions parameter supplied to GPUComposer.resize(), expected positive integers, got: ".concat(width, ", ").concat(height));
+        }
         // Set correct canvas pixel size.
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Canvas_size_and_WebGL
         canvas.width = width;
@@ -893,7 +899,7 @@ var GPUComposer = /** @class */ (function () {
             if (input && ((input === output || input.layer === output) ||
                 ((0, type_checks_1.isArray)(input) && (0, utils_1.indexOfLayerInArray)(outputLayer, input) >= 0))) {
                 if (outputLayer.numBuffers === 1) {
-                    throw new Error('Cannot use same buffer for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input.');
+                    throw new Error("Cannot use same buffer \"".concat(outputLayer.name, "\" for input and output of a program. Try increasing the number of buffers in your output layer to at least 2 so you can render to nextState using currentState as an input."));
                 }
                 if (fullscreenRender) {
                     // Render and increment buffer.

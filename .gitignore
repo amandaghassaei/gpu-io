@@ -2,7 +2,7 @@ node_modules/
 *.DS_Store
 examples/shells/*
 examples/fdtd/*
-examples/drawing/*
+examples/squeegee/*
 examples/soft-body/*
 examples/smoothlife/*
 examples/test/*
