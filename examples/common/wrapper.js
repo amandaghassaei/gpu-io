@@ -14,6 +14,17 @@
 
 	// Init a simple gui.
 	const pane = new Tweakpane.Pane();
+	// Init a pane to toggle main mane visibility.
+	const paneToggle = new Tweakpane.Pane();
+	paneToggle.expanded = false;
+	paneToggle.addButton({ title: 'Show Controls' }).on('click', () => {
+		paneToggle.expanded = false;
+		pane.expanded = true;
+	});
+	pane.addButton({ title: 'Hide Controls'}).on('click', () => {
+		pane.expanded = false;
+		paneToggle.expanded = true;
+	});
 
 	// Init info dialog.
 	MicroModal.init();
