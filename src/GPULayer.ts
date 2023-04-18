@@ -672,7 +672,43 @@ export class GPULayer {
 		// Unbind texture.
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
+	
+	// set a single value at a given 2D location in the layer.
+	setAtIndex2D(x: number, y: number, components: GPULayerArray | number[]) {
+		const { _composer, width, height, _currentTexture } = this;
+		const { gl } = _composer;
 
+		// Validate x and y.
+		if (x < 0 || x >= width || y < 0 || y >= height) {
+			throw new Error(`Invalid coordinates [${x}, ${y}] for GPULayer "${this.name}" with dimensions [${width}, ${height}].`);
+		}
+
+		// Validate components.
+		const validatedValues = GPULayer.validateGPULayerArray(components, this, 1);
+
+		// Set the value at the index.
+		gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, 1, 1, this._glFormat, this._glType, validatedValues);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+
+	// set a single value at a given 1D location in the layer.
+	setAtIndex1D(index: number, components: GPULayerArray | number[]) {
+		const { _glInternalFormat, _glFormat, _glType, width, height, _currentTexture } = this;
+		
+		// Validate index.
+		if (index < 0 || index >= width * height) {
+			throw new Error(`Invalid index ${index} for GPULayer "${this.name}" with dimensions [${width}, ${height}].`);
+		}
+		
+		// Get the x and y coordinates of the index.
+		const x = index % width;
+		const y = Math.floor(index / width);
+
+		// Set the value at the index.
+		this.setAtIndex2D(x, y, components);
+	}
+	
 	// setFromImage(image: HTMLImageElement) {
 	// 	const { name, _composer, width, height, _currentTexture, _glInternalFormat, _glFormat, _glType, numComponents, type } = this;
 	// 	const { gl } = _composer;
@@ -1190,5 +1226,6 @@ export class GPULayer {
 	static validateGPULayerArray(
 		array: GPULayerArray | number[],
 		layer: GPULayer,
+		validateSubarrayLength?: number
 	): GPULayerArray;
 }
