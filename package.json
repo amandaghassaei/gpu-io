@@ -30,7 +30,7 @@
   },
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
-    "build": "webpack && npm run docs",
+    "build": "rollup --config && npm run docs",
     "docs": "typedoc --options ./typedoc.json && npm run md-to-html",
     "md-to-html": "marked -i ./examples/README.md -o ./examples/index.html && concat -o ./examples/index.html ./examples/common/github-markdown-wrapper1.html ./examples/index.html ./examples/common/github-markdown-wrapper2.html",
     "update-three": "npm install --save-dev three@latest && cp ./node_modules/three/build/three.min.js ./examples/common/ && cp ./node_modules/three/examples/js/controls/OrbitControls.js ./examples/common/"
@@ -38,12 +38,15 @@
   "author": "Amanda Ghassaei",
   "license": "MIT",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^24.1.0",
+    "@rollup/plugin-node-resolve": "^15.0.2",
+    "@rollup/plugin-terser": "^0.4.1",
+    "@rollup/plugin-typescript": "^11.1.0",
     "@types/file-saver": "^2.0.3",
     "@types/offscreencanvas": "^2019.7.0",
     "@types/three": "^0.127.1",
     "chai": "^4.3.6",
     "concat": "^1.0.3",
-    "install": "^0.13.0",
     "karma": "^6.4.0",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.1.1",
@@ -51,13 +54,14 @@
     "karma-mocha-reporter": "^2.2.5",
     "marked": "^4.1.1",
     "mocha": "^10.0.0",
-    "three": "^0.145.0",
-    "ts-loader": "^8.4.0",
+    "rollup": "^3.21.0",
+    "rollup-plugin-delete": "^2.0.0",
+    "rollup-plugin-dts": "^5.3.0",
+    "three": "^0.151.3",
+    "tslib": "^2.5.0",
     "typedoc": "^0.23.16",
     "typedoc-plugin-markdown": "^3.14.0",
-    "typescript": "^4.7.4",
-    "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0"
+    "typescript": "^4.7.4"
   },
   "dependencies": {
     "@amandaghassaei/type-checks": "^1.0.2",
