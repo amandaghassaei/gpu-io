@@ -6,7 +6,7 @@
 [![NPM Downloads](https://img.shields.io/npm/dw/gpu-io)](https://www.npmtrends.com/gpu-io)
 [![License](https://img.shields.io/npm/l/gpu-io)](https://github.com/amandaghassaei/gpu-io/blob/main/LICENSE.txt)
 
-**A GPU-accelerated computing library for physics simulations and other mathematical calculations**
+**A GPU-accelerated computing library for running physics simulations on the web**
 
 gpu-io is a WebGL library that helps you easily compose GPU-accelerated computing workflows.  This library can be used for a variety of applications including real-time physics simulations, particle/agent-based simulations, cellular automata, image processing, and general purpose GPU computations.  gpu-io supports rendering directly to the WebGL canvas and has some built-in features that make interactivity easy.  See [Examples](https://apps.amandaghassaei.com/gpu-io/examples/) for more details.
 
