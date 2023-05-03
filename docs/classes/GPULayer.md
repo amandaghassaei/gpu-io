@@ -204,13 +204,14 @@ ___
 
 ### setFromArray
 
-▸ **setFromArray**(`array`): `void`
+▸ **setFromArray**(`array`, `range?`): `void`
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
 | `array` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
+| `range?` | [`GPULayerRange`](../README.md#gpulayerrange) \| [`GPULayerRegion`](../README.md#gpulayerregion) |
 
 #### Returns
 

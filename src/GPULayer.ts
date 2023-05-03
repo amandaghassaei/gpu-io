@@ -46,6 +46,8 @@ import {
 	ImageType,
 	validImageFormats,
 	validImageTypes,
+	GPULayerRange,
+	GPULayerRegion,
  } from './constants';
 import {
 	readPixelsAsync,
@@ -654,24 +656,109 @@ export class GPULayer {
 			this._textureOverrides[this.bufferIndex] = undefined;
 		}
 	}
-  
-	setFromArray(array: GPULayerArray | number[]) {
-		const {
-			_composer,
-			_glInternalFormat,
-			_glFormat,
-			_glType,
-			width,
-			height,
-			_currentTexture,
-		} = this;
-		const { gl } = _composer;
-		const validatedArray = GPULayer.validateGPULayerArray(array, this);
-		gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, _glInternalFormat, width, height, 0, _glFormat, _glType, validatedArray);
-		// Unbind texture.
-		gl.bindTexture(gl.TEXTURE_2D, null);
+
+	/**
+	 * Get texImage2D regions for layer range or region
+	 * @private
+	 */
+	_getTexImage2DRegions(range?: GPULayerRange | GPULayerRegion): {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+		sliceStart: number;
+		sliceEnd: number;
+	}[] {
+		const { width, height } = this;
+		if (!range) {
+			// no range
+			return [{x: 0, y: 0, width, height, sliceStart: 0, sliceEnd: width*height}];
+		} else if ((range as GPULayerRegion).width !== undefined) {
+			// this is a 2D region
+			const { x, y, width, height } = range as GPULayerRegion;
+			return [{x, y, width, height, sliceStart: 0, sliceEnd: width*height}];
+		}
+
+		if ((range as GPULayerRange).start !== undefined) {
+			// this is a 1D range
+			const { width } = this;
+			const { start, end } = range as GPULayerRange;
+			const length = end - start;
+			
+			let regions = []
+			const numRows = Math.ceil(length / width);
+			if (numRows > 0) {
+				// first region, top cap
+				regions.push({
+					x: start % width,
+					y: Math.floor(start / width),
+					width: Math.min(width - start % width, length),
+					height: 1,
+					sliceStart: 0,
+					sliceEnd: Math.min(width - start % width, length),
+				});
+			}
+			if (numRows > 1) {
+				// end region, bottom cap
+				regions.push({
+					x: 0,
+					y: Math.floor(end / width),
+					width: end % width,
+					height: 1,
+					sliceStart: length - end % width,
+					sliceEnd: length,
+				});
+			}
+			if (numRows > 2) {
+				// middle region
+				regions.push({
+					x: 0,
+					y: Math.floor(start / width) + 1,
+					width: width,
+					height: numRows - 2,
+					sliceStart: width - start % width + 1,
+					sliceEnd: width - start % width + 1 + (numRows - 2) * width,
+				});
+			}
+			
+			return regions;
+		}
+		return [];
 	}
+
+	setFromArray(array: GPULayerArray | number[], range?: GPULayerRange | GPULayerRegion) {
+    const {
+      _composer,
+      _glFormat,
+      _glType,
+      _currentTexture,
+			numComponents
+    } = this;
+    const { gl } = _composer;
+    const regions = this._getTexImage2DRegions(range);
+    gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
+    for (const { x, y, width, height, sliceStart, sliceEnd } of regions) {
+    	const validatedArray = GPULayer.validateGPULayerArray(
+				array.slice(sliceStart*numComponents, sliceEnd*numComponents),
+				this,
+				// if no range was passed, we're setting the whole layer and we can validate the whole array
+				!range ? undefined : Math.min(sliceEnd - sliceStart, array.length / numComponents)
+			);
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        x,
+        y,
+        width,
+        height,
+        _glFormat,
+        _glType,
+				validatedArray
+      );
+    }
+    // Unbind texture.
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
 	
 	/**
 	 * Set a single value at a given 2D location in the layer.
@@ -680,21 +767,7 @@ export class GPULayer {
 	 * @param components 
 	 */
 	setAtIndex2D(x: number, y: number, components: GPULayerArray | number[]) {
-		const { _composer, width, height, _currentTexture } = this;
-		const { gl } = _composer;
-
-		// Validate x and y.
-		if (x < 0 || x >= width || y < 0 || y >= height) {
-			throw new Error(`Invalid coordinates [${x}, ${y}] for GPULayer "${this.name}" with dimensions [${width}, ${height}].`);
-		}
-
-		// Validate components.
-		const validatedValues = GPULayer.validateGPULayerArray(components, this, 1);
-
-		// Set the value at the index.
-		gl.bindTexture(gl.TEXTURE_2D, _currentTexture);
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, 1, 1, this._glFormat, this._glType, validatedValues);
-		gl.bindTexture(gl.TEXTURE_2D, null);
+		this.setFromArray(components, {x, y, width: 1, height: 1});
 	}
 
 	/**
@@ -703,19 +776,7 @@ export class GPULayer {
 	 * @param components
 	 */
 	setAtIndex1D(index: number, components: GPULayerArray | number[]) {
-		const { _glInternalFormat, _glFormat, _glType, width, height, _currentTexture } = this;
-		
-		// Validate index.
-		if (index < 0 || index >= width * height) {
-			throw new Error(`Invalid index ${index} for GPULayer "${this.name}" with dimensions [${width}, ${height}].`);
-		}
-		
-		// Get the x and y coordinates of the index.
-		const x = index % width;
-		const y = Math.floor(index / width);
-
-		// Set the value at the index.
-		this.setAtIndex2D(x, y, components);
+		this.setFromArray(components, {start: index, end: index+1});
 	}
 	
 	// setFromImage(image: HTMLImageElement) {
