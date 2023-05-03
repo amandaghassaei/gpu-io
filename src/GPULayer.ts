@@ -654,7 +654,7 @@ export class GPULayer {
 			this._textureOverrides[this.bufferIndex] = undefined;
 		}
 	}
-
+  
 	setFromArray(array: GPULayerArray | number[]) {
 		const {
 			_composer,
@@ -673,7 +673,12 @@ export class GPULayer {
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 	
-	// set a single value at a given 2D location in the layer.
+	/**
+	 * Set a single value at a given 2D location in the layer.
+	 * @param x 
+	 * @param y 
+	 * @param components 
+	 */
 	setAtIndex2D(x: number, y: number, components: GPULayerArray | number[]) {
 		const { _composer, width, height, _currentTexture } = this;
 		const { gl } = _composer;
@@ -692,7 +697,11 @@ export class GPULayer {
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 
-	// set a single value at a given 1D location in the layer.
+	/**
+	 * Set a single value at a given 1D location in the layer.
+	 * @param index
+	 * @param components
+	 */
 	setAtIndex1D(index: number, components: GPULayerArray | number[]) {
 		const { _glInternalFormat, _glFormat, _glType, width, height, _currentTexture } = this;
 		

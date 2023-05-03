@@ -23,6 +23,8 @@
 - [decrementBufferIndex](GPULayer.md#decrementbufferindex)
 - [getStateAtIndex](GPULayer.md#getstateatindex)
 - [setFromArray](GPULayer.md#setfromarray)
+- [setAtIndex2D](GPULayer.md#setatindex2d)
+- [setAtIndex1D](GPULayer.md#setatindex1d)
 - [resize](GPULayer.md#resize)
 - [clear](GPULayer.md#clear)
 - [getValues](GPULayer.md#getvalues)
@@ -209,6 +211,45 @@ ___
 | Name | Type |
 | :------ | :------ |
 | `array` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
+
+#### Returns
+
+`void`
+
+___
+
+### setAtIndex2D
+
+▸ **setAtIndex2D**(`x`, `y`, `components`): `void`
+
+Set a single value at a given 2D location in the layer.
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `x` | `number` |
+| `y` | `number` |
+| `components` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
+
+#### Returns
+
+`void`
+
+___
+
+### setAtIndex1D
+
+▸ **setAtIndex1D**(`index`, `components`): `void`
+
+Set a single value at a given 1D location in the layer.
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `index` | `number` |
+| `components` | `number`[] \| [`GPULayerArray`](../README.md#gpulayerarray) |
 
 #### Returns
 
