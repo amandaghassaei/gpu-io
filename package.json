@@ -22,7 +22,7 @@
     "src"
   ],
   "main": "dist/gpu-io.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/gpu-io.d.ts",
   "homepage": "https://apps.amandaghassaei.com/gpu-io/examples/",
   "repository": {
     "type": "git",
