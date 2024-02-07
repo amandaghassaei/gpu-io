@@ -875,3 +875,94 @@ export async function readPixelsAsync(
 	gl.deleteBuffer(buf);
 	return dstBuffer;
   }
+	
+	/**
+	 * Read pixels from a framebuffer to a destination WebGLBuffer at a given offset.
+	 * @param gl - WebGL2 Rendering Context
+	 * @param dstBuffer - An object to read data into. The array type must match the type of the type parameter.
+	 * @param x - The first horizontal pixel that is read from the lower left corner of a rectangular block of pixels.
+	 * @param y - The first vertical pixel that is read from the lower left corner of a rectangular block of pixels.
+	 * @param w - The width of the rectangle.
+	 * @param h - The height of the rectangle.
+	 * @param format - The GLenum format of the pixel data.
+	 * @param componentType - The GLenum data type of the pixel data.
+	 * @param componentSizeBytes - The size of each component in bytes.
+	 * @param srcOffset - The offset in bytes from the start of the buffer object where data will be read.
+	 * @param dstOffset - The offset in bytes from the start of the buffer object where data will be written.
+	 * @returns
+	 */
+
+	export function readPixelsToWebGLBuffer(
+		gl: WebGL2RenderingContext,
+		dstBuffer: WebGLBuffer,
+		x: number, y: number,
+		w: number, h: number,
+		format: number,
+		componentType: number,
+		componentSizeBytes: number = 4,
+		numComponents: number = 4,
+		srcOffset: number = 0,
+		dstOffset: number = 0,
+	) {
+		const pbo = gl.createBuffer()!;
+		gl.bindBuffer(gl.PIXEL_PACK_BUFFER, pbo);
+		gl.bufferData(gl.PIXEL_PACK_BUFFER, w * h * numComponents * componentSizeBytes, gl.STATIC_COPY);
+		gl.readPixels(x, y, w, h, format, componentType, 0);
+	
+		gl.bindBuffer(gl.COPY_WRITE_BUFFER, dstBuffer);
+		gl.copyBufferSubData(gl.PIXEL_PACK_BUFFER, gl.COPY_WRITE_BUFFER, srcOffset, dstOffset, w * h * numComponents * componentSizeBytes);
+		gl.bindBuffer(gl.COPY_WRITE_BUFFER, null);
+		gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+	
+		gl.deleteBuffer(pbo);
+	
+	}
+	
+	type PixelTransfers = {
+		dstBuffer: WebGLBuffer,
+		srcOffset: number,
+		dstOffset: number,
+		length: number,
+	}
+	
+	/** 
+	 * Read pixels from a framebuffer to multiple destination buffers at given offsets.
+	 * @param gl - WebGL2 Rendering Context
+	 * @param transfers - An array of transfer configurations representing a set of transfers to buffers.
+	 * @param x - The first horizontal pixel that is read from the lower left corner of a rectangular block of pixels.
+	 * @param y - The first vertical pixel that is read from the lower left corner of a rectangular block of pixels.
+	 * @param w - The width of the rectangle.
+	 * @param h - The height of the rectangle.
+	 * @param format - The GLenum format of the pixel data.
+	 * @param componentType - The GLenum data type of the pixel data.
+	 * @param componentSizeBytes - The size of each component in bytes.
+	 * @param numComponents - The number of components per pixel.
+	 * @returns
+	 */
+	 
+	export function readPixelsToMultipleWebGLBuffers(
+		gl: WebGL2RenderingContext,
+		transfers: PixelTransfers[],
+		x: number, y: number,
+		w: number, h: number,
+		format: number,
+		componentType: number,
+		componentSizeBytes: number = 4,
+		numComponents: number = 4,
+	) {
+		const pbo = gl.createBuffer()!;
+		gl.bindBuffer(gl.PIXEL_PACK_BUFFER, pbo);
+		gl.bufferData(gl.PIXEL_PACK_BUFFER, w * h * componentSizeBytes * numComponents, gl.STREAM_READ);
+		gl.readPixels(x, y, w, h, format, componentType, 0);
+
+		transfers.forEach(
+			({ dstBuffer, srcOffset, dstOffset, length }) => {
+				gl.bindBuffer(gl.COPY_WRITE_BUFFER, dstBuffer);
+				gl.copyBufferSubData(gl.PIXEL_PACK_BUFFER, gl.COPY_WRITE_BUFFER, srcOffset, dstOffset, length);
+				gl.bindBuffer(gl.COPY_WRITE_BUFFER, null);
+			}
+		)
+		gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+
+		gl.deleteBuffer(pbo);
+	}

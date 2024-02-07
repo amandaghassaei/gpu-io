@@ -730,5 +730,43 @@
 				// dispose() marks them for deletion, but they are garbage collected later.
 			});
 		});
+		describe('copy to GPU buffer', () => {
+			it('should copy values to a GPU buffer using `GPULayer.copyToWebGLBuffer`', async () => {
+				const composer = new GPUComposer({ canvas: document.createElement('canvas') });
+				const { gl } = composer;
+
+				const glBuffer = gl.createBuffer();
+
+				// simulate binding this buffer as a vertex attribute
+				gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([Math.random(), Math.random(), Math.random(), Math.random()]), gl.STATIC_DRAW);
+				
+				const layer1 = new GPULayer(composer, {
+					name: 'test',
+					type: FLOAT,
+					numComponents: 4,
+					dimensions: [1,1],
+					clearValue: 3,
+				});
+				// overwrite it with the pixels from the layer
+				layer1.clear();
+				
+				layer1.copyToWebGLBuffer(glBuffer);
+				
+				// read it back to an array
+				const array = new Float32Array(4);
+				gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+				gl.getBufferSubData(gl.ARRAY_BUFFER, 0, array);
+				
+				assert.equal(array[0], 3);
+				assert.equal(array[1], 3);
+				assert.equal(array[2], 3);
+				assert.equal(array[3], 3);
+
+				layer1.dispose();
+				composer.dispose();
+				gl.deleteBuffer(glBuffer);
+			});
+		})
 	});
 }

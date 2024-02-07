@@ -31,6 +31,8 @@ const _testing = {
 	uniformInternalTypeForValue: utils.uniformInternalTypeForValue,
 	indexOfLayerInArray: utils.indexOfLayerInArray,
 	readPixelsAsync: utils.readPixelsAsync,
+	readPixelsToWebGLBuffer: utils.readPixelsToWebGLBuffer,
+	readPixelsToMultipleWebGLBuffers: utils.readPixelsToMultipleWebGLBuffers,
 	...extensions,
 	...regex,
 	...checks,

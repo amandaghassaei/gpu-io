@@ -27,6 +27,7 @@
 - [clear](GPULayer.md#clear)
 - [getValues](GPULayer.md#getvalues)
 - [getValuesAsync](GPULayer.md#getvaluesasync)
+- [copyToWebGLBuffer](GPULayer.md#copytowebglbuffer)
 - [getImage](GPULayer.md#getimage)
 - [savePNG](GPULayer.md#savepng)
 - [attachToThreeTexture](GPULayer.md#attachtothreetexture)
@@ -277,6 +278,29 @@ This only works for WebGL2 contexts, will fall back to getValues() if WebGL1 con
 `Promise`<[`GPULayerArray`](../README.md#gpulayerarray)\>
 
 - A TypedArray containing current state of GPULayer.
+
+___
+
+### copyToWebGLBuffer
+
+▸ **copyToWebGLBuffer**(`dstBuffer`, `dstOffset?`, `srcX?`, `srcY?`, `srcWidth?`, `srcHeight?`): `void`
+
+Copies the contents of the layer to a WebGLBuffer.
+
+#### Parameters
+
+| Name | Type | Default value | Description |
+| :------ | :------ | :------ | :------ |
+| `dstBuffer` | `WebGLBuffer` | `undefined` | The WebGLBuffer to copy the contents of the layer to. |
+| `dstOffset` | `number` | `0` | The offset in bytes to start copying to. |
+| `srcX?` | `number` | `0` | The x coordinate of the source rectangle. |
+| `srcY?` | `number` | `0` | The y coordinate of the source rectangle. |
+| `srcWidth?` | `number` | `undefined` | The width of the source rectangle. |
+| `srcHeight?` | `number` | `undefined` | The height of the source rectangle. |
+
+#### Returns
+
+`void`
 
 ___
 

@@ -58,6 +58,8 @@
 		uniformInternalTypeForValue,
 		indexOfLayerInArray,
 		readPixelsAsync,
+		readPixelsToWebGLBuffer,
+		readPixelsToMultipleWebGLBuffers,
 		SAMPLER2D_FILTER,
 		SAMPLER2D_WRAP_X,
 		SAMPLER2D_WRAP_Y,
@@ -740,6 +742,99 @@ void main() {
 				assert.equal(array[3], 3);
 				layer1.dispose();
 				composer.dispose();
+			});
+		});
+		describe('read pixels to GPU buffers', () => {
+			it('should transfer pixels to a single buffer using `readPixelsToWebGLBuffer`', async () => {
+				const composer = new GPUComposer({ canvas: document.createElement('canvas') });
+				const { gl } = composer;
+
+				const glBuffer = gl.createBuffer();
+
+				// simulate binding this buffer as a vertex attribute
+				gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([Math.random(), Math.random(), Math.random(), Math.random()]), gl.STATIC_DRAW);
+				
+				const layer1 = new GPULayer(composer, {
+					name: 'test',
+					type: FLOAT,
+					numComponents: 4,
+					dimensions: [1,1],
+					clearValue: 3,
+				});
+				// overwrite it with the pixels from the layer
+				layer1.clear();
+				
+				readPixelsToWebGLBuffer(gl, glBuffer, 0, 0, 1, 1, gl.RGBA, gl.FLOAT);
+
+				// read it back to an array
+				const array = new Float32Array(4);
+				gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+				gl.getBufferSubData(gl.ARRAY_BUFFER, 0, array);
+				
+				assert.equal(array[0], 3);
+				assert.equal(array[1], 3);
+				assert.equal(array[2], 3);
+				assert.equal(array[3], 3);
+
+				layer1.dispose();
+				composer.dispose();
+				gl.deleteBuffer(glBuffer);
+			});
+
+			it('should transfer pixels to multiple buffers using `readPixelsToMultipleWebGLBuffers`', async () => {
+				const composer = new GPUComposer({ canvas: document.createElement('canvas') });
+				const { gl } = composer;
+
+				const singleComponentBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, singleComponentBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([Math.random()]), gl.STATIC_DRAW);
+				
+				const rangeTwoBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, rangeTwoBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([Math.random(), Math.random()]), gl.STATIC_DRAW);
+				
+				const layer1 = new GPULayer(composer, {
+					name: 'test',
+					type: FLOAT,
+					numComponents: 4,
+					dimensions: 1,
+					clearValue: 3,
+				});
+				
+				layer1.clear();
+				layer1.setFromArray([1,2,3,4]);
+				
+				// first let's make sure the values are what we expect
+				const array = new Float32Array(4);
+				await readPixelsAsync(gl, 0, 0, 1, 1, gl.RGBA, gl.FLOAT, array);
+
+				assert.equal(array[1], 2);
+
+				await readPixelsToMultipleWebGLBuffers(gl, [
+					{ dstBuffer: singleComponentBuffer, srcOffset: 3*4, dstOffset: 0, length: 4 },
+					{ dstBuffer: rangeTwoBuffer, srcOffset: 1*4, dstOffset: 0, length: 2*4}
+				], 0, 0, 1, 1, gl.RGBA, gl.FLOAT, 4);
+
+				// read the single value (4th component) back to an array and check it
+				const singleComponentArray = new Float32Array(1);
+				gl.bindBuffer(gl.ARRAY_BUFFER, singleComponentBuffer);
+				gl.getBufferSubData(gl.ARRAY_BUFFER, 0, singleComponentArray, 0, 1);
+				
+				assert.equal(singleComponentArray[0], 4);
+				
+				// read the range values (2nd and 3rd components) back to an array and check them
+				const rangeTwoArray = new Float32Array(2);
+				gl.bindBuffer(gl.ARRAY_BUFFER, rangeTwoBuffer);
+				gl.getBufferSubData(gl.ARRAY_BUFFER, 0, rangeTwoArray, 0);
+
+				assert.equal(rangeTwoArray[0], 2);
+				assert.equal(rangeTwoArray[1], 3);
+
+				layer1.dispose();
+				composer.dispose();
+				gl.deleteBuffer(singleComponentBuffer);
+				gl.deleteBuffer(rangeTwoBuffer);
 			});
 		});
 	});

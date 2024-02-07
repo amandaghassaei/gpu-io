@@ -49,6 +49,7 @@ import {
  } from './constants';
 import {
 	readPixelsAsync,
+	readPixelsToWebGLBuffer,
 	readyToRead,
 } from './utils';
 import { disposeFramebuffers, bindFrameBuffer } from './framebuffers';
@@ -944,6 +945,51 @@ export class GPULayer {
 		await readPixelsAsync(gl as WebGL2RenderingContext, 0, 0, width, height, _glFormat, _glType, _valuesRaw);
 		return this._getValuesPost(_valuesRaw, _glNumChannels, _internalType);
 	}
+
+	/**
+	 * Copies the contents of the layer to a WebGLBuffer.
+	 * @param dstBuffer - The WebGLBuffer to copy the contents of the layer to.
+	 * @param dstOffset - The offset in bytes to start copying to.
+	 * @param [srcX=0] - The x coordinate of the source rectangle.
+	 * @param [srcY=0] - The y coordinate of the source rectangle.
+	 * @param [srcWidth=0] - The width of the source rectangle.
+	 * @param [srcHeight=0] - The height of the source rectangle.
+	 */
+	 
+	copyToWebGLBuffer(
+		dstBuffer: WebGLBuffer,
+		dstOffset: number = 0,
+		srcX = 0,
+		srcY = 0,
+		srcWidth? : number,
+		srcHeight?: number,
+	) {
+		const { width: fullWidth, height: fullHeight, _composer } = this;
+		const width = srcWidth || fullWidth;
+		const height = srcHeight || fullHeight;
+
+		const { gl, isWebGL2 } = _composer;
+		if (!isWebGL2) {
+			throw new Error('copyToBuffer() is only supported for WebGL2.');
+		}
+		
+		const { _glFormat, _glType, _valuesRaw, _glNumChannels, _internalType } = this._getValuesSetup();
+		readPixelsToWebGLBuffer(
+			gl as WebGL2RenderingContext,
+			dstBuffer,
+			srcX,
+			srcY,
+			width,
+			height,
+			_glFormat,
+			_glType,
+			4, // to-do: support all the types by passing in the component byte size
+				 // maybe this can come from `this._getValuesSetup()`?
+			_glNumChannels,
+			dstOffset
+		)
+	}	
+		
 
 	private _getCanvasWithImageData(multiplier?: number) {
 		const values = this.getValues();
