@@ -51,6 +51,8 @@ gpu-io
 - [GPULayerFilter](README.md#gpulayerfilter)
 - [GPULayerWrap](README.md#gpulayerwrap)
 - [GPULayerState](README.md#gpulayerstate)
+- [GPULayerRange](README.md#gpulayerrange)
+- [GPULayerRegion](README.md#gpulayerregion)
 - [ImageFormat](README.md#imageformat)
 - [ImageType](README.md#imagetype)
 - [GLSLVersion](README.md#glslversion)
@@ -363,6 +365,34 @@ This data structure also includes a reference back to the GPULayer that it origi
 | :------ | :------ |
 | `texture` | `WebGLTexture` |
 | `layer` | [`GPULayer`](classes/GPULayer.md) |
+
+___
+
+### GPULayerRange
+
+Ƭ **GPULayerRange**: `Object`
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `start` | `number` |
+| `end` | `number` |
+
+___
+
+### GPULayerRegion
+
+Ƭ **GPULayerRegion**: `Object`
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `x` | `number` |
+| `y` | `number` |
+| `width` | `number` |
+| `height` | `number` |
 
 ___
 

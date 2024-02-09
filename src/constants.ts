@@ -112,6 +112,17 @@ export type GPULayerState = {
 	texture: WebGLTexture,
 	layer: GPULayer,
 }
+export type GPULayerRange = {
+	start: number,
+	end: number,
+}
+
+export type GPULayerRegion = {
+	x: number,
+	y: number,
+	width: number,
+	height: number,
+}
 
 // For image urls that are passed in and inited as textures.
 /**

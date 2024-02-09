@@ -889,14 +889,21 @@ export function minMaxValuesForType(type: GPULayerType) {
  * Recasts typed array to match GPULayer.internalType.
  * @private
  */
-GPULayer.validateGPULayerArray = (array: GPULayerArray | number[], layer: GPULayer) => {
+GPULayer.validateGPULayerArray = (array: GPULayerArray | number[], layer: GPULayer, validateSubarrayLength : number | null = null) => {
 	const { numComponents, width, height, name } = layer;
 	const glNumChannels = layer._glNumChannels;
 	const internalType = layer._internalType;
 	const length = layer.is1D() ? layer.length : null;
 
 	// Check that data is correct length (user error).
-	if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
+	
+	// Are we validating a subarray?
+	if (validateSubarrayLength) {
+		if (array.length !== validateSubarrayLength * numComponents) {
+			throw new Error(`Invalid data length: ${array.length} for GPULayer "${name}" of numComponents: ${numComponents}.`);
+		}
+	// Otherwise our data
+	} else if (array.length !== width * height * numComponents) { // Either the correct length for WebGLTexture size
 		if (!length || (length &&  array.length !== length * numComponents)) { // Of the correct length for 1D array.
 			throw new Error(`Invalid data length: ${array.length} for GPULayer "${name}" of ${length ? `length ${length} and ` : ''}dimensions: [${width}, ${height}] and numComponents: ${numComponents}.`);
 		}
@@ -948,7 +955,13 @@ GPULayer.validateGPULayerArray = (array: GPULayerArray | number[], layer: GPULay
 
 	// Then check if array needs to be lengthened.
 	// This could be because glNumChannels !== numComponents or because length !== width * height.
-	const arrayLength = width * height * glNumChannels;
+
+	const arrayLength =
+		// If we are validating a subarray, we need to use the subarray length.
+		validateSubarrayLength ? validateSubarrayLength * glNumChannels :
+		// otherwise we can use the layer length.
+		width * height * glNumChannels;
+
 	const shouldResize = array.length !== arrayLength;
 		
 	let validatedArray = array as GPULayerArray;
